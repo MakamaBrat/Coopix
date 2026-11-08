@@ -21,3 +21,12 @@ and the app underneath is frozen while an app page is open.
 Compatibility: the app page has an explicit solid background and the main app is hidden behind it,
 and CSS has fallbacks for browsers without color-mix() / inset. WebGL contexts are created only for
 cards near the viewport and released when far away.
+
+Card backgrounds (Settings > Card background, or per card in the editor > Background):
+Waves, Mosaic (cover tiles scroll), Sunset (cover inside the sun), Rain (streaks take cover colours).
+Mix = each card gets its own by id. All four read the game cover, squeezed to a 32x32 texture.
+
+Lite mode (quality Low): shader, stars, sheen, glow, particles, noise and animations are off, cards
+use a flat static gradient. Auto turns it on at once for weak phones: Save-Data, <=2 GB RAM, <=2 cores,
+old WebView (no aspect-ratio, Chrome < 88), software or very old GPU, no WebGL. It also switches on by
+itself if the frame rate stays low (a toast tells the user), and the choice is remembered.
