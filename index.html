@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
+<script async src="https://telegram.org/js/telegram-web-app.js" onload="window.tgInit&&tgInit()"></script>
+<script>window.tgInit=function(){try{var w=window.Telegram&&Telegram.WebApp;if(!w||!(w.initData||(w.platform&&w.platform!=="unknown")))return;document.documentElement.classList.add("tg");
+w.ready();w.expand();try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
+if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",function(){window.tgInit()});</script>
 <title>App Market</title>
 <meta name="description" content="Retro app market. Drop a cover, pick an item, and the whole card takes its colours.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0618'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23a56bff'/%3E%3Crect x='5' y='3' width='6' height='2' fill='%23a56bff'/%3E%3Crect x='6' y='7' width='1' height='3' fill='%230a0618'/%3E%3Crect x='5' y='8' width='3' height='1' fill='%230a0618'/%3E%3Crect x='10' y='7' width='1' height='1' fill='%230a0618'/%3E%3Crect x='11' y='9' width='1' height='1' fill='%230a0618'/%3E%3C/svg%3E">
@@ -18,11 +22,16 @@
   --bg0:#07040f; --bg1:#0e0820; --ink:#f4ecff; --dim:#9b86d6; --line:#3a2a70; --acc:#a56bff; --acc2:#5b2fd0;
   --font:"Pixelify Sans",ui-monospace,"Courier New",monospace;
   --k:.5; --col:min(100vw - 24px, 500px);
+  /* Telegram mini app: its own insets (fullscreen header buttons) + system insets, one extra gap inside Telegram */
+  --tgt:calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px));
+  --top:max(env(safe-area-inset-top,0px),var(--tgt));
+  --bot:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));
 }
+html.tg{--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 12px)}
 *{box-sizing:border-box;margin:0}
 html{background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
-body{font-family:var(--font);color:var(--ink);min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
-  padding:env(safe-area-inset-top) 0 0}
+body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
+  padding:var(--top) 0 0}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 :focus-visible{outline:3px solid #fff;outline-offset:3px}
 svg{display:block}
@@ -165,7 +174,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 @keyframes enter{from{opacity:0;transform:translateY(22px) scale(.97)}}
 
 /* ---------- dock ---------- */
-.dock{position:fixed;z-index:20;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);width:var(--col);height:clamp(58px,15vw,74px);
+.dock{position:fixed;z-index:20;left:50%;bottom:calc(10px + var(--bot));transform:translateX(-50%);width:var(--col);height:clamp(58px,15vw,74px);
   background:linear-gradient(160deg,#6a4cc8,#2a1a66);
   clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px)}
 .dock-in{position:absolute;inset:3px;display:grid;grid-template-columns:repeat(4,1fr);background:linear-gradient(#1a1040,#110a2a);
@@ -182,7 +191,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .sheet.open{visibility:visible}
 .scrim{position:absolute;inset:0;background:rgba(5,2,12,.72);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s}
 .sheet.open .scrim{opacity:1}
-.panel{position:relative;width:min(100vw,540px);max-height:94dvh;overflow:auto;padding:22px 18px calc(22px + env(safe-area-inset-bottom));
+.panel{position:relative;width:min(100vw,540px);max-height:calc(100vh - var(--top) - 8px);max-height:calc(100dvh - var(--top) - 8px);overflow:auto;padding:22px 18px calc(22px + var(--bot));
   background:linear-gradient(#1a1040,#0f0826);border-top:4px solid var(--acc);
   clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 24px,100% 100%,0 100%,0 24px);
   transform:translateY(40px);opacity:0;transition:.3s cubic-bezier(.2,.9,.2,1)}
@@ -226,7 +235,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .toggle[aria-checked=true] i::after{left:29px;background:#fff}
 
 /* ---------- toast ---------- */
-.toast{position:fixed;z-index:80;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-220%);visibility:hidden;min-width:200px;max-width:92vw;padding:12px 22px 14px;text-align:center;font-size:20px;
+.toast{position:fixed;z-index:80;left:50%;top:calc(14px + var(--top));transform:translate(-50%,-220%);visibility:hidden;min-width:200px;max-width:92vw;padding:12px 22px 14px;text-align:center;font-size:20px;
   background:#1a1040;border:3px solid var(--acc);color:#fff;transition:transform .35s cubic-bezier(.2,1.2,.3,1);
   clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
 .toast.on{transform:translate(-50%,0);visibility:visible}
@@ -266,7 +275,7 @@ textarea.in{height:auto;min-height:92px;padding:10px 14px;resize:vertical;line-h
   transition:transform .35s cubic-bezier(.2,.9,.2,1),opacity .15s,visibility 0s .35s;
   background:radial-gradient(90% 38% at 50% 0,color-mix(in srgb,var(--c1) 28%,transparent),transparent 70%),linear-gradient(#0c0720,#07040f);background-color:#09051a}
 .page.open{visibility:visible;opacity:1;transform:none;transition-delay:0s}
-.pg{width:var(--col);margin:0 auto;padding:env(safe-area-inset-top) 0 calc(130px + env(safe-area-inset-bottom))}
+.pg{width:var(--col);margin:0 auto;padding:var(--top) 0 calc(130px + var(--bot))}
 .pg-top{display:flex;align-items:center;justify-content:space-between;height:56px}
 .back{width:48px;height:48px;display:grid;place-items:center;color:var(--c3)}
 .back svg{width:26px;height:26px;fill:currentColor}.back:hover{color:#fff}
@@ -289,6 +298,13 @@ textarea.in{height:auto;min-height:92px;padding:10px 14px;resize:vertical;line-h
 .scr{position:relative;height:0;padding-bottom:75%;background:#05030a;border-radius:18px/16px;overflow:hidden;cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;
   box-shadow:inset 0 0 0 3px #0a0612,0 0 0 3px rgba(0,0,0,.55)}
 .scr.playing{touch-action:none}
+/* hiss: TV is showing snow while the game loads; it powers on when ready */
+.scr.hiss canvas.g{opacity:0}
+html .tv .scr.hiss::before{display:block;opacity:.9;mix-blend-mode:normal;animation:nz1 .12s steps(1) infinite}
+.scr.hiss .tvn{opacity:1;animation-duration:.1s}
+.scr.hiss .ov{z-index:5;place-items:center;padding:0}
+.scr.hiss .ov span{display:inline-block;padding:3px 10px;background:rgba(5,3,10,.78)}
+html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .scr canvas.g{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;filter:saturate(1.15) contrast(1.06);animation:tvg 5s steps(1) infinite}
 .scr.pon canvas.g{animation:pon .6s ease-out,tvg 5s .6s steps(1) infinite}
 @keyframes tvg{0%,91%,100%{transform:none}92%{transform:translateX(3px) skewX(-1.5deg)}94%{transform:translateX(-4px)}96%{transform:translateX(1px) skewX(1deg)}}
@@ -343,7 +359,7 @@ textarea.in{height:auto;min-height:92px;padding:10px 14px;resize:vertical;line-h
 
 /* play bar */
 .pfade{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;background:linear-gradient(transparent,#07040f 72%)}
-.pbar{position:fixed;z-index:2;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);width:var(--col);filter:drop-shadow(0 0 14px color-mix(in srgb,var(--c1) 55%,transparent))}
+.pbar{position:fixed;z-index:2;left:50%;bottom:calc(10px + var(--bot));transform:translateX(-50%);width:var(--col);filter:drop-shadow(0 0 14px color-mix(in srgb,var(--c1) 55%,transparent))}
 .bigplay{width:100%;height:64px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#140a28;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c1) 65%,#fff),var(--c1) 50%,color-mix(in srgb,var(--c1) 70%,#000));
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);transition:transform .12s,filter .2s}
@@ -959,7 +975,7 @@ async function render(intro){
   const rows=DATA.filter(f);
   if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:launch,onEdit:c=>openEditor(c.m.id),onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
       onDropCover:(c,url)=>{const d=DATA.find(x=>x.id===c.m.id);d.cover=url;d.tint=null;persist();c.set({...d})}});
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
   if(view===0)addCard();
@@ -1174,8 +1190,8 @@ function pageHTML(m,kind){
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="What do you think of the beta?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Post</button></div></div></section></div>`}
 
-async function openPage(id){
-  const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m};pgFocus=document.activeElement;
+async function openPage(id,opt){
+  const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
   const cov=await resolveCover(m.cover);if(PG!==me)return;const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s),kind=KIND[m.genre]||"catch";
   Object.assign(PG,{pal,art:cov.canvas,kind,run:false,score:0,best:store.get("am.best",{})[m.id]||0});
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
@@ -1183,7 +1199,7 @@ async function openPage(id){
   $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
   $("#pgPlays").textContent=(m.played||0)+" plays";$("#bs").textContent=PG.best;
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();tvIdle();tvPower();sfx.tap();
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
@@ -1226,15 +1242,22 @@ function renderCM(){
    :`<p class="empty">No reviews yet. Be the first to try the beta.</p>`}
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
-  if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
+  if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
+  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
   else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span>SCORE ${PG.score}</span>${nb?"<span>NEW BEST!</span>":""}<span class="blink">TAP TO RETRY</span></div>`}}
 function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=false;
   const g=x.createLinearGradient(0,0,0,120);g.addColorStop(0,rgb(PG.pal.B));g.addColorStop(1,rgb(PG.pal.D));x.fillStyle=g;x.fillRect(0,0,160,120);
   x.drawImage(PG.art,46,8,68,68);setOv("idle")}
+async function tvBoot(me){
+  /* real prep first (cover is ready, one painted frame), then a short minimum of snow so the hiss reads as a TV */
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  await wait(Q?900:500);if(PG!==me)return;
+  me.ready=true;const s=$("#scr");if(!s)return;s.classList.remove("hiss");tvIdle();tvPower();sfx.play();
+  if(me.want){me.want=false;playBeta()}}
 function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void s.offsetWidth;s.classList.add("pon")}
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
-  if(!PG||!PG.pal)return;stopGame();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
+  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}stopGame();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
   Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;$("#sc").textContent=0;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
@@ -1249,10 +1272,11 @@ function endGame(){
   if(nb){b[PG.m.id]=s;store.set("am.best",b);PG.best=s;$("#bs").textContent=s}
   stopGame();PG.endT=performance.now();burst();setOv("end",nb&&s>0);sfx.out()}
 async function playBeta(){
-  const me=PG,d=DATA.find(x=>x.id===me.m.id);if(d){d.played=(d.played||0)+1;persist();$("#pgPlays").textContent=d.played+" plays"}
-  const t=me.m.title||"app";toast("Loading beta · "+t,true);sfx.in();stopGame();setOv("idle");
+  const me=PG;if(!me||!me.pal)return;if(!me.ready){me.want=true;return}
+  const d=DATA.find(x=>x.id===me.m.id);if(d){d.played=(d.played||0)+1;persist();$("#pgPlays").textContent=d.played+" plays"}
+  sfx.in();stopGame();setOv("idle");
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
-  await wait(1100);if(PG!==me)return;sfx.play();toast("Ready · "+t);startGame()}
+  await wait(450);if(PG!==me)return;startGame()}
 $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
 
 /* ============ boot ============ */
