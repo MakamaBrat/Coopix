@@ -238,6 +238,18 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
   *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
   .swoosh ellipse{stroke-dashoffset:0}
 }
+
+/* CD: rainbow diffraction sheen */
+.item.cd .shine{opacity:.85;mix-blend-mode:color;animation:spin 14s linear infinite;
+  background:conic-gradient(from var(--a),#0000 0deg,#ff4fb8 18deg,#ffd23f 42deg,#4dff9a 66deg,#3fc4ff 90deg,#8a5cff 114deg,#0000 140deg,#0000 180deg,#ff4fb8 198deg,#ffd23f 222deg,#4dff9a 246deg,#3fc4ff 270deg,#8a5cff 294deg,#0000 320deg,#0000 360deg)}
+.card:hover .item.cd .shine{animation-duration:4s;opacity:1}
+/* handheld: noisy screen */
+.noise{position:absolute;inset:0;display:none;pointer-events:none;mix-blend-mode:overlay;overflow:hidden;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px),var(--nz) 0 0/96px 96px;image-rendering:pixelated;animation:nz .45s steps(1) infinite}
+.noise::after{content:"";position:absolute;left:0;right:0;height:30%;background:linear-gradient(transparent,rgba(255,255,255,.35),transparent);animation:roll 3.2s linear infinite}
+.item.hh .noise{display:block}
+@keyframes nz{0%{background-position:0 0,0 0}20%{background-position:0 0,-34px 18px}40%{background-position:0 0,22px -40px}60%{background-position:0 0,-12px -22px}80%{background-position:0 0,40px 30px}}
+@keyframes roll{from{top:-35%}to{top:105%}}
 </style>
 </head>
 <body class="scan">
@@ -323,6 +335,8 @@ const ITEMS={
   handheld:{label:"Handheld",side:"right",case:"case_d",ov:.2}
 };
 
+(()=>{const c=document.createElement("canvas");c.width=c.height=48;const x=c.getContext("2d"),d=x.createImageData(48,48);
+  for(let i=0;i<2304;i++){const v=Math.random()*255;d.data.set([v,v,v,255],i*4)}x.putImageData(d,0,0);document.documentElement.style.setProperty("--nz",`url(${c.toDataURL()})`)})();
 /* ============ colour ============ */
 function hsl2rgb(h,s,l){h=((h%360)+360)%360/360;const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return [f(0)*255,f(8)*255,f(4)*255]}
 function palette(h,s){
@@ -482,7 +496,7 @@ class Card{
       <div class="shell"><div class="shell-in"><canvas class="fx"></canvas><i class="beam"></i></div></div>
       <i class="stripes"><b></b><b></b><b></b></i>
       <i class="halo"></i><i class="floor"></i>
-      <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="shine"></div><div class="gl"></div></div></div></div>
+      <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="shine"></div><div class="gl"></div><div class="noise"></div></div></div></div>
       <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="256" height="256"></canvas><canvas class="b" width="256" height="256"></canvas></div><div class="gl"></div></div>
       <canvas class="pt" width="453" height="110"></canvas>
       <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
@@ -492,7 +506,7 @@ class Card{
     host.append(el);
     const q=s=>el.querySelector(s);
     this.r={fx:q(".fx"),item:q(".slot.item"),itemC:q(".slot.item canvas"),shine:q(".shine"),cse:q(".slot.case"),cseC:q(".slot.case>canvas"),cover:q(".cover"),ca:q(".cover .a"),cb:q(".cover .b"),
-      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit")};
+      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),noise:q(".noise"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit")};
     this.fx=SET.shader?makeFx(this.r.fx):null;
     this.resize();CARDS.add(this);
     if(!o.preview){this.io=new IntersectionObserver(e=>{this.vis=e[0].isIntersecting});this.io.observe(el)}
@@ -516,6 +530,8 @@ class Card{
     const set=(el,x,y,w,h)=>{el.style.left=x+"px";el.style.top=y+"px";el.style.width=w+"px";el.style.height=h+"px"};
     set(this.r.item,ix,cy-I.h/2,I.w,I.h);set(this.r.cse,cx,cy-C.h/2+2,C.w,C.h);
     this.r.item.dataset.k=this.m.item;this.r.item.classList.toggle("cd",this.m.item==="cd");
+    const hh=this.m.item==="handheld";this.r.item.classList.toggle("hh",hh);
+    if(hh)this.r.noise.style.clipPath="polygon("+window.DECOR.handheld.polys[0].map(q=>q[0]+"px "+q[1]+"px").join(",")+")";
     this.r.shine.style.setProperty("--m",`url(${I.src})`);
     this.r.item.style.setProperty("--hx",(it.side==="left"?14:-14)+"px");
     this.r.item.style.setProperty("--bd",(-(this.id%5))+"s");
