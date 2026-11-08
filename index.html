@@ -187,21 +187,57 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .dock button:hover{color:#d9c2ff}
 
 /* ---------- sheet ---------- */
-.sheet{position:fixed;inset:0;z-index:50;display:grid;place-items:end center;visibility:hidden}
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;visibility:hidden}
 .sheet.open{visibility:visible}
 .scrim{position:absolute;inset:0;background:rgba(5,2,12,.72);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s}
 .sheet.open .scrim{opacity:1}
-.panel{position:relative;width:min(100vw,540px);max-height:calc(100vh - var(--top) - 8px);max-height:calc(100dvh - var(--top) - 8px);overflow:auto;padding:22px 18px calc(22px + var(--bot));
+.panel{position:relative;width:min(100vw,540px);max-height:calc(100vh - var(--top) - 8px);max-height:calc(100dvh - var(--top) - 8px);display:flex;flex-direction:column;overflow:hidden;padding:0;
   background:linear-gradient(#1a1040,#0f0826);border-top:4px solid var(--acc);
   clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 24px,100% 100%,0 100%,0 24px);
   transform:translateY(40px);opacity:0;transition:.3s cubic-bezier(.2,.9,.2,1)}
 .sheet.open .panel{transform:none;opacity:1}
-@media(min-width:700px){.sheet{place-items:center}.panel{clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 24px,100% calc(100% - 24px),calc(100% - 24px) 100%,24px 100%,0 calc(100% - 24px),0 24px);border-top:0;box-shadow:0 0 0 3px var(--acc)}}
+@media(min-width:700px){.sheet{align-items:center}.panel{clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 24px,100% calc(100% - 24px),calc(100% - 24px) 100%,24px 100%,0 calc(100% - 24px),0 24px);border-top:0;box-shadow:0 0 0 3px var(--acc)}}
 .panel h2{font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
 .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .x{width:44px;height:44px;display:grid;place-items:center;color:var(--dim)}
 .x svg{width:22px;height:22px;fill:currentColor}.x:hover{color:#fff}
 .pv{margin-bottom:16px}
+
+/* editor / settings sheet: fixed header + fixed footer, only the middle scrolls */
+.panel>.ph{flex:none;margin:0;padding:14px 8px 6px 18px}
+.pfix{flex:none;padding:0 18px 8px}
+.pbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:6px 18px 16px}
+.pbody::-webkit-scrollbar{width:6px}.pbody::-webkit-scrollbar-thumb{background:#3a2a70}
+.pfoot{flex:none;padding:12px 18px calc(14px + var(--bot));border-top:3px solid #2a1a66;background:#0f0826}
+.pfoot .row{margin-top:0}
+.pfix .pv{margin-bottom:0}
+.lbl small{float:right;font-size:inherit;color:var(--dim)}
+/* dropdown (context) menu button + popup */
+.sel{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:50px;padding:0 14px;font-size:21px;color:#fff;text-align:left;background:#120a2a;border:3px solid var(--line);transition:border-color .15s}
+.sel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel::after{content:"";flex:none;width:8px;height:8px;margin:-4px 3px 0 0;border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);transform:rotate(45deg);transition:transform .15s}
+.sel:hover,.sel[aria-expanded=true]{border-color:var(--acc)}
+.sel[aria-expanded=true]::after{transform:rotate(225deg);margin-top:4px}
+.menu{position:fixed;z-index:70;overflow-y:auto;overscroll-behavior:contain;padding:6px;background:#1a1040;border:3px solid var(--acc);box-shadow:0 14px 34px rgba(0,0,0,.65);animation:mnu .14s ease-out}
+@keyframes mnu{from{opacity:0;transform:translateY(-4px)}}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;height:46px;padding:0 12px;font-size:20px;color:var(--ink);text-align:left}
+.menu button::before{content:"";flex:none;width:12px;height:12px;border:3px solid var(--line)}
+.menu button:hover,.menu button:focus-visible{background:#2a1a66;outline-offset:-3px}
+.menu button[aria-checked=true]{background:#2a1a66;color:#fff}
+.menu button[aria-checked=true]::before{background:var(--acc);border-color:#fff}
+/* tags */
+.tagbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:50px;padding:6px 8px;background:#120a2a;border:3px solid var(--line);cursor:text;transition:border-color .15s}
+.tagbox:focus-within{border-color:var(--acc)}
+.tagbox input{flex:1 1 90px;min-width:80px;height:34px;padding:0 4px;font:inherit;font-size:20px;color:#fff;background:none;border:0;outline:none}
+.tagbox input[hidden]{display:none}
+.tg{display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 3px 0 12px;font-size:18px;color:#fff;background:#2a1a66;border:2px solid var(--line);border-radius:17px}
+.tg.main{border-color:var(--acc)}
+.tg button{width:26px;height:26px;display:grid;place-items:center;color:var(--dim)}
+.tg button:hover{color:#ff5c7a}.tg svg{width:11px;height:11px;fill:currentColor}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.sugg[hidden]{display:none}
+.sg{height:32px;padding:0 12px;font-size:17px;color:var(--dim);border:2px dashed var(--line);border-radius:16px}
+.sg:hover,.sg:active{color:#fff;border-color:var(--acc)}
+.sg.new{color:#fff;border-style:solid;border-color:var(--acc)}
 .fld{display:block;margin:0 0 14px}
 .lbl{display:block;font-size:17px;color:var(--dim);margin-bottom:7px}
 .drop{display:grid;place-items:center;gap:4px;text-align:center;padding:16px;border:3px dashed var(--line);background:#120a2a;color:var(--dim);font-size:19px;cursor:pointer;transition:.2s}
@@ -952,11 +988,17 @@ const DEFAULTS=[
  {id:"blocks",title:"Block Drop",genre:"Puzzle",rating:5,item:"handheld",cover:"b:blocks",tint:{h:38,s:.95},built:1}
 ];
 const GENRES=["Arcade","Music","Shooter","Puzzle","Adventure","Racing","Sport","Photo"];
+/* a card has up to 3 tags; the first one is the main genre (it picks the mini-game). card.genre mirrors tags[0] */
+const MAXT=3;
+const capT=t=>{t=String(t).replace(/[,;<>"&]/g," ").replace(/\s+/g," ").trim().slice(0,14);return t?t[0].toUpperCase()+t.slice(1):""};
+const tagsOf=m=>{const t=Array.isArray(m.tags)?m.tags.filter(Boolean):[];return t.length?t.slice(0,MAXT):[m.genre||"Arcade"]};
+const hasTag=(m,g)=>tagsOf(m).some(t=>t.toLowerCase()===g.toLowerCase());
+const kindOf=m=>{for(const t of tagsOf(m)){const k=Object.keys(KIND).find(k=>k.toLowerCase()===t.toLowerCase());if(k)return KIND[k]}return"catch"};
 let DATA=store.get("am.cards.v1",null)||DEFAULTS.map(d=>({...d}));
 function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — new covers won't be saved")}
 
 /* ============ list / tabs / dock ============ */
-const TABS=[["pad","Home",()=>true],["grid","Games",c=>c.genre!=="Music"],["music","Music",c=>c.genre==="Music"],["image","Mine",c=>!c.built],["gear","Settings",null]];
+const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["music","Music",c=>hasTag(c,"Music")],["image","Mine",c=>!c.built],["gear","Settings",null]];
 const DOCK=[["bag","Store",()=>true],["star","Top rated",c=>c.rating>=5],["dl","Installed",c=>c.played>0],["user","Profile",null]];
 let tab=0,view=0;const listEl=$("#list");let LIVE=[];
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
@@ -1004,24 +1046,50 @@ async function launch(c){
   await c.slide(true);await wait(1100);sfx.play();toast("Ready · "+(c.m.title||"app"));await c.slide(false)}
 
 /* ============ sheet ============ */
-const sheet=$("#sheet"),panel=$("#panel");let PV=null,lastFocus=null,onKey=null;
+const sheet=$("#sheet"),panel=$("#panel");let PV=null,lastFocus=null,onKey=null,MENU=null;
 function openSheet(html){lastFocus=document.activeElement;panel.innerHTML=html;sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  onKey=e=>{if(e.key==="Escape")closeSheet()};addEventListener("keydown",onKey);setTimeout(()=>panel.querySelector("input,button,select")?.focus({preventScroll:true}),60)}
-function closeSheet(){sheet.classList.remove("open");sheet.setAttribute("aria-hidden","true");document.body.style.overflow="";removeEventListener("keydown",onKey);
+  onKey=e=>{if(e.key==="Escape"){if(MENU){const bt=MENU.btn;closeMenu();bt.focus({preventScroll:true})}else closeSheet()}};addEventListener("keydown",onKey);setTimeout(()=>panel.querySelector("input,button,select")?.focus({preventScroll:true}),60)}
+function closeSheet(){closeMenu();sheet.classList.remove("open");sheet.setAttribute("aria-hidden","true");document.body.style.overflow="";removeEventListener("keydown",onKey);
   if(PV){PV.destroy();PV=null}lastFocus&&lastFocus.focus&&lastFocus.focus({preventScroll:true});removeEventListener("paste",onPaste)}
 sheet.addEventListener("click",e=>{if(e.target.closest("[data-close]"))closeSheet()});
 let onPaste=null;
 
+/* ---- dropdown / context menu ---- */
+function closeMenu(){if(!MENU)return;const m=MENU;MENU=null;m.el.remove();m.btn.setAttribute("aria-expanded","false");
+  document.removeEventListener("pointerdown",m.away,true);removeEventListener("resize",closeMenu);m.sc&&m.sc.removeEventListener("scroll",closeMenu)}
+function openMenu(btn,opts,cur,pick){
+  if(MENU&&MENU.btn===btn){closeMenu();return}
+  closeMenu();
+  const el=document.createElement("div");el.className="menu";el.setAttribute("role","menu");
+  opts.forEach(([v,l])=>{const o=document.createElement("button");o.type="button";o.setAttribute("role","menuitemradio");o.setAttribute("aria-checked",String(v)===String(cur));o.textContent=l;
+    o.onclick=()=>{closeMenu();btn.firstElementChild.textContent=l;btn.focus({preventScroll:true});pick(v,l)};el.append(o)});
+  el.addEventListener("keydown",e=>{const k=e.key;if(k==="Tab"){closeMenu();return}if(k!=="ArrowDown"&&k!=="ArrowUp")return;e.preventDefault();
+    const it=[...el.children],i=it.indexOf(document.activeElement);it[(i+(k==="ArrowDown"?1:-1)+it.length)%it.length].focus()});
+  sheet.append(el);btn.setAttribute("aria-expanded","true");
+  const r=btn.getBoundingClientRect(),h=el.scrollHeight+6,below=innerHeight-r.bottom-12,above=r.top-12,down=h<=below||below>=above;
+  const mh=Math.max(120,Math.min(320,(down?below:above)-4));el.style.maxHeight=mh+"px";el.style.minWidth=r.width+"px";
+  const w=el.offsetWidth,eh=Math.min(h,mh);
+  el.style.top=(down?r.bottom+4:r.top-4-eh)+"px";el.style.left=clamp(r.left,8,Math.max(8,innerWidth-w-8))+"px";
+  const sc=panel.querySelector(".pbody"),away=e=>{if(!el.contains(e.target)&&!btn.contains(e.target))closeMenu()};
+  MENU={el,btn,away,sc};document.addEventListener("pointerdown",away,true);addEventListener("resize",closeMenu);sc&&sc.addEventListener("scroll",closeMenu,{passive:true});
+  (el.querySelector('[aria-checked="true"]')||el.firstElementChild).focus({preventScroll:true})}
+const selBtn=(id,label)=>`<button type="button" class="sel" id="${id}" aria-haspopup="menu" aria-expanded="false"><span>${esc(label)}</span></button>`;
+const BGS=[["mix","Mix"],["0","Waves"],["1","Mosaic"],["2","Sunset"],["3","Rain"]];
+const BGS_CARD=[["auto","Auto"],...BGS.slice(1)];
+
 function openSettings(){
   const rows=[["shader","Animated card shader"],["stars","Starfield"],["scan","Scanlines"],["sound","Sound effects"]];
+  const bgL=(BGS.find(x=>x[0]===String(SET.bg))||BGS[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">Settings</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
+   <div class="pbody">
    ${rows.map(([k,l])=>`<button class="toggle" role="switch" aria-checked="${SET[k]}" data-k="${k}"><span>${l}</span><i></i></button>`).join("")}
    <div class="fld" style="margin-top:16px"><span class="lbl">Quality</span><div class="chips" id="qchips" role="radiogroup" aria-label="Quality">${[["auto","Auto"],["2","High"],["1","Mid"],["0","Low"]].map(([v,l])=>`<button class="chip" role="radio" aria-checked="${String(SET.quality)===v}" data-v="${v}">${l}</button>`).join("")}</div></div>
-   <div class="fld" style="margin-top:16px"><span class="lbl">Card background</span><div class="chips" id="bchips" role="radiogroup" aria-label="Card background" style="grid-template-columns:repeat(3,1fr)">${[["mix","Mix"],["0","Waves"],["1","Mosaic"],["2","Sunset"],["3","Rain"]].map(([v,l])=>`<button class="chip" role="radio" aria-checked="${String(SET.bg)===v}" data-v="${v}">${l}</button>`).join("")}</div>${Q===0?'<p class="hint2" style="text-align:left">Lite mode is on, so backgrounds are off. Pick High or Mid quality to see them.</p>':""}</div>
-   <div class="row" style="margin-top:18px"><button class="btn ghost" id="reset">Reset cards</button><button class="btn" data-close>Done</button></div>`);
+   <div class="fld" style="margin-top:16px"><span class="lbl">Card background</span>${selBtn("bgSel",bgL)}${Q===0?'<p class="hint2" style="text-align:left">Lite mode is on, so backgrounds are off. Pick High or Mid quality to see them.</p>':""}</div>
+   </div>
+   <div class="pfoot"><div class="row"><button class="btn ghost" id="reset">Reset cards</button><button class="btn" data-close>Done</button></div></div>`);
   panel.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;SET[k]=!SET[k];b.setAttribute("aria-checked",SET[k]);saveSet();
     document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound")sfx.tap();if(k==="shader"){closeSheet();render()}}));
-  $("#bchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;SET.bg=b.dataset.v;saveSet();closeSheet();render();toast("Background: "+b.textContent)});
+  $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Background: "+l)}));
   $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;saveSet();
     if(v==="auto"){store.set("am.qauto",2);Q=autoQ()}else Q=+v;applyQ();closeSheet();bgResize();render();toast("Quality: "+b.textContent)});
   $("#reset").addEventListener("click",()=>{DATA=DEFAULTS.map(d=>({...d}));persist();closeSheet();tab=0;view=0;sync();render();toast("Cards reset")})}
@@ -1031,41 +1099,77 @@ function openEditor(id,preCover){
   const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:""};
   if(!existing&&!preCover)draft.cover="b:space";
   if(draft.desc==null)draft.desc=DESC[draft.id]||"";
-  let cands=[];
+  let cands=[],tags=tagsOf(draft).slice();
+  const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
-   <div class="pv" id="pv"></div>
-   <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
-   <div class="fld"><span class="lbl">Item</span><div class="chips" role="radiogroup" aria-label="Item" id="chips">${Object.entries(ITEMS).map(([k,v])=>`<button class="chip" role="radio" aria-checked="${k===draft.item}" data-k="${k}">${v.label}</button>`).join("")}</div></div>
-   <div class="two"><label class="fld"><span class="lbl">Name</span><input class="in" id="name" maxlength="14" placeholder="My game" value="${(draft.title||"").replace(/"/g,"&quot;")}"></label>
-   <label class="fld"><span class="lbl">Genre</span><select class="in" id="genre">${GENRES.map(g=>`<option${g===draft.genre?" selected":""}>${g}</option>`).join("")}</select></label></div>
-   <label class="fld"><span class="lbl">Description</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="What is this app about?">${esc(draft.desc||"")}</textarea></label>
+   <div class="pfix"><div class="pv" id="pv"></div></div>
+   <div class="pbody">
+   <label class="fld"><span class="lbl">Name</span><input class="in" id="name" maxlength="14" placeholder="My game" value="${esc(draft.title||"")}"></label>
+   <div class="fld"><span class="lbl">Tags <small id="tcnt"></small></span>
+     <div class="tagbox" id="tagbox"><input id="taginp" maxlength="14" placeholder="Add a tag…" enterkeyhint="done" autocomplete="off" autocapitalize="words" aria-label="Add a tag"></div>
+     <div class="sugg" id="sugg"></div>
+     <p class="hint2" style="text-align:left">Up to ${MAXT}. The first tag is the main genre and picks the mini-game.</p></div>
+   <div class="two" style="grid-template-columns:1fr 1fr">
+     <div class="fld"><span class="lbl">Gadget</span>${selBtn("itemSel",itemL(draft.item))}</div>
+     <div class="fld"><span class="lbl">Background</span>${selBtn("bgSel",bgL(draft.bg))}</div></div>
+   ${Q===0||!SET.shader?'<p class="hint2" style="text-align:left;margin:-6px 0 14px">Lite mode is on, backgrounds are off on this device.</p>':""}
    <div class="fld"><span class="lbl">Colour</span><div class="sw" id="sw"></div></div>
-   <div class="fld"><span class="lbl">Background</span><div class="chips" id="bgc" role="radiogroup" aria-label="Background" style="grid-template-columns:repeat(3,1fr)">${[["auto","Auto"],["0","Waves"],["1","Mosaic"],["2","Sunset"],["3","Rain"]].map(([v,l])=>`<button class="chip" role="radio" aria-checked="${(draft.bg==null||draft.bg===""?"auto":String(draft.bg))===v}" data-v="${v}">${l}</button>`).join("")}</div>${Q===0||!SET.shader?'<p class="hint2" style="text-align:left">Lite mode is on, backgrounds are off on this device.</p>':""}</div>
-   <div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div>`);
+   <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
+   <label class="fld" style="margin-bottom:0"><span class="lbl">Description</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="What is this app about?">${esc(draft.desc||"")}</textarea></label>
+   </div>
+   <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
   const pv=$("#pv");PV=new Card(pv,draft,{preview:true});PV.set({...draft},{});
   pv.style.setProperty("--k",pv.clientWidth/905);
   const upd=()=>PV.set({...draft});
+  /* colour */
   const drawSw=async()=>{const info=await resolveCover(draft.cover);cands=info.dom.cands||[];
-    const sw=$("#sw");sw.innerHTML=`<button class="auto" aria-pressed="${!draft.tint}" data-auto>Auto</button>`+cands.map((c,i)=>{const col=rgb(palette(c.h,c.s).A);const on=draft.tint&&Math.abs(draft.tint.h-c.h)<2;return `<button style="--c:${col}" aria-pressed="${!!on}" data-i="${i}" aria-label="Colour ${i+1}"></button>`}).join("")+
+    const sw=$("#sw");if(!sw)return;sw.innerHTML=`<button class="auto" aria-pressed="${!draft.tint}" data-auto>Auto</button>`+cands.map((c,i)=>{const col=rgb(palette(c.h,c.s).A);const on=draft.tint&&Math.abs(draft.tint.h-c.h)<2;return `<button style="--c:${col}" aria-pressed="${!!on}" data-i="${i}" aria-label="Colour ${i+1}"></button>`}).join("")+
       `<label class="pick" aria-label="Custom colour"><input type="color" id="cc" value="#a56bff"></label>`;
     sw.querySelector("[data-auto]").onclick=()=>{draft.tint=null;upd();drawSw()};
     sw.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{const c=cands[+b.dataset.i];draft.tint={h:c.h,s:c.s};upd();drawSw()});
     sw.querySelector("#cc").oninput=e=>{const v=e.target.value,r=parseInt(v.slice(1,3),16)/255,g=parseInt(v.slice(3,5),16)/255,b=parseInt(v.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l=(mx+mn)/2;
       let h=d===0?265:mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h=(h*60+360)%360;const s=d===0?.2:d/(1-Math.abs(2*l-1));draft.tint={h,s:clamp(s,.3,1)};upd()}};
   drawSw();
+  /* cover */
   const setFile=async f=>{if(!f||!f.type.startsWith("image/"))return;draft.cover=await fileToCover(f);draft.tint=null;upd();drawSw();sfx.tap()};
   $("#file").onchange=e=>setFile(e.target.files[0]);
   const drop=$("#drop");["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
   ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,()=>drop.classList.remove("over")));drop.addEventListener("drop",e=>{e.preventDefault();setFile(e.dataTransfer.files[0])});
   onPaste=e=>{const f=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));if(f)setFile(f)};addEventListener("paste",onPaste);
-  $("#chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;draft.item=b.dataset.k;$("#chips").querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-checked",x===b));upd()});
-  $("#bgc").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;draft.bg=b.dataset.v==="auto"?undefined:b.dataset.v;$("#bgc").querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-checked",x===b));upd()});
+  /* gadget + background menus */
+  $("#itemSel").addEventListener("click",e=>openMenu(e.currentTarget,Object.entries(ITEMS).map(([k,v])=>[k,v.label]),draft.item,v=>{draft.item=v;upd();sfx.tap()}));
+  $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS_CARD,draft.bg==null||draft.bg===""?"auto":draft.bg,v=>{draft.bg=v==="auto"?undefined:v;upd();sfx.tap()}));
+  /* name / description */
   $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
-  $("#genre").addEventListener("change",e=>{draft.genre=e.target.value;PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre});
-  $("#save").addEventListener("click",()=>{draft.title=(draft.title||"").trim()||"Untitled";sfx.play();
+  /* tags: type + Enter / comma, or tap a suggestion; max 3 */
+  const tb=$("#tagbox"),ti=$("#taginp"),sg=$("#sugg");
+  const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
+  const same=(a,b)=>a.toLowerCase()===b.toLowerCase();
+  const drawTags=()=>{
+    tb.querySelectorAll(".tg").forEach(x=>x.remove());
+    tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tg"+(i===0?" main":"");sp.append(t);
+      const bt=document.createElement("button");bt.type="button";bt.dataset.i=i;bt.setAttribute("aria-label","Remove "+t);bt.innerHTML=IC.x;sp.append(bt);tb.insertBefore(sp,ti)});
+    const full=tags.length>=MAXT;ti.hidden=full;$("#tcnt").textContent=tags.length+"/"+MAXT;
+    sg.textContent="";const q=capT(ti.value);
+    if(!full){
+      if(q&&!tags.some(t=>same(t,q))&&!GENRES.some(g=>same(g,q))){const n=document.createElement("button");n.type="button";n.className="sg new";n.dataset.g=q;n.textContent="+ "+q;sg.append(n)}
+      GENRES.filter(g=>!tags.some(t=>same(t,g))&&(!q||g.toLowerCase().startsWith(q.toLowerCase()))).forEach(g=>{const n=document.createElement("button");n.type="button";n.className="sg";n.dataset.g=g;n.textContent="+ "+g;sg.append(n)})}
+    sg.hidden=!sg.children.length};
+  const addTag=v=>{v=capT(v);if(!v||tags.length>=MAXT||tags.some(t=>same(t,v)))return false;tags.push(v);ti.value="";syncTags();drawTags();sfx.tap();return true};
+  ti.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===","){e.preventDefault();if(!addTag(ti.value))drawTags()}
+    else if(e.key==="Backspace"&&!ti.value&&tags.length){tags.pop();syncTags();drawTags()}});
+  ti.addEventListener("input",()=>{if(/[,;]/.test(ti.value)){const p=ti.value.split(/[,;]/);ti.value="";p.slice(0,-1).forEach(addTag);ti.value=p[p.length-1]}drawTags()});
+  tb.addEventListener("click",e=>{const x=e.target.closest(".tg button");
+    if(x){tags.splice(+x.dataset.i,1);syncTags();drawTags();ti.hidden||ti.focus({preventScroll:true})}else ti.focus({preventScroll:true})});
+  sg.addEventListener("click",e=>{const n=e.target.closest(".sg");if(n){addTag(n.dataset.g);ti.hidden||ti.focus({preventScroll:true})}});
+  drawTags();
+  /* save / delete */
+  $("#save").addEventListener("click",()=>{if(ti.value.trim())addTag(ti.value);
+    draft.title=(draft.title||"").trim()||"Untitled";if(!tags.length)tags=["Arcade"];syncTags();sfx.play();
     if(existing)Object.assign(existing,draft);else DATA.push(draft);persist();closeSheet();
-    if(!existing||view>0||tab===1&&draft.genre==="Music"){tab=0;view=0;sync()}render();if(!existing)setTimeout(()=>scrollTo({top:document.body.scrollHeight,behavior:RM?"auto":"smooth"}),200);toast(existing?"Saved":"Added to the market")});
+    if(!existing||view>0||tab===1&&hasTag(draft,"Music")){tab=0;view=0;sync()}render();if(!existing)setTimeout(()=>scrollTo({top:document.body.scrollHeight,behavior:RM?"auto":"smooth"}),200);toast(existing?"Saved":"Added to the market")});
   $("#del")&&$("#del").addEventListener("click",()=>{DATA=DATA.filter(d=>d.id!==draft.id);persist();closeSheet();render();toast("Deleted")})}
 
 /* ============ app page (beta TV) ============ */
@@ -1172,7 +1276,7 @@ function pageHTML(m,kind){
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><span class="beta">BETA 0.3</span></div>
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
-    <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(m.genre)}</span></div>
+    <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
@@ -1183,7 +1287,7 @@ function pageHTML(m,kind){
   <div class="hud"><span>SCORE <b id="sc">0</b></span><span>BEST <b id="bs">0</b></span></div>
   <p class="hint2">${HINT[kind]}</p>
   <section class="sec"><h3>About</h3><p class="desc${desc?"":" dim"}">${esc(desc||"No description yet. Tap the pencil on the card to add one.")}</p>
-    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 micro build</span><span class="tag">Works offline</span><span class="tag">${esc(m.genre)}</span></div></section>
+    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 micro build</span><span class="tag">Works offline</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div></section>
   <section class="sec"><h3>Reviews <small id="cmN"></small></h3><div id="cmList"></div>
     <div class="wr"><span class="lbl">Write a review</span><div class="spick" id="pk"></div>
       <input class="in" id="cmName" maxlength="14" placeholder="Your name" value="${esc(store.get("am.name",""))}">
@@ -1192,7 +1296,7 @@ function pageHTML(m,kind){
 
 async function openPage(id,opt){
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
-  const cov=await resolveCover(m.cover);if(PG!==me)return;const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s),kind=KIND[m.genre]||"catch";
+  const cov=await resolveCover(m.cover);if(PG!==me)return;const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s),kind=kindOf(m);
   Object.assign(PG,{pal,art:cov.canvas,kind,run:false,score:0,best:store.get("am.best",{})[m.id]||0});
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;

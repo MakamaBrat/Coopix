@@ -10,8 +10,10 @@ assets/fonts/      Pixelify Sans (self-hosted)
 
 App page: tap a card to open it. It has a CRT TV with a noise filter (knob on the right)
 running a micro beta of the game, description, reviews (stored in localStorage) and a Play button.
-The game is picked by genre: Arcade=breakout, Music=pads, Shooter=shooter, Puzzle=blocks, other=catch.
+The game is picked by the first matching tag: Arcade=breakout, Music=pads, Shooter=shooter, Puzzle=blocks, other=catch.
 Description is editable in the card editor (pencil).
+Editor: preview, header and buttons stay fixed, only the middle scrolls. Gadget and Background are dropdown menus.
+Tags: up to 3 per card (type + Enter / comma, or tap a suggestion). The first tag is the main genre and picks the game.
 
 Performance: Settings > Quality (Auto / High / Mid / Low). Auto picks a tier from device hints
 (Save-Data, memory, cores) and steps down by itself if the frame rate stays low.
