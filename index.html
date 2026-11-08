@@ -89,7 +89,20 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .stripes b{width:14px;height:26px;background:var(--c1);opacity:.9}
 .stripes b:nth-child(2){opacity:.65}.stripes b:nth-child(3){opacity:.4}
 
-.slot{position:absolute;filter:drop-shadow(0 7px 7px rgba(0,0,0,.55))}
+.slot{position:absolute;filter:drop-shadow(0 0 1px color-mix(in srgb,var(--c3) 80%,transparent)) drop-shadow(0 0 9px color-mix(in srgb,var(--c1) 60%,transparent)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
+@property --sw{syntax:"<length>";inherits:true;initial-value:-300px}
+@keyframes sweep{0%{--sw:-300px}55%,100%{--sw:1250px}}
+.stage{animation:sweep 6.5s linear infinite}
+.halo{position:absolute;top:0;width:560px;height:220px;pointer-events:none;mix-blend-mode:screen;opacity:.55;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--c1) 60%,transparent),transparent);animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.95;transform:scale(1.06)}}
+.floor{position:absolute;height:30px;pointer-events:none;border-radius:50%;filter:blur(3px);opacity:.8;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--c1) 55%,#000),transparent)}
+.beam{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.2;
+  background:linear-gradient(90deg,transparent calc(var(--sw) - 160px),var(--c3) var(--sw),transparent calc(var(--sw) + 160px))}
+.gl{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat;
+  background:linear-gradient(90deg,transparent calc(var(--sw) - var(--gx,0px) - 60px),rgba(255,255,255,.7) calc(var(--sw) - var(--gx,0px)),transparent calc(var(--sw) - var(--gx,0px) + 60px)) 0 0/905px 100% no-repeat}
+.pt{position:absolute;left:0;top:0;width:905px;height:220px;z-index:3;pointer-events:none;image-rendering:pixelated}
 .slot canvas{display:block;width:100%;height:100%}
 .slot.item{z-index:1}.slot.case{z-index:2}
 .hv{width:100%;height:100%;transition:transform .45s cubic-bezier(.2,.9,.2,1)}
@@ -466,10 +479,12 @@ class Card{
     this.host=host;this.o=o;this.id=++UID;this.m=null;this.pal=palette(265,.5);this.vis=true;this.gray=o.intro?0:1;this.pulse=0;this.pt=null;this.busy=Promise.resolve();
     const el=this.el=document.createElement("article");el.className="card";
     el.innerHTML=`<div class="stage">
-      <div class="shell"><div class="shell-in"><canvas class="fx"></canvas></div></div>
+      <div class="shell"><div class="shell-in"><canvas class="fx"></canvas><i class="beam"></i></div></div>
       <i class="stripes"><b></b><b></b><b></b></i>
-      <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="shine"></div></div></div></div>
-      <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="256" height="256"></canvas><canvas class="b" width="256" height="256"></canvas></div></div>
+      <i class="halo"></i><i class="floor"></i>
+      <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="shine"></div><div class="gl"></div></div></div></div>
+      <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="256" height="256"></canvas><canvas class="b" width="256" height="256"></canvas></div><div class="gl"></div></div>
+      <canvas class="pt" width="453" height="110"></canvas>
       <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
       <button class="play" aria-label="Launch">${IC.play}</button>
       ${o.preview?"":`<button class="edit" aria-label="Edit">${IC.edit}</button>`}
@@ -477,7 +492,7 @@ class Card{
     host.append(el);
     const q=s=>el.querySelector(s);
     this.r={fx:q(".fx"),item:q(".slot.item"),itemC:q(".slot.item canvas"),shine:q(".shine"),cse:q(".slot.case"),cseC:q(".slot.case>canvas"),cover:q(".cover"),ca:q(".cover .a"),cb:q(".cover .b"),
-      title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit")};
+      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit")};
     this.fx=SET.shader?makeFx(this.r.fx):null;
     this.resize();CARDS.add(this);
     if(!o.preview){this.io=new IntersectionObserver(e=>{this.vis=e[0].isIntersecting});this.io.observe(el)}
@@ -507,11 +522,41 @@ class Card{
     this.side=it.side;this.dx=(it.side==="left"?1:-1)*I.w*.5;
     this.focus=[(ix+I.w/2)/905,(cy)/220];
     const f=window.FACES[it.case];this.r.cover.style.transform=quadCSS(256,256,f.q.map(([a,b])=>[a*C.w,b*C.h]));
+    const H=Math.max(I.h,C.h),bx=Math.min(ix,cx);this.pb=[bx,cy-H/2,total,H];
+    this.r.floor.style.cssText=`left:${bx-10}px;width:${total+20}px;top:${cy+H/2-16}px`;this.r.halo.style.left=(bx+total/2-280)+"px";
+    this.r.glI.style.cssText=`--m:url(${I.src});--gx:${ix}px`;this.r.glC.style.cssText=`--m:url(${C.src});--gx:${cx}px`;
     this.sprI=I;this.sprC=C}
   paint(){
-    recolor(this.sprI,this.r.itemC,this.pal,1.5);recolor(this.sprC,this.r.cseC,this.pal,2.2);
+    recolor(this.sprI,this.r.itemC,this.pal,1.5);recolor(this.sprC,this.r.cseC,this.pal,2.2);this.decorate();
     const s=this.el.style;s.setProperty("--c1",rgb(this.pal.A));s.setProperty("--c2",rgb(this.pal.B));s.setProperty("--c3",rgb(this.pal.L));
     s.setProperty("--glow",`rgba(${this.pal.A.map(v=>v|0).join(",")},.38)`)}
+  decorate(){
+    const D=window.DECOR&&window.DECOR[this.m.item],art=this.art;if(!D||!art)return;
+    const cv=this.r.itemC,x=cv.getContext("2d"),b=this._b||(this._b=document.createElement("canvas"));
+    b.width=cv.width;b.height=cv.height;b.getContext("2d").drawImage(cv,0,0);
+    const fin=()=>{x.globalCompositeOperation="overlay";x.globalAlpha=.6;x.drawImage(b,0,0)};
+    const ring=(cx,cy,rx,ry,r2,r3)=>{x.beginPath();x.moveTo(cx+rx,cy);x.ellipse(cx,cy,rx,ry,0,0,6.2832);x.moveTo(cx+r2,cy);x.ellipse(cx,cy,r2,r3,0,0,6.2832);x.clip("evenodd")};
+    if(D.rx){
+      const [cx,cy]=D.c,rx=D.rx,ry=D.ry;
+      x.save();ring(cx,cy,rx*.975,ry*.975,rx*.83,ry*.83);x.globalCompositeOperation="multiply";x.globalAlpha=.95;
+      for(let i=0;i<6;i++){x.save();x.beginPath();const a0=i*Math.PI/3,a1=a0+Math.PI/3;x.moveTo(cx,cy);x.lineTo(cx+300*Math.cos(a0),cy+300*Math.sin(a0));x.lineTo(cx+300*Math.cos(a1),cy+300*Math.sin(a1));x.closePath();x.clip();
+        x.translate(cx,cy);x.rotate(i*1.05);x.scale(rx*2.3/256,ry*2.3/256);x.drawImage(art,-128,-128);x.restore()}
+      fin();x.restore();
+      const [hx,hy,hrx,hry,hr]=D.hub;
+      x.save();ring(hx,hy,hrx,hry,hr*1.04,hr*1.04);x.globalAlpha=.85;x.translate(hx,hy);x.scale(hrx*2/256,hry*2/256);x.drawImage(art,-128,-128);x.setTransform(1,0,0,1,0,0);fin();x.restore();
+    }else D.polys.forEach((P,n)=>{
+      x.save();x.beginPath();P.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.clip();
+      const [a,bb,,d]=P,ux=bb[0]-a[0],uy=bb[1]-a[1],vx=d[0]-a[0],vy=d[1]-a[1],S=256,sh=Math.min(S,S*Math.hypot(vx,vy)/Math.hypot(ux,uy)),sy=(S-sh)*D.fy[n],m=[ux/S,uy/S,vx/sh,vy/sh];
+      x.globalCompositeOperation="multiply";x.globalAlpha=.93;x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[2]*sy,a[1]-m[3]*sy);x.drawImage(art,0,0);x.setTransform(1,0,0,1,0,0);fin();x.restore()})}
+  spawn(n,fast){this.P=this.P||[];const [x,y,w,h]=this.pb;for(let i=0;i<n;i++)this.P.push({x:x+Math.random()*w,y:y+h*(.1+Math.random()*.9),vx:(Math.random()-.5)*(fast?70:10),vy:-(fast?20:6)-Math.random()*(fast?45:14),l:0,d:(fast?.8:1.4)+Math.random()*1.4,s:Math.random()<.3?2:1,c:Math.random()<.45?"L":"A"})}
+  burst(){if(this.pb&&!RM)this.spawn(40,true)}
+  fxp(now){
+    const px=this.px||(this.px=this.r.pt.getContext("2d")),dt=Math.min(.05,(now-(this.lt||now))/1000);this.lt=now;
+    if(!this.pb||RM)return;px.clearRect(0,0,453,110);this.P=this.P||[];
+    if(this.gray>=1){this.acc=(this.acc||0)+dt*9;while(this.acc>=1){this.acc--;this.spawn(1)}}
+    for(let i=this.P.length-1;i>=0;i--){const p=this.P[i];p.l+=dt;if(p.l>=p.d){this.P.splice(i,1);continue}
+      p.x+=p.vx*dt;p.y+=p.vy*dt;px.globalAlpha=Math.sin(p.l/p.d*Math.PI)*.9;px.fillStyle=rgb(this.pal[p.c]);px.fillRect((p.x/2)|0,(p.y/2)|0,p.s,p.s)}
+    px.globalAlpha=1}
   setStars(n,editable){
     const box=this.r.stars;box.innerHTML="";
     for(let i=1;i<=5;i++){const b=document.createElement("button");b.innerHTML=starSvg(i<=n);b.setAttribute("aria-label",i+" star"+(i>1?"s":""));
@@ -523,7 +568,7 @@ class Card{
     const an=b.animate([{clipPath:"inset(0 100% 0 0)"},{clipPath:"inset(0 0 0 0)"}],{duration:520,easing:"steps(10,end)",fill:"forwards"});
     await an.finished;a.getContext("2d").drawImage(src,0,0);an.cancel()}
   slide(inside){
-    const el=this.r.item,from=inside?0:this.dx,to=inside?this.dx:0;
+    const el=this.r.item,from=inside?0:this.dx,to=inside?this.dx:0;if(!inside)setTimeout(()=>this.burst(),RM?0:260);
     if(RM){el.style.transform=`translateX(${to}px)`;return Promise.resolve()}
     const an=el.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],
       {duration:inside?380:640,easing:inside?"cubic-bezier(.6,0,.9,.5)":"cubic-bezier(.2,1.25,.35,1)",fill:"forwards"});
@@ -535,7 +580,7 @@ class Card{
   set(next,opt={}){return this.busy=this.busy.then(()=>this._set(next,opt))}
   async _set(next,opt){
     const prev=this.m,first=!prev;this.m={...next};const m=this.m;
-    const cov=await resolveCover(m.cover);
+    const cov=await resolveCover(m.cover);this.art=cov.canvas;
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
     this.r.title.textContent=m.title||"Untitled";this.r.pill.textContent=m.genre;this.setStars(m.rating);
@@ -561,7 +606,8 @@ class Card{
     if(this.pt){const u=clamp((now-this.pt.t0)/this.pt.d,0,1);this.pal=lerpPal(this.pt.from,this.pt.to,ease(u));this.paint();if(u>=1)this.pt=null}
     if(this.gray<1&&this.t0g){this.gray=clamp((now-this.t0g)/1200,0,1);if(RM)this.gray=1}
     if(this.pulse>0){this.pulse=Math.max(0,1-(now-this.pt0)/1000)}
-    if(this.fx&&(this.vis||this.o.preview)){this.fx.draw(RM?3:t,this.pal,this.pulse,this.gray<1?ease(this.gray):1,this.focus?this.focus[0]:.2,this.focus?this.focus[1]:.5)}}
+    if(this.fx&&(this.vis||this.o.preview)){this.fx.draw(RM?3:t,this.pal,this.pulse,this.gray<1?ease(this.gray):1,this.focus?this.focus[0]:.2,this.focus?this.focus[1]:.5)}
+    if(this.vis||this.o.preview)this.fxp(now)}
   destroy(){CARDS.delete(this);this.io&&this.io.disconnect();this.el.remove()}
 }
 
