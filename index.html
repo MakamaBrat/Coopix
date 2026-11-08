@@ -230,10 +230,10 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .tagbox:focus-within{border-color:var(--acc)}
 .tagbox input{flex:1 1 90px;min-width:80px;height:34px;padding:0 4px;font:inherit;font-size:20px;color:#fff;background:none;border:0;outline:none}
 .tagbox input[hidden]{display:none}
-.tg{display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 3px 0 12px;font-size:18px;color:#fff;background:#2a1a66;border:2px solid var(--line);border-radius:17px}
-.tg.main{border-color:var(--acc)}
-.tg button{width:26px;height:26px;display:grid;place-items:center;color:var(--dim)}
-.tg button:hover{color:#ff5c7a}.tg svg{width:11px;height:11px;fill:currentColor}
+.tchip{display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 3px 0 12px;font-size:18px;color:#fff;background:#2a1a66;border:2px solid var(--line);border-radius:17px}
+.tchip.main{border-color:var(--acc)}
+.tchip button{width:26px;height:26px;display:grid;place-items:center;color:var(--dim)}
+.tchip button:hover{color:#ff5c7a}.tchip svg{width:11px;height:11px;fill:currentColor}
 .sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.sugg[hidden]{display:none}
 .sg{height:32px;padding:0 12px;font-size:17px;color:var(--dim);border:2px dashed var(--line);border-radius:16px}
 .sg:hover,.sg:active{color:#fff;border-color:var(--acc)}
@@ -1147,8 +1147,8 @@ function openEditor(id,preCover){
   const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
   const same=(a,b)=>a.toLowerCase()===b.toLowerCase();
   const drawTags=()=>{
-    tb.querySelectorAll(".tg").forEach(x=>x.remove());
-    tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tg"+(i===0?" main":"");sp.append(t);
+    tb.querySelectorAll(".tchip").forEach(x=>x.remove());
+    tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tchip"+(i===0?" main":"");sp.append(t);
       const bt=document.createElement("button");bt.type="button";bt.dataset.i=i;bt.setAttribute("aria-label","Remove "+t);bt.innerHTML=IC.x;sp.append(bt);tb.insertBefore(sp,ti)});
     const full=tags.length>=MAXT;ti.hidden=full;$("#tcnt").textContent=tags.length+"/"+MAXT;
     sg.textContent="";const q=capT(ti.value);
@@ -1161,7 +1161,7 @@ function openEditor(id,preCover){
     if(e.key==="Enter"||e.key===","){e.preventDefault();if(!addTag(ti.value))drawTags()}
     else if(e.key==="Backspace"&&!ti.value&&tags.length){tags.pop();syncTags();drawTags()}});
   ti.addEventListener("input",()=>{if(/[,;]/.test(ti.value)){const p=ti.value.split(/[,;]/);ti.value="";p.slice(0,-1).forEach(addTag);ti.value=p[p.length-1]}drawTags()});
-  tb.addEventListener("click",e=>{const x=e.target.closest(".tg button");
+  tb.addEventListener("click",e=>{const x=e.target.closest(".tchip button");
     if(x){tags.splice(+x.dataset.i,1);syncTags();drawTags();ti.hidden||ti.focus({preventScroll:true})}else ti.focus({preventScroll:true})});
   sg.addEventListener("click",e=>{const n=e.target.closest(".sg");if(n){addTag(n.dataset.g);ti.hidden||ti.focus({preventScroll:true})}});
   drawTags();
