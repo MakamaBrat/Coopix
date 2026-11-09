@@ -211,7 +211,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .dock{position:fixed;z-index:20;left:50%;bottom:calc(10px + var(--bot));transform:translateX(-50%);width:var(--col);height:clamp(58px,15vw,74px);
   background:linear-gradient(160deg,#6a4cc8,#2a1a66);
   clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px)}
-.dock-in{position:absolute;inset:3px;display:grid;grid-template-columns:repeat(5,1fr);background:linear-gradient(#1a1040,#110a2a);
+.dock-in{position:absolute;inset:3px;display:grid;grid-template-columns:repeat(6,1fr);background:linear-gradient(#1a1040,#110a2a);
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
 .dock button{position:relative;display:grid;place-items:center;color:#7a5fcf;transition:color .2s}
 .dock button+button::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:#33236a}
@@ -571,6 +571,30 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
  .nw{background:linear-gradient(160deg,#5a3fb8,#2a1a66)}
  .lbtn{background:var(--lc)}
 }
+
+/* ---------- club tab ---------- */
+.club{display:none}
+body.onclub .club{display:flex;flex-direction:column;gap:16px;padding-top:2px}
+body.onclub .tabs,body.onclub .list,body.onclub .home{display:none}
+body.onclub .top{margin-bottom:4px}
+.club{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff}
+.club .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
+.cl-head{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.cl-lock{width:64px;height:64px;display:grid;place-items:center;color:#d6bcff;background:#150d33;border:3px solid var(--acc);filter:drop-shadow(0 0 14px rgba(165,107,255,.6));
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
+.cl-lock svg{width:36px;height:36px}
+.cl-head .hero-t em{display:inline;margin:0}
+.cl-btns{display:flex;flex-direction:column;gap:12px}
+.lbtn.big{height:62px;font-size:clamp(20px,6vw,26px)}
+.lbtn.big svg{width:28px;height:28px}
+.lw.bo{filter:drop-shadow(0 0 12px rgba(255,138,61,.5))}
+.nw.why p{display:block;-webkit-line-clamp:unset;margin:0;font-size:19px;line-height:1.3}
+.sl{display:flex;flex-direction:column;gap:12px}
+.sl-in{display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:center;padding:12px 14px 14px 22px}
+.sl .av{width:48px;height:48px;font-size:26px;font-weight:400;--hc:var(--nc)}
+.sl h4{font-size:22px}
+.sl p{display:block;-webkit-line-clamp:unset;margin-top:4px;font-size:18px}
+[data-q="0"] .lw.bo,[data-q="0"] .cl-lock{filter:none}
 </style>
 </head>
 <body class="scan">
@@ -603,6 +627,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
   <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
   <section class="list" id="list" aria-live="polite"></section>
   <section class="home" id="home" lang="ru"></section>
+  <section class="club" id="club" lang="ru"></section>
 </main>
 
 <nav class="dock" aria-label="Main"><div class="dock-in" id="dock"></div></nav>
@@ -662,6 +687,8 @@ const IC={
  play:`<svg viewBox="0 0 24 24"><path d="M5 2.6v18.8L21 12z"/></svg>`,
  send:`<svg viewBox="0 0 24 24"><path d="M22 2.4L1.6 10.3l5.6 2.2 2 6.6 3.2-3.8 5.4 4zM8.6 12.4l9.2-5.6-7 7.2z"/></svg>`,
  chat:`<svg viewBox="0 0 24 24"><path d="M3 3h18v14h-8l-5.6 4.6V17H3z"/></svg>`,
+ lock:`<svg viewBox="0 0 24 24"><path d="M4.6 10.4h14.8V22H4.6z" fill="currentColor"/><path d="M7.8 11V7.6a4.2 4.2 0 0 1 8.4 0V11" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M11 14.4h2v4.2h-2z" fill="var(--cut,#150d33)"/></svg>`,
+ heart:`<svg viewBox="0 0 24 24"><path d="M12 21.6L3 12.7a5.3 5.3 0 0 1 9-6.5 5.3 5.3 0 0 1 9 6.5z"/></svg>`,
  home:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L22.6 11.2h-3.1V21.6h-5.6V15h-3.8v6.6H4.5V11.2H1.4z"/></svg>`,
  plus:`<svg viewBox="0 0 24 24"><path d="M9.6 3h4.8v6.6H21v4.8h-6.6V21H9.6v-6.6H3V9.6h6.6z"/></svg>`,
  x:`<svg viewBox="0 0 24 24"><path d="M4.6 2.2L12 9.6l7.4-7.4 2.4 2.4L14.4 12l7.4 7.4-2.4 2.4L12 14.4l-7.4 7.4-2.4-2.4L9.6 12 2.2 4.6z"/></svg>`,
@@ -1144,8 +1171,8 @@ function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — 
 
 /* ============ list / tabs / dock ============ */
 const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["music","Music",c=>hasTag(c,"Music")],["image","Mine",c=>!c.built],["gear","Settings",null]];
-const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["star","Top rated",c=>c.rating>=5],["dl","Installed",c=>c.played>0],["user","Profile",null]];
-let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 3 installed, 4 profile */
+const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["star","Top rated",c=>c.rating>=5],["dl","Installed",c=>c.played>0],["lock","Club",()=>true],["user","Profile",null]];
+let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 3 installed, 4 club, (5 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
@@ -1154,14 +1181,17 @@ $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   if(DOCK[i][2]===null){openSettings();return}goView(i)});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>b.setAttribute("aria-selected",i===tab&&view===1));
-  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0)}
+  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===4)}
 
 function emptyMsg(){return view===2?"No 5-star picks yet. Tap the stars on a card to rate it.":view===3?"Nothing installed yet. Press play on a card to install it.":""}
 async function render(intro){
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
+  document.body.classList.toggle("onclub",view===4);
+  if(view!==4)clubEl.innerHTML="";
   if(view===0){renderHome();return}
   homeEl.innerHTML="";
+  if(view===4){renderClub();return}
   const f=view>1?DOCK[view][2]:TABS[tab][2];
   const rows=DATA.filter(f);
   if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
@@ -1179,8 +1209,8 @@ const NEWS=[
  {tag:"Совет",c:"#4dd2ff",date:"07.11",title:"Телефон тормозит?",text:"Откройте Settings → Quality → Low: эффекты отключатся, игры пойдут быстрее."}
 ];
 /* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
-const SPONSORS=[{name:"Sponsor One",c:"#ffb23f"},{name:"Sponsor Two",c:"#4dd2ff"}];
-const LINKS={channel:"https://t.me/coopix_market",chat:"https://t.me/coopix_chat"};
+const SPONSORS=[{name:"Sponsor One",c:"#ffb23f",msg:"Спасибо за классные игры! Так держать."},{name:"Sponsor Two",c:"#4dd2ff",msg:"Играем с друзьями каждый вечер."}];
+const LINKS={channel:"https://t.me/coopix_market",chat:"https://t.me/coopix_chat",pchannel:"https://t.me/+PRIVATE_CHANNEL",pchat:"https://t.me/+PRIVATE_CHAT",boosty:"https://boosty.to/coopix"}; /* pchannel / pchat = closed channel and chat (invite links), boosty = Boosty page */
 function openLink(u){try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&/^https:\/\/t\.me\//.test(u)&&w.openTelegramLink){w.openTelegramLink(u);return true}}catch(e){}return false}
 const HOME_GADS=[["cassette",318,"#ff5ec4","-6deg"],["cd",222,"#5b8cff","4deg"],["floppy",112,"#5dff8a","-3deg"],["handheld",38,"#ffb23f","6deg"]];
 const SPK='<svg viewBox="0 0 24 24"><path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z"/></svg>';
@@ -1194,7 +1224,7 @@ function renderHome(){
     <div class="shelf" aria-hidden="true">${HOME_GADS.map((g,i)=>`<div class="gad" style="--r:${g[3]};--g:${g[2]}88"><div class="bob" style="--bd:${-i*1.2}s"><canvas></canvas></div></div>`).join("")}<i class="floor"></i></div>
     <h2 class="hero-t">Быстрые офлайн игры <em>с Мультиплеером</em></h2>
     <div class="tags"><span class="tag">Быстро</span><span class="tag">Офлайн</span><span class="tag">Мультиплеер</span></div>
-    <div class="gow"><button class="bigplay" id="goMarket" type="button">${IC.bag}Перейти в маркет</button></div>
+    <div class="gow"><button class="bigplay" id="goMarket" type="button">Перейти в маркет</button></div>
   </div>
   <div class="pn enter" style="--i:.2s">
     <section class="sec"><h3>Новости</h3>
@@ -1202,11 +1232,12 @@ function renderHome(){
         <div class="nw-h"><span class="nw-tag">${n.tag}</span><time>${n.date}</time>${n.ok?IC.play:""}</div><h4>${n.title}</h4><p>${n.text}</p></div></div></div>`).join("")}</div>
       ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
     </section>
-    <section class="sec sprow-h"><h3>Спонсоры</h3><div class="sprow">${SPONSORS.map(n=>`<span class="spc" style="--nc:${n.c}"><i>${n.name[0]}</i>${n.name}</span>`).join("")}<a class="spc me" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat" aria-label="Стать спонсором"><i>+</i>Вы?</a></div></section>
+    <section class="sec sprow-h"><h3>Спонсоры</h3><div class="sprow">${SPONSORS.map(n=>`<button type="button" class="spc" data-club style="--nc:${n.c}"><i>${n.name[0]}</i>${n.name}</button>`).join("")}<button type="button" class="spc me" data-club aria-label="Стать спонсором"><i>+</i>Вы?</button></div></section>
     <div class="lnks"><div class="lw"><a class="lbtn" href="${LINKS.channel}" target="_blank" rel="noopener" data-l="channel">${IC.send}Канал</a></div><div class="lw pk"><a class="lbtn" style="--lc:#ff5ec4" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat">${IC.chat}Чатик</a></div></div>
   </div>`;
   const cv=homeEl.querySelectorAll(".gad canvas");
   HOME_GADS.forEach((g,i)=>{const sp=SPR[g[0]];if(sp)recolor(sp,cv[i],palette(g[1],.85),1.9)});
+  homeEl.querySelectorAll("[data-club]").forEach(b=>b.addEventListener("click",()=>{sfx.tap();goView(4)}));
   $("#goMarket").addEventListener("click",()=>{sfx.in();goView(1)});
   homeEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
   homeEl.querySelectorAll(".nw[data-app]").forEach(el=>{const open=()=>{sfx.tap();openPage(el.dataset.app)};
@@ -1218,6 +1249,22 @@ function renderHome(){
   ns.addEventListener("pointerdown",()=>{hold=Date.now()});
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
+}
+
+/* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
+function renderClub(){
+  clearInterval(homeT);
+  clubEl.innerHTML=`<div class="cl-head enter"><div class="cl-lock" aria-hidden="true">${IC.lock}</div><h2 class="hero-t">Закрытый <em>клуб</em></h2></div>
+  <div class="cl-btns enter" style="--i:.08s">
+    <div class="lw"><a class="lbtn big" href="${LINKS.pchannel}" target="_blank" rel="noopener" data-l="1">${IC.send}Закрытый канал</a></div>
+    <div class="lw pk"><a class="lbtn big" style="--lc:#ff5ec4" href="${LINKS.pchat}" target="_blank" rel="noopener" data-l="1">${IC.chat}Закрытый чат</a></div>
+    <div class="lw bo"><a class="lbtn big" style="--lc:#ff8a3d" href="${LINKS.boosty}" target="_blank" rel="noopener" data-l="1">${IC.heart}Boosty</a></div>
+  </div>
+  <section class="sec enter" style="--i:.16s"><h3>Зачем закрытый канал?</h3>
+    <div class="nw why" style="--nc:#4dd2ff"><div class="nw-in"><p>Некоторые проекты имеют авторские права и сделаны для приватного пользователя. Поэтому мы не выкладываем их в общий маркет: они доступны только в закрытом канале и чате.</p></div></div></section>
+  <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
+    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>`;
+  clubEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
 }
 
 function addCard(){
