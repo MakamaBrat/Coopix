@@ -437,6 +437,11 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .spk{width:28px;height:50px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.55) 0 3px,transparent 3px 7px);margin-top:6px}
 .led{width:10px;height:10px;border-radius:50%;background:#5a2020;transition:.2s}.led.on{background:#5dff8a;box-shadow:0 0 9px #5dff8a}
 .hud{display:flex;justify-content:space-between;margin:12px 6px 0;font-size:21px;color:var(--c3)}.hud b{font-weight:700;color:#fff}
+.pg-au{font-size:16px;color:var(--dim)}.pg-au b{font-weight:600;color:#e5d9ff}
+.chg{margin-top:12px;padding:6px 10px 7px;background:#120a2a;border:2px solid var(--line);border-left:5px solid var(--c1,#a56bff)}
+.chg-h{display:flex;justify-content:space-between;gap:8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.chg ul{margin:3px 0 0;padding:0;list-style:none;font-size:14px;line-height:1.25;color:#e5d9ff;max-height:5.1em;overflow-y:auto}
+.chg li::before{content:"+ ";color:var(--c1,#a56bff)}
 .hint2{margin-top:4px;text-align:center;font-size:16px;color:var(--dim)}
 
 /* sections */
@@ -625,49 +630,73 @@ body.onhome .logo{font-size:clamp(24px,8.32vw,40.8px)}
 
 /* ---------- profile tab ---------- */
 .prof{display:none}
-body.onprof .prof{display:flex;flex-direction:column;gap:14px;padding-top:2px}
+body.onprof .prof{display:flex;flex-direction:column;gap:10px;padding-top:2px}
 body.onprof .tabs,body.onprof .list,body.onprof .home,body.onprof .club,body.onprof .sbar{display:none}
 .prof .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .pf-card{--pc:#a56bff;position:relative;padding:3px;background:linear-gradient(160deg,#6a4fd0,#2a1a66);filter:drop-shadow(0 0 14px rgba(165,107,255,.4));
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
-.pf-in{display:grid;grid-template-columns:92px 1fr;gap:14px;align-items:center;padding:16px 14px 16px 16px;background:linear-gradient(#1b1141,#120a2c);
+.pf-in{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center;padding:12px 14px 12px 12px;background:linear-gradient(#1b1141,#120a2c);
   clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px)}
-.pf-av{position:relative;width:92px;height:92px;padding:3px;background:var(--pc);overflow:hidden;
+.pf-av{position:relative;width:76px;height:76px;padding:3px;background:var(--pc);overflow:hidden;
   clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
 .pf-av i{display:block;width:100%;height:100%;background:#1a1040 center/cover no-repeat;
   clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px)}
 .pf-av i.pg{background-size:118%;background-position:50% 30%}
-.pf-name{font-size:clamp(24px,7.6vw,32px);font-weight:700;line-height:1.05;text-transform:uppercase;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
-.pf-rank{display:inline-block;margin-top:6px;padding:2px 12px;font-size:16px;letter-spacing:.05em;text-transform:uppercase;color:#140a28;background:var(--pc);
+.pf-name{font-size:clamp(22px,6.6vw,28px);padding-right:30px;font-weight:700;line-height:1.05;text-transform:uppercase;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
+.pf-rank{display:inline-block;margin-top:4px;padding:1px 12px;font-size:15px;letter-spacing:.05em;text-transform:uppercase;color:#140a28;background:var(--pc);
   clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
-.pf-reg{margin-top:6px;font-size:16px;color:var(--dim)}
+.pf-reg{margin-top:4px;font-size:14px;color:var(--dim)}
 .pf-edit{position:absolute;right:10px;top:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--dim);z-index:1}
 .pf-edit svg{width:20px;height:20px;fill:currentColor}.pf-edit:hover{color:#fff}
-.pf-lv{padding:14px 16px 16px;background:#150d33;border:3px solid var(--line)}
+.pf-lv{padding:9px 14px 10px;background:#150d33;border:3px solid var(--line)}
 .pf-lvh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.pf-lvh b{font-size:28px;text-transform:uppercase;color:#fff;text-shadow:2px 2px 0 #6a35e0}
+.pf-lvh b{font-size:22px;text-transform:uppercase;color:#fff;text-shadow:2px 2px 0 #6a35e0}
 .pf-lvh span{font-size:17px;color:var(--dim)}
-.pf-bar{position:relative;height:20px;margin:10px 0 6px;background:#0c0620;border:3px solid #3a2a70;overflow:hidden}
+.pf-bar{position:relative;height:16px;margin:6px 0 5px;background:#0c0620;border:3px solid #3a2a70;overflow:hidden}
 .pf-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);background:repeating-linear-gradient(90deg,#b98bff 0 8px,#8a52f5 8px 10px);transition:width .9s cubic-bezier(.2,.9,.2,1)}
 .pf-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.22),transparent 55%)}
-.pf-lvn{font-size:16px;color:var(--dim)}
-.pf-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.pf-st div{padding:10px 4px 9px;text-align:center;background:#150d33;border:3px solid var(--line)}
-.pf-st b{display:block;font-size:26px;color:#fff;line-height:1}
-.pf-st span{display:block;margin-top:4px;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
-.mdl{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.md{--mc:#a56bff;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 6px 10px;background:linear-gradient(#1b1141,#120a2c);border:3px solid var(--mc);
-  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
-.md .mb{position:relative;width:54px;height:54px;display:grid;place-items:center;border-radius:50%;color:#140a28;background:radial-gradient(circle at 35% 30%,#fff 0,var(--mc) 55%,#000 160%);
-  box-shadow:0 0 0 3px #140a28,0 0 0 6px var(--mc),0 0 16px var(--mc)}
-.md .mb svg{width:28px;height:28px;fill:currentColor}
-.md b{font-size:15px;line-height:1.05;text-transform:uppercase;color:#fff;margin-top:6px}
-.md small{font-size:13px;line-height:1.15;color:var(--dim)}
-.md em{font-style:normal;font-size:13px;color:var(--mc)}
-.md.off{border-color:#2f2360;filter:grayscale(1);opacity:.62}
-.md.off .mb{box-shadow:0 0 0 3px #140a28,0 0 0 6px #3a2a70;background:#241a4a;color:#6b5aa8}
-.md.off em{color:var(--dim)}
-.pf-set{display:flex;gap:10px}
+.pf-lvn{font-size:14px;color:var(--dim)}
+.pf-st{display:flex;justify-content:space-between;gap:6px;margin-top:8px;padding-top:7px;border-top:2px dashed #2f2360}
+.pf-st div{flex:1;text-align:center}
+.pf-st b{display:block;font-size:20px;color:#fff;line-height:1}
+.pf-st span{display:block;margin-top:2px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.mdl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 4px}
+.md{--mc:#a56bff;--r1:#ffd9a0;--r2:#c9822f;--r3:#6b3a10;position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 0 2px;color:inherit;text-align:center;-webkit-tap-highlight-color:transparent}
+.md[data-t="2"]{--r1:#ffffff;--r2:#b8c4e0;--r3:#4a5578}
+.md[data-t="3"]{--r1:#fff3b0;--r2:#ffc83a;--r3:#9a5a00}
+.mh{position:relative;width:58px;height:66px;margin-bottom:7px;transition:transform .15s}
+.md:active .mh{transform:scale(.92)}
+/* лента: два хвоста под значком */
+.mh::before,.mh::after{content:"";position:absolute;bottom:-9px;width:15px;height:20px;background:linear-gradient(var(--mc),color-mix(in srgb,var(--mc) 50%,#000));z-index:0}
+.mh::before{left:13px;transform:rotate(9deg);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+.mh::after{right:13px;transform:rotate(-9deg);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+.mr{position:absolute;inset:0;z-index:1;background:linear-gradient(145deg,var(--r1),var(--r2) 48%,var(--r3));
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);filter:drop-shadow(0 0 8px var(--mc))}
+.mi{position:absolute;inset:5px;z-index:2;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(circle at 32% 24%,color-mix(in srgb,var(--mc) 55%,#fff),var(--mc) 46%,color-mix(in srgb,var(--mc) 45%,#000));
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.mi svg{position:relative;width:26px;height:26px;fill:#fff;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 5px rgba(255,255,255,.7))}
+/* блик пробегает по полученным медалям */
+.mi::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);transform:skewX(-20deg);animation:mshine 3.6s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes mshine{0%,55%{left:-60%}100%{left:130%}}
+.md b{font-size:11px;font-weight:700;line-height:1.05;text-transform:uppercase;letter-spacing:0;color:#fff;max-width:100%;overflow-wrap:normal}
+.md.off{filter:grayscale(1)}
+.md.off .mr{background:linear-gradient(145deg,#3a2f66,#241a4a 55%,#14102e);filter:none}
+.md.off .mi{background:#16102f}
+.md.off .mi svg{fill:#6b5aa8;filter:none;width:22px;height:22px}
+.md.off .mi::after{display:none}
+.md.off .mh::before,.md.off .mh::after{background:#2a1f55}
+.md.off b{color:var(--dim)}
+.md.pk .mr{filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 6px #fff)}
+.md.pk b{color:#fff}
+.md-pips{display:flex;gap:2px;height:4px;width:44px;margin-top:-1px}
+.md-pips i{flex:1;background:#2f2360}.md-pips i.on{background:var(--mc)}
+.md-info{min-height:44px;margin-top:10px;padding:7px 10px 8px;background:#120a2a;border:2px solid var(--line);border-left:5px solid var(--ic,#a56bff);font-size:15px;line-height:1.2;color:#e5d9ff}
+.md-info b{display:block;font-size:16px;text-transform:uppercase;color:#fff}
+.md-info span{color:var(--dim);font-size:14px}
+[data-q="0"] .mi::after{animation:none;display:none}
+@supports not (background:color-mix(in srgb,red,blue)){.mi{background:var(--mc)}.mh::before,.mh::after{background:var(--mc)}}
+.pf-set{display:flex;gap:10px}.pf-set .btn{height:44px;font-size:18px}
 .sw{display:flex;gap:8px;flex-wrap:wrap}
 .sw button{width:40px;height:40px;background:var(--sc);border:3px solid #140a28;box-shadow:0 0 0 3px transparent}
 .sw button[aria-checked=true]{box-shadow:0 0 0 3px #fff}
@@ -677,10 +706,31 @@ body.onprof .tabs,body.onprof .list,body.onprof .home,body.onprof .club,body.onp
 .av-row .btn{height:44px;font-size:18px}
 [data-q="0"] .pf-card,[data-q="0"] .pf-in{filter:none}
 
+
+/* ---------- графики капитализации (вкладка кубка) ---------- */
+.chc{padding:10px 12px 10px;background:#150d33;border:3px solid var(--line)}
+.chc-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chc-t{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
+.chc-t{white-space:nowrap}.chc-t em{font-style:normal;margin-left:4px;padding:0 6px;font-size:11px;color:#ffb23f;border:1px solid #ffb23f66}
+.chc-v{white-space:nowrap;font-size:28px;font-weight:700;line-height:1.05;color:#fff;margin-top:2px}
+.chc-d{font-size:15px;margin-top:1px}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
+.chc-p{display:flex;gap:3px;flex:none}
+.chc-p button{height:26px;padding:0 6px;font-size:13px;color:var(--dim);background:#120a2a;border:2px solid var(--line)}
+.chc-p button[aria-pressed=true]{color:#140a28;background:#b98bff;border-color:#b98bff}
+.chc svg{display:block;width:100%;height:auto;margin-top:6px;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.chc svg text{font-family:"Tektur",ui-monospace,monospace;fill:#8f82c4;font-size:9px}
+.chc-i{min-height:18px;margin-top:2px;font-size:14px;color:#e5d9ff}
+.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;padding-top:7px;border-top:2px dashed #2f2360;text-align:center}
+.chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.chc-n{margin-top:6px;font-size:12px;line-height:1.25;color:var(--dim)}
+.chc+.chc{margin-top:12px}
+
 /* ---------- club tab ---------- */
 .club{display:none}
 body.onclub .club{display:flex;flex-direction:column;gap:16px;padding-top:2px}
 body.onclub .tabs,body.onclub .list,body.onclub .home,body.onclub .sbar{display:none}
+/* во вкладке кубка шапка (лого и голубь) убрана полностью */
+body.onclub .top{display:none}
 .club{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff}
 .club .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .cl-head{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
@@ -1427,8 +1477,12 @@ function profMade(){PROF.made++;addXp(25)}
 function profVisit(){const k=dayKey();if(PROF.last!==k){PROF.last=k;PROF.days++;PROF.xp+=PROF.days>1?10:0;profCheck()}}
 const fmtDate=t=>{const d=new Date(t),p=n=>String(n).padStart(2,"0");return p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear()};
 function avatarBg(){return PROF.photo?`style="background-image:url(${PROF.photo})"`:`class="pg" style="background-image:url(assets/coopix-pigeon.png)"`}
-function medalHTML(m){const ok=!!PROF.medals[m.id],v=Math.min(m.v(PROF),m.need);
-  return `<div class="md${ok?"":" off"}" style="--mc:${m.c}"><i class="mb">${ok?IC[m.ic]:IC.lock}</i><b>${m.n}</b><small>${m.d}</small><em>${ok?"+"+m.xp+" XP · получена":v+" / "+m.need}</em></div>`}
+const mTier=m=>m.xp>=50?3:m.xp>=25?2:1;
+function medalHTML(m,i){const ok=!!PROF.medals[m.id],v=Math.min(m.v(PROF),m.need);
+  const N=Math.min(m.need,5),f=Math.floor(v/m.need*N),pips=ok||m.need<2?"":`<span class="md-pips">${Array.from({length:N},(_,k)=>`<i class="${k<f?"on":""}"></i>`).join("")}</span>`;
+  return `<button type="button" class="md${ok?"":" off"}" data-m="${m.id}" data-t="${mTier(m)}" style="--mc:${m.c};--d:${(i%6)*.5}s" aria-label="${m.n}"><span class="mh"><i class="mr"></i><i class="mi">${ok?IC[m.ic]:IC.lock}</i></span><b>${m.n}</b>${pips}</button>`}
+function medalInfo(id){const m=MEDALS.find(x=>x.id===id),ok=!!PROF.medals[id],v=Math.min(m.v(PROF),m.need);
+  return `<b>${m.n}</b>${m.d}<br><span>${ok?"Получена "+fmtDate(PROF.medals[id])+" · +"+m.xp+" XP":"Прогресс: "+v+" / "+m.need+" · награда +"+m.xp+" XP"}</span>`}
 function renderProfile(){
   profVisit();
   const lv=lvOf(PROF.xp),max=lv>=10,a=xpAt(lv),b=xpAt(lv+1),pct=max?100:Math.round((PROF.xp-a)/(b-a)*100),n=Object.keys(PROF.medals).length;
@@ -1438,11 +1492,15 @@ function renderProfile(){
     </div><button class="pf-edit" id="pfEdit" type="button" aria-label="Изменить профиль">${IC.edit}</button></div>
   <div class="pf-lv enter" style="--i:.06s"><div class="pf-lvh"><b>Уровень ${lv}</b><span>${PROF.xp} XP</span></div>
     <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
-    <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-PROF.xp)+" XP · звание «"+RANKS[lv]+"»"}</div></div>
-  <div class="pf-st enter" style="--i:.12s"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div>
-  <section class="sec enter" style="--i:.18s"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div></section>
-  <div class="pf-set enter" style="--i:.24s"><button class="btn ghost" id="pfSet" type="button" style="flex:1">Настройки</button></div>`;
+    <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-PROF.xp)+" XP · «"+RANKS[lv]+"»"}</div>
+    <div class="pf-st"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>
+  <section class="sec enter" style="--i:.12s;margin-top:4px"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div>
+    <div class="md-info" id="mdInfo"></div></section>
+  <div class="pf-set enter" style="--i:.18s"><button class="btn ghost" id="pfSet" type="button" style="flex:1">Настройки</button></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=profEl.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
+  const pick=id=>{const m=MEDALS.find(x=>x.id===id);const info=$("#mdInfo");info.style.setProperty("--ic",m.c);info.innerHTML=medalInfo(id);profEl.querySelectorAll(".md").forEach(x=>x.classList.toggle("pk",x.dataset.m===id))};
+  const first=MEDALS.find(m=>!PROF.medals[m.id])||MEDALS[0];pick(Object.keys(PROF.medals).length?Object.entries(PROF.medals).sort((x,y)=>y[1]-x[1])[0][0]:first.id);
+  profEl.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)});
   $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
   $("#pfSet").addEventListener("click",()=>{sfx.tap();openSettings()})}
 function openProfileEditor(){
@@ -1466,6 +1524,61 @@ function openProfileEditor(){
     const ch=nm!==PROF.name||d.color!==PROF.color||d.photo!==PROF.photo;
     Object.assign(PROF,{name:nm,color:d.color,photo:d.photo});if(ch)PROF.custom=1;saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
 
+/* ============ графики капитализации ============ */
+/* ВНИМАНИЕ: цифры демонстрационные. Настоящие значения подставьте в CAP ниже (now = текущая капитализация, ресурс/цена считаются от активности) */
+const CAP={cur:"₽",now:184500,res:"COOP",rate:"1 игра = 5 COOP · 1 отзыв = 20 COOP"};
+const PER=[["24ч",24,3,.012,.0015,36e5],["7д",28,5,.03,.004,6*36e5],["30д",30,7,.06,.012,864e5],["Всё",40,9,.12,.045,7*864e5]];
+const rng=seed=>()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
+const nf=n=>Math.round(n).toLocaleString("ru-RU");
+const cf=n=>n>=1e6?(n/1e6).toFixed(1).replace(".",",")+"M":n>=1e3?(n/1e3).toFixed(n>=1e5?0:1).replace(".",",")+"К":Math.round(n)+"";
+const lbl=(i,n,step)=>{const d=new Date(Date.now()-(n-1-i)*step),p=x=>String(x).padStart(2,"0");return step<=36e5?p(d.getHours())+":00":p(d.getDate())+"."+p(d.getMonth()+1)};
+function mkMoney(pi){const [,n,seed,vol,tr,step]=PER[pi],r=rng(seed*7+3);let v=[1];for(let i=1;i<n;i++)v.push(Math.max(.15,v[i-1]*(1+(r()-.45)*vol+tr)));const k=CAP.now/v[n-1];
+  return v.map((x,i)=>({v:x*k,t:lbl(i,n,step)}))}
+function mkAct(pi){const [,n,seed,vol,tr,step]=PER[pi],r=rng(seed*13+5),per=Math.max(1,step/864e5),base=Math.max(6,Math.round(120*Math.pow(per,.55)));
+  let res=CAP.now/1.8*Math.pow(.62,Math.max(0,PER[3][1]-n)/20),out=[];
+  for(let i=0;i<n;i++){const a=Math.round(base*(.55+r()*.9)*(1+i/n*.5));res+=a*5+Math.round(a*.08)*20;const price=1.1+i/n*.4+a/(base*3)*.2;out.push({a,res,cap:res*price,t:lbl(i,n,step)})}
+  const k=CAP.now*1.35/out[n-1].cap;out.forEach(o=>o.cap*=k);return out}
+function area(pts,W,H,pl,pr,pt,pb,key,lo,hi){const x=i=>pl+(W-pl-pr)*i/(pts.length-1),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo||1));return{x,y,d:pts.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p[key]).toFixed(1)).join("")}}
+function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
+  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги<em>демо</em></div><div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div></div><div class="chc-v" data-v></div><div class="chc-d" data-d></div>
+    <svg viewBox="0 0 340 150" role="img" aria-label="График капитализации проекта в деньгах"></svg><div class="chc-i" data-info></div></div>
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс<em>демо</em></div><div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div></div><div class="chc-v" data-v></div><div class="chc-d" data-d></div>
+    <svg viewBox="0 0 340 150" role="img" aria-label="График: активность игроков, ресурс и капитализация актива"></svg><div class="chc-i" data-info></div>
+    <div class="chc-s" data-s></div><p class="chc-n">Активность игроков превращается в ресурс ${CAP.res}: ${CAP.rate}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
+function initCharts(root){
+  const W=340,H=150,NS="http://www.w3.org/2000/svg";
+  const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
+    const run=()=>{box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));draw(pi,svg,box)};
+    box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});run()};
+  const hover=(svg,n,pl,pr,on)=>{const f=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;on(clamp(Math.round((px-pl)/(W-pl-pr)*(n-1)),0,n-1))};
+    svg.onpointermove=f;svg.onpointerdown=f;svg.onpointerleave=()=>on(-1)};
+  /* 1: деньги, как график криптовалюты */
+  wire(root.querySelector("#chM"),(pi,svg,box)=>{const pts=mkMoney(pi),n=pts.length,pl=4,pr=40,pt=8,pb=16,vs=pts.map(p=>p.v),lo=Math.min(...vs)*.97,hi=Math.max(...vs)*1.03;
+    const up=pts[n-1].v>=pts[0].v,col=up?"#5dff8a":"#ff5e7a",a=area(pts,W,H,pl,pr,pt,pb,"v",lo,hi),ch=(pts[n-1].v/pts[0].v-1)*100;
+    let g="";for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=a.y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2f2360" stroke-dasharray="2 3"/><text x="${W-pr+4}" y="${y+3}">${cf(v)}</text>`}
+    const ly=a.y(pts[n-1].v),tx=[0,Math.floor(n/2),n-1].map(i=>`<text x="${a.x(i)}" y="${H-3}" text-anchor="${i?i===n-1?"end":"middle":"start"}">${pts[i].t}</text>`).join("");
+    svg.innerHTML=`<defs><linearGradient id="gm${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".38"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${g}${tx}
+      <path d="${a.d}L${a.x(n-1)} ${H-pb}L${a.x(0)} ${H-pb}Z" fill="url(#gm${pi})"/><path d="${a.d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="${pl}" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${col}" stroke-dasharray="3 3" opacity=".7"/><rect x="${W-pr}" y="${ly-7}" width="${pr}" height="14" fill="${col}"/><text x="${W-pr+3}" y="${ly+3}" style="fill:#0c0620;font-weight:700">${cf(pts[n-1].v)}</text>
+      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".5"/><circle r="3.5" fill="#fff" stroke="${col}" stroke-width="2"/></g>`;
+    const V=box.querySelector("[data-v]"),D=box.querySelector("[data-d]"),I=box.querySelector("[data-info]"),X=svg.querySelector("[data-x]");
+    V.textContent=nf(pts[n-1].v)+" "+CAP.cur;D.className="chc-d "+(up?"up":"dn");D.textContent=(up?"▲ +":"▼ ")+ch.toFixed(1).replace(".",",")+"% за "+PER[pi][0];I.textContent="Проведите пальцем по графику";
+    hover(svg,n,pl,pr,i=>{if(i<0){X.style.display="none";I.textContent="Проведите пальцем по графику";return}const x=a.x(i),y=a.y(pts[i].v);X.style.display="";X.querySelector("line").setAttribute("x1",x);X.querySelector("line").setAttribute("x2",x);X.querySelector("circle").setAttribute("cx",x);X.querySelector("circle").setAttribute("cy",y);I.textContent=pts[i].t+" · "+nf(pts[i].v)+" "+CAP.cur})});
+  /* 2: активность игроков → ресурс → кап актива */
+  wire(root.querySelector("#chA"),(pi,svg,box)=>{const d=mkAct(pi),n=d.length,pl=4,pr=40,pt=8,pb=16,mx=Math.max(...d.map(o=>o.a)),cv=d.map(o=>o.cap),lo=Math.min(...cv)*.9,hi=Math.max(...cv)*1.03;
+    const a=area(d,W,H,pl,pr,pt,pb,"cap",lo,hi),bw=(W-pl-pr)/n*.62,col="#ffb23f";let g="";
+    for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=a.y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2f2360" stroke-dasharray="2 3"/><text x="${W-pr+4}" y="${y+3}">${cf(v)}</text>`}
+    const bars=d.map((o,i)=>{const h=(H-pt-pb)*.42*o.a/mx;return `<rect x="${a.x(i)-bw/2}" y="${H-pb-h}" width="${bw}" height="${h}" fill="#8a52f5" opacity=".75"/>`}).join("");
+    const tx=[0,Math.floor(n/2),n-1].map(i=>`<text x="${a.x(i)}" y="${H-3}" text-anchor="${i?i===n-1?"end":"middle":"start"}">${d[i].t}</text>`).join("");
+    svg.innerHTML=`<defs><linearGradient id="ga${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".3"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}
+      <path d="${a.d}L${a.x(n-1)} ${H-pb}L${a.x(0)} ${H-pb}Z" fill="url(#ga${pi})"/><path d="${a.d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".5"/><circle r="3.5" fill="#fff" stroke="${col}" stroke-width="2"/></g>`;
+    const V=box.querySelector("[data-v]"),D=box.querySelector("[data-d]"),I=box.querySelector("[data-info]"),X=svg.querySelector("[data-x]"),S=box.querySelector("[data-s]"),last=d[n-1],tot=d.reduce((s,o)=>s+o.a,0),ch=(last.cap/d[0].cap-1)*100;
+    V.textContent=nf(last.cap)+" "+CAP.cur;D.className="chc-d up";D.textContent="▲ +"+ch.toFixed(1).replace(".",",")+"% капитализация актива";
+    S.innerHTML=`<div><b>${nf(tot)}</b><span>Активность, игр</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
+    const idle=()=>{I.innerHTML='<span style="color:#8a52f5">▮</span> активность &nbsp; <span style="color:#ffb23f">▬</span> кап актива'};idle();
+    hover(svg,n,pl,pr,i=>{if(i<0){X.style.display="none";idle();return}const o=d[i];X.style.display="";X.querySelector("line").setAttribute("x1",a.x(i));X.querySelector("line").setAttribute("x2",a.x(i));X.querySelector("circle").setAttribute("cx",a.x(i));X.querySelector("circle").setAttribute("cy",a.y(o.cap));I.textContent=o.t+" · "+o.a+" игр · "+nf(o.res)+" "+CAP.res+" · "+nf(o.cap)+" "+CAP.cur})})}
+
 /* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
 function renderClub(){
   clearInterval(homeT);
@@ -1480,7 +1593,8 @@ function renderClub(){
     <div class="lw bo"><a class="lbtn big" style="--lc:#ff8a3d" href="${LINKS.boosty}" target="_blank" rel="noopener" data-l="1">${IC.heart}Boosty</a></div>
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
-    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>`;
+    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}`;
+  initCharts(clubEl);
   clubEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
 }
 
@@ -1564,9 +1678,9 @@ function openSettings(){
 
 function openEditor(id,preCover){
   const existing=id?DATA.find(d=>d.id===id):null;
-  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:""};
+  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:""};
   if(!existing&&!preCover)draft.cover="b:space";
-  if(draft.desc==null)draft.desc=DESC[draft.id]||"";
+  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";
   let cands=[],tags=tagsOf(draft).slice();
   const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
@@ -1584,6 +1698,8 @@ function openEditor(id,preCover){
    <div class="fld"><span class="lbl">Colour</span><div class="sw" id="sw"></div></div>
    <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="in" id="chg" maxlength="200" rows="3" placeholder="Что нового в этой версии?">${esc(draft.changes||"")}</textarea></label>
    </div>
    <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
   const pv=$("#pv");PV=new Card(pv,draft,{preview:true});PV.set({...draft},{});
@@ -1610,6 +1726,7 @@ function openEditor(id,preCover){
   /* name / description */
   $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
+  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});
   /* tags: type + Enter / comma, or tap a suggestion; max 3 */
   const tb=$("#tagbox"),ti=$("#taginp"),sg=$("#sugg");
   const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
@@ -1724,6 +1841,12 @@ const DESC={
  space:"Космический синтовый джем. Попадайте по светящимся падам в такт падающим нотам и собирайте мелодию из ничего.\nБета-версия: один бесконечный трек, после пяти промахов песня заканчивается.",
  toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nБета-версия: пока без боссов и бонусов.",
  blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
+const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
+const CHANGES={
+  retro:"Скорость растёт после каждой стены\nНовые неоновые кирпичи\nИсправлено залипание платформы",
+  space:"Ноты падают плавнее\nДобавлен счётчик промахов\nИсправлены задержки звука",
+  toxic:"Пушка стреляет чаще\nЧерепа стали живее\nИсправлен вылет на старых телефонах",
+  blocks:"Свайпы стали отзывчивее\nНовые закатные цвета\nИсправлен сброс фигуры"};
 const SEED={
  retro:[["kira_88",5,"Арканоид с душой кассетного магнитофона. Платформа управляется отлично.",3],["moth",4,"Нужно больше уровней, но бета уже съедает мой обеденный перерыв.",9]],
  space:[["DJ Tofu",5,"Играл в автобусе со звуком. Очень расслабляет и очень сложно.",2],["nullptr",4,"Попадания засчитываются щедро. Я не жалуюсь.",6]],
@@ -1740,12 +1863,14 @@ const KN={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"," ":"S",a:"L",d
 
 function pageHTML(m,kind){
   const desc=(m.desc!=null&&m.desc!==""?m.desc:DESC[m.id]||"").trim();
+  const author=(m.author||AUTHORS[m.id]||PROF.name||"Неизвестен").trim(),chl=(m.changes!=null&&m.changes!==""?m.changes:CHANGES[m.id]||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4);
   return `<div class="pg">
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button><span class="beta">BETA 0.3</span></div>
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
     <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
-    <div class="pg-m"><span id="pgPlays"></span></div></div></div>
+    <div class="pg-m"><span id="pgPlays"></span></div>
+    <div class="pg-au">Автор: <b>${esc(author)}</b></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
       <canvas class="g" id="tvc" width="160" height="120"></canvas><div class="ov" id="ov"></div><i class="tvn"></i>
@@ -1755,7 +1880,8 @@ function pageHTML(m,kind){
   <div class="hud"><span>SCORE <b id="sc">0</b></span><span>BEST <b id="bs">0</b></span></div>
   <p class="hint2">${HINT[kind]}</p>
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
-    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div></section>
+    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span><span>v0.3</span></div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
   <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><div id="cmList"></div>
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
       <input class="in" id="cmName" maxlength="14" placeholder="Ваше имя" value="${esc(store.get("am.name",""))}">
