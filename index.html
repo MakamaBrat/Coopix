@@ -864,14 +864,12 @@ html.desk .ns .nw p{font-size:17px;-webkit-line-clamp:3}
 html.desk .ns .nw-tag{font-size:14px}html.desk .ns .nw-h time{font-size:15px}
 html.desk .lnks .lbtn{height:58px;font-size:24px}
 
-/* Community: slogan + Boosty | sponsors, charts side by side below */
+/* Community: slogan + help button + chart | sponsors */
 html.desk body.onclub .club{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px;align-items:start;padding-top:8px}
 html.desk .club>.cl-hero{grid-column:1;grid-row:1}
 html.desk .club>.cl-btns{grid-column:1;grid-row:2}
-html.desk .club>section:nth-of-type(1){grid-column:2;grid-row:1/span 2;margin-top:0}
-html.desk .club>section:nth-of-type(2){grid-column:1/-1;grid-row:3;margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 32px;align-items:start}
-html.desk .club>section:nth-of-type(2)>h3{grid-column:1/-1;margin-bottom:0}
-html.desk .club>section:nth-of-type(2)>.chc{margin:0}
+html.desk .club>section:nth-of-type(1){grid-column:2;grid-row:1/span 3;margin-top:0}
+html.desk .club>section:nth-of-type(2){grid-column:1;grid-row:3;margin-top:8px}
 html.desk .cl-slogan{font-size:clamp(36px,4.6vw,64px)}
 
 /* Profile: card + level on the left, medals on the right */
@@ -1580,6 +1578,8 @@ const NEWS=[
 /* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
 const SPONSORS=[{name:"Sponsor One",c:"#ffb23f",msg:"Спасибо за классные игры! Так держать."},{name:"Sponsor Two",c:"#4dd2ff",msg:"Играем с друзьями каждый вечер."}];
 const LINKS={channel:"https://t.me/coopix_market",chat:"https://t.me/coopix_chat",pchannel:"https://t.me/+PRIVATE_CHANNEL",pchat:"https://t.me/+PRIVATE_CHAT",boosty:"https://boosty.to/coopix"}; /* pchannel / pchat = closed channel and chat (invite links), boosty = Boosty page */
+/* donation wallet: put your real TRON (TRC20) address here. Until it looks like a valid T... address the Help window shows a "not added yet" note */
+const WALLET={net:"TRON (TRC20)",coin:"USDT",addr:"ВСТАВЬТЕ_АДРЕС_TRON"};
 function openLink(u){try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&/^https:\/\/t\.me\//.test(u)&&w.openTelegramLink){w.openTelegramLink(u);return true}}catch(e){}return false}
 const HOME_GADS=[["cassette",318,"#ff5ec4","-6deg"],["cd",222,"#5b8cff","4deg"],["floppy",112,"#5dff8a","-3deg"],["handheld",38,"#ffb23f","6deg"]];
 const SPK='<svg viewBox="0 0 24 24"><path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z"/></svg>';
@@ -1676,12 +1676,13 @@ function renderProfile(){
     <div class="pf-st"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>
   <section class="sec enter" style="--i:.12s;margin-top:4px"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div>
     <div class="md-info" id="mdInfo"></div></section>
-  <div class="pf-set enter" style="--i:.18s"><button class="btn ghost" id="pfSet" type="button" style="flex:1">Настройки</button></div>`;
+  <div class="pf-set enter" style="--i:.18s;display:flex;flex-direction:column;gap:10px"><button class="btn" id="pfSub" type="button" style="flex:none;width:100%">${IC.plus}&nbsp;Отправить игру</button>${isAdmin()?'<button class="btn ghost" id="pfAdm" type="button" style="flex:none;width:100%">Админ-панель</button>':""}<button class="btn ghost" id="pfSet" type="button" style="flex:none;width:100%">Настройки</button></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=profEl.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
   const pick=id=>{const m=MEDALS.find(x=>x.id===id);const info=$("#mdInfo");info.style.setProperty("--ic",m.c);info.innerHTML=medalInfo(id);profEl.querySelectorAll(".md").forEach(x=>x.classList.toggle("pk",x.dataset.m===id))};
   const first=MEDALS.find(m=>!PROF.medals[m.id])||MEDALS[0];pick(Object.keys(PROF.medals).length?Object.entries(PROF.medals).sort((x,y)=>y[1]-x[1])[0][0]:first.id);
   profEl.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)});
   $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
+  $("#pfSub").addEventListener("click",()=>{sfx.tap();openSubmit()});const ad=$("#pfAdm");ad&&ad.addEventListener("click",()=>{sfx.tap();openAdmin()});
   $("#pfSet").addEventListener("click",()=>{sfx.tap();openSettings()})}
 function openProfileEditor(){
   const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
@@ -1741,7 +1742,6 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
 const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
 function chartsHTML(){const demo=CAP.series?"":"<em>демо</em>";return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги${demo}</div></div>${chBody(HM,"График капитализации проекта в деньгах",1)}<div class="chc-s" data-s></div></div>
   <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс${demo}</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
     <div class="chc-s" data-s></div><p class="chc-n">Активность игроков превращается в ресурс ${CAP.res}: ${CAP.rate}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
 function initCharts(root){
@@ -1772,32 +1772,6 @@ function initCharts(root){
   const goal=(el,v)=>{const g=GOALS.find(x=>x>v);if(!g){el.innerHTML='<div class="chc-gh"><span>Все цели достигнуты</span><b>★</b></div>';return}
     const pc=v/g*100;el.innerHTML=`<div class="chc-gh"><span>Следующая цель</span><b>${nf(g)} ${CAP.cur}</b></div><div class="chc-gb"><i style="--w:0%"></i></div><div class="chc-gp">${pc<1&&v>0?"меньше 1":pc.toFixed(pc<10?1:0).replace(".",",")}% · осталось ${nf(g-v)} ${CAP.cur}</div>`;
     const bar=el.querySelector("i");requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.setProperty("--w",Math.max(3,pc)+"%")))};
-  /* 1: деньги */
-  wire(root.querySelector("#chM"),(pi,svg,box)=>{
-    const H=HM,pts=getMoney(pi),n=pts.length;if(n<2){empty(box,svg,H);return}
-    const pl=6,pr=46,pt=18,pb=22,vs=pts.map(p=>p.v),mx=Math.max(...vs),sc=scaleOf(vs),lo=sc.lo,hi=sc.hi,
-      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo)),xs=vs.map((_,i)=>X(i)),ys=vs.map(Y),d=curve(xs,ys),
-      last=vs[n-1],up=last>=vs[0],dc=last>0&&!up?"#ff5e7a":"#5dff8a",ly=ys[n-1],lx=xs[n-1],dr=anim()?" dr":"",fi=anim()?" fi":"",
-      fz=vs.findIndex(v=>v>0),pk=vs.indexOf(mx);
-    let g="";sticks(sc).forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#2a1f5e"}" ${v===lo?"":'stroke-dasharray="2 4"'}/><text x="${W-pr+5}" y="${y+4}">${fv(v)}</text>`});
-    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-5}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${pts[i].t}</text>`).join("");
-    let extra="";
-    if(mx<=0){const gy=H-pb,gh=(H-pt-pb)*.55;extra=`<path class="gh${fi}" d="${ghost(xs,gy,gh)}" fill="none" stroke="#a56bff" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
-      <text class="hd" x="${(pl+W-pr)/2}" y="${pt+(H-pt-pb)*.3}" text-anchor="middle">Старт проекта</text><text class="hs" x="${(pl+W-pr)/2}" y="${pt+(H-pt-pb)*.3+17}" text-anchor="middle">линия оживёт с первой игры</text>`}
-    else{if(fz>0){const r=xs[fz]>W-pr-60;extra+=`<circle cx="${xs[fz]}" cy="${ys[fz]}" r="3.5" fill="#ffd23f" class="glow"/><text class="tt" x="${xs[fz]+(r?4:-4)}" y="${ys[fz]-11}" text-anchor="${r?"start":"end"}">Старт</text>`}
-      if(pk<n-1&&mx>last)extra+=star(xs[pk],ys[pk]-1)}
-    svg.innerHTML=`<defs><linearGradient id="mL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ff5ec4"/><stop offset=".55" stop-color="#8a52f5"/><stop offset="1" stop-color="#3b9bff"/></linearGradient>
-      <linearGradient id="mA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a52f5" stop-opacity=".5"/><stop offset="1" stop-color="#8a52f5" stop-opacity="0"/></linearGradient></defs>${g}${tx}
-      <path class="${fi}" d="${d}L${lx} ${H-pb}L${xs[0]} ${H-pb}Z" fill="url(#mA${pi})"/>${extra}
-      <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#mL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="${pl}" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${dc}" stroke-dasharray="3 3" opacity=".55"/>
-      <circle class="pul" cx="${lx}" cy="${ly}" r="9" fill="${dc}" opacity=".4"/><circle cx="${lx}" cy="${ly}" r="4" fill="${dc}" stroke="#fff" stroke-width="1.5"/>
-      <rect x="${W-pr}" y="${ly-8}" width="${pr}" height="16" fill="${dc}"/><text x="${W-pr+4}" y="${ly+4}" style="fill:#0c0620;font-weight:700">${fv(last)}</text>
-      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#8a52f5" stroke-width="2.5"/></g>`;
-    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");
-    box.querySelector("[data-v]").textContent=fx(last)+" "+CAP.cur;delta(box.querySelector("[data-d]"),vs[0],last,"за "+PER[pi][0],CAP.cur);goal(box.querySelector("[data-g]"),last);
-    box.querySelector("[data-s]").innerHTML=`<div><b>${fv(mx)}</b><span>Максимум</span></div><div><b>${fv(Math.min(...vs))}</b><span>Минимум</span></div><div><b>${fv(vs.reduce((a,b)=>a+b,0)/n)}</b><span>Среднее</span></div>`;
-    attach(box,svg,n,pl,pr,i=>{G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);return{x:xs[i],html:`<span>${pts[i].t}</span><b>${fx(vs[i])} ${CAP.cur}</b>`}},()=>{G.style.display="none"})});
   /* 2: активность (столбцы сверху) и капитализация актива (линия снизу) на общей оси времени */
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
@@ -1825,7 +1799,7 @@ function initCharts(root){
     attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);brs.forEach((b,j)=>b.classList.toggle("hl",j===i));
       return{x:xs[i],html:`<span>${o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} игр · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
 
-/* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
+/* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
 function renderClub(){
   clearInterval(homeT);
   clubEl.innerHTML=`<div class="cl-hero enter" style="--i:.04s">
@@ -1836,12 +1810,32 @@ function renderClub(){
     <h2 class="cl-slogan"><span>Игру может</span><em>сделать каждый</em></h2>
   </div>
   <div class="cl-btns enter" style="--i:.08s">
-    <div class="lw bo"><a class="lbtn big" style="--lc:#ff8a3d" href="${LINKS.boosty}" target="_blank" rel="noopener" data-l="1">${IC.heart}Boosty</a></div>
+    <div class="lw bo"><button class="lbtn big" id="helpBtn" type="button" style="--lc:#ff8a3d;width:100%">${IC.heart}Помочь</button></div>
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
     <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}`;
   initCharts(clubEl);
-  clubEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
+  clubEl.querySelector("#helpBtn").addEventListener("click",()=>{sfx.tap();openHelp()});
+}
+/* Help window: TRON (TRC20) USDT address + copy */
+function openHelp(){
+  const ok=/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(WALLET.addr);
+  openSheet(`<div class="ph"><h2 id="sheetTitle">Помочь</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
+  <div class="pbody" lang="ru">
+    <p style="font-size:19px;line-height:1.35;color:var(--dim);margin-bottom:14px">Если хотите поддержать проект, отправьте <b style="color:#fff">${WALLET.coin}</b> в сети <b style="color:#fff">${WALLET.net}</b>. Спасибо!</p>
+    ${ok?`<span class="lbl">Адрес кошелька · ${WALLET.coin} · ${WALLET.net}</span>
+    <div id="walAddr" style="margin-top:8px;padding:14px;background:#120a2a;border:3px solid var(--line);font-size:19px;line-height:1.3;word-break:break-all;user-select:all;-webkit-user-select:all;color:#fff">${WALLET.addr}</div>
+    <p style="margin-top:12px;font-size:16px;line-height:1.35;color:#ff9aa8">Отправляйте только USDT по сети TRON (TRC20). Другие сети и монеты будут потеряны.</p>`
+    :`<p style="padding:14px;background:#120a2a;border:3px solid var(--line);font-size:19px">Адрес пока не добавлен.</p>`}
+  </div>
+  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Закрыть</button>${ok?'<button class="btn" id="walCopy" type="button">Скопировать</button>':""}</div></div>`);
+  const cp=$("#walCopy");if(!cp)return;
+  cp.addEventListener("click",async()=>{
+    let done=false;
+    try{await navigator.clipboard.writeText(WALLET.addr);done=true}catch(e){}
+    if(!done){try{const t=document.createElement("textarea");t.value=WALLET.addr;t.style.cssText="position:fixed;opacity:0;left:-999px";document.body.append(t);t.select();done=document.execCommand("copy");t.remove()}catch(e){}}
+    if(!done){try{const r=document.createRange();r.selectNodeContents($("#walAddr"));const sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(e){}}
+    toast(done?"Адрес скопирован":"Выделите адрес и скопируйте вручную");sfx.tap()});
 }
 
 function addCard(){
@@ -2298,6 +2292,92 @@ $("#dlbtn").addEventListener("click",()=>{if(!PG)return;const d=DATA.find(x=>x.i
       m.append(c);setTimeout(()=>c.remove(),900)}})})();
 
 /* ============ boot ============ */
+/* ============ game submissions: send form, my requests, admin panel ============
+   SUB_API="" -> demo mode: everything is kept in this browser's localStorage (admin sees only local requests).
+   For real requests from all players set SUB_API to your backend: GET /subs, POST /subs, PATCH /subs/:id (JSON, header X-Tg-Init = Telegram initData; check admin rights on the SERVER).
+   ADMIN_IDS = Telegram user ids allowed to see the admin button. Outside Telegram (browser test) the button is shown for demo. */
+const SUB_API="",ADMIN_IDS=[],SUB_MAX=1500000;
+const SST={new:{t:"Не просмотрено",c:"#ffb23f"},seen:{t:"Просмотрено",c:"#4dd2ff"},pub:{t:"Опубликовано",c:"#5dff8a"}};
+const tgU=()=>{try{return Telegram.WebApp.initDataUnsafe.user||null}catch(e){return null}};
+const meId=()=>String((tgU()&&tgU().id)||"local");
+const isAdmin=()=>{const u=tgU();return u?ADMIN_IDS.includes(u.id):true};
+const SUBS={async list(){if(SUB_API){const r=await fetch(SUB_API+"/subs",{headers:{"X-Tg-Init":(window.Telegram&&Telegram.WebApp.initData)||""}});return r.json()}
+    try{return JSON.parse(localStorage.getItem("am.subs.v1")||"[]")}catch(e){return[]}},
+  async save(all){localStorage.setItem("am.subs.v1",JSON.stringify(all))},
+  async add(s){if(SUB_API){await fetch(SUB_API+"/subs",{method:"POST",headers:{"Content-Type":"application/json","X-Tg-Init":(window.Telegram&&Telegram.WebApp.initData)||""},body:JSON.stringify(s)});return}
+    const a=await this.list();a.unshift(s);await this.save(a)},
+  async upd(id,p){if(SUB_API){await fetch(SUB_API+"/subs/"+id,{method:"PATCH",headers:{"Content-Type":"application/json","X-Tg-Init":(window.Telegram&&Telegram.WebApp.initData)||""},body:JSON.stringify(p)});return}
+    const a=await this.list(),s=a.find(x=>x.id===id);if(s)Object.assign(s,p,{upd:Date.now()});await this.save(a)}};
+{const st=document.createElement("style");st.textContent=`.sb{display:inline-block;padding:2px 10px;font-size:15px;font-weight:700;text-transform:uppercase;color:#140a28;background:var(--c)}
+.sbi{display:block;width:100%;text-align:left;margin-top:10px;padding:12px 14px;background:#120a2a;border:3px solid var(--line);border-left:8px solid var(--c)}
+.sbi h4{font-size:21px;margin:6px 0 2px}.sbi p{font-size:16px;color:var(--dim);margin:0}.sbi .cm{margin-top:6px;color:#fff;font-size:17px}
+.sbc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.sbc .chip[aria-pressed=true]{background:var(--acc);color:#140a28}
+.sbt{width:100%;min-height:90px;padding:10px 14px;font:inherit;font-size:19px;color:#fff;background:#120a2a;border:3px solid var(--line);border-radius:0;outline:none;resize:vertical}
+.sbk{font-size:17px;line-height:1.4;color:var(--dim)}.sbk b{color:#fff}`;document.head.append(st)}
+const sbBadge=k=>`<span class="sb" style="--c:${SST[k].c}">${SST[k].t}</span>`;
+const sbHead=(t,back)=>`<div class="ph"><h2 id="sheetTitle">${t}</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>`;
+function openSubmit(){
+  const G=["Arcade","Music","Shooter","Puzzle","Other"];let file=null;
+  openSheet(sbHead("Отправить игру")+`<div class="pbody" lang="ru">
+    <p class="sbk" style="margin-bottom:8px">Расскажите про игру и загрузите один HTML-файл (до 1,5 МБ). Мы посмотрим и ответим статусом и комментарием.</p>
+    <label class="fld"><span class="lbl">Название *</span><input class="in" id="sbT" maxlength="40" placeholder="Название игры"></label>
+    <label class="fld"><span class="lbl">Жанр</span><select class="in" id="sbG">${G.map(g=>`<option>${g}</option>`).join("")}</select></label>
+    <label class="fld"><span class="lbl">Описание *</span><textarea class="sbt" id="sbD" maxlength="600" placeholder="О чём игра, как играть, что внутри"></textarea></label>
+    <label class="fld"><span class="lbl">Версия</span><input class="in" id="sbV" maxlength="12" value="0.1"></label>
+    <label class="fld"><span class="lbl">Контакт (Telegram или почта)</span><input class="in" id="sbC" maxlength="60" placeholder="@username"></label>
+    <div class="fld"><span class="lbl">HTML-файл *</span><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer;width:100%"><span id="sbFN">Выбрать файл</span><input type="file" id="sbF" accept=".html,.htm,text/html" hidden></label></div>
+    <p class="sbk" id="sbErr" style="color:#ff9aa8;min-height:20px;margin-top:8px"></p></div>
+  <div class="pfoot"><div class="row"><button class="btn ghost" id="sbMine" type="button">Мои заявки</button><button class="btn" id="sbSend" type="button">Отправить</button></div></div>`);
+  const err=m=>{$("#sbErr").textContent=m};
+  $("#sbF").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
+    if(f.size>SUB_MAX){err("Файл больше 1,5 МБ");e.target.value="";return}
+    const r=new FileReader();r.onload=()=>{file={name:f.name,size:f.size,text:String(r.result)};$("#sbFN").textContent=f.name+" · "+Math.round(f.size/1024)+" КБ";err("")};r.readAsText(f)});
+  $("#sbMine").addEventListener("click",()=>{sfx.tap();openMine()});
+  $("#sbSend").addEventListener("click",async()=>{
+    const t=$("#sbT").value.trim(),d=$("#sbD").value.trim();
+    if(!t||!d){err("Заполните название и описание");return}
+    if(!file||!/<(html|body|script|canvas)/i.test(file.text)){err("Загрузите корректный HTML-файл");return}
+    const s={id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),authorId:meId(),author:PROF.name,tg:(tgU()&&tgU().username)||"",
+      title:t,genre:$("#sbG").value,desc:d,ver:$("#sbV").value.trim()||"0.1",contact:$("#sbC").value.trim(),file,at:Date.now(),status:"new",comment:"",upd:Date.now()};
+    try{await SUBS.add(s)}catch(e){err("Не удалось сохранить заявку (мало места или нет связи)");return}
+    sfx.tap();toast("Заявка отправлена");openMine()})}
+async function openMine(){
+  const all=(await SUBS.list()).filter(s=>s.authorId===meId());
+  openSheet(sbHead("Мои заявки")+`<div class="pbody" lang="ru">${all.length?all.map(s=>`<div class="sbi" style="--c:${SST[s.status].c}">${sbBadge(s.status)}<h4>${esc(s.title)}</h4><p>${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}</p>${s.comment?`<p class="cm">Комментарий: ${esc(s.comment)}</p>`:""}</div>`).join(""):`<p class="sbk">Заявок пока нет.</p>`}</div>
+  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Закрыть</button><button class="btn" id="sbNew" type="button">Новая заявка</button></div></div>`);
+  $("#sbNew").addEventListener("click",()=>{sfx.tap();openSubmit()})}
+async function openAdmin(){
+  let all=[],q="",f="all",cur=null;
+  const draw=()=>{
+    if(cur){const s=all.find(x=>x.id===cur);let st=s.status;
+      panel.innerHTML=sbHead("Заявка")+`<div class="pbody" lang="ru">${sbBadge(s.status)}<h3 style="margin:8px 0 2px;font-size:26px">${esc(s.title)}</h3>
+      <p class="sbk"><b>Автор:</b> ${esc(s.author)}${s.tg?" (@"+esc(s.tg)+")":""} · id ${esc(s.authorId)}<br><b>Контакт:</b> ${esc(s.contact||"—")}<br><b>Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}<br><b>Файл:</b> ${esc(s.file.name)} · ${Math.round(s.file.size/1024)} КБ</p>
+      <p style="font-size:19px;line-height:1.35;margin:10px 0;white-space:pre-wrap">${esc(s.desc)}</p>
+      <div class="row" style="margin:6px 0"><button class="btn ghost" id="adOpen" type="button">Открыть HTML</button><button class="btn ghost" id="adDl" type="button">Скачать</button></div>
+      <span class="lbl">Статус</span><div class="sbc" id="adSt">${Object.keys(SST).map(k=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${k===st}">${SST[k].t}</button>`).join("")}</div>
+      <span class="lbl">Комментарий автору</span><textarea class="sbt" id="adCm" maxlength="400" placeholder="Что поправить или почему принято">${esc(s.comment||"")}</textarea></div>
+      <div class="pfoot"><div class="row"><button class="btn ghost" id="adBack" type="button">Назад</button><button class="btn" id="adSave" type="button">Сохранить</button></div></div>`;
+      const blob=()=>URL.createObjectURL(new Blob([s.file.text],{type:"text/html"}));
+      $("#adOpen").onclick=()=>window.open(blob(),"_blank");
+      $("#adDl").onclick=()=>{const a=document.createElement("a");a.href=blob();a.download=s.file.name;a.click()};
+      $("#adSt").onclick=e=>{const b=e.target.closest("button");if(!b)return;st=b.dataset.k;panel.querySelectorAll("#adSt .chip").forEach(x=>x.setAttribute("aria-pressed",x===b));sfx.tap()};
+      $("#adBack").onclick=()=>{cur=null;draw()};
+      $("#adSave").onclick=async()=>{const p={status:st,comment:$("#adCm").value.trim()};await SUBS.upd(s.id,p);Object.assign(s,p);toast("Сохранено");sfx.tap();cur=null;draw()};
+    }else{
+      const ql=q.toLowerCase(),list=all.filter(s=>(f==="all"||s.status===f)&&(!ql||[s.title,s.author,s.tg,s.contact,s.genre,s.authorId].join(" ").toLowerCase().includes(ql)));
+      const cnt=k=>k==="all"?all.length:all.filter(s=>s.status===k).length;
+      panel.innerHTML=sbHead("Админ-панель")+`<div class="pbody" lang="ru"><input class="in" id="adQ" type="search" placeholder="Поиск: игра, автор, контакт" value="${esc(q)}" autocomplete="off">
+      <div class="sbc" id="adF">${["all",...Object.keys(SST)].map(k=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${k===f}">${k==="all"?"Все":SST[k].t} · ${cnt(k)}</button>`).join("")}</div>
+      <div id="adL">${list.length?list.map(s=>`<button type="button" class="sbi" data-id="${s.id}" style="--c:${SST[s.status].c}">${sbBadge(s.status)}<h4>${esc(s.title)}</h4><p>${esc(s.author)} · ${esc(s.genre)} · ${fmtDate(s.at)}</p></button>`).join(""):`<p class="sbk" style="margin-top:12px">Ничего не найдено.</p>`}</div></div>
+      <div class="pfoot"><div class="row"><button class="btn" data-close>Закрыть</button></div></div>`;
+      const inp=$("#adQ");inp.oninput=e=>{q=e.target.value;const p=inp.selectionStart;draw();const n=$("#adQ");n.focus();n.setSelectionRange(p,p)};
+      $("#adF").onclick=e=>{const b=e.target.closest("button");if(!b)return;f=b.dataset.k;sfx.tap();draw()};
+      $("#adL").onclick=e=>{const b=e.target.closest(".sbi");if(!b)return;cur=b.dataset.id;sfx.tap();draw()}}
+    fitSheet()};
+  openSheet(sbHead("Админ-панель")+`<div class="pbody"><p class="sbk">Загрузка…</p></div>`);
+  try{all=await SUBS.list()}catch(e){}
+  draw()}
+
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
