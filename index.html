@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
 <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.tgInit&&tgInit()"></script>
 <script>window.tgInit=function(){try{var w=window.Telegram&&Telegram.WebApp;if(!w||!(w.initData||(w.platform&&w.platform!=="unknown")))return;document.documentElement.classList.add("tg");
@@ -46,6 +46,7 @@ svg{display:block}
 body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.10) 2px 3px)}
 
+html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .app{position:relative;z-index:1;width:var(--col);margin:0 auto;padding:6px 0 140px}
 
 /* ---------- header ---------- */
@@ -322,6 +323,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .btn{flex:1;height:54px;font-size:22px;font-weight:600;text-transform:uppercase;color:#140a28;background:linear-gradient(#cfb0ff,#9a63ff);
   clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);transition:.12s}
 .btn:hover{filter:brightness(1.1)}.btn:active{transform:translateY(3px)}
+.cm-more{display:flex;width:100%;height:46px;margin:14px 0 0;font-size:18px;align-items:center;justify-content:center}.cm-more[hidden]{display:none}
 .btn.ghost{flex:0 0 auto;padding:0 20px;background:#2a1a66;color:#e5d6ff}
 .btn.danger{background:#ff5c7a;color:#2a0510}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px 4px;font-size:21px;border-bottom:2px solid #2a1a66;text-align:left}
@@ -451,7 +453,7 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .desc{font-size:21px;line-height:1.35;color:#e5d9ff;white-space:pre-line;overflow-wrap:anywhere}.desc.dim{color:var(--dim)}
 .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .tag{height:32px;padding:0 14px;display:flex;align-items:center;font-size:17px;border:2px solid var(--c1);color:var(--c3);border-radius:16px;background:color-mix(in srgb,var(--c2) 60%,#000)}
-.cm{display:grid;grid-template-columns:40px 1fr;gap:12px;padding:14px 0;border-bottom:2px solid #2a1a66}
+.cm{content-visibility:auto;contain-intrinsic-size:auto 92px;display:grid;grid-template-columns:40px 1fr;gap:12px;padding:14px 0;border-bottom:2px solid #2a1a66}
 .av{width:40px;height:40px;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:22px;color:#140a28;background:var(--hc);
   clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px)}
 .cm-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:19px}.cm-h b{font-weight:600;color:#fff}
@@ -470,6 +472,9 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .bigplay{width:100%;height:64px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#140a28;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c1) 65%,#fff),var(--c1) 50%,color-mix(in srgb,var(--c1) 70%,#000));
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);transition:transform .12s,filter .2s}
+.pbar{display:flex;gap:10px}.pbar .bigplay{flex:1 1 0;width:auto;min-width:0;height:54px;font-size:21px;gap:8px;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
+.pbar .bigplay svg{width:22px;height:22px}
+.pbar .dlbtn,.pbar .dlbtn:hover{background:#2a1a66;color:#e5d6ff}.pbar .dlbtn svg{fill:#e5d6ff}
 .bigplay svg{width:26px;height:26px;fill:#140a28}.bigplay:hover{filter:brightness(1.1)}.bigplay:active{transform:translateY(4px)}
 
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
@@ -634,7 +639,7 @@ body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
 .prof{display:none}
 body.onprof .prof{display:flex;flex-direction:column;gap:10px;padding-top:2px}
 body.onprof .tabs,body.onprof .list,body.onprof .home,body.onprof .club,body.onprof .sbar{display:none}
-body.onprof .top{display:none}
+body:not(.onhome) .top{display:none}
 .prof .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .pf-card{--pc:#a56bff;position:relative;padding:3px;background:linear-gradient(160deg,#6a4fd0,#2a1a66);filter:drop-shadow(0 0 14px rgba(165,107,255,.4));
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
@@ -711,22 +716,35 @@ body.onprof .top{display:none}
 
 
 /* ---------- графики капитализации (вкладка кубка) ---------- */
-.chc{padding:10px 12px 10px;background:#150d33;border:3px solid var(--line)}
+.chc{padding:12px 12px 12px;background:linear-gradient(180deg,#171040,#120a2c);border:3px solid var(--line)}
 .chc-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.chc-t{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
-.chc-t{white-space:nowrap}.chc-t em{font-style:normal;margin-left:4px;padding:0 6px;font-size:11px;color:#ffb23f;border:1px solid #ffb23f66}
-.chc-v{white-space:nowrap;font-size:28px;font-weight:700;line-height:1.05;color:#fff;margin-top:2px}
-.chc-d{font-size:15px;margin-top:1px}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
-.chc-p{display:flex;gap:3px;flex:none}
-.chc-p button{height:26px;padding:0 6px;font-size:13px;color:var(--dim);background:#120a2a;border:2px solid var(--line)}
-.chc-p button[aria-pressed=true]{color:#140a28;background:#b98bff;border-color:#b98bff}
-.chc svg{display:block;width:100%;height:auto;margin-top:6px;touch-action:pan-y;-webkit-user-select:none;user-select:none}
-.chc svg text{font-family:"Tektur",ui-monospace,monospace;fill:#8f82c4;font-size:9px}
-.chc-i{min-height:18px;margin-top:2px;font-size:14px;color:#e5d9ff}
-.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;padding-top:7px;border-top:2px dashed #2f2360;text-align:center}
-.chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
-.chc-n{margin-top:6px;font-size:12px;line-height:1.25;color:var(--dim)}
+.chc-t{white-space:nowrap;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#cdbfff;font-weight:700}
+.chc-t em{font-style:normal;margin-left:6px;padding:0 6px;font-size:11px;font-weight:500;color:#ffb23f;border:1px solid #ffb23f66}
+.chc-v{white-space:nowrap;font-size:32px;font-weight:700;line-height:1.05;color:#fff;margin-top:6px;text-shadow:0 0 18px rgba(165,107,255,.45)}
+.chc-d{font-size:16px;margin-top:2px;font-weight:500}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
+.chc-p{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;padding:4px;background:#0d0724;border:2px solid #2a1f5e}
+.chc-p button{height:34px;font-size:15px;font-weight:500;color:var(--dim);background:transparent;border:0;transition:background .18s,color .18s}
+.chc-p button[aria-pressed=true]{color:#140a28;font-weight:700;background:linear-gradient(90deg,#ff8fd8,#a56bff 55%,#6fa2ff)}
+.chw{position:relative;margin-top:10px}
+.chc svg{display:block;width:100%;height:auto;touch-action:pan-y;-webkit-user-select:none;user-select:none;overflow:visible}
+.chc svg text{font-family:"Tektur",ui-monospace,monospace;fill:#8f82c4;font-size:11px}
+.chc svg text.pt{fill:#cdbfff;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.chc .glow{filter:drop-shadow(0 0 5px rgba(165,107,255,.75))}
+.chc .bar{opacity:.82;transition:opacity .12s}.chc .bar.hl{opacity:1;stroke:#fff;stroke-width:1}
+.chc .dr{stroke-dasharray:1;stroke-dashoffset:1;animation:chdraw 1s cubic-bezier(.3,.7,.2,1) forwards}
+.chc .fi{animation:chfade .9s ease both}
+.chc .pul{transform-box:fill-box;transform-origin:center;animation:chpul 1.8s ease-out infinite}
+@keyframes chdraw{to{stroke-dashoffset:0}}@keyframes chfade{from{opacity:0}}
+@keyframes chpul{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+.chc-tip{position:absolute;top:-4px;left:0;z-index:2;pointer-events:none;min-width:104px;padding:6px 10px;background:rgba(24,14,64,.96);border:2px solid #7a58e0;color:#fff;font-size:14px;line-height:1.35;white-space:nowrap;opacity:0;transition:opacity .12s}
+.chc-tip.on{opacity:1}.chc-tip span{display:block;font-size:12px;color:#a99be0}.chc-tip b{display:block;font-size:16px;color:#fff}.chc-tip i{font-style:normal;color:#cdbfff}
+.chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
+.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:9px;border-top:2px dashed #2f2360;text-align:center}
+.chc-s b{display:block;font-size:19px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.chc-n{margin-top:8px;font-size:13px;line-height:1.3;color:var(--dim)}
 .chc+.chc{margin-top:12px}
+[data-q="0"] .chc .glow{filter:none}[data-q="0"] .chc .dr,[data-q="0"] .chc .fi,[data-q="0"] .chc .pul{animation:none}[data-q="0"] .chc .dr{stroke-dashoffset:0}
+@media (prefers-reduced-motion:reduce){.chc .dr,.chc .fi,.chc .pul{animation:none}.chc .dr{stroke-dashoffset:0}}
 
 /* ---------- club tab ---------- */
 .club{display:none}
@@ -808,7 +826,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
 </div>
 <div class="page" id="page" aria-hidden="true" role="dialog" aria-modal="true" aria-label="App page">
   <div id="pgBody"></div><div class="pfade"></div>
-  <div class="pbar"><button class="bigplay" id="bigplay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.6v18.8L21 12z"/></svg>Играть в бету</button></div>
+  <div class="pbar"><button class="bigplay" id="bigplay" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.6v18.8L21 12z"/></svg>Играть</button><button class="bigplay dlbtn" id="dlbtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3h3v8.2l3.1-3.1 2.1 2.1L12 16.9 5.3 10.2l2.1-2.1 3.1 3.1zM4 18h16v3H4z"/></svg>Скачать</button></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -1541,46 +1559,81 @@ function mkAct(pi){const [,n,seed,vol,tr,step]=PER[pi],r=rng(seed*13+5),per=Math
   let res=CAP.now/1.8*Math.pow(.62,Math.max(0,PER[3][1]-n)/20),out=[];
   for(let i=0;i<n;i++){const a=Math.round(base*(.55+r()*.9)*(1+i/n*.5));res+=a*5+Math.round(a*.08)*20;const price=1.1+i/n*.4+a/(base*3)*.2;out.push({a,res,cap:res*price,t:lbl(i,n,step)})}
   const k=CAP.now*1.35/out[n-1].cap;out.forEach(o=>o.cap*=k);return out}
-function area(pts,W,H,pl,pr,pt,pb,key,lo,hi){const x=i=>pl+(W-pl-pr)*i/(pts.length-1),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo||1));return{x,y,d:pts.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(p[key]).toFixed(1)).join("")}}
-function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги<em>демо</em></div><div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div></div><div class="chc-v" data-v></div><div class="chc-d" data-d></div>
-    <svg viewBox="0 0 340 150" role="img" aria-label="График капитализации проекта в деньгах"></svg><div class="chc-i" data-info></div></div>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс<em>демо</em></div><div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div></div><div class="chc-v" data-v></div><div class="chc-d" data-d></div>
-    <svg viewBox="0 0 340 150" role="img" aria-label="График: активность игроков, ресурс и капитализация актива"></svg><div class="chc-i" data-info></div>
+const HM=210,HA=304,CW=340;
+/* реальные данные: CAP.series={money:[[{v,t}…] на каждый период],act:[[{a,res,cap,t}…]]}; без series показываются демо-данные */
+const getMoney=pi=>CAP.series?((CAP.series.money||[])[pi]||[]):mkMoney(pi);
+const getAct=pi=>CAP.series?((CAP.series.act||[])[pi]||[]):mkAct(pi);
+/* плавная монотонная кривая (без «перелётов» между точками) */
+function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((x,i)=>(i?"L":"M")+f(x)+" "+f(ys[i])).join("");
+  const d=[],m=[];for(let i=0;i<n-1;i++)d[i]=(ys[i+1]-ys[i])/(xs[i+1]-xs[i]);m[0]=d[0];m[n-1]=d[n-2];for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
+  for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
+  let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
+const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
+const chBody=(h,label)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
+function chartsHTML(){const demo=CAP.series?"":"<em>демо</em>";return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
+  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги${demo}</div></div>${chBody(HM,"График капитализации проекта в деньгах")}<div class="chc-s" data-s></div></div>
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс${demo}</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
     <div class="chc-s" data-s></div><p class="chc-n">Активность игроков превращается в ресурс ${CAP.res}: ${CAP.rate}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
 function initCharts(root){
-  const W=340,H=150,NS="http://www.w3.org/2000/svg";
+  const W=CW,NS="http://www.w3.org/2000/svg",anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
-    const run=()=>{box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));draw(pi,svg,box)};
-    box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});run()};
-  const hover=(svg,n,pl,pr,on)=>{const f=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;on(clamp(Math.round((px-pl)/(W-pl-pr)*(n-1)),0,n-1))};
-    svg.onpointermove=f;svg.onpointerdown=f;svg.onpointerleave=()=>on(-1)};
-  /* 1: деньги, как график криптовалюты */
-  wire(root.querySelector("#chM"),(pi,svg,box)=>{const pts=mkMoney(pi),n=pts.length,pl=4,pr=40,pt=8,pb=16,vs=pts.map(p=>p.v),lo=Math.min(...vs)*.97,hi=Math.max(...vs)*1.03;
-    const up=pts[n-1].v>=pts[0].v,col=up?"#5dff8a":"#ff5e7a",a=area(pts,W,H,pl,pr,pt,pb,"v",lo,hi),ch=(pts[n-1].v/pts[0].v-1)*100;
-    let g="";for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=a.y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2f2360" stroke-dasharray="2 3"/><text x="${W-pr+4}" y="${y+3}">${cf(v)}</text>`}
-    const ly=a.y(pts[n-1].v),tx=[0,Math.floor(n/2),n-1].map(i=>`<text x="${a.x(i)}" y="${H-3}" text-anchor="${i?i===n-1?"end":"middle":"start"}">${pts[i].t}</text>`).join("");
-    svg.innerHTML=`<defs><linearGradient id="gm${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".38"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${g}${tx}
-      <path d="${a.d}L${a.x(n-1)} ${H-pb}L${a.x(0)} ${H-pb}Z" fill="url(#gm${pi})"/><path d="${a.d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
-      <line x1="${pl}" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${col}" stroke-dasharray="3 3" opacity=".7"/><rect x="${W-pr}" y="${ly-7}" width="${pr}" height="14" fill="${col}"/><text x="${W-pr+3}" y="${ly+3}" style="fill:#0c0620;font-weight:700">${cf(pts[n-1].v)}</text>
-      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".5"/><circle r="3.5" fill="#fff" stroke="${col}" stroke-width="2"/></g>`;
-    const V=box.querySelector("[data-v]"),D=box.querySelector("[data-d]"),I=box.querySelector("[data-info]"),X=svg.querySelector("[data-x]");
-    V.textContent=nf(pts[n-1].v)+" "+CAP.cur;D.className="chc-d "+(up?"up":"dn");D.textContent=(up?"▲ +":"▼ ")+ch.toFixed(1).replace(".",",")+"% за "+PER[pi][0];I.textContent="Проведите пальцем по графику";
-    hover(svg,n,pl,pr,i=>{if(i<0){X.style.display="none";I.textContent="Проведите пальцем по графику";return}const x=a.x(i),y=a.y(pts[i].v);X.style.display="";X.querySelector("line").setAttribute("x1",x);X.querySelector("line").setAttribute("x2",x);X.querySelector("circle").setAttribute("cx",x);X.querySelector("circle").setAttribute("cy",y);I.textContent=pts[i].t+" · "+nf(pts[i].v)+" "+CAP.cur})});
-  /* 2: активность игроков → ресурс → кап актива */
-  wire(root.querySelector("#chA"),(pi,svg,box)=>{const d=mkAct(pi),n=d.length,pl=4,pr=40,pt=8,pb=16,mx=Math.max(...d.map(o=>o.a)),cv=d.map(o=>o.cap),lo=Math.min(...cv)*.9,hi=Math.max(...cv)*1.03;
-    const a=area(d,W,H,pl,pr,pt,pb,"cap",lo,hi),bw=(W-pl-pr)/n*.62,col="#ffb23f";let g="";
-    for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=a.y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2f2360" stroke-dasharray="2 3"/><text x="${W-pr+4}" y="${y+3}">${cf(v)}</text>`}
-    const bars=d.map((o,i)=>{const h=(H-pt-pb)*.42*o.a/mx;return `<rect x="${a.x(i)-bw/2}" y="${H-pb-h}" width="${bw}" height="${h}" fill="#8a52f5" opacity=".75"/>`}).join("");
-    const tx=[0,Math.floor(n/2),n-1].map(i=>`<text x="${a.x(i)}" y="${H-3}" text-anchor="${i?i===n-1?"end":"middle":"start"}">${d[i].t}</text>`).join("");
-    svg.innerHTML=`<defs><linearGradient id="ga${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".3"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}
-      <path d="${a.d}L${a.x(n-1)} ${H-pb}L${a.x(0)} ${H-pb}Z" fill="url(#ga${pi})"/><path d="${a.d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
-      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".5"/><circle r="3.5" fill="#fff" stroke="${col}" stroke-width="2"/></g>`;
-    const V=box.querySelector("[data-v]"),D=box.querySelector("[data-d]"),I=box.querySelector("[data-info]"),X=svg.querySelector("[data-x]"),S=box.querySelector("[data-s]"),last=d[n-1],tot=d.reduce((s,o)=>s+o.a,0),ch=(last.cap/d[0].cap-1)*100;
-    V.textContent=nf(last.cap)+" "+CAP.cur;D.className="chc-d up";D.textContent="▲ +"+ch.toFixed(1).replace(".",",")+"% капитализация актива";
-    S.innerHTML=`<div><b>${nf(tot)}</b><span>Активность, игр</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
-    const idle=()=>{I.innerHTML='<span style="color:#8a52f5">▮</span> активность &nbsp; <span style="color:#ffb23f">▬</span> кап актива'};idle();
-    hover(svg,n,pl,pr,i=>{if(i<0){X.style.display="none";idle();return}const o=d[i];X.style.display="";X.querySelector("line").setAttribute("x1",a.x(i));X.querySelector("line").setAttribute("x2",a.x(i));X.querySelector("circle").setAttribute("cx",a.x(i));X.querySelector("circle").setAttribute("cy",a.y(o.cap));I.textContent=o.t+" · "+o.a+" игр · "+nf(o.res)+" "+CAP.res+" · "+nf(o.cap)+" "+CAP.cur})})}
+    const run=()=>{box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
+    box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});
+    const out=e=>{if(!box.isConnected){document.removeEventListener("pointerdown",out);return}if(!e.target.closest||e.target.closest("svg")!==svg)box._off&&box._off()};document.addEventListener("pointerdown",out);run()};
+  /* ведение пальцем: плашка с цифрами остаётся после отрыва пальца, скрывается касанием вне графика; мышь: наведение показывает, клик закрепляет */
+  const attach=(box,svg,n,pl,pr,show,hide)=>{const tip=box.querySelector("[data-tip]");let pin=false;
+    const idx=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;return clamp(Math.round((px-pl)/(W-pl-pr)*(n-1)),0,n-1)};
+    const go=i=>{box.classList.add("used");const o=show(i);tip.innerHTML=o.html;tip.classList.add("on");
+      const sw=svg.clientWidth,w=tip.offsetWidth,px=o.x/W*sw;tip.style.left=clamp(px-w/2,0,Math.max(0,sw-w))+"px"};
+    const off=()=>{pin=false;tip.classList.remove("on");hide()};box._off=off;
+    svg.onpointerdown=e=>{pin=true;go(idx(e))};svg.onpointermove=e=>{if(e.pointerType==="mouse"||pin)go(idx(e))};
+    svg.onpointerleave=e=>{if(e.pointerType==="mouse"&&!pin)off()}};
+  const ticks=n=>[...new Set([0,.25,.5,.75,1].map(k=>Math.round(k*(n-1))))];
+  const empty=(box,svg,h)=>{svg.innerHTML=`<text x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";box._off=null};
+  const delta=(el,ch,tail)=>{const up=ch>=0;el.className="chc-d "+(up?"up":"dn");el.textContent=(up?"▲ +":"▼ ")+Math.abs(ch).toFixed(1).replace(".",",")+"% "+tail;return up};
+  /* 1: деньги */
+  wire(root.querySelector("#chM"),(pi,svg,box)=>{
+    const H=HM,pts=getMoney(pi),n=pts.length;if(n<2){empty(box,svg,H);return}
+    const pl=6,pr=46,pt=16,pb=22,vs=pts.map(p=>p.v),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn||mx||1)*.12,lo=mn-pad,hi=mx+pad,
+      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo)),xs=vs.map((_,i)=>X(i)),ys=vs.map(Y),d=curve(xs,ys),
+      up=vs[n-1]>=vs[0],dc=up?"#5dff8a":"#ff5e7a",ly=ys[n-1],lx=xs[n-1],dr=anim()?" dr":"",fi=anim()?" fi":"";
+    let g="";for(let k=0;k<5;k++){const v=lo+(hi-lo)*k/4,y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${y+4}">${cf(v)}</text>`}
+    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-5}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${pts[i].t}</text>`).join("");
+    svg.innerHTML=`<defs><linearGradient id="mL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ff5ec4"/><stop offset=".55" stop-color="#8a52f5"/><stop offset="1" stop-color="#3b9bff"/></linearGradient>
+      <linearGradient id="mA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a52f5" stop-opacity=".5"/><stop offset="1" stop-color="#8a52f5" stop-opacity="0"/></linearGradient></defs>${g}${tx}
+      <path class="${fi}" d="${d}L${lx} ${H-pb}L${xs[0]} ${H-pb}Z" fill="url(#mA${pi})"/>
+      <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#mL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="${pl}" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${dc}" stroke-dasharray="3 3" opacity=".55"/>
+      <circle class="pul" cx="${lx}" cy="${ly}" r="9" fill="${dc}" opacity=".4"/><circle cx="${lx}" cy="${ly}" r="4" fill="${dc}" stroke="#fff" stroke-width="1.5"/>
+      <rect x="${W-pr}" y="${ly-8}" width="${pr}" height="16" fill="${dc}"/><text x="${W-pr+4}" y="${ly+4}" style="fill:#0c0620;font-weight:700">${cf(vs[n-1])}</text>
+      <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#8a52f5" stroke-width="2.5"/></g>`;
+    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");
+    box.querySelector("[data-v]").textContent=nf(vs[n-1])+" "+CAP.cur;delta(box.querySelector("[data-d]"),(vs[n-1]/vs[0]-1)*100,"за "+PER[pi][0]);
+    box.querySelector("[data-s]").innerHTML=`<div><b>${cf(mx)}</b><span>Максимум</span></div><div><b>${cf(mn)}</b><span>Минимум</span></div><div><b>${cf(vs.reduce((a,b)=>a+b,0)/n)}</b><span>Среднее</span></div>`;
+    attach(box,svg,n,pl,pr,i=>{G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);return{x:xs[i],html:`<span>${pts[i].t}</span><b>${nf(vs[i])} ${CAP.cur}</b>`}},()=>{G.style.display="none"})});
+  /* 2: активность (столбцы сверху) и капитализация актива (линия снизу) на общей оси времени */
+  wire(root.querySelector("#chA"),(pi,svg,box)=>{
+    const H=HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
+    const pl=6,pr=46,aT=24,aB=96,bT=176,bB=H-26,mxA=Math.max(...dt.map(o=>o.a))||1,cv=dt.map(o=>o.cap),mn=Math.min(...cv),mx=Math.max(...cv),pad=(mx-mn||mx||1)*.12,lo=mn-pad,hi=mx+pad,
+      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,(W-pl-pr)/n*.62),
+      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=dt.reduce((s,o)=>s+o.a,0);
+    let g=`<text class="pt" x="${pl}" y="14">Активность · игр</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${cf(mxA)}</text>
+      <line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/><text x="${W-pr+5}" y="${aB+4}">0</text><text class="pt" x="${pl}" y="${bT-14}">Капитализация актива · ${CAP.cur}</text>`;
+    for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${y+4}">${cf(v)}</text>`}
+    const bars=dt.map((o,i)=>{const h=Math.max(1.5,(aB-aT)*o.a/mxA);return `<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="url(#aB${pi})"/>`}).join("");
+    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
+    svg.innerHTML=`<defs><linearGradient id="aB${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a4ff"/><stop offset="1" stop-color="#6a35e0"/></linearGradient>
+      <linearGradient id="aL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ffb23f"/><stop offset=".6" stop-color="#ff7a8a"/><stop offset="1" stop-color="#ff5ec4"/></linearGradient>
+      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".42"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}
+      <path class="${fi}" d="${d}L${xs[n-1]} ${bB}L${xs[0]} ${bB}Z" fill="url(#aA${pi})"/>
+      <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#aL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle class="pul" cx="${xs[n-1]}" cy="${ys[n-1]}" r="9" fill="#ffb23f" opacity=".4"/><circle cx="${xs[n-1]}" cy="${ys[n-1]}" r="4" fill="#ffb23f" stroke="#fff" stroke-width="1.5"/>
+      <g data-x style="display:none"><line y1="${aT}" y2="${bB}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
+    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+8)/H*100)+"%";
+    box.querySelector("[data-v]").textContent=nf(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),(last.cap/dt[0].cap-1)*100,"капитализация за "+PER[pi][0]);
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>Активность, игр</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
+    attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);brs.forEach((b,j)=>b.classList.toggle("hl",j===i));
+      return{x:xs[i],html:`<span>${o.t}</span><b>${nf(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} игр · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
 
 /* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
 function renderClub(){
@@ -1681,9 +1734,9 @@ function openSettings(){
 
 function openEditor(id,preCover){
   const existing=id?DATA.find(d=>d.id===id):null;
-  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0"};
+  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0",downloads:0};
   if(!existing&&!preCover)draft.cover="b:space";
-  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";
+  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";if(draft.downloads==null)draft.downloads=DOWNLOADS[draft.id]||0;
   let cands=[],tags=tagsOf(draft).slice();
   const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
@@ -1703,6 +1756,8 @@ function openEditor(id,preCover){
    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Версия</span><input class="in" id="ver" maxlength="12" placeholder="Например 1.2.0" value="${esc(draft.version||"")}"></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Загрузки</span><input class="in" id="dl" inputmode="numeric" maxlength="9" placeholder="0" value="${draft.downloads||0}"></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Ссылка на скачивание</span><input class="in" id="dlink" maxlength="300" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(draft.link||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="in" id="chg" maxlength="200" rows="3" placeholder="Что нового в этой версии?">${esc(draft.changes||"")}</textarea></label>
    </div>
    <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
@@ -1730,7 +1785,7 @@ function openEditor(id,preCover){
   /* name / description */
   $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
-  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
+  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#dlink").addEventListener("input",e=>{draft.link=e.target.value.trim()});$("#dl").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"");e.target.value=v;draft.downloads=+v||0});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
   /* tags: type + Enter / comma, or tap a suggestion; max 3 */
   const tb=$("#tagbox"),ti=$("#taginp"),sg=$("#sugg");
   const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
@@ -1846,6 +1901,10 @@ const DESC={
  toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nБета-версия: пока без боссов и бонусов.",
  blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
+const DL_LINKS={retro:"",space:"",toxic:"",blocks:""};
+const DOWNLOADS={retro:1280,space:964,toxic:742,blocks:1530};
+const nfmt=n=>(+n||0).toLocaleString("ru-RU");
+const plr=(n,a)=>{n=Math.abs(n)%100;const k=n%10;return n>10&&n<20?a[2]:k>1&&k<5?a[1]:k===1?a[0]:a[2]};
 const VERSIONS={retro:"0.3",space:"0.3",toxic:"0.3",blocks:"0.3"};
 const CHANGES={
   retro:"Скорость растёт после каждой стены\nНовые неоновые кирпичи\nИсправлено залипание платформы",
@@ -1870,12 +1929,14 @@ function pageHTML(m,kind){
   const desc=(m.desc!=null&&m.desc!==""?m.desc:DESC[m.id]||"").trim();
   const author=(m.author||AUTHORS[m.id]||PROF.name||"Неизвестен").trim(),chl=(m.changes!=null&&m.changes!==""?m.changes:CHANGES[m.id]||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4);
   const ver=(m.version!=null&&m.version!==""?m.version:VERSIONS[m.id]||"").toString().trim();
+  const dlN=m.downloads!=null&&m.downloads!==""?+m.downloads:DOWNLOADS[m.id]||0,dl=nfmt(dlN)+" "+plr(dlN,["загрузка","загрузки","загрузок"]);
   return `<div class="pg">
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button>${ver?`<span class="beta">v${esc(ver)}</span>`:""}</div>
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
     <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div>
+    <div class="pg-m"><span id="pgDl">${dl}</span></div>
     <div class="pg-au">Автор: <b>${esc(author)}</b></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
@@ -1887,7 +1948,7 @@ function pageHTML(m,kind){
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
     ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
-  <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><div id="cmList"></div>
+  <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
     <div class="wr"><span class="lbl">Написать отзыв <small>от имени ${esc((PROF.name||"Игрок").trim())}</small></span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div>`}
@@ -1933,14 +1994,17 @@ function bindPage(){
   pk.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;rate=i===rate?0:i;drawPk();sfx.tap()});
   txt.addEventListener("input",()=>{$("#cnt").textContent=txt.value.length+"/240"});
   $("#cmPost").addEventListener("click",()=>{const t=txt.value.trim();if(t.length<2){toast("Напишите пару слов");txt.focus();return}
-    const n=(PROF.name||"").trim()||"Игрок";cmOf(m).unshift({n,r:rate,t,d:Date.now(),me:1});saveCM();
+    const n=(PROF.name||"").trim()||"Игрок";const L=cmOf(m);L.unshift({n,r:rate,t,d:Date.now(),me:1});if(L.length>CM_MAX)L.length=CM_MAX;saveCM();
     txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();profReview();renderCM();sfx.play();toast("Отзыв отправлен")});
+  $("#cmMore").addEventListener("click",()=>{PG.cmN=(PG.cmN||CM_PAGE)+CM_PAGE;renderCM();sfx.tap()});
   $("#cmList").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;cmOf(m).splice(+b.dataset.del,1);saveCM();renderCM()});
   pageEl.querySelector("[data-back]").addEventListener("click",backClick);
   renderCM()}
+const CM_PAGE=10,CM_MAX=300;
 function renderCM(){
-  const a=cmOf(PG.m);$("#cmN").textContent=a.length?"· "+a.length:"";
-  $("#cmList").innerHTML=a.length?a.map((c,i)=>`<article class="cm"><i class="av" style="--hc:hsl(${hue(c.n)} 70% 64%)">${esc((c.n[0]||"?").toUpperCase())}</i><div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`).join("")
+  const a=cmOf(PG.m),lim=PG.cmN||(PG.cmN=CM_PAGE),shown=a.slice(0,lim);$("#cmN").textContent=a.length?"· "+a.length:"";
+  const mb=$("#cmMore");if(mb){const left=a.length-shown.length;mb.hidden=left<=0;mb.textContent="Показать ещё "+Math.min(CM_PAGE,left)+" · осталось "+left}
+  $("#cmList").innerHTML=a.length?shown.map((c,i)=>`<article class="cm"><i class="av" style="--hc:hsl(${hue(c.n)} 70% 64%)">${esc((c.n[0]||"?").toUpperCase())}</i><div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`).join("")
    :`<p class="empty">Отзывов пока нет. Станьте первым, кто попробует бету.</p>`}
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
@@ -1980,6 +2044,17 @@ async function playBeta(){
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
 $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
+$("#dlbtn").addEventListener("click",()=>{if(!PG)return;const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
+  if(!/^(https?:\/\/|\.?\/?[\w-])/i.test(u)||!u){toast("Файл для скачивания пока не добавлен");return}
+  if(d){d.downloads=(d.downloads!=null&&d.downloads!==""?+d.downloads:DOWNLOADS[d.id]||0)+1;persist();const n=d.downloads;$("#pgDl").textContent=nfmt(n)+" "+plr(n,["загрузка","загрузки","загрузок"])}
+  const a=document.createElement("a");a.href=u;a.download="";a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();sfx.play();toast("Загрузка началась")});
+
+/* ============ no page zoom (iOS ignores user-scalable, so block gestures by hand) ============ */
+(()=>{const no=e=>e.preventDefault(),o={passive:false};
+  ["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,no,o));
+  document.addEventListener("touchmove",e=>{if(e.touches.length>1||(e.scale&&e.scale!==1))e.preventDefault()},o);
+  addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},o);
+  addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["+","-","=","_","0"].includes(e.key))e.preventDefault()})})();
 
 /* ============ mascot: tap the pigeon ============ */
 (()=>{const m=$("#mascot"),mj=m&&m.querySelector(".mjump");if(!m||!mj)return;const COL=["#ff5ec4","#ffd23f","#4dff9a","#3fc4ff","#a56bff","#ffffff"];let last=0;
