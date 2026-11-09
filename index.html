@@ -11,19 +11,19 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: retro app market. Drop a cover, pick an item, and the whole card takes its colours.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0618'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23a56bff'/%3E%3Crect x='5' y='3' width='6' height='2' fill='%23a56bff'/%3E%3Crect x='6' y='7' width='1' height='3' fill='%230a0618'/%3E%3Crect x='5' y='8' width='3' height='1' fill='%230a0618'/%3E%3Crect x='10' y='7' width='1' height='1' fill='%230a0618'/%3E%3Crect x='11' y='9' width='1' height='1' fill='%230a0618'/%3E%3C/svg%3E">
-<link rel="preload" href="assets/fonts/pixelify-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/tiny5-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/pixelify-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Pixelify Sans";font-weight:400;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"Pixelify Sans";font-weight:600;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-600-normal.woff2) format("woff2")}
 @font-face{font-family:"Pixelify Sans";font-weight:700;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Pixelify Sans";font-weight:400;font-display:swap;src:url(assets/fonts/pixelify-sans-cyrillic-400-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
-@font-face{font-family:"Pixelify Sans";font-weight:600;font-display:swap;src:url(assets/fonts/pixelify-sans-cyrillic-600-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
-@font-face{font-family:"Pixelify Sans";font-weight:700;font-display:swap;src:url(assets/fonts/pixelify-sans-cyrillic-700-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+/* UI font: Tiny5 (pixel font with a clean Cyrillic). Pixelify Sans stays for the logo only */
+@font-face{font-family:"Tiny5";font-weight:400;font-display:swap;src:url(assets/fonts/tiny5-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD,U+2190-2193}
+@font-face{font-family:"Tiny5";font-weight:400;font-display:swap;src:url(assets/fonts/tiny5-cyrillic-400-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 
 :root{
   --bg0:#07040f; --bg1:#0e0820; --ink:#f4ecff; --dim:#9b86d6; --line:#3a2a70; --acc:#a56bff; --acc2:#5b2fd0;
-  --font:"Pixelify Sans",ui-monospace,"Courier New",monospace;
+  --font:"Tiny5","Pixelify Sans",ui-monospace,"Courier New",monospace;
   --k:.5; --col:min(100vw - 24px, 500px);
   /* Telegram mini app: its own insets (fullscreen header buttons) + system insets, one extra gap inside Telegram */
   --tgt:calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px));
@@ -32,7 +32,7 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
 }
 html.tg{--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 12px)}
 *{box-sizing:border-box;margin:0}
-html{background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
+html{font-synthesis:none;background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
 body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
   padding:var(--top) 0 0}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
@@ -51,7 +51,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .swoosh ellipse{fill:none;stroke:url(#swg);stroke-width:5;stroke-linecap:round;stroke-dasharray:640 260;stroke-dashoffset:640;
   animation:draw 1.6s .15s cubic-bezier(.2,.7,.2,1) forwards;filter:drop-shadow(0 0 8px #a56bff99)}
 @keyframes draw{to{stroke-dashoffset:0}}
-.logo{position:absolute;left:3%;top:13%;z-index:1;font-weight:700;font-size:clamp(30px,10.4vw,51px);line-height:.86;letter-spacing:-.02em;
+.logo{font-family:"Pixelify Sans",ui-monospace,monospace;position:absolute;left:3%;top:13%;z-index:1;font-weight:700;font-size:clamp(30px,10.4vw,51px);line-height:.86;letter-spacing:-.02em;
   transform:skewX(-9deg);transform-origin:left bottom;color:#fff7ee;text-transform:none;
   text-shadow:2px 2px 0 #a56bff,4px 4px 0 #6a35e0,6px 6px 0 #2d1475,0 0 26px #8a4dff88}
 .logo span{display:block}
@@ -491,56 +491,85 @@ html[data-q="0"] .scr::after{background:none}
 html[data-q="0"] .tv.clean .tvn{opacity:.2}
 html[data-q="0"] .scr.burst .tvn{animation:none}
 
-/* ---------- home (front page) ---------- */
-.home{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;--glow:rgba(165,107,255,.35);display:none}
-body.onhome .home{display:block}
+/* ---------- home: title screen (one screen, no scrolling) ---------- */
+:root{--vh:100vh}
+@supports (height:100dvh){:root{--vh:100dvh}}
+body.onhome .app{padding-bottom:calc(clamp(58px,15vw,74px) + 20px + var(--bot))}
+body.onhome .top{margin-bottom:4px}
 body.onhome .tabs,body.onhome .list{display:none}
-body.onhome .top{margin-bottom:14px}
+.home{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;display:none}
+body.onhome .home{display:flex;flex-direction:column;gap:12px;
+  min-height:calc(var(--vh) - var(--top) - 6px - clamp(126px,33vw,155px) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot))}
 .home .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
-.hero{position:relative;isolation:isolate}
-.hero::before{content:"";position:absolute;top:3px;left:3px;right:3px;bottom:3px;z-index:-1;pointer-events:none;border-radius:24px;box-shadow:0 0 38px 3px var(--glow)}
-.hero-sh{padding:3px;background:linear-gradient(120deg,var(--c1),var(--c2) 55%,var(--c1));
-  clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 24px,100% calc(100% - 24px),calc(100% - 24px) 100%,24px 100%,0 calc(100% - 24px),0 24px)}
-.hero-in{position:relative;overflow:hidden;padding:18px 18px 20px;background:linear-gradient(#150d33,#0b0716 75%);
-  background:radial-gradient(120% 80% at 50% 0,color-mix(in srgb,var(--c1) 34%,transparent),transparent 65%),linear-gradient(#150d33,#0b0716 75%);
-  clip-path:polygon(21px 0,calc(100% - 21px) 0,100% 21px,100% calc(100% - 21px),calc(100% - 21px) 100%,21px 100%,0 calc(100% - 21px),0 21px)}
-.hero-in .stripes{right:18px;top:12px;transform:skewX(-34deg) scale(.7);transform-origin:right top}
-.shelf{position:relative;display:flex;justify-content:center;align-items:flex-end;padding:20px 0 6px}
-.gad{position:relative;z-index:1;width:27%;margin:0 -2.5%;transform:rotate(var(--r,0deg))}
-.gad:nth-child(odd){margin-bottom:10px}
-.gad canvas{display:block;width:100%;height:auto;filter:drop-shadow(0 0 9px var(--g)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
-.shelf .floor{left:8%;right:8%;bottom:0;background:radial-gradient(closest-side,rgba(165,107,255,.55),transparent)}
-.hero-t{position:relative;margin-top:12px;font-size:clamp(26px,8.4vw,38px);font-weight:700;line-height:1.02;text-transform:uppercase;letter-spacing:.01em;text-align:center;color:#fff7ee;overflow-wrap:anywhere;
-  text-shadow:0 3px 0 rgba(0,0,0,.45)}
-.hero-t em{display:block;margin-top:4px;font-style:normal;color:#d6bcff;text-shadow:2px 2px 0 #6a35e0,4px 4px 0 #2d1475,0 0 22px #8a4dff88}
-.hero .tags{justify-content:center;margin-top:16px}
-.gow{margin-top:18px;filter:drop-shadow(0 0 12px rgba(165,107,255,.55))}
-.gow .bigplay{animation:goglow 2.6s ease-in-out infinite}
+.ts{position:relative;isolation:isolate;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,1.9vh,18px);text-align:center}
+.ts::before{content:"";position:absolute;z-index:-1;left:-12%;right:-12%;top:2%;bottom:2%;pointer-events:none;background:radial-gradient(closest-side,rgba(138,77,255,.32),transparent)}
+.shelf{position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(58px,min(12.5vh,21vw),106px);margin-bottom:4px}
+.gad{position:relative;z-index:1;height:100%;margin:0 -3%;transform:rotate(var(--r,0deg))}
+.gad:nth-child(odd){margin-bottom:8px;height:92%}
+.gad .bob{display:block}
+.gad canvas{display:block;height:100%;width:auto;filter:drop-shadow(0 0 9px var(--g)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
+.shelf .floor{left:6%;right:6%;bottom:-6px;background:radial-gradient(closest-side,rgba(165,107,255,.55),transparent)}
+.hero-t{font-size:clamp(22px,7.4vw,36px);font-weight:400;line-height:1.08;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
+.hero-t em{display:block;margin-top:5px;font-style:normal;color:#d6bcff;text-shadow:2px 2px 0 #6a35e0,4px 4px 0 #2d1475,0 0 22px #8a4dff88}
+.ts .tags{justify-content:center;margin:0;gap:6px}
+.ts .tag{height:28px;padding:0 11px;font-size:15px}
+.gow{width:100%;margin-top:2px;filter:drop-shadow(0 0 12px rgba(165,107,255,.55))}
+.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:400;animation:goglow 2.6s ease-in-out infinite}
 @keyframes goglow{50%{filter:brightness(1.14)}}
-.hero .hint2{margin-top:10px}
-.news{display:flex;flex-direction:column;gap:12px}
+.ts .spark{z-index:0}
+.pn{flex:none;display:flex;flex-direction:column;gap:10px}
+.home .sec{margin-top:0}
+.home .sec h3{margin-bottom:6px;font-size:16px;font-weight:400;letter-spacing:.08em;color:var(--dim)}
+.home .sec h3 small{font-size:14px}
+/* news slider */
+.ns{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.ns::-webkit-scrollbar{display:none}
+.ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
 .nw{--nc:#a56bff;position:relative;padding:2px;background:linear-gradient(160deg,#5a3fb8,#2a1a66);
   background:linear-gradient(160deg,color-mix(in srgb,var(--nc) 75%,#2a1a66),#2a1a66);
   clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);transition:transform .12s,filter .2s}
-.nw-in{position:relative;padding:14px 16px 16px 24px;background:linear-gradient(#1b1141,#120a2c);
+.nw-in{position:relative;padding:10px 14px 12px 22px;background:linear-gradient(#1b1141,#120a2c);
   clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
 .nw-in::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--nc)}
 .nw[role=button]{cursor:pointer}
 .nw[role=button]:hover{filter:brightness(1.12)}.nw[role=button]:active{transform:scale(.985)}
-.nw-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.nw-tag{padding:3px 14px;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#140a28;background:var(--nc);clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
-.nw-h time{margin-left:auto;font-size:16px;color:var(--dim)}
-.nw h4{font-size:24px;font-weight:600;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 3px 0 rgba(0,0,0,.45);overflow-wrap:anywhere}
-.nw p{margin-top:6px;font-size:19px;line-height:1.3;color:#e5d9ff;overflow-wrap:anywhere}
-.nw-go{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:17px;text-transform:uppercase;letter-spacing:.04em;color:var(--nc)}
-.nw-go svg{width:13px;height:13px;fill:currentColor}
-[data-q="0"] .hero::before{box-shadow:none}
-[data-q="0"] .gow{filter:none}
+.nw-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.nw-tag{padding:2px 12px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#140a28;background:var(--nc);clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+.nw-h time{margin-left:auto;font-size:15px;color:var(--dim)}
+.nw-h svg{width:12px;height:12px;fill:var(--nc)}
+.nw h4{font-size:21px;font-weight:400;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nw p{margin-top:4px;font-size:16px;line-height:1.25;color:#e5d9ff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dots{display:flex;justify-content:center;gap:4px;margin-top:2px}
+.dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
+.dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
+/* sponsors */
+.sprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
+.sprow::-webkit-scrollbar{display:none}
+.spc{--nc:#a56bff;flex:none;display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 5px;font-size:17px;text-transform:uppercase;color:#fff;text-decoration:none;white-space:nowrap;background:#120a2a;border:2px solid var(--nc);border-radius:20px;transition:transform .12s,filter .2s}
+.spc:hover{filter:brightness(1.15)}.spc:active{transform:scale(.96)}
+.spc i{display:grid;place-items:center;width:28px;height:28px;font-style:normal;font-size:18px;color:#140a28;background:var(--nc);clip-path:polygon(5px 0,calc(100% - 5px) 0,100% 5px,100% calc(100% - 5px),calc(100% - 5px) 100%,5px 100%,0 calc(100% - 5px),0 5px)}
+.spc.me{border-style:dashed;border-color:var(--line);color:var(--dim)}
+.spc.me i{background:#2a1a66;color:#e5d6ff}
+/* link buttons */
+.lnks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lbtn{--lc:#a56bff;position:relative;display:flex;align-items:center;justify-content:center;gap:10px;height:54px;padding:0 8px;text-decoration:none;
+  font-size:clamp(19px,5.6vw,24px);text-transform:uppercase;letter-spacing:.03em;color:#140a28;background:var(--lc);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--lc) 65%,#fff),var(--lc) 50%,color-mix(in srgb,var(--lc) 70%,#000));
+  clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);transition:transform .12s,filter .2s}
+.lbtn svg{flex:none;width:24px;height:24px;fill:#140a28}
+.lbtn:hover{filter:brightness(1.1)}.lbtn:active{transform:translateY(4px)}
+.lw{filter:drop-shadow(0 0 12px rgba(165,107,255,.45))}
+.lw.pk{filter:drop-shadow(0 0 12px rgba(255,94,196,.45))}
+/* short phones: drop extras instead of scrolling */
+@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.pn{gap:8px}.lbtn{height:50px}}
+@media(max-height:650px){.sprow-h{display:none}.shelf{height:52px}}
+[data-q="0"] .gow,[data-q="0"] .lw,[data-q="0"] .lw.pk{filter:none}
 [data-q="0"] .gow .bigplay{animation:none}
 [data-q="0"] .gad canvas{filter:drop-shadow(0 6px 6px rgba(0,0,0,.55))}
+[data-q="0"] .ts::before{display:none}
 @supports not (background:color-mix(in srgb,red,blue)){
- .hero-in{background:linear-gradient(#150d33,#0b0716 75%)}
  .nw{background:linear-gradient(160deg,#5a3fb8,#2a1a66)}
+ .lbtn{background:var(--lc)}
 }
 </style>
 </head>
@@ -631,6 +660,8 @@ const IC={
  dl:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.6 2.5h2.8v9.2h3.2L12 17 7.4 11.7h3.2z"/><path d="M3 15.4h2.8v4h12.4v-4H21v6.8H3z"/></svg>`,
  user:`<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.6"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg>`,
  play:`<svg viewBox="0 0 24 24"><path d="M5 2.6v18.8L21 12z"/></svg>`,
+ send:`<svg viewBox="0 0 24 24"><path d="M22 2.4L1.6 10.3l5.6 2.2 2 6.6 3.2-3.8 5.4 4zM8.6 12.4l9.2-5.6-7 7.2z"/></svg>`,
+ chat:`<svg viewBox="0 0 24 24"><path d="M3 3h18v14h-8l-5.6 4.6V17H3z"/></svg>`,
  home:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L22.6 11.2h-3.1V21.6h-5.6V15h-3.8v6.6H4.5V11.2H1.4z"/></svg>`,
  plus:`<svg viewBox="0 0 24 24"><path d="M9.6 3h4.8v6.6H21v4.8h-6.6V21H9.6v-6.6H3V9.6h6.6z"/></svg>`,
  x:`<svg viewBox="0 0 24 24"><path d="M4.6 2.2L12 9.6l7.4-7.4 2.4 2.4L14.4 12l7.4 7.4-2.4 2.4L12 14.4l-7.4 7.4-2.4-2.4L9.6 12 2.2 4.6z"/></svg>`,
@@ -1114,7 +1145,7 @@ function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — 
 /* ============ list / tabs / dock ============ */
 const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["music","Music",c=>hasTag(c,"Music")],["image","Mine",c=>!c.built],["gear","Settings",null]];
 const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["star","Top rated",c=>c.rating>=5],["dl","Installed",c=>c.played>0],["user","Profile",null]];
-let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home");let LIVE=[]; /* view: 0 front page, 1 store, 2 top rated, 3 installed, 4 profile */
+let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 3 installed, 4 profile */
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
@@ -1127,7 +1158,7 @@ function sync(){document.querySelectorAll(".tab").forEach((b,i)=>b.setAttribute(
 
 function emptyMsg(){return view===2?"No 5-star picks yet. Tap the stars on a card to rate it.":view===3?"Nothing installed yet. Press play on a card to install it.":""}
 async function render(intro){
-  LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";
+  LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
   if(view===0){renderHome();return}
   homeEl.innerHTML="";
@@ -1140,32 +1171,53 @@ async function render(intro){
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
   if(view===1)addCard();
 }
-/* ============ home: front page ============ */
-/* news: edit here. tag colour = c, optional app:"card id" makes the item open that app page */
+/* ============ home: title screen ============ */
+/* news: edit here. c = tag colour, app:"card id" makes the item open that app page */
 const NEWS=[
  {tag:"Новое",c:"#ff5ec4",date:"09.11",title:"Coopix Market открыт",text:"Быстрые офлайн игры с мультиплеером: запускайте, зовите друга и играйте без интернета."},
  {tag:"Игра",c:"#ffb23f",date:"08.11",title:"Block Drop в маркете",text:"Пятизвёздочный пазл. Бросьте вызов другу и побейте его рекорд.",app:"blocks"},
  {tag:"Совет",c:"#4dd2ff",date:"07.11",title:"Телефон тормозит?",text:"Откройте Settings → Quality → Low: эффекты отключатся, игры пойдут быстрее."}
 ];
+/* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
+const SPONSORS=[{name:"Sponsor One",c:"#ffb23f"},{name:"Sponsor Two",c:"#4dd2ff"}];
+const LINKS={channel:"https://t.me/coopix_market",chat:"https://t.me/coopix_chat"};
+function openLink(u){try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&/^https:\/\/t\.me\//.test(u)&&w.openTelegramLink){w.openTelegramLink(u);return true}}catch(e){}return false}
 const HOME_GADS=[["cassette",318,"#ff5ec4","-6deg"],["cd",222,"#5b8cff","4deg"],["floppy",112,"#5dff8a","-3deg"],["handheld",38,"#ffb23f","6deg"]];
-const plural=(n,f)=>{const a=Math.abs(n)%100,b=a%10;return a>10&&a<20?f[2]:b>1&&b<5?f[1]:b===1?f[0]:f[2]};
+const SPK='<svg viewBox="0 0 24 24"><path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z"/></svg>';
 function renderHome(){
-  const live=NEWS.map(n=>({...n,ok:!n.app||DATA.some(d=>d.id===n.app)}));
-  homeEl.innerHTML=`<article class="hero enter"><div class="hero-sh"><div class="hero-in">
-    <div class="stripes" aria-hidden="true"><b></b><b></b><b></b></div>
+  clearInterval(homeT);
+  const items=NEWS.map(n=>({...n,ok:!!n.app&&DATA.some(d=>d.id===n.app)}));
+  homeEl.innerHTML=`<div class="ts enter">
+    <i class="spark" style="left:2%;top:6%;--s:20px;--d:.2s" aria-hidden="true">${SPK}</i>
+    <i class="spark" style="right:4%;top:26%;--s:14px;--d:1.1s;color:#7fb2ff" aria-hidden="true">${SPK}</i>
+    <i class="spark" style="left:8%;bottom:20%;--s:16px;--d:1.7s;color:#fff" aria-hidden="true">${SPK}</i>
     <div class="shelf" aria-hidden="true">${HOME_GADS.map((g,i)=>`<div class="gad" style="--r:${g[3]};--g:${g[2]}88"><div class="bob" style="--bd:${-i*1.2}s"><canvas></canvas></div></div>`).join("")}<i class="floor"></i></div>
     <h2 class="hero-t">Быстрые офлайн игры <em>с Мультиплеером</em></h2>
     <div class="tags"><span class="tag">Быстро</span><span class="tag">Офлайн</span><span class="tag">Мультиплеер</span></div>
     <div class="gow"><button class="bigplay" id="goMarket" type="button">${IC.bag}Перейти в маркет</button></div>
-    <p class="hint2">В маркете ${DATA.length} ${plural(DATA.length,["игра","игры","игр"])}</p>
-  </div></div></article>
-  <section class="sec enter" style="--i:.15s"><h3>Новости<small>${NEWS.length}</small></h3><div class="news">${live.map((n,i)=>`<div class="nw enter" style="--nc:${n.c};--i:${.25+i*.09}s"${n.app&&n.ok?` role="button" tabindex="0" data-app="${n.app}"`:""}><div class="nw-in">
-    <div class="nw-h"><span class="nw-tag">${n.tag}</span><time>${n.date}</time></div><h4>${n.title}</h4><p>${n.text}</p>${n.app&&n.ok?`<span class="nw-go">Открыть игру${IC.play}</span>`:""}</div></div>`).join("")}</div></section>`;
+  </div>
+  <div class="pn enter" style="--i:.2s">
+    <section class="sec"><h3>Новости</h3>
+      <div class="ns" id="ns">${items.map(n=>`<div class="ns-i"><div class="nw" style="--nc:${n.c}"${n.ok?` role="button" tabindex="0" data-app="${n.app}"`:""}><div class="nw-in">
+        <div class="nw-h"><span class="nw-tag">${n.tag}</span><time>${n.date}</time>${n.ok?IC.play:""}</div><h4>${n.title}</h4><p>${n.text}</p></div></div></div>`).join("")}</div>
+      ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
+    </section>
+    <section class="sec sprow-h"><h3>Спонсоры</h3><div class="sprow">${SPONSORS.map(n=>`<span class="spc" style="--nc:${n.c}"><i>${n.name[0]}</i>${n.name}</span>`).join("")}<a class="spc me" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat" aria-label="Стать спонсором"><i>+</i>Вы?</a></div></section>
+    <div class="lnks"><div class="lw"><a class="lbtn" href="${LINKS.channel}" target="_blank" rel="noopener" data-l="channel">${IC.send}Канал</a></div><div class="lw pk"><a class="lbtn" style="--lc:#ff5ec4" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat">${IC.chat}Чатик</a></div></div>
+  </div>`;
   const cv=homeEl.querySelectorAll(".gad canvas");
   HOME_GADS.forEach((g,i)=>{const sp=SPR[g[0]];if(sp)recolor(sp,cv[i],palette(g[1],.85),1.9)});
   $("#goMarket").addEventListener("click",()=>{sfx.in();goView(1)});
+  homeEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
   homeEl.querySelectorAll(".nw[data-app]").forEach(el=>{const open=()=>{sfx.tap();openPage(el.dataset.app)};
     el.addEventListener("click",open);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}})});
+  /* news slider: swipe, dots, slow autoplay */
+  const ns=$("#ns"),dots=[...homeEl.querySelectorAll("#dots button")];let cur=0,hold=0;
+  const go=i=>ns.scrollTo({left:i*ns.clientWidth,behavior:RM?"auto":"smooth"});
+  ns.addEventListener("scroll",()=>{const i=Math.round(ns.scrollLeft/ns.clientWidth);if(i!==cur){cur=i;dots.forEach((d,j)=>d.setAttribute("aria-current",j===i))}},{passive:true});
+  ns.addEventListener("pointerdown",()=>{hold=Date.now()});
+  dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
+  if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
 
 function addCard(){
@@ -1551,7 +1603,7 @@ $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
-  try{await document.fonts.load('600 36px "Pixelify Sans"')}catch(e){}
+  try{await Promise.all([document.fonts.load('400 36px "Tiny5"'),document.fonts.load('400 20px "Tiny5"'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
   sync();await render(true);
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);

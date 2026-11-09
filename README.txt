@@ -37,7 +37,12 @@ Branding: the header shows the Coopix Market logo and the pigeon mascot (assets/
 The pigeon hops, its goggles glint, the bag screen blinks, and a tap makes it jump with confetti. Lite mode turns the motion off.
 The small planet sits behind its wing; to remove it, delete the <canvas id="planet"> line in index.html.
 
-Front page (Home): first tab in the bottom dock, opens by default. Hero "Быстрые офлайн игры с Мультиплеером",
-button "Перейти в маркет" (goes to Store), news block. News live in the NEWS array in index.html (search "NEWS=");
-tag colour = c, app:"card id" makes the item open that app page.
-Dock is now: Home, Store, Top rated, Installed, Profile. Cyrillic font files were added to assets/fonts.
+Front page (Home): first tab in the bottom dock, opens by default. It is a one-screen title screen (no scrolling):
+gadgets, headline "Быстрые офлайн игры с Мультиплеером", button "Перейти в маркет" (goes to Store),
+a swipeable news slider (autoplay, dots), a sponsors row and two buttons (Канал / Чатик).
+On short phones extras (tag chips, sponsors row) are hidden instead of scrolling.
+News: NEWS array in index.html (search "NEWS="): c = tag colour, app:"card id" makes the item open that app page.
+Sponsors: SPONSORS array. Links: LINKS object (replace the placeholder t.me URLs with the real ones).
+Dock is now: Home, Store, Top rated, Installed, Profile.
+
+Font: UI uses Tiny5 (assets/fonts/tiny5-*.woff2, good Cyrillic). Pixelify Sans stays for the logo only.
