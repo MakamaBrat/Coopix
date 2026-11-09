@@ -9,7 +9,7 @@
 w.ready();w.expand();try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
 if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",function(){window.tgInit()});</script>
 <title>Coopix Market</title>
-<meta name="description" content="Coopix Market: retro app market. Drop a cover, pick an item, and the whole card takes its colours.">
+<meta name="description" content="Coopix Market: ретро-маркет приложений. Добавьте обложку, выберите предмет, и вся карточка окрасится в её цвета.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0618'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23a56bff'/%3E%3Crect x='5' y='3' width='6' height='2' fill='%23a56bff'/%3E%3Crect x='6' y='7' width='1' height='3' fill='%230a0618'/%3E%3Crect x='5' y='8' width='3' height='1' fill='%230a0618'/%3E%3Crect x='10' y='7' width='1' height='1' fill='%230a0618'/%3E%3Crect x='11' y='9' width='1' height='1' fill='%230a0618'/%3E%3C/svg%3E">
 <link rel="preload" href="assets/fonts/tektur-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/tektur-cyrillic-500-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -583,6 +583,9 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
 /* home tweaks: logo -20% (header height unchanged), hero title -10%, news card slightly larger */
 body.onhome .logo{font-size:clamp(24px,8.32vw,40.8px)}
+/* средний блок главной (гаджеты + заголовок + кнопка) -10%, освободившееся место отдано новостям: в карточке влезает 3 строки текста */
+.ts{zoom:.9}
+.ns .nw p{-webkit-line-clamp:3}
 .ts .hero-t{font-size:clamp(20px,6.66vw,32.4px)}
 .ns .nw-in{padding:9px 14px 10px 21px}
 .ns .nw h4{font-size:19px}
@@ -608,7 +611,7 @@ body.onhome .logo{font-size:clamp(24px,8.32vw,40.8px)}
 .lw{filter:drop-shadow(0 0 12px rgba(165,107,255,.45))}
 .lw.pk{filter:drop-shadow(0 0 12px rgba(255,94,196,.45))}
 /* short phones: drop extras instead of scrolling */
-@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:1}.pn{gap:6px}.lbtn,.lnks .lbtn{height:46px}}
+@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:3}.pn{gap:6px}.lbtn,.lnks .lbtn{height:46px}}
 @media(max-height:650px){.shelf{height:52px}}
 [data-q="0"] .gow,[data-q="0"] .lw,[data-q="0"] .lw.pk{filter:none}
 [data-q="0"] .gow .bigplay{animation:none}
@@ -618,6 +621,61 @@ body.onhome .logo{font-size:clamp(24px,8.32vw,40.8px)}
  .nw{background:linear-gradient(160deg,#5a3fb8,#2a1a66)}
  .lbtn{background:var(--lc)}
 }
+
+
+/* ---------- profile tab ---------- */
+.prof{display:none}
+body.onprof .prof{display:flex;flex-direction:column;gap:14px;padding-top:2px}
+body.onprof .tabs,body.onprof .list,body.onprof .home,body.onprof .club,body.onprof .sbar{display:none}
+.prof .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
+.pf-card{--pc:#a56bff;position:relative;padding:3px;background:linear-gradient(160deg,#6a4fd0,#2a1a66);filter:drop-shadow(0 0 14px rgba(165,107,255,.4));
+  clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
+.pf-in{display:grid;grid-template-columns:92px 1fr;gap:14px;align-items:center;padding:16px 14px 16px 16px;background:linear-gradient(#1b1141,#120a2c);
+  clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px)}
+.pf-av{position:relative;width:92px;height:92px;padding:3px;background:var(--pc);overflow:hidden;
+  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
+.pf-av i{display:block;width:100%;height:100%;background:#1a1040 center/cover no-repeat;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px)}
+.pf-av i.pg{background-size:118%;background-position:50% 30%}
+.pf-name{font-size:clamp(24px,7.6vw,32px);font-weight:700;line-height:1.05;text-transform:uppercase;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
+.pf-rank{display:inline-block;margin-top:6px;padding:2px 12px;font-size:16px;letter-spacing:.05em;text-transform:uppercase;color:#140a28;background:var(--pc);
+  clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+.pf-reg{margin-top:6px;font-size:16px;color:var(--dim)}
+.pf-edit{position:absolute;right:10px;top:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--dim);z-index:1}
+.pf-edit svg{width:20px;height:20px;fill:currentColor}.pf-edit:hover{color:#fff}
+.pf-lv{padding:14px 16px 16px;background:#150d33;border:3px solid var(--line)}
+.pf-lvh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.pf-lvh b{font-size:28px;text-transform:uppercase;color:#fff;text-shadow:2px 2px 0 #6a35e0}
+.pf-lvh span{font-size:17px;color:var(--dim)}
+.pf-bar{position:relative;height:20px;margin:10px 0 6px;background:#0c0620;border:3px solid #3a2a70;overflow:hidden}
+.pf-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--w,0%);background:repeating-linear-gradient(90deg,#b98bff 0 8px,#8a52f5 8px 10px);transition:width .9s cubic-bezier(.2,.9,.2,1)}
+.pf-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.22),transparent 55%)}
+.pf-lvn{font-size:16px;color:var(--dim)}
+.pf-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pf-st div{padding:10px 4px 9px;text-align:center;background:#150d33;border:3px solid var(--line)}
+.pf-st b{display:block;font-size:26px;color:#fff;line-height:1}
+.pf-st span{display:block;margin-top:4px;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.mdl{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.md{--mc:#a56bff;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 6px 10px;background:linear-gradient(#1b1141,#120a2c);border:3px solid var(--mc);
+  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
+.md .mb{position:relative;width:54px;height:54px;display:grid;place-items:center;border-radius:50%;color:#140a28;background:radial-gradient(circle at 35% 30%,#fff 0,var(--mc) 55%,#000 160%);
+  box-shadow:0 0 0 3px #140a28,0 0 0 6px var(--mc),0 0 16px var(--mc)}
+.md .mb svg{width:28px;height:28px;fill:currentColor}
+.md b{font-size:15px;line-height:1.05;text-transform:uppercase;color:#fff;margin-top:6px}
+.md small{font-size:13px;line-height:1.15;color:var(--dim)}
+.md em{font-style:normal;font-size:13px;color:var(--mc)}
+.md.off{border-color:#2f2360;filter:grayscale(1);opacity:.62}
+.md.off .mb{box-shadow:0 0 0 3px #140a28,0 0 0 6px #3a2a70;background:#241a4a;color:#6b5aa8}
+.md.off em{color:var(--dim)}
+.pf-set{display:flex;gap:10px}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw button{width:40px;height:40px;background:var(--sc);border:3px solid #140a28;box-shadow:0 0 0 3px transparent}
+.sw button[aria-checked=true]{box-shadow:0 0 0 3px #fff}
+.av-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.av-row .pf-av{flex:none}
+.av-row .btns{display:flex;flex-direction:column;gap:8px;flex:1}
+.av-row .btn{height:44px;font-size:18px}
+[data-q="0"] .pf-card,[data-q="0"] .pf-in{filter:none}
 
 /* ---------- club tab ---------- */
 .club{display:none}
@@ -686,6 +744,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
   <section class="list" id="list" aria-live="polite"></section>
   <section class="home" id="home" lang="ru"></section>
   <section class="club" id="club" lang="ru"></section>
+  <section class="prof" id="prof" lang="ru"></section>
 </main>
 
 <nav class="dock" aria-label="Main"><div class="dock-in" id="dock"></div></nav>
@@ -696,7 +755,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
 </div>
 <div class="page" id="page" aria-hidden="true" role="dialog" aria-modal="true" aria-label="App page">
   <div id="pgBody"></div><div class="pfade"></div>
-  <div class="pbar"><button class="bigplay" id="bigplay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.6v18.8L21 12z"/></svg>Play beta</button></div>
+  <div class="pbar"><button class="bigplay" id="bigplay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.6v18.8L21 12z"/></svg>Играть в бету</button></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -1235,17 +1294,17 @@ function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — 
 
 /* ============ list / tabs / dock ============ */
 const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>!c.built],["gear","Settings",null]];
-const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Community",()=>true],["user","Profile",null]];
-let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
+const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Community",()=>true],["user","Profile",()=>true]];
+let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club"),profEl=$("#prof");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
   if(TABS[i][2]===null){openSettings();return}tab=i;view=1;sync();render()});
 $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;sfx.tap();
-  if(DOCK[i][2]===null){openSettings();return}goView(i)});
+  goView(i)});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>b.setAttribute("aria-selected",i===tab&&view===1));
-  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2)}
+  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
 /* search: hides cards instead of rebuilding them, so typing never restarts the card animations */
 let SQ="";const qIn=$("#q"),qX=$("#qx");
@@ -1265,15 +1324,18 @@ async function render(intro){
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
   document.body.classList.toggle("onclub",view===2);
+  document.body.classList.toggle("onprof",view===3);
   if(view!==2)clubEl.innerHTML="";
+  if(view!==3)profEl.innerHTML="";
   if(view===0){renderHome();return}
   homeEl.innerHTML="";
   if(view===2){renderClub();return}
+  if(view===3){renderProfile();return}
   const f=TABS[tab][2];
   const rows=DATA.filter(f);
   if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")).toLowerCase();
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
       onDropCover:(c,url)=>{const d=DATA.find(x=>x.id===c.m.id);d.cover=url;d.tint=null;persist();c.set({...d})}});
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
   if(view===1&&TABS[tab][0]!=="favt")addCard();filterList();
@@ -1325,6 +1387,84 @@ function renderHome(){
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
+
+/* ============ профиль: уровень, звание, медали ============ */
+/* XP: игра +5, очки в игре (до +30), отзыв +20, новая игра в избранном +5, своя карточка +25, заход в новый день +10, медали дают бонус */
+const RANKS=["Новичок","Игрок","Знаток","Бывалый","Мастер","Эксперт","Ветеран","Легенда","Герой","Чемпион"];
+const RCOL=["#9aa4c8","#4dd2ff","#5dff8a","#ffd23f","#ffb23f","#ff8a3d","#ff5ec4","#b98bff","#ff5e7a","#ffe27a"];
+const AVC=["#a56bff","#ff5ec4","#4dd2ff","#5dff8a","#ffb23f","#ff5e7a"];
+const lvOf=xp=>Math.min(10,Math.floor(Math.sqrt(xp/50))+1);
+const xpAt=l=>50*(l-1)*(l-1); /* XP, с которого начинается уровень l */
+const MEDALS=[
+ {id:"first",n:"Первый запуск",d:"Запустите любую игру",c:"#4dd2ff",ic:"play",xp:10,v:p=>p.plays,need:1},
+ {id:"plays10",n:"Заядлый игрок",d:"Сыграйте 10 раз",c:"#ffb23f",ic:"play",xp:30,v:p=>p.plays,need:10},
+ {id:"plays50",n:"Марафонец",d:"Сыграйте 50 раз",c:"#ff5ec4",ic:"trophy",xp:80,v:p=>p.plays,need:50},
+ {id:"all4",n:"Знаток жанров",d:"Попробуйте 4 разные игры",c:"#5dff8a",ic:"star",xp:35,v:p=>p.ids.length,need:4},
+ {id:"score100",n:"Рекордсмен",d:"Наберите 100 очков",c:"#ffd23f",ic:"trophy",xp:40,v:p=>p.best,need:100},
+ {id:"rev1",n:"Критик",d:"Напишите отзыв",c:"#b98bff",ic:"chat",xp:15,v:p=>p.reviews,need:1},
+ {id:"rev5",n:"Голос маркета",d:"Напишите 5 отзывов",c:"#ff8a3d",ic:"chat",xp:40,v:p=>p.reviews,need:5},
+ {id:"fav3",n:"Коллекционер",d:"Добавьте 3 игры в избранное",c:"#ff5e7a",ic:"heart",xp:25,v:p=>p.favs.length,need:3},
+ {id:"make1",n:"Создатель",d:"Добавьте свою карточку",c:"#7fb2ff",ic:"plus",xp:30,v:p=>p.made,need:1},
+ {id:"me",n:"Личность",d:"Смените ник или аватар",c:"#ff5ec4",ic:"user",xp:10,v:p=>p.custom,need:1},
+ {id:"days3",n:"Постоянный гость",d:"Зайдите в 3 разных дня",c:"#4dd2ff",ic:"star",xp:20,v:p=>p.days,need:3},
+ {id:"days7",n:"Свой в маркете",d:"Зайдите в 7 разных дней",c:"#ffe27a",ic:"star",xp:50,v:p=>p.days,need:7}];
+const dayKey=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+const PROF=Object.assign({name:"Игрок",color:AVC[0],photo:"",reg:Date.now(),xp:0,plays:0,ids:[],best:0,reviews:0,favs:[],made:0,custom:0,days:0,last:"",medals:{}},store.get("am.profile",{}));
+if(!store.get("am.profile",null)){PROF.plays=DATA.reduce((a,d)=>a+(d.played||0),0);PROF.ids=DATA.filter(d=>d.played).map(d=>d.id);PROF.xp=PROF.plays*5;PROF.favs=DATA.filter(d=>d.fav).map(d=>d.id)}
+const saveProf=()=>store.set("am.profile",PROF);
+let profQ=[],profT=0;
+function profSay(m){profQ.push(m);if(profT)return;const go=()=>{const x=profQ.shift();if(!x){profT=0;return}toast(x);profT=setTimeout(go,2300)};profT=setTimeout(go,1500)}
+function profCheck(){let again=true;
+  while(again){again=false;
+    for(const m of MEDALS){if(!PROF.medals[m.id]&&m.v(PROF)>=m.need){PROF.medals[m.id]=Date.now();const l0=lvOf(PROF.xp);PROF.xp+=m.xp;again=true;profSay("Медаль: <b>"+m.n+"</b> · +"+m.xp+" XP");if(lvOf(PROF.xp)>l0)profSay("Уровень "+lvOf(PROF.xp)+" · "+RANKS[lvOf(PROF.xp)-1])}}}
+  saveProf()}
+function addXp(n){const l0=lvOf(PROF.xp);PROF.xp+=n;if(lvOf(PROF.xp)>l0)profSay("Уровень "+lvOf(PROF.xp)+" · звание «"+RANKS[lvOf(PROF.xp)-1]+"»");profCheck()}
+function profPlay(id){PROF.plays++;if(!PROF.ids.includes(id))PROF.ids.push(id);addXp(5)}
+function profScore(s){if(s>PROF.best)PROF.best=s;addXp(Math.min(30,Math.floor(s/10)))}
+function profReview(){PROF.reviews++;addXp(20)}
+function profFav(id,on){if(on&&!PROF.favs.includes(id)){PROF.favs.push(id);addXp(5)}}
+function profMade(){PROF.made++;addXp(25)}
+function profVisit(){const k=dayKey();if(PROF.last!==k){PROF.last=k;PROF.days++;PROF.xp+=PROF.days>1?10:0;profCheck()}}
+const fmtDate=t=>{const d=new Date(t),p=n=>String(n).padStart(2,"0");return p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear()};
+function avatarBg(){return PROF.photo?`style="background-image:url(${PROF.photo})"`:`class="pg" style="background-image:url(assets/coopix-pigeon.png)"`}
+function medalHTML(m){const ok=!!PROF.medals[m.id],v=Math.min(m.v(PROF),m.need);
+  return `<div class="md${ok?"":" off"}" style="--mc:${m.c}"><i class="mb">${ok?IC[m.ic]:IC.lock}</i><b>${m.n}</b><small>${m.d}</small><em>${ok?"+"+m.xp+" XP · получена":v+" / "+m.need}</em></div>`}
+function renderProfile(){
+  profVisit();
+  const lv=lvOf(PROF.xp),max=lv>=10,a=xpAt(lv),b=xpAt(lv+1),pct=max?100:Math.round((PROF.xp-a)/(b-a)*100),n=Object.keys(PROF.medals).length;
+  profEl.innerHTML=`<div class="pf-card enter" style="--pc:${RCOL[lv-1]}"><div class="pf-in">
+    <div class="pf-av" style="--pc:${PROF.color}"><i ${avatarBg()}></i></div>
+    <div><h2 class="pf-name">${esc(PROF.name)}</h2><span class="pf-rank">${RANKS[lv-1]}</span><p class="pf-reg">Регистрация: ${fmtDate(PROF.reg)}</p></div>
+    </div><button class="pf-edit" id="pfEdit" type="button" aria-label="Изменить профиль">${IC.edit}</button></div>
+  <div class="pf-lv enter" style="--i:.06s"><div class="pf-lvh"><b>Уровень ${lv}</b><span>${PROF.xp} XP</span></div>
+    <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
+    <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-PROF.xp)+" XP · звание «"+RANKS[lv]+"»"}</div></div>
+  <div class="pf-st enter" style="--i:.12s"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div>
+  <section class="sec enter" style="--i:.18s"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div></section>
+  <div class="pf-set enter" style="--i:.24s"><button class="btn ghost" id="pfSet" type="button" style="flex:1">Настройки</button></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=profEl.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
+  $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
+  $("#pfSet").addEventListener("click",()=>{sfx.tap();openSettings()})}
+function openProfileEditor(){
+  const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
+  openSheet(`<div class="ph"><h2 id="sheetTitle">Профиль</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
+  <div class="pbody" lang="ru">
+    <div class="av-row"><div class="pf-av" id="pfAv" style="--pc:${d.color}"><i></i></div>
+      <div class="btns"><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer">Загрузить фото<input type="file" accept="image/*" hidden id="pfFile"></label><button class="btn ghost" id="pfNoPh" type="button">Голубь</button></div></div>
+    <label class="fld"><span class="lbl">Ник</span><input class="in" id="pfName" maxlength="16" placeholder="Ваш ник" value="${esc(d.name)}"></label>
+    <div class="fld"><span class="lbl">Цвет рамки</span><div class="sw" id="pfSw" role="radiogroup" aria-label="Цвет рамки">${AVC.map(c=>`<button type="button" role="radio" aria-checked="${c===d.color}" data-c="${c}" style="--sc:${c}" aria-label="${c}"></button>`).join("")}</div></div>
+  </div>
+  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="pfSave">Сохранить</button></div></div>`);
+  const av=$("#pfAv"),draw=()=>{const i=av.querySelector("i");av.style.setProperty("--pc",d.color);i.className=d.photo?"":"pg";i.style.backgroundImage=d.photo?`url(${d.photo})`:"url(assets/coopix-pigeon.png)"};draw();
+  $("#pfName").addEventListener("input",e=>{d.name=e.target.value});
+  $("#pfSw").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;d.color=b.dataset.c;panel.querySelectorAll("#pfSw button").forEach(x=>x.setAttribute("aria-checked",x===b));draw();sfx.tap()});
+  $("#pfNoPh").addEventListener("click",()=>{d.photo="";draw();sfx.tap()});
+  $("#pfFile").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
+    im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);d.photo=c.toDataURL("image/jpeg",.82);URL.revokeObjectURL(u);draw()};
+    im.onerror=()=>{URL.revokeObjectURL(u);toast("Не удалось открыть картинку")};im.src=u});
+  $("#pfSave").addEventListener("click",()=>{const nm=(d.name||"").trim()||"Игрок";
+    const ch=nm!==PROF.name||d.color!==PROF.color||d.photo!==PROF.photo;
+    Object.assign(PROF,{name:nm,color:d.color,photo:d.photo});if(ch)PROF.custom=1;saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
 
 /* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
 function renderClub(){
@@ -1443,7 +1583,7 @@ function openEditor(id,preCover){
    ${Q===0||!SET.shader?'<p class="hint2" style="text-align:left;margin:-6px 0 14px">Lite mode is on, backgrounds are off on this device.</p>':""}
    <div class="fld"><span class="lbl">Colour</span><div class="sw" id="sw"></div></div>
    <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
-   <label class="fld" style="margin-bottom:0"><span class="lbl">Description</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="What is this app about?">${esc(draft.desc||"")}</textarea></label>
+   <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
    </div>
    <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
   const pv=$("#pv");PV=new Card(pv,draft,{preview:true});PV.set({...draft},{});
@@ -1496,7 +1636,7 @@ function openEditor(id,preCover){
   /* save / delete */
   $("#save").addEventListener("click",()=>{if(ti.value.trim())addTag(ti.value);
     draft.title=(draft.title||"").trim()||"Untitled";if(!tags.length)tags=["Arcade"];syncTags();sfx.play();
-    if(existing)Object.assign(existing,draft);else DATA.push(draft);persist();closeSheet();
+    if(existing)Object.assign(existing,draft);else{DATA.push(draft);profMade()}persist();closeSheet();
     if(!existing||view!==1||tab===1&&hasTag(draft,"Music")){tab=0;view=1;sync()}render();if(!existing)setTimeout(()=>scrollTo({top:document.body.scrollHeight,behavior:RM?"auto":"smooth"}),200);toast(existing?"Saved":"Added to the market")});
   $("#del")&&$("#del").addEventListener("click",()=>{DATA=DATA.filter(d=>d.id!==draft.id);persist();closeSheet();render();toast("Deleted")})}
 
@@ -1578,20 +1718,20 @@ const GAMES={
 /*ENDGAMES*/
 
 const KIND={Arcade:"arcade",Music:"music",Shooter:"shooter",Puzzle:"puzzle"};
-const HINT={arcade:"Drag or ← → to move the paddle",music:"Tap the pads or press ← ↓ ↑ →",shooter:"Drag or ← → to steer · it fires itself",puzzle:"Swipe to move · tap to rotate · space drops",catch:"Drag or ← → to catch stars, dodge bombs"};
+const HINT={arcade:"Тяните или ← → чтобы двигать платформу",music:"Нажимайте на пады или ← ↓ ↑ →",shooter:"Тяните или ← → для управления · стреляет сама",puzzle:"Свайп — двигать · тап — повернуть · пробел — сбросить",catch:"Тяните или ← → чтобы ловить звёзды и уворачиваться от бомб"};
 const DESC={
- retro:"A 90's arcade mixtape. Bounce the ball, smash the neon bricks and keep the tape rolling.\nBeta build: one endless level, speed goes up every wall you clear.",
- space:"Cosmic synth jam. Hit the glowing pads in time with the falling notes and build a melody out of thin air.\nBeta build: one endless track, five misses and the song ends.",
- toxic:"Wasteland shooter. Drag to steer, the cannon fires on its own. Hold off the toxic skulls for as long as you can.\nBeta build: no bosses yet, no power-ups.",
- blocks:"Classic falling blocks with a sunset twist. Stack, clear lines and chase your best score.\nBeta build: no hold slot and no ghost piece."};
+ retro:"Аркадный микстейп из 90-х. Отбивайте мяч, разбивайте неоновые кирпичи и не давайте кассете остановиться.\nБета-версия: один бесконечный уровень, после каждой очищенной стены скорость растёт.",
+ space:"Космический синтовый джем. Попадайте по светящимся падам в такт падающим нотам и собирайте мелодию из ничего.\nБета-версия: один бесконечный трек, после пяти промахов песня заканчивается.",
+ toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nБета-версия: пока без боссов и бонусов.",
+ blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
 const SEED={
- retro:[["kira_88",5,"Brick breaker with a tape deck soul. The paddle feels great.",3],["moth",4,"Needs more levels, but the beta already eats my lunch break.",9]],
- space:[["DJ Tofu",5,"Played it on the bus with the sound on. Very relaxing, very hard.",2],["nullptr",4,"Hit detection is a bit generous. I am not complaining.",6]],
- toxic:[["bitbaker",4,"Those skulls wiggle! Would love a boss at the end.",1],["Lena",5,"Auto-fire is the right call on touch screens.",5]],
- blocks:[["oldschool",5,"Swipe controls work way better than I expected.",4],["pixelfox",4,"Please add a ghost piece in the next beta.",8]]};
+ retro:[["kira_88",5,"Арканоид с душой кассетного магнитофона. Платформа управляется отлично.",3],["moth",4,"Нужно больше уровней, но бета уже съедает мой обеденный перерыв.",9]],
+ space:[["DJ Tofu",5,"Играл в автобусе со звуком. Очень расслабляет и очень сложно.",2],["nullptr",4,"Попадания засчитываются щедро. Я не жалуюсь.",6]],
+ toxic:[["bitbaker",4,"Черепа так извиваются! Хочу босса в конце.",1],["Lena",5,"Автострельба на сенсорных экранах — правильное решение.",5]],
+ blocks:[["oldschool",5,"Управление свайпами работает намного лучше, чем я ожидал.",4],["pixelfox",4,"Добавьте призрачную фигуру в следующей бете, пожалуйста.",8]]};
 let CM=store.get("am.comments.v1",{});const saveCM=()=>store.set("am.comments.v1",CM);
 const cmOf=m=>{if(!CM[m.id]){CM[m.id]=(SEED[m.id]||[]).map(([n,r,t,d],i)=>({n,r,t,d:Date.now()-d*864e5-i*36e5}));saveCM()}return CM[m.id]};
-const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?"just now":s<3600?(s/60|0)+"m ago":s<86400?(s/3600|0)+"h ago":(s/86400|0)+"d ago"};
+const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?"только что":s<3600?(s/60|0)+" мин назад":s<86400?(s/3600|0)+" ч назад":(s/86400|0)+" дн назад"};
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
 const starRow=n=>[1,2,3,4,5].map(i=>starSvg(i<=n)).join("");
 
@@ -1614,13 +1754,13 @@ function pageHTML(m,kind){
   </div></div></div>
   <div class="hud"><span>SCORE <b id="sc">0</b></span><span>BEST <b id="bs">0</b></span></div>
   <p class="hint2">${HINT[kind]}</p>
-  <section class="sec"><h3>About</h3><p class="desc${desc?"":" dim"}">${esc(desc||"No description yet. Tap the pencil on the card to add one.")}</p>
-    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 micro build</span><span class="tag">Works offline</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div></section>
-  <section class="sec"><h3>Reviews <small id="cmN"></small></h3><div id="cmList"></div>
-    <div class="wr"><span class="lbl">Write a review</span><div class="spick" id="pk"></div>
-      <input class="in" id="cmName" maxlength="14" placeholder="Your name" value="${esc(store.get("am.name",""))}">
-      <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="What do you think of the beta?"></textarea>
-      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Post</button></div></div></section></div>`}
+  <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
+    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div></section>
+  <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><div id="cmList"></div>
+    <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
+      <input class="in" id="cmName" maxlength="14" placeholder="Ваше имя" value="${esc(store.get("am.name",""))}">
+      <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
+      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div>`}
 
 async function openPage(id,opt){
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
@@ -1629,9 +1769,9 @@ async function openPage(id,opt){
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;
   $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
-  $("#pgPlays").textContent=(m.played||0)+" plays";$("#bs").textContent=PG.best;
+  $("#pgPlays").textContent=(m.played||0)+" игр";$("#bs").textContent=PG.best;
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
@@ -1659,19 +1799,19 @@ function bindPage(){
   scr.addEventListener("pointercancel",()=>{down=null});
   $("#knob").addEventListener("click",e=>{const on=$("#tv").classList.toggle("clean");e.currentTarget.setAttribute("aria-pressed",!on);sfx.tap()});
   let rate=0;const pk=$("#pk"),txt=$("#cmText"),nm=$("#cmName");
-  const drawPk=()=>{pk.innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-i="${i}" aria-label="${i} star${i>1?"s":""}">${starSvg(i<=rate)}</button>`).join("")};drawPk();
+  const drawPk=()=>{pk.innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-i="${i}" aria-label="Звёзд: ${i}">${starSvg(i<=rate)}</button>`).join("")};drawPk();
   pk.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;rate=i===rate?0:i;drawPk();sfx.tap()});
   txt.addEventListener("input",()=>{$("#cnt").textContent=txt.value.length+"/240"});
-  $("#cmPost").addEventListener("click",()=>{const t=txt.value.trim();if(t.length<2){toast("Write a few words first");txt.focus();return}
-    const n=nm.value.trim()||"Guest";store.set("am.name",n);cmOf(m).unshift({n,r:rate,t,d:Date.now(),me:1});saveCM();
-    txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();renderCM();sfx.play();toast("Review posted")});
+  $("#cmPost").addEventListener("click",()=>{const t=txt.value.trim();if(t.length<2){toast("Напишите пару слов");txt.focus();return}
+    const n=nm.value.trim()||"Гость";store.set("am.name",n);cmOf(m).unshift({n,r:rate,t,d:Date.now(),me:1});saveCM();
+    txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();profReview();renderCM();sfx.play();toast("Отзыв отправлен")});
   $("#cmList").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;cmOf(m).splice(+b.dataset.del,1);saveCM();renderCM()});
   pageEl.querySelector("[data-back]").addEventListener("click",backClick);
   renderCM()}
 function renderCM(){
   const a=cmOf(PG.m);$("#cmN").textContent=a.length?"· "+a.length:"";
-  $("#cmList").innerHTML=a.length?a.map((c,i)=>`<article class="cm"><i class="av" style="--hc:hsl(${hue(c.n)} 70% 64%)">${esc((c.n[0]||"?").toUpperCase())}</i><div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Delete</button>`:""}</div></article>`).join("")
-   :`<p class="empty">No reviews yet. Be the first to try the beta.</p>`}
+  $("#cmList").innerHTML=a.length?a.map((c,i)=>`<article class="cm"><i class="av" style="--hc:hsl(${hue(c.n)} 70% 64%)">${esc((c.n[0]||"?").toUpperCase())}</i><div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`).join("")
+   :`<p class="empty">Отзывов пока нет. Станьте первым, кто попробует бету.</p>`}
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
   if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
@@ -1702,10 +1842,10 @@ function stopGame(){if(!PG)return;PG.run=false;cancelAnimationFrame(PG.raf);cons
 function endGame(){
   const s=PG.score,b=store.get("am.best",{}),nb=s>(b[PG.m.id]||0);
   if(nb){b[PG.m.id]=s;store.set("am.best",b);PG.best=s;$("#bs").textContent=s}
-  stopGame();PG.endT=performance.now();burst();setOv("end",nb&&s>0);sfx.out()}
+  profScore(s);stopGame();PG.endT=performance.now();burst();setOv("end",nb&&s>0);sfx.out()}
 async function playBeta(){
   const me=PG;if(!me||!me.pal)return;if(!me.ready){me.want=true;return}
-  const d=DATA.find(x=>x.id===me.m.id);if(d){d.played=(d.played||0)+1;persist();$("#pgPlays").textContent=d.played+" plays"}
+  const d=DATA.find(x=>x.id===me.m.id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id);$("#pgPlays").textContent=d.played+" игр"}
   sfx.in();stopGame();setOv("idle");
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
@@ -1728,7 +1868,7 @@ $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
   document.body.classList.toggle("scan",SET.scan);bgResize();
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
   try{await Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
-  sync();await render(true);
+  profVisit();sync();await render(true);
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
 })();

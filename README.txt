@@ -1,53 +1,69 @@
-App Market: static one-page site, no build step.
+App Market: статический одностраничный сайт, сборка не нужна.
 
-Deploy to Vercel: drag this folder onto vercel.com/new, or run `npx vercel` inside it.
-Local preview: `npx serve` in this folder.
+Деплой на Vercel: перетащите папку на vercel.com/new или выполните `npx vercel` внутри неё.
+Локальный просмотр: `npx serve` в этой папке.
 
-index.html         the whole page (HTML, CSS, JS)
-assets/sprites.js  sprites cut from the monochrome sheet, inlined as data URIs
-assets/sprites/    the same sprites as PNG
-assets/fonts/      Pixelify Sans (self-hosted)
+index.html         вся страница (HTML, CSS, JS)
+assets/sprites.js  спрайты из монохромного листа, встроены как data URI
+assets/sprites/    те же спрайты в PNG
+assets/fonts/      шрифты Tektur и Pixelify Sans (локально)
 
-App page: tap a card to open it. It has a CRT TV with a noise filter (knob on the right)
-running a micro beta of the game, description, reviews (stored in localStorage) and a Play button.
-The game is picked by the first matching tag: Arcade=breakout, Music=pads, Shooter=shooter, Puzzle=blocks, other=catch.
-Description is editable in the card editor (pencil).
-Editor: preview, header and buttons stay fixed, only the middle scrolls. Gadget and Background are dropdown menus.
-Tags: up to 3 per card (type + Enter / comma, or tap a suggestion). The first tag is the main genre and picks the game.
+Страница приложения: нажмите на карточку. Там ЭЛТ-телевизор с фильтром шума (ручка справа) и микро-бета игры,
+описание, отзывы (хранятся в localStorage) и кнопка «Играть». Игра выбирается по первому подходящему тегу:
+Arcade = арканоид, Music = пады, Shooter = шутер, Puzzle = блоки, остальное = ловля звёзд.
+Описание редактируется в редакторе карточки (карандаш). Тексты описаний и стартовых отзывов лежат
+в объектах DESC и SEED в index.html. Отзывы уже сохранённые в браузере остаются на старом языке:
+чтобы увидеть новые, очистите localStorage (ключ am.comments.v1).
 
-Performance: Settings > Quality (Auto / High / Mid / Low). Auto picks a tier from device hints
-(Save-Data, memory, cores) and steps down by itself if the frame rate stays low.
-Cards render the shader at reduced resolution and 30 fps (15 on Low), pause everything off-screen,
-and the app underneath is frozen while an app page is open.
+Редактор: превью, шапка и кнопки закреплены, прокручивается только середина. Гаджет и фон выбираются из выпадающих меню.
+Теги: до 3 на карточку (ввод + Enter или запятая, либо подсказка). Первый тег это основной жанр, он выбирает игру.
 
-Compatibility: the app page has an explicit solid background and the main app is hidden behind it,
-and CSS has fallbacks for browsers without color-mix() / inset. WebGL contexts are created only for
-cards near the viewport and released when far away.
+Производительность: Настройки > Quality (Auto / High / Mid / Low). Auto выбирает уровень по признакам устройства
+(Save-Data, память, ядра) и сам понижает его, если частота кадров остаётся низкой.
+Карточки рисуют шейдер в пониженном разрешении и 30 fps (15 на Low), всё вне экрана ставится на паузу,
+а приложение под открытой страницей приложения замораживается.
 
-Card backgrounds (Settings > Card background, or per card in the editor > Background):
-Waves, Mosaic (cover tiles scroll), Sunset (cover inside the sun), Rain (streaks take cover colours).
-Mix = each card gets its own by id. All four read the game cover, squeezed to a 32x32 texture.
+Совместимость: у страницы приложения явный сплошной фон, основное приложение за ней скрыто, а в CSS есть запасные
+варианты для браузеров без color-mix() / inset. WebGL-контексты создаются только для карточек рядом с экраном
+и освобождаются, когда карточки далеко.
 
-Lite mode (quality Low): shader, stars, sheen, glow, particles, noise and animations are off, cards
-use a flat static gradient. Auto turns it on at once for weak phones: Save-Data, <=2 GB RAM, <=2 cores,
-old WebView (no aspect-ratio, Chrome < 88), software or very old GPU, no WebGL. It also switches on by
-itself if the frame rate stays low (a toast tells the user), and the choice is remembered.
+Фоны карточек (Настройки > Card background или в редакторе карточки > Background):
+Waves, Mosaic (плитки обложки), Sunset (обложка внутри солнца), Rain (струи берут цвета обложки).
+Mix = у каждой карточки свой фон по id. Все четыре читают обложку игры, сжатую до текстуры 32x32.
 
-Branding (in the Store tab the header is shown at 60% size, see "games window" in the CSS): the header shows the Coopix Market logo and the pigeon mascot (assets/coopix-pigeon.png).
-The pigeon hops, its goggles glint, the bag screen blinks, and a tap makes it jump with confetti. Lite mode turns the motion off.
-The small planet sits behind its wing; to remove it, delete the <canvas id="planet"> line in index.html.
+Лайт-режим (качество Low): шейдер, звёзды, блики, свечение, частицы, шум и анимации выключены, карточки
+рисуются плоским статичным градиентом. Auto включает его сразу на слабых телефонах: Save-Data, <=2 ГБ ОЗУ,
+<=2 ядер, старый WebView (нет aspect-ratio, Chrome < 88), программный или очень старый GPU, нет WebGL.
+Он также включается сам, если частота кадров остаётся низкой (пользователю показывается уведомление), выбор запоминается.
 
-Front page (Home): first tab in the bottom dock, opens by default. It is a one-screen title screen (no scrolling):
-gadgets, headline "Быстрые офлайн игры с Мультиплеером", button "Перейти в маркет" (goes to Store),
-a swipeable news slider (autoplay, dots) and two buttons (Канал / Чатик).
-On short phones extras (tag chips, sponsors row) are hidden instead of scrolling.
-News: NEWS array in index.html (search "NEWS="): c = tag colour, app:"card id" makes the item open that app page.
-Sponsors: SPONSORS array. Links: LINKS object (replace the placeholder t.me URLs with the real ones).
-Search bar (#sbar) sits above the card list in Store: it hides non-matching cards by title / tags without rebuilding them. Dock is now: Home, Store, Community (trophy icon), Profile. Store tabs: Home, Games, Favorites (heart, was Music), Mine, Settings. Heart on every card and on the app page toggles a favorite (saved in the card data as fav).
+Брендинг (во вкладке Store шапка показывается в размере 60%, в CSS см. «games window» и «club»): в шапке логотип
+Coopix Market и талисман-голубь (assets/coopix-pigeon.png). Голубь прыгает, блики на очках, мигает экран на сумке,
+по нажатию он подпрыгивает с конфетти. Лайт-режим выключает движение.
+Маленькая планета лежит за крылом; чтобы убрать её, удалите строку <canvas id="planet"> в index.html.
 
-Club tab (title "Community", buttons Канал / Чатик): big slogan "Игру может сделать каждый" (.cl-hero), closed channel, closed chat, Boosty button, the "Зачем закрытый канал?" text and the sponsors list with
-short messages (SPONSORS[].msg). Links live in LINKS (search "LINKS="): pchannel / pchat = invite links to the
-closed channel and chat, boosty = Boosty page. All three are placeholders, replace them with the real URLs.
-Tapping a sponsor chip on Home opens the Club tab.
+Главная страница (Home): первая вкладка нижней панели, открывается по умолчанию. Экран-заставка на один экран (без прокрутки):
+гаджеты, заголовок «Быстрые офлайн игры с Мультиплеером», кнопка «Перейти в маркет» (ведёт в Store),
+новости со свайпом (автопрокрутка, точки) и две кнопки (Канал / Чатик).
+Лого на главной уменьшено на 20%, заголовок на 10%, карточка новостей чуть крупнее.
+На низких телефонах лишнее (чипы тегов, ряд спонсоров) скрывается, а не прокручивается.
+Новости: массив NEWS в index.html (поиск «NEWS=»): c = цвет тега, app:"id карточки" открывает страницу этого приложения.
+Спонсоры: массив SPONSORS. Ссылки: объект LINKS (замените заглушки t.me на настоящие).
+Строка поиска (#sbar) стоит над списком карточек в Store: скрывает неподходящие по названию и тегам карточки, не пересобирая их.
+Нижняя панель: Home, Store, Community (иконка кубка), Profile. Вкладки Store: Home, Games, Favorites (сердце, раньше Music), Mine, Settings.
+Сердце на каждой карточке и на странице приложения включает избранное (хранится в данных карточки как fav).
 
-Font: UI uses Tektur (assets/fonts/tektur-*.woff2: 500 for regular, 700 for headings, latin + cyrillic). Pixelify Sans stays for the logo only.
+Вкладка клуба (Community): надписи «Community» сверху нет, шапка уменьшена как в Store. Крупный слоган «Игру может сделать каждый»
+(.cl-hero), кнопка Boosty и список спонсоров с короткими сообщениями (SPONSORS[].msg). Кнопок Канал / Чатик здесь больше нет.
+Ссылки лежат в LINKS (поиск «LINKS=»): boosty = страница Boosty (заглушка, замените на настоящий URL);
+pchannel / pchat = инвайты в закрытые канал и чат, сейчас не используются.
+
+Шрифт: интерфейс на Tektur (assets/fonts/tektur-*.woff2: 500 для обычного, 700 для заголовков, latin + cyrillic).
+Pixelify Sans остаётся только для логотипа.
+
+Профиль (4-я кнопка нижней панели, раньше открывала настройки): аватар (по умолчанию голубь, можно загрузить фото и выбрать цвет рамки),
+ник, дата регистрации, звание, уровень с полосой опыта (XP), статистика и медали. Карандаш открывает редактор профиля,
+кнопка «Настройки» внизу страницы открывает прежние настройки (они также остались во вкладке Store, значок шестерёнки).
+Данные лежат в localStorage, ключ am.profile. Звания по уровням (до 10): Новичок, Игрок, Знаток, Бывалый, Мастер, Эксперт, Ветеран, Легенда, Герой, Чемпион.
+Уровень = floor(sqrt(XP/50))+1, то есть уровню N нужно 50*(N-1)^2 XP.
+XP: запуск игры +5, очки в игре (до +30 за забег), отзыв +20, новая игра в избранном +5, своя карточка +25, заход в новый день +10, медали дают бонус.
+Звания, медали и награды настраиваются в index.html: поиск «RANKS=» и «MEDALS=» (id, название, условие v/need, бонус xp, цвет c, значок ic).
