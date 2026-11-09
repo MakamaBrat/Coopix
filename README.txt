@@ -32,3 +32,7 @@ Lite mode (quality Low): shader, stars, sheen, glow, particles, noise and animat
 use a flat static gradient. Auto turns it on at once for weak phones: Save-Data, <=2 GB RAM, <=2 cores,
 old WebView (no aspect-ratio, Chrome < 88), software or very old GPU, no WebGL. It also switches on by
 itself if the frame rate stays low (a toast tells the user), and the choice is remembered.
+
+Branding: the header shows the Coopix Market logo and the pigeon mascot (assets/coopix-pigeon.png).
+The pigeon hops, its goggles glint, the bag screen blinks, and a tap makes it jump with confetti. Lite mode turns the motion off.
+The small planet sits behind its wing; to remove it, delete the <canvas id="planet"> line in index.html.
