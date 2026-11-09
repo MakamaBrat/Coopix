@@ -738,6 +738,18 @@ body:not(.onhome) .top{display:none}
 @keyframes chpul{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.5);opacity:0}}
 .chc-tip{position:absolute;top:-4px;left:0;z-index:2;pointer-events:none;min-width:104px;padding:6px 10px;background:rgba(24,14,64,.96);border:2px solid #7a58e0;color:#fff;font-size:14px;line-height:1.35;white-space:nowrap;opacity:0;transition:opacity .12s}
 .chc-tip.on{opacity:1}.chc-tip span{display:block;font-size:12px;color:#a99be0}.chc-tip b{display:block;font-size:16px;color:#fff}.chc-tip i{font-style:normal;color:#cdbfff}
+.chc-g{margin-top:10px}
+.chc-gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}.chc-gh b{font-size:15px;color:#ffd23f;letter-spacing:0}
+.chc-gb{position:relative;height:12px;margin-top:5px;background:#0d0724;border:2px solid #2a1f5e;overflow:hidden}
+.chc-gb i{position:absolute;left:0;top:0;bottom:0;width:var(--w,3%);background:repeating-linear-gradient(90deg,#ff8fd8 0 8px,#a56bff 8px 16px,#6fa2ff 16px 24px);background-size:48px 100%;box-shadow:0 0 10px rgba(165,107,255,.8);transition:width .9s cubic-bezier(.2,.9,.2,1);animation:chflow 1.4s linear infinite}
+.chc-gp{margin-top:4px;font-size:13px;color:#cdbfff}
+@keyframes chflow{to{background-position:48px 0}}
+[data-q="0"] .chc-gb i{animation:none}
+@media (prefers-reduced-motion:reduce){.chc-gb i{animation:none}}
+.chc-d.nu{color:#cdbfff}
+.chc svg text.tt{fill:#ffd23f;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.chc svg text.hd{fill:#fff;font-size:14px;font-weight:700}.chc svg text.hs{fill:#a99be0;font-size:12px}
+.chc .gh{opacity:.55}
 .chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
 .chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:9px;border-top:2px dashed #2f2360;text-align:center}
 .chc-s b{display:block;font-size:19px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
@@ -1563,19 +1575,30 @@ const HM=210,HA=304,CW=340;
 /* реальные данные: CAP.series={money:[[{v,t}…] на каждый период],act:[[{a,res,cap,t}…]]}; без series показываются демо-данные */
 const getMoney=pi=>CAP.series?((CAP.series.money||[])[pi]||[]):mkMoney(pi);
 const getAct=pi=>CAP.series?((CAP.series.act||[])[pi]||[]):mkAct(pi);
+const GOALS=[100,500,1e3,2500,5e3,1e4,25e3,5e4,1e5,25e4,5e5,1e6,5e6,1e7];
+/* формат малых чисел: <10 с десятыми, <1000 целые, дальше К/M */
+const fv=v=>{const a=Math.abs(v);return a>=1e3?cf(v):a>=10||Number.isInteger(v)?String(Math.round(v)):v.toFixed(1).replace(".",",")};
+const fx=v=>Math.abs(v)>=10||Number.isInteger(v)?nf(v):v.toFixed(1).replace(".",",");
+/* «красивая» шкала: шаги 1/2/2.5/5·10^k, для растущих с нуля данных всегда от нуля */
+function nscale(lo,hi,k){const r=(hi-lo)||1,raw=r/k,e=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/e,st=(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e;return{lo:Math.floor(lo/st+1e-9)*st,hi:Math.ceil(hi/st-1e-9)*st,st}}
+function scaleOf(vals){const mn=Math.min(...vals),mx=Math.max(...vals);
+  if(mx<=0)return nscale(0,8,4);
+  if(mn>=0&&mn<mx*.6)return nscale(0,mx*1.12,4);
+  const pad=(mx-mn||mx)*.14;return nscale(Math.max(0,mn-pad),mx+pad,4)}
+const sticks=sc=>{const o=[];for(let v=sc.lo;v<=sc.hi+sc.st/2;v+=sc.st)o.push(v);return o};
 /* плавная монотонная кривая (без «перелётов» между точками) */
 function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((x,i)=>(i?"L":"M")+f(x)+" "+f(ys[i])).join("");
   const d=[],m=[];for(let i=0;i<n-1;i++)d[i]=(ys[i+1]-ys[i])/(xs[i+1]-xs[i]);m[0]=d[0];m[n-1]=d[n-2];for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
   for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
-const chBody=(h,label)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
+const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
 function chartsHTML(){const demo=CAP.series?"":"<em>демо</em>";return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги${demo}</div></div>${chBody(HM,"График капитализации проекта в деньгах")}<div class="chc-s" data-s></div></div>
+  <div class="chc" id="chM"><div class="chc-h"><div class="chc-t">Проект · деньги${demo}</div></div>${chBody(HM,"График капитализации проекта в деньгах",1)}<div class="chc-s" data-s></div></div>
   <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс${demo}</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
     <div class="chc-s" data-s></div><p class="chc-n">Активность игроков превращается в ресурс ${CAP.res}: ${CAP.rate}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
 function initCharts(root){
-  const W=CW,NS="http://www.w3.org/2000/svg",anim=()=>!RM&&Q>0;
+  const W=CW,anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
     const run=()=>{box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
     box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});
@@ -1589,51 +1612,71 @@ function initCharts(root){
     svg.onpointerdown=e=>{pin=true;go(idx(e))};svg.onpointermove=e=>{if(e.pointerType==="mouse"||pin)go(idx(e))};
     svg.onpointerleave=e=>{if(e.pointerType==="mouse"&&!pin)off()}};
   const ticks=n=>[...new Set([0,.25,.5,.75,1].map(k=>Math.round(k*(n-1))))];
-  const empty=(box,svg,h)=>{svg.innerHTML=`<text x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";box._off=null};
-  const delta=(el,ch,tail)=>{const up=ch>=0;el.className="chc-d "+(up?"up":"dn");el.textContent=(up?"▲ +":"▼ ")+Math.abs(ch).toFixed(1).replace(".",",")+"% "+tail;return up};
+  const empty=(box,svg,h)=>{svg.innerHTML=`<text x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";const g=box.querySelector("[data-g]");g&&(g.innerHTML="");box._off=null};
+  /* изменение за период: от нуля процент не считаем (деление на 0), показываем прирост в деньгах */
+  const delta=(el,a,b,tail,unit)=>{
+    if(a>0){const ch=(b/a-1)*100,up=ch>=0,big=Math.abs(ch)>=1000;el.className="chc-d "+(up?"up":"dn");el.textContent=big?"▲ ×"+(b/a).toFixed(0)+" "+tail:(up?"▲ +":"▼ ")+Math.abs(ch).toFixed(1).replace(".",",")+"% "+tail}
+    else if(b>0){el.className="chc-d up";el.textContent="▲ +"+fx(b-a)+" "+unit+" "+tail}
+    else{el.className="chc-d nu";el.textContent="● Старт положен · ждём первых игроков"}};
+  /* призрачная кривая «потенциала» для пустого графика */
+  const ghost=(xs,y0,hgt)=>{const n=xs.length,ys=xs.map((_,i)=>y0-hgt*Math.pow(i/(n-1),1.7));return curve(xs,ys)};
+  const star=(x,y)=>`<g transform="translate(${x} ${y})" class="glow"><path d="M0-7L2.1-2.2L7.4-2.1L3.3 1.2L4.7 6.5L0 3.5L-4.7 6.5L-3.3 1.2L-7.4-2.1L-2.1-2.2Z" fill="#ffd23f" stroke="#fff" stroke-width=".8"/></g>`;
+  /* цель: ближайший круглый рубеж и полоса прогресса */
+  const goal=(el,v)=>{const g=GOALS.find(x=>x>v);if(!g){el.innerHTML='<div class="chc-gh"><span>Все цели достигнуты</span><b>★</b></div>';return}
+    const pc=v/g*100;el.innerHTML=`<div class="chc-gh"><span>Следующая цель</span><b>${nf(g)} ${CAP.cur}</b></div><div class="chc-gb"><i style="--w:0%"></i></div><div class="chc-gp">${pc<1&&v>0?"меньше 1":pc.toFixed(pc<10?1:0).replace(".",",")}% · осталось ${nf(g-v)} ${CAP.cur}</div>`;
+    const bar=el.querySelector("i");requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.setProperty("--w",Math.max(3,pc)+"%")))};
   /* 1: деньги */
   wire(root.querySelector("#chM"),(pi,svg,box)=>{
     const H=HM,pts=getMoney(pi),n=pts.length;if(n<2){empty(box,svg,H);return}
-    const pl=6,pr=46,pt=16,pb=22,vs=pts.map(p=>p.v),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn||mx||1)*.12,lo=mn-pad,hi=mx+pad,
+    const pl=6,pr=46,pt=18,pb=22,vs=pts.map(p=>p.v),mx=Math.max(...vs),sc=scaleOf(vs),lo=sc.lo,hi=sc.hi,
       X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo)),xs=vs.map((_,i)=>X(i)),ys=vs.map(Y),d=curve(xs,ys),
-      up=vs[n-1]>=vs[0],dc=up?"#5dff8a":"#ff5e7a",ly=ys[n-1],lx=xs[n-1],dr=anim()?" dr":"",fi=anim()?" fi":"";
-    let g="";for(let k=0;k<5;k++){const v=lo+(hi-lo)*k/4,y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${y+4}">${cf(v)}</text>`}
+      last=vs[n-1],up=last>=vs[0],dc=last>0&&!up?"#ff5e7a":"#5dff8a",ly=ys[n-1],lx=xs[n-1],dr=anim()?" dr":"",fi=anim()?" fi":"",
+      fz=vs.findIndex(v=>v>0),pk=vs.indexOf(mx);
+    let g="";sticks(sc).forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#2a1f5e"}" ${v===lo?"":'stroke-dasharray="2 4"'}/><text x="${W-pr+5}" y="${y+4}">${fv(v)}</text>`});
     const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-5}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${pts[i].t}</text>`).join("");
+    let extra="";
+    if(mx<=0){const gy=H-pb,gh=(H-pt-pb)*.55;extra=`<path class="gh${fi}" d="${ghost(xs,gy,gh)}" fill="none" stroke="#a56bff" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
+      <text class="hd" x="${(pl+W-pr)/2}" y="${pt+(H-pt-pb)*.3}" text-anchor="middle">Старт проекта</text><text class="hs" x="${(pl+W-pr)/2}" y="${pt+(H-pt-pb)*.3+17}" text-anchor="middle">линия оживёт с первой игры</text>`}
+    else{if(fz>0){const r=xs[fz]>W-pr-60;extra+=`<circle cx="${xs[fz]}" cy="${ys[fz]}" r="3.5" fill="#ffd23f" class="glow"/><text class="tt" x="${xs[fz]+(r?4:-4)}" y="${ys[fz]-11}" text-anchor="${r?"start":"end"}">Старт</text>`}
+      if(pk<n-1&&mx>last)extra+=star(xs[pk],ys[pk]-1)}
     svg.innerHTML=`<defs><linearGradient id="mL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ff5ec4"/><stop offset=".55" stop-color="#8a52f5"/><stop offset="1" stop-color="#3b9bff"/></linearGradient>
       <linearGradient id="mA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a52f5" stop-opacity=".5"/><stop offset="1" stop-color="#8a52f5" stop-opacity="0"/></linearGradient></defs>${g}${tx}
-      <path class="${fi}" d="${d}L${lx} ${H-pb}L${xs[0]} ${H-pb}Z" fill="url(#mA${pi})"/>
+      <path class="${fi}" d="${d}L${lx} ${H-pb}L${xs[0]} ${H-pb}Z" fill="url(#mA${pi})"/>${extra}
       <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#mL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       <line x1="${pl}" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${dc}" stroke-dasharray="3 3" opacity=".55"/>
       <circle class="pul" cx="${lx}" cy="${ly}" r="9" fill="${dc}" opacity=".4"/><circle cx="${lx}" cy="${ly}" r="4" fill="${dc}" stroke="#fff" stroke-width="1.5"/>
-      <rect x="${W-pr}" y="${ly-8}" width="${pr}" height="16" fill="${dc}"/><text x="${W-pr+4}" y="${ly+4}" style="fill:#0c0620;font-weight:700">${cf(vs[n-1])}</text>
+      <rect x="${W-pr}" y="${ly-8}" width="${pr}" height="16" fill="${dc}"/><text x="${W-pr+4}" y="${ly+4}" style="fill:#0c0620;font-weight:700">${fv(last)}</text>
       <g data-x style="display:none"><line y1="${pt}" y2="${H-pb}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#8a52f5" stroke-width="2.5"/></g>`;
     const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");
-    box.querySelector("[data-v]").textContent=nf(vs[n-1])+" "+CAP.cur;delta(box.querySelector("[data-d]"),(vs[n-1]/vs[0]-1)*100,"за "+PER[pi][0]);
-    box.querySelector("[data-s]").innerHTML=`<div><b>${cf(mx)}</b><span>Максимум</span></div><div><b>${cf(mn)}</b><span>Минимум</span></div><div><b>${cf(vs.reduce((a,b)=>a+b,0)/n)}</b><span>Среднее</span></div>`;
-    attach(box,svg,n,pl,pr,i=>{G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);return{x:xs[i],html:`<span>${pts[i].t}</span><b>${nf(vs[i])} ${CAP.cur}</b>`}},()=>{G.style.display="none"})});
+    box.querySelector("[data-v]").textContent=fx(last)+" "+CAP.cur;delta(box.querySelector("[data-d]"),vs[0],last,"за "+PER[pi][0],CAP.cur);goal(box.querySelector("[data-g]"),last);
+    box.querySelector("[data-s]").innerHTML=`<div><b>${fv(mx)}</b><span>Максимум</span></div><div><b>${fv(Math.min(...vs))}</b><span>Минимум</span></div><div><b>${fv(vs.reduce((a,b)=>a+b,0)/n)}</b><span>Среднее</span></div>`;
+    attach(box,svg,n,pl,pr,i=>{G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);return{x:xs[i],html:`<span>${pts[i].t}</span><b>${fx(vs[i])} ${CAP.cur}</b>`}},()=>{G.style.display="none"})});
   /* 2: активность (столбцы сверху) и капитализация актива (линия снизу) на общей оси времени */
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
-    const pl=6,pr=46,aT=24,aB=96,bT=176,bB=H-26,mxA=Math.max(...dt.map(o=>o.a))||1,cv=dt.map(o=>o.cap),mn=Math.min(...cv),mx=Math.max(...cv),pad=(mx-mn||mx||1)*.12,lo=mn-pad,hi=mx+pad,
+    const pl=6,pr=46,aT=24,aB=96,bT=176,bB=H-26,acts=dt.map(o=>o.a),mxA=Math.max(...acts),sa=nscale(0,Math.max(mxA,4),2),cv=dt.map(o=>o.cap),mx=Math.max(...cv),sc=scaleOf(cv),lo=sc.lo,hi=sc.hi,
       X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,(W-pl-pr)/n*.62),
-      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=dt.reduce((s,o)=>s+o.a,0);
-    let g=`<text class="pt" x="${pl}" y="14">Активность · игр</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${cf(mxA)}</text>
+      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),none=mxA<=0&&mx<=0;
+    let g=`<text class="pt" x="${pl}" y="14">Активность · игр</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${fv(sa.hi)}</text>
       <line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/><text x="${W-pr+5}" y="${aB+4}">0</text><text class="pt" x="${pl}" y="${bT-14}">Капитализация актива · ${CAP.cur}</text>`;
-    for(let k=0;k<4;k++){const v=lo+(hi-lo)*k/3,y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${y+4}">${cf(v)}</text>`}
-    const bars=dt.map((o,i)=>{const h=Math.max(1.5,(aB-aT)*o.a/mxA);return `<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="url(#aB${pi})"/>`}).join("");
+    sticks(sc).forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#2a1f5e"}" ${v===lo?"":'stroke-dasharray="2 4"'}/><text x="${W-pr+5}" y="${y+4}">${fv(v)}</text>`});
+    const bars=dt.map((o,i)=>{const h=o.a>0?Math.max(5,(aB-aT)*o.a/sa.hi):2;return `<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="${o.a>0?`url(#aB${pi})`:"#4a3a8a"}"${o.a>0?"":' opacity=".5"'}/>`}).join("");
     const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
+    let extra="";if(none){extra=`<path class="gh${fi}" d="${ghost(xs,bB,(bB-bT)*.6)}" fill="none" stroke="#ff9a5e" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
+      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+30}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+48}" text-anchor="middle">каждая игра добавит столбик</text>`}
+    else if(mxA>0){const pk=acts.indexOf(mxA);extra=star(xs[pk],aB-(aB-aT)*mxA/sa.hi-9)}
     svg.innerHTML=`<defs><linearGradient id="aB${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a4ff"/><stop offset="1" stop-color="#6a35e0"/></linearGradient>
       <linearGradient id="aL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ffb23f"/><stop offset=".6" stop-color="#ff7a8a"/><stop offset="1" stop-color="#ff5ec4"/></linearGradient>
-      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".42"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}
+      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".42"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}${extra}
       <path class="${fi}" d="${d}L${xs[n-1]} ${bB}L${xs[0]} ${bB}Z" fill="url(#aA${pi})"/>
       <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#aL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       <circle class="pul" cx="${xs[n-1]}" cy="${ys[n-1]}" r="9" fill="#ffb23f" opacity=".4"/><circle cx="${xs[n-1]}" cy="${ys[n-1]}" r="4" fill="#ffb23f" stroke="#fff" stroke-width="1.5"/>
       <g data-x style="display:none"><line y1="${aT}" y2="${bB}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
     const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+8)/H*100)+"%";
-    box.querySelector("[data-v]").textContent=nf(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),(last.cap/dt[0].cap-1)*100,"капитализация за "+PER[pi][0]);
+    box.querySelector("[data-v]").textContent=fx(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),dt[0].cap,last.cap,"капитализация за "+PER[pi][0],CAP.cur);
     box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>Активность, игр</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
     attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);brs.forEach((b,j)=>b.classList.toggle("hl",j===i));
-      return{x:xs[i],html:`<span>${o.t}</span><b>${nf(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} игр · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
+      return{x:xs[i],html:`<span>${o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} игр · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
 
 /* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
 function renderClub(){
