@@ -922,6 +922,10 @@ html.desk .pbody:has(.toggle)>.toggle{grid-column:1}
 html.desk .pbody:has(.toggle)>.fld{grid-column:2;margin-top:0!important}
 html.desk .pbody:has(.toggle)>.fld:first-of-type{grid-row:1/span 2}
 html.desk .pbody:has(.toggle)>.fld:last-of-type{grid-row:3/span 2}
+.pf-sub{position:relative;margin:12px 0 4px;padding:12px 14px 14px;background:linear-gradient(135deg,#2a1466,#150d33 70%);border:3px solid var(--acc);box-shadow:4px 4px 0 #6a35e0;display:flex;flex-direction:column;gap:10px}
+.pf-subh b{display:block;font-size:20px;text-transform:uppercase;color:#fff;text-shadow:2px 2px 0 #6a35e0}.pf-subh span{display:block;font-size:15px;line-height:1.3;color:var(--dim);margin-top:2px}
+.pf-sub .btn{flex:none;width:100%;height:46px;font-size:18px}.pf-subb svg{display:inline-block;width:20px;height:20px;fill:currentColor;vertical-align:-3px}.pf-subr{display:flex;gap:10px}.pf-subr .btn{flex:1;min-width:0;height:42px}
+html.desk .prof>.pf-sub{grid-column:1;grid-row:3;margin:0}html.desk .prof>.pf-set{grid-row:4}html.desk .prof>section{grid-row:1/span 4}
 /* profile editor */
 html.desk .pbody:has(.av-row){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;align-content:start}
 html.desk .pbody:has(.av-row)>.av-row{grid-column:1;grid-row:1/span 2}
@@ -1674,15 +1678,18 @@ function renderProfile(){
     <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
     <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-PROF.xp)+" XP · «"+RANKS[lv]+"»"}</div>
     <div class="pf-st"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>
+  <div class="pf-sub enter" style="--i:.09s"><div class="pf-subh"><b>Ваша игра в маркете</b><span>Отправьте HTML-файл на рассмотрение и следите за статусом</span></div>
+    <button class="btn pf-subb" id="pfSub" type="button">${IC.plus}&nbsp;Отправить игру</button>
+    <div class="pf-subr"><button class="btn ghost" id="pfMine" type="button">Мои заявки</button>${isAdmin()?'<button class="btn ghost" id="pfAdm" type="button">Админ-панель</button>':""}</div></div>
   <section class="sec enter" style="--i:.12s;margin-top:4px"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div>
     <div class="md-info" id="mdInfo"></div></section>
-  <div class="pf-set enter" style="--i:.18s;display:flex;flex-direction:column;gap:10px"><button class="btn" id="pfSub" type="button" style="flex:none;width:100%">${IC.plus}&nbsp;Отправить игру</button>${isAdmin()?'<button class="btn ghost" id="pfAdm" type="button" style="flex:none;width:100%">Админ-панель</button>':""}<button class="btn ghost" id="pfSet" type="button" style="flex:none;width:100%">Настройки</button></div>`;
+  <div class="pf-set enter" style="--i:.18s"><button class="btn ghost" id="pfSet" type="button" style="flex:none;width:100%">Настройки</button></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=profEl.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
   const pick=id=>{const m=MEDALS.find(x=>x.id===id);const info=$("#mdInfo");info.style.setProperty("--ic",m.c);info.innerHTML=medalInfo(id);profEl.querySelectorAll(".md").forEach(x=>x.classList.toggle("pk",x.dataset.m===id))};
   const first=MEDALS.find(m=>!PROF.medals[m.id])||MEDALS[0];pick(Object.keys(PROF.medals).length?Object.entries(PROF.medals).sort((x,y)=>y[1]-x[1])[0][0]:first.id);
   profEl.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)});
   $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
-  $("#pfSub").addEventListener("click",()=>{sfx.tap();openSubmit()});const ad=$("#pfAdm");ad&&ad.addEventListener("click",()=>{sfx.tap();openAdmin()});
+  $("#pfSub").addEventListener("click",()=>{sfx.tap();openSubmit()});$("#pfMine").addEventListener("click",()=>{sfx.tap();openMine()});const ad=$("#pfAdm");ad&&ad.addEventListener("click",()=>{sfx.tap();openAdmin()});
   $("#pfSet").addEventListener("click",()=>{sfx.tap();openSettings()})}
 function openProfileEditor(){
   const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
