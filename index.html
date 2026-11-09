@@ -436,13 +436,12 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .lab{font-size:12px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em}
 .spk{width:28px;height:50px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.55) 0 3px,transparent 3px 7px);margin-top:6px}
 .led{width:10px;height:10px;border-radius:50%;background:#5a2020;transition:.2s}.led.on{background:#5dff8a;box-shadow:0 0 9px #5dff8a}
-.hud{display:flex;justify-content:space-between;margin:12px 6px 0;font-size:21px;color:var(--c3)}.hud b{font-weight:700;color:#fff}
 .pg-au{font-size:16px;color:var(--dim)}.pg-au b{font-weight:600;color:#e5d9ff}
 .chg{margin-top:12px;padding:6px 10px 7px;background:#120a2a;border:2px solid var(--line);border-left:5px solid var(--c1,#a56bff)}
 .chg-h{display:flex;justify-content:space-between;gap:8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .chg ul{margin:3px 0 0;padding:0;list-style:none;font-size:14px;line-height:1.25;color:#e5d9ff;max-height:5.1em;overflow-y:auto}
 .chg li::before{content:"+ ";color:var(--c1,#a56bff)}
-.hint2{margin-top:4px;text-align:center;font-size:16px;color:var(--dim)}
+.hint2{margin-top:14px;text-align:center;font-size:16px;color:var(--dim)}
 
 /* sections */
 .sec{margin-top:24px}
@@ -635,6 +634,7 @@ body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
 .prof{display:none}
 body.onprof .prof{display:flex;flex-direction:column;gap:10px;padding-top:2px}
 body.onprof .tabs,body.onprof .list,body.onprof .home,body.onprof .club,body.onprof .sbar{display:none}
+body.onprof .top{display:none}
 .prof .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .pf-card{--pc:#a56bff;position:relative;padding:3px;background:linear-gradient(160deg,#6a4fd0,#2a1a66);filter:drop-shadow(0 0 14px rgba(165,107,255,.4));
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
@@ -1681,9 +1681,9 @@ function openSettings(){
 
 function openEditor(id,preCover){
   const existing=id?DATA.find(d=>d.id===id):null;
-  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:""};
+  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0"};
   if(!existing&&!preCover)draft.cover="b:space";
-  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";
+  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";
   let cands=[],tags=tagsOf(draft).slice();
   const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
@@ -1702,6 +1702,7 @@ function openEditor(id,preCover){
    <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Версия</span><input class="in" id="ver" maxlength="12" placeholder="Например 1.2.0" value="${esc(draft.version||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="in" id="chg" maxlength="200" rows="3" placeholder="Что нового в этой версии?">${esc(draft.changes||"")}</textarea></label>
    </div>
    <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
@@ -1729,7 +1730,7 @@ function openEditor(id,preCover){
   /* name / description */
   $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
-  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});
+  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
   /* tags: type + Enter / comma, or tap a suggestion; max 3 */
   const tb=$("#tagbox"),ti=$("#taginp"),sg=$("#sugg");
   const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
@@ -1845,6 +1846,7 @@ const DESC={
  toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nБета-версия: пока без боссов и бонусов.",
  blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
+const VERSIONS={retro:"0.3",space:"0.3",toxic:"0.3",blocks:"0.3"};
 const CHANGES={
   retro:"Скорость растёт после каждой стены\nНовые неоновые кирпичи\nИсправлено залипание платформы",
   space:"Ноты падают плавнее\nДобавлен счётчик промахов\nИсправлены задержки звука",
@@ -1867,8 +1869,9 @@ const KN={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"," ":"S",a:"L",d
 function pageHTML(m,kind){
   const desc=(m.desc!=null&&m.desc!==""?m.desc:DESC[m.id]||"").trim();
   const author=(m.author||AUTHORS[m.id]||PROF.name||"Неизвестен").trim(),chl=(m.changes!=null&&m.changes!==""?m.changes:CHANGES[m.id]||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4);
+  const ver=(m.version!=null&&m.version!==""?m.version:VERSIONS[m.id]||"").toString().trim();
   return `<div class="pg">
-  <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button><span class="beta">BETA 0.3</span></div>
+  <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button>${ver?`<span class="beta">v${esc(ver)}</span>`:""}</div>
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
     <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
@@ -1880,14 +1883,12 @@ function pageHTML(m,kind){
       <span class="rec">● BETA</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" aria-pressed="true" aria-label="Noise filter"></button><span class="lab">noise</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
-  <div class="hud"><span>SCORE <b id="sc">0</b></span><span>BEST <b id="bs">0</b></span></div>
   <p class="hint2">${HINT[kind]}</p>
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
-    <div class="tags"><span class="tag">Beta 0.3</span><span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
-    ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span><span>v0.3</span></div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
+    <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
   <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><div id="cmList"></div>
-    <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
-      <input class="in" id="cmName" maxlength="14" placeholder="Ваше имя" value="${esc(store.get("am.name",""))}">
+    <div class="wr"><span class="lbl">Написать отзыв <small>от имени ${esc((PROF.name||"Игрок").trim())}</small></span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div>`}
 
@@ -1898,7 +1899,7 @@ async function openPage(id,opt){
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;
   $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
-  $("#pgPlays").textContent=(m.played||0)+" игр";$("#bs").textContent=PG.best;
+  $("#pgPlays").textContent=(m.played||0)+" игр";
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){backClick();return}
@@ -1927,12 +1928,12 @@ function bindPage(){
   scr.addEventListener("pointerup",()=>{if(down&&down.mv<8&&PG.run)inp.q.push({t:"tap"});down=null});
   scr.addEventListener("pointercancel",()=>{down=null});
   $("#knob").addEventListener("click",e=>{const on=$("#tv").classList.toggle("clean");e.currentTarget.setAttribute("aria-pressed",!on);sfx.tap()});
-  let rate=0;const pk=$("#pk"),txt=$("#cmText"),nm=$("#cmName");
+  let rate=0;const pk=$("#pk"),txt=$("#cmText");
   const drawPk=()=>{pk.innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-i="${i}" aria-label="Звёзд: ${i}">${starSvg(i<=rate)}</button>`).join("")};drawPk();
   pk.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;rate=i===rate?0:i;drawPk();sfx.tap()});
   txt.addEventListener("input",()=>{$("#cnt").textContent=txt.value.length+"/240"});
   $("#cmPost").addEventListener("click",()=>{const t=txt.value.trim();if(t.length<2){toast("Напишите пару слов");txt.focus();return}
-    const n=nm.value.trim()||"Гость";store.set("am.name",n);cmOf(m).unshift({n,r:rate,t,d:Date.now(),me:1});saveCM();
+    const n=(PROF.name||"").trim()||"Игрок";cmOf(m).unshift({n,r:rate,t,d:Date.now(),me:1});saveCM();
     txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();profReview();renderCM();sfx.play();toast("Отзыв отправлен")});
   $("#cmList").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;cmOf(m).splice(+b.dataset.del,1);saveCM();renderCM()});
   pageEl.querySelector("[data-back]").addEventListener("click",backClick);
@@ -1945,7 +1946,7 @@ function renderCM(){
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
   if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
   else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
-  else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span>SCORE ${PG.score}</span>${nb?"<span>NEW BEST!</span>":""}<span class="blink">TAP TO RETRY</span></div>`}}
+  else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span class="blink">TAP TO RETRY</span></div>`}}
 function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=false;
   const g=x.createLinearGradient(0,0,0,120);g.addColorStop(0,rgb(PG.pal.B));g.addColorStop(1,rgb(PG.pal.D));x.fillStyle=g;x.fillRect(0,0,160,120);
   x.drawImage(PG.art,46,8,68,68);setOv("idle")}
@@ -1959,18 +1960,18 @@ function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
   if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}stopGame();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
-  Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;$("#sc").textContent=0;
+  Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
   const loop=now=>{if(!PG||!PG.run)return;if(Q<2&&now-last<(Q?30:45)){PG.raf=requestAnimationFrame(loop);return}const dt=Math.min(.05,(now-last)/1e3);last=now;
     inp.x=clamp(inp.x+(inp.r-inp.l)*dt*.9,0,1);const g=PG.game;g.step(dt);g.draw(x);inp.q.length=0;
-    if(g.score!==PG.score){PG.score=g.score;$("#sc").textContent=g.score}
+    if(g.score!==PG.score)PG.score=g.score;
     if(g.over){endGame();return}PG.raf=requestAnimationFrame(loop)};
   PG.raf=requestAnimationFrame(loop)}
 function stopGame(){if(!PG)return;PG.run=false;cancelAnimationFrame(PG.raf);const s=$("#scr"),l=$("#led");s&&s.classList.remove("playing");l&&l.classList.remove("on")}
 function endGame(){
   const s=PG.score,b=store.get("am.best",{}),nb=s>(b[PG.m.id]||0);
-  if(nb){b[PG.m.id]=s;store.set("am.best",b);PG.best=s;$("#bs").textContent=s}
+  if(nb){b[PG.m.id]=s;store.set("am.best",b);PG.best=s}
   profScore(s);stopGame();PG.endT=performance.now();burst();setOv("end",nb&&s>0);sfx.out()}
 async function playBeta(){
   const me=PG;if(!me||!me.pal)return;if(!me.ready){me.want=true;return}
