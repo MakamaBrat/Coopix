@@ -20,7 +20,7 @@ lock();document.addEventListener("DOMContentLoaded",lock);addEventListener("poin
 })();</script>
 <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.tgInit&&tgInit()"></script>
 <script>window.tgInit=function(){try{var w=window.Telegram&&Telegram.WebApp;if(!w||!(w.initData||(w.platform&&w.platform!=="unknown")))return;document.documentElement.classList.add("tg");
-w.ready();w.expand();try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
+w.ready();w.expand();try{if(!window.__tgFs&&w.requestFullscreen&&/^(tdesktop|macos|weba|webk|web|unigram)$/.test(w.platform||"")){window.__tgFs=1;w.requestFullscreen()}}catch(e){}try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
 if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",function(){window.tgInit()});</script>
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: ретро-маркет приложений. Добавьте обложку, выберите предмет, и вся карточка окрасится в её цвета.">
