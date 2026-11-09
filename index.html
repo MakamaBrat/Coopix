@@ -11,19 +11,22 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: retro app market. Drop a cover, pick an item, and the whole card takes its colours.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0618'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23a56bff'/%3E%3Crect x='5' y='3' width='6' height='2' fill='%23a56bff'/%3E%3Crect x='6' y='7' width='1' height='3' fill='%230a0618'/%3E%3Crect x='5' y='8' width='3' height='1' fill='%230a0618'/%3E%3Crect x='10' y='7' width='1' height='1' fill='%230a0618'/%3E%3Crect x='11' y='9' width='1' height='1' fill='%230a0618'/%3E%3C/svg%3E">
-<link rel="preload" href="assets/fonts/tiny5-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/tektur-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/tektur-cyrillic-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/pixelify-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Pixelify Sans";font-weight:400;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"Pixelify Sans";font-weight:600;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-600-normal.woff2) format("woff2")}
 @font-face{font-family:"Pixelify Sans";font-weight:700;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-700-normal.woff2) format("woff2")}
-/* UI font: Tiny5 (pixel font with a clean Cyrillic). Pixelify Sans stays for the logo only */
-@font-face{font-family:"Tiny5";font-weight:400;font-display:swap;src:url(assets/fonts/tiny5-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD,U+2190-2193}
-@font-face{font-family:"Tiny5";font-weight:400;font-display:swap;src:url(assets/fonts/tiny5-cyrillic-400-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+/* UI font: Tektur (techy, readable Cyrillic, chamfered corners match the UI). 500 file covers weights <600, 700 file covers 600+. Pixelify Sans stays for the logo only */
+@font-face{font-family:"Tektur";font-weight:100 599;font-display:swap;src:url(assets/fonts/tektur-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD,U+2190-2193}
+@font-face{font-family:"Tektur";font-weight:100 599;font-display:swap;src:url(assets/fonts/tektur-cyrillic-500-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"Tektur";font-weight:600 900;font-display:swap;src:url(assets/fonts/tektur-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD,U+2190-2193}
+@font-face{font-family:"Tektur";font-weight:600 900;font-display:swap;src:url(assets/fonts/tektur-cyrillic-700-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 
 :root{
   --bg0:#07040f; --bg1:#0e0820; --ink:#f4ecff; --dim:#9b86d6; --line:#3a2a70; --acc:#a56bff; --acc2:#5b2fd0;
-  --font:"Tiny5","Pixelify Sans",ui-monospace,"Courier New",monospace;
+  --font:"Tektur","Pixelify Sans",ui-monospace,"Courier New",monospace;
   --k:.5; --col:min(100vw - 24px, 500px);
   /* Telegram mini app: its own insets (fullscreen header buttons) + system insets, one extra gap inside Telegram */
   --tgt:calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px));
@@ -95,7 +98,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 @keyframes tw{0%,100%{opacity:.25;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.05) rotate(20deg)}}
 
 /* ---------- tabs ---------- */
-.tabs{display:grid;grid-template-columns:1.18fr repeat(4,1fr);gap:7px;margin:4px 0 20px;position:relative}
+.tabs{display:grid;grid-template-columns:1.18fr repeat(4,1fr);gap:7px;margin:4px 0 12px;position:relative}
 .tabcell{position:relative}
 .tab{position:relative;display:grid;place-items:center;width:100%;height:clamp(50px,13.6vw,64px);
   --cut:#150d33;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);
@@ -112,6 +115,19 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .tab[aria-selected=true]+.notch{transform:scaleY(1)}
 
 /* ---------- cards ---------- */
+.sbar{--cut:#150d33;position:relative;display:flex;align-items:center;height:clamp(48px,12.4vw,58px);margin:0 0 16px;color:#8366d6;transition:filter .2s,color .2s;
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);
+  background:linear-gradient(160deg,#5a3fb8,#2a1a66)}
+.sbar::before{content:"";position:absolute;inset:2px;background:linear-gradient(#1b1141,#120a2c);
+  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
+.sbar:focus-within{color:#d6bcff;background:linear-gradient(160deg,#d6bcff,#8a52f5);filter:drop-shadow(0 0 10px rgba(165,107,255,.55))}
+.sbar svg{position:relative;flex:none;width:24px;height:24px;fill:currentColor}
+.sbar .si{display:grid;place-items:center;width:52px;height:100%;position:relative}
+.sbar input{position:relative;flex:1;min-width:0;height:100%;padding:0;font:inherit;font-size:21px;letter-spacing:.03em;color:#fff;background:none;border:0;outline:0;border-radius:0;-webkit-appearance:none;appearance:none}
+.sbar input::placeholder{color:#6f58bf;opacity:1}
+.sbar input::-webkit-search-cancel-button,.sbar input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.sbar .sx{position:relative;display:grid;place-items:center;width:48px;height:100%;color:#b79cff}
+.sbar .sx[hidden]{display:none}.sbar .sx svg{width:18px;height:18px}.sbar .sx:hover{color:#fff}
 .list{display:flex;flex-direction:column;gap:clamp(10px,3vw,16px)}
 .cardbox{width:100%;position:relative}
 .card{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;--glow:rgba(165,107,255,.35);
@@ -194,6 +210,14 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .card:hover .edit,.edit:focus-visible,.cardbox:focus-within .edit{opacity:1;transform:none}
 @media(hover:none){.edit{opacity:.9;transform:none;width:52px;height:52px}}
 
+.fav{position:absolute;left:838px;top:8px;z-index:6;width:52px;height:52px;display:grid;place-items:center;border-radius:50%;
+  background:rgba(8,4,18,.8);color:var(--c3);border:2px solid var(--c1);transition:transform .12s,color .2s,background .2s}
+.fav svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;shape-rendering:crispEdges}
+.fav[aria-pressed=true]{color:#ff5ec4;border-color:#ff5ec4}.fav[aria-pressed=true] svg{fill:currentColor}
+.fav:hover{transform:scale(1.1)}.fav:active{transform:scale(.92)}
+.pg-fav{width:48px;height:48px;margin-left:auto;margin-right:10px;display:grid;place-items:center;color:var(--c3)}
+.pg-fav svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+.pg-fav[aria-pressed=true]{color:#ff5ec4}.pg-fav[aria-pressed=true] svg{fill:currentColor}
 .card.add .shell{background:repeating-linear-gradient(135deg,#4b3a94 0 12px,transparent 12px 20px)}
 .card.add .shell-in::before{background:linear-gradient(100deg,#150d33,#0b0716 75%)}
 .card.add .shell-in::after{display:none}
@@ -211,7 +235,7 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .dock{position:fixed;z-index:20;left:50%;bottom:calc(10px + var(--bot));transform:translateX(-50%);width:var(--col);height:clamp(58px,15vw,74px);
   background:linear-gradient(160deg,#6a4cc8,#2a1a66);
   clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px)}
-.dock-in{position:absolute;inset:3px;display:grid;grid-template-columns:repeat(6,1fr);background:linear-gradient(#1a1040,#110a2a);
+.dock-in{position:absolute;inset:3px;display:grid;grid-template-columns:repeat(4,1fr);background:linear-gradient(#1a1040,#110a2a);
   clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px)}
 .dock button{position:relative;display:grid;place-items:center;color:#7a5fcf;transition:color .2s}
 .dock button+button::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:#33236a}
@@ -496,7 +520,7 @@ html[data-q="0"] .scr.burst .tvn{animation:none}
 @supports (height:100dvh){:root{--vh:100dvh}}
 body.onhome .app{padding-bottom:calc(clamp(58px,15vw,74px) + 20px + var(--bot))}
 body.onhome .top{margin-bottom:4px}
-body.onhome .tabs,body.onhome .list{display:none}
+body.onhome .tabs,body.onhome .list,body.onhome .sbar{display:none}
 .home{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;display:none}
 body.onhome .home{display:flex;flex-direction:column;gap:12px;
   min-height:calc(var(--vh) - var(--top) - 6px - clamp(126px,33vw,155px) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot))}
@@ -509,12 +533,12 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .gad .bob{display:block}
 .gad canvas{display:block;height:100%;width:auto;filter:drop-shadow(0 0 9px var(--g)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
 .shelf .floor{left:6%;right:6%;bottom:-6px;background:radial-gradient(closest-side,rgba(165,107,255,.55),transparent)}
-.hero-t{font-size:clamp(22px,7.4vw,36px);font-weight:400;line-height:1.08;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
+.hero-t{font-size:clamp(22px,7.4vw,36px);font-weight:700;line-height:1.08;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
 .hero-t em{display:block;margin-top:5px;font-style:normal;color:#d6bcff;text-shadow:2px 2px 0 #6a35e0,4px 4px 0 #2d1475,0 0 22px #8a4dff88}
 .ts .tags{justify-content:center;margin:0;gap:6px}
 .ts .tag{height:28px;padding:0 11px;font-size:15px}
 .gow{width:100%;margin-top:2px;filter:drop-shadow(0 0 12px rgba(165,107,255,.55))}
-.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:400;animation:goglow 2.6s ease-in-out infinite;
+.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:700;animation:goglow 2.6s ease-in-out infinite;
   /* no block behind the label: plain glowing text + pixel chevron */
   background:none;clip-path:none;color:#fff7ee;gap:10px;text-shadow:2px 2px 0 #6a35e0,4px 4px 0 #2d1475,0 0 22px #8a4dff88}
 .gow .bigplay::after{content:"";width:.5em;height:.5em;border:solid #d6bcff;border-width:.16em .16em 0 0;transform:rotate(45deg);margin-left:-.1em;animation:gonudge 1.3s steps(4) infinite}
@@ -542,7 +566,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .nw-tag{padding:2px 12px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#140a28;background:var(--nc);clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
 .nw-h time{margin-left:auto;font-size:15px;color:var(--dim)}
 .nw-h svg{width:12px;height:12px;fill:var(--nc)}
-.nw h4{font-size:21px;font-weight:400;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nw h4{font-size:21px;font-weight:700;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nw p{margin-top:4px;font-size:16px;line-height:1.25;color:#e5d9ff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dots{display:flex;justify-content:center;gap:4px;margin-top:2px}
 .dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
@@ -580,7 +604,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 /* ---------- club tab ---------- */
 .club{display:none}
 body.onclub .club{display:flex;flex-direction:column;gap:16px;padding-top:2px}
-body.onclub .tabs,body.onclub .list,body.onclub .home{display:none}
+body.onclub .tabs,body.onclub .list,body.onclub .home,body.onclub .sbar{display:none}
 body.onclub .top{margin-bottom:4px}
 .club{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff}
 .club .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
@@ -593,7 +617,7 @@ body.onclub .top{margin-bottom:4px}
 .cl-hero{position:relative;isolation:isolate;text-align:center;padding:22px 6px 20px}
 .cl-hero::before{content:"";position:absolute;z-index:-1;left:-10%;right:-10%;top:0;bottom:0;pointer-events:none;background:radial-gradient(closest-side,rgba(138,77,255,.38),transparent)}
 .cl-hero .spark{z-index:0}
-.cl-slogan{font-size:clamp(30px,10.6vw,52px);font-weight:400;line-height:1;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;
+.cl-slogan{font-size:clamp(30px,10.6vw,52px);font-weight:700;line-height:1;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;
   text-shadow:2px 2px 0 #a56bff,4px 4px 0 #6a35e0,6px 6px 0 #2d1475,0 0 28px #8a4dff99}
 .cl-slogan span{display:block}
 .cl-slogan em{display:block;margin-top:8px;font-style:normal;color:#ffd36b;
@@ -605,10 +629,9 @@ body.onclub .top{margin-bottom:4px}
 .lbtn.big{height:62px;font-size:clamp(20px,6vw,26px)}
 .lbtn.big svg{width:28px;height:28px}
 .lw.bo{filter:drop-shadow(0 0 12px rgba(255,138,61,.5))}
-.nw.why p{display:block;-webkit-line-clamp:unset;margin:0;font-size:19px;line-height:1.3}
 .sl{display:flex;flex-direction:column;gap:12px}
 .sl-in{display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:center;padding:12px 14px 14px 22px}
-.sl .av{width:48px;height:48px;font-size:26px;font-weight:400;--hc:var(--nc)}
+.sl .av{width:48px;height:48px;font-size:26px;font-weight:700;--hc:var(--nc)}
 .sl h4{font-size:22px}
 .sl p{display:block;-webkit-line-clamp:unset;margin-top:4px;font-size:18px}
 [data-q="0"] .lw.bo,[data-q="0"] .cl-lock{filter:none}
@@ -642,6 +665,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
   </header>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
+  <label class="sbar" id="sbar"><span class="si" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 2.1-2.1-5.4-5.4A8 8 0 0 0 10 2zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg></span><input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="Search games" aria-label="Search games"><button class="sx" id="qx" type="button" hidden aria-label="Clear search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l7 7 7-7 2 2-7 7 7 7-2 2-7-7-7 7-2-2 7-7-7-7z"/></svg></button></label>
   <section class="list" id="list" aria-live="polite"></section>
   <section class="home" id="home" lang="ru"></section>
   <section class="club" id="club" lang="ru"></section>
@@ -704,8 +728,11 @@ const IC={
  play:`<svg viewBox="0 0 24 24"><path d="M5 2.6v18.8L21 12z"/></svg>`,
  send:`<svg viewBox="0 0 24 24"><path d="M22 2.4L1.6 10.3l5.6 2.2 2 6.6 3.2-3.8 5.4 4zM8.6 12.4l9.2-5.6-7 7.2z"/></svg>`,
  chat:`<svg viewBox="0 0 24 24"><path d="M3 3h18v14h-8l-5.6 4.6V17H3z"/></svg>`,
+ trophy:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2.5h12V9a6 6 0 0 1-12 0z"/><path d="M6 4.6H2.6V7a4.4 4.4 0 0 0 4 4.4l.5-2.2A2.2 2.2 0 0 1 4.9 7V6.8H6zM18 4.6h3.4V7a4.4 4.4 0 0 1-4 4.4l-.5-2.2A2.2 2.2 0 0 0 19.1 7V6.8H18z"/><path d="M10.8 14.8h2.4v3.2h-2.4z"/><path d="M7 19.4h10v2.6H7z"/></svg>`,
  lock:`<svg viewBox="0 0 24 24"><path d="M4.6 10.4h14.8V22H4.6z" fill="currentColor"/><path d="M7.8 11V7.6a4.2 4.2 0 0 1 8.4 0V11" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M11 14.4h2v4.2h-2z" fill="var(--cut,#150d33)"/></svg>`,
  heart:`<svg viewBox="0 0 24 24"><path d="M12 21.6L3 12.7a5.3 5.3 0 0 1 9-6.5 5.3 5.3 0 0 1 9 6.5z"/></svg>`,
+ favt:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.6L3 12.7a5.3 5.3 0 0 1 9-6.5 5.3 5.3 0 0 1 9 6.5z"/></svg>`,
+ favo:`<svg viewBox="0 0 24 24"><path d="M12 20.4L4.2 12.5a4.4 4.4 0 0 1 7.8-5.2 4.4 4.4 0 0 1 7.8 5.2z"/></svg>`,
  home:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L22.6 11.2h-3.1V21.6h-5.6V15h-3.8v6.6H4.5V11.2H1.4z"/></svg>`,
  plus:`<svg viewBox="0 0 24 24"><path d="M9.6 3h4.8v6.6H21v4.8h-6.6V21H9.6v-6.6H3V9.6h6.6z"/></svg>`,
  x:`<svg viewBox="0 0 24 24"><path d="M4.6 2.2L12 9.6l7.4-7.4 2.4 2.4L14.4 12l7.4 7.4-2.4 2.4L12 14.4l-7.4 7.4-2.4-2.4L9.6 12 2.2 4.6z"/></svg>`,
@@ -974,12 +1001,13 @@ class Card{
       <canvas class="pt" width="453" height="110"></canvas>
       <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
       <button class="play" aria-label="Launch">${IC.play}</button>
+      ${o.preview?"":`<button class="fav" type="button" aria-label="Favorite" aria-pressed="false">${IC.favo}</button>`}
       ${o.preview?"":`<button class="edit" aria-label="Edit">${IC.edit}</button>`}
     </div>`;
     host.append(el);
     const q=s=>el.querySelector(s);
     this.r={fx:q(".fx"),item:q(".slot.item"),itemC:q(".slot.item canvas"),shine:q(".shine"),cse:q(".slot.case"),cseC:q(".slot.case>canvas"),cover:q(".cover"),ca:q(".cover .a"),cb:q(".cover .b"),
-      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),noise:q(".noise"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit")};
+      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),noise:q(".noise"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit"),fav:q(".fav")};
     this.fx=null;this.fxMode=-1;this.texDirty=true;if(o.preview&&FXON()){this.fxMode=modeFor(m);this.fx=makeFx(this.r.fx,this.fxMode)}
     this.resize();CARDS.add(this);
     if(!o.preview){this.io=new IntersectionObserver(e=>{this.vis=e[0].isIntersecting;this.el.classList.toggle("off",!this.vis);this.syncFx();this.cdRun()},{rootMargin:"160px"});
@@ -987,6 +1015,7 @@ class Card{
     this.r.play.addEventListener("click",e=>{e.stopPropagation();this.cdKick();o.onPlay&&o.onPlay(this)});
     el.addEventListener("pointerenter",()=>this.cdRate(4));el.addEventListener("pointerleave",()=>this.cdRate(1));el.addEventListener("click",()=>this.cdKick());
     this.r.edit&&this.r.edit.addEventListener("click",e=>{e.stopPropagation();o.onEdit&&o.onEdit(this)});
+    this.r.fav&&this.r.fav.addEventListener("click",e=>{e.stopPropagation();o.onFav&&o.onFav(this)});
     if(!o.preview){el.tabIndex=0;el.addEventListener("click",()=>o.onOpen&&o.onOpen(this));
       el.addEventListener("keydown",e=>{if(e.target===el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();o.onOpen&&o.onOpen(this)}})}
     if(!o.preview){
@@ -1093,6 +1122,7 @@ class Card{
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
     this.r.title.textContent=m.title||"Untitled";this.r.pill.textContent=m.genre;this.setStars(m.rating);
+    if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
     if(first){
       this.layout();this.pal=pal;this.paint();await this.drawCover(null,false);
       this.r.item.style.transform=`translateX(${this.dx}px)`;this.pulse=0;
@@ -1187,9 +1217,9 @@ let DATA=store.get("am.cards.v1",null)||DEFAULTS.map(d=>({...d}));
 function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — new covers won't be saved")}
 
 /* ============ list / tabs / dock ============ */
-const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["music","Music",c=>hasTag(c,"Music")],["image","Mine",c=>!c.built],["gear","Settings",null]];
-const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["star","Top rated",c=>c.rating>=5],["dl","Installed",c=>c.played>0],["lock","Club",()=>true],["user","Profile",null]];
-let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 3 installed, 4 club, (5 profile = settings) */
+const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>!c.built],["gear","Settings",null]];
+const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Community",()=>true],["user","Profile",null]];
+let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
@@ -1198,32 +1228,45 @@ $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   if(DOCK[i][2]===null){openSettings();return}goView(i)});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>b.setAttribute("aria-selected",i===tab&&view===1));
-  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===4)}
+  document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2)}
 
-function emptyMsg(){return view===2?"No 5-star picks yet. Tap the stars on a card to rate it.":view===3?"Nothing installed yet. Press play on a card to install it.":""}
+/* search: hides cards instead of rebuilding them, so typing never restarts the card animations */
+let SQ="";const qIn=$("#q"),qX=$("#qx");
+function filterList(){
+  const k=SQ.trim().toLowerCase(),boxes=[...listEl.querySelectorAll(".cardbox")];let shown=0,tagged=0;
+  boxes.forEach(b=>{const s=b.dataset.s;if(s==null){b.hidden=!!k;return}tagged++;const ok=!k||s.includes(k);b.hidden=!ok;if(ok)shown++});
+  let nf=listEl.querySelector(".nofound");
+  if(k&&tagged&&!shown){if(!nf){nf=document.createElement("p");nf.className="empty nofound";listEl.prepend(nf)}nf.textContent='Nothing found for "'+SQ.trim()+'"'}
+  else if(nf)nf.remove();
+  qX.hidden=!SQ;
+}
+qIn.addEventListener("input",()=>{SQ=qIn.value;filterList()});
+qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";filterList()}else if(e.key==="Enter")qIn.blur()});
+qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
+function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"No favorites yet. Tap the heart on a card to add it here.":""}
 async function render(intro){
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
-  document.body.classList.toggle("onclub",view===4);
-  if(view!==4)clubEl.innerHTML="";
+  document.body.classList.toggle("onclub",view===2);
+  if(view!==2)clubEl.innerHTML="";
   if(view===0){renderHome();return}
   homeEl.innerHTML="";
-  if(view===4){renderClub();return}
-  const f=view>1?DOCK[view][2]:TABS[tab][2];
+  if(view===2){renderClub();return}
+  const f=TABS[tab][2];
   const rows=DATA.filter(f);
   if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
-  rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
+  rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")).toLowerCase();
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
       onDropCover:(c,url)=>{const d=DATA.find(x=>x.id===c.m.id);d.cover=url;d.tint=null;persist();c.set({...d})}});
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
-  if(view===1)addCard();
+  if(view===1&&TABS[tab][0]!=="favt")addCard();filterList();
 }
 /* ============ home: title screen ============ */
 /* news: edit here. c = tag colour, app:"card id" makes the item open that app page */
 const NEWS=[
  {tag:"Новое",c:"#ff5ec4",date:"09.11",title:"Coopix Market открыт",text:"Быстрые офлайн игры с мультиплеером: запускайте, зовите друга и играйте без интернета."},
  {tag:"Игра",c:"#ffb23f",date:"08.11",title:"Block Drop в маркете",text:"Пятизвёздочный пазл. Бросьте вызов другу и побейте его рекорд.",app:"blocks"},
- {tag:"Совет",c:"#4dd2ff",date:"07.11",title:"Телефон тормозит?",text:"Откройте Settings → Quality → Low: эффекты отключатся, игры пойдут быстрее."}
+ {tag:"Совет",c:"#4dd2ff",date:"07.11",title:"Телефон тормозит?",text:"Откройте Settings › Quality › Low: эффекты отключатся, игры пойдут быстрее."}
 ];
 /* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
 const SPONSORS=[{name:"Sponsor One",c:"#ffb23f",msg:"Спасибо за классные игры! Так держать."},{name:"Sponsor Two",c:"#4dd2ff",msg:"Играем с друзьями каждый вечер."}];
@@ -1254,7 +1297,7 @@ function renderHome(){
   </div>`;
   const cv=homeEl.querySelectorAll(".gad canvas");
   HOME_GADS.forEach((g,i)=>{const sp=SPR[g[0]];if(sp)recolor(sp,cv[i],palette(g[1],.85),1.9)});
-  homeEl.querySelectorAll("[data-club]").forEach(b=>b.addEventListener("click",()=>{sfx.tap();goView(4)}));
+  homeEl.querySelectorAll("[data-club]").forEach(b=>b.addEventListener("click",()=>{sfx.tap();goView(2)}));
   $("#goMarket").addEventListener("click",()=>{sfx.in();goView(1)});
   homeEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
   homeEl.querySelectorAll(".nw[data-app]").forEach(el=>{const open=()=>{sfx.tap();openPage(el.dataset.app)};
@@ -1271,7 +1314,7 @@ function renderHome(){
 /* ============ club tab: closed channel / chat, Boosty, sponsors ============ */
 function renderClub(){
   clearInterval(homeT);
-  clubEl.innerHTML=`<div class="cl-head enter"><div class="cl-lock" aria-hidden="true">${IC.lock}</div><h2 class="hero-t">Закрытый <em>клуб</em></h2></div>
+  clubEl.innerHTML=`<div class="cl-head enter"><h2 class="hero-t">Community</h2></div>
   <div class="cl-hero enter" style="--i:.04s">
     <i class="spark" style="left:3%;top:10%;--s:20px;--d:.2s" aria-hidden="true">${SPK}</i>
     <i class="spark" style="right:5%;top:18%;--s:14px;--d:1.1s;color:#7fb2ff" aria-hidden="true">${SPK}</i>
@@ -1280,12 +1323,10 @@ function renderClub(){
     <h2 class="cl-slogan"><span>Игру может</span><em>сделать каждый</em></h2>
   </div>
   <div class="cl-btns enter" style="--i:.08s">
-    <div class="lw"><a class="lbtn big" href="${LINKS.pchannel}" target="_blank" rel="noopener" data-l="1">${IC.send}Закрытый канал</a></div>
-    <div class="lw pk"><a class="lbtn big" style="--lc:#ff5ec4" href="${LINKS.pchat}" target="_blank" rel="noopener" data-l="1">${IC.chat}Закрытый чат</a></div>
+    <div class="lw"><a class="lbtn big" href="${LINKS.pchannel}" target="_blank" rel="noopener" data-l="1">${IC.send}Канал</a></div>
+    <div class="lw pk"><a class="lbtn big" style="--lc:#ff5ec4" href="${LINKS.pchat}" target="_blank" rel="noopener" data-l="1">${IC.chat}Чатик</a></div>
     <div class="lw bo"><a class="lbtn big" style="--lc:#ff8a3d" href="${LINKS.boosty}" target="_blank" rel="noopener" data-l="1">${IC.heart}Boosty</a></div>
   </div>
-  <section class="sec enter" style="--i:.16s"><h3>Зачем закрытый канал?</h3>
-    <div class="nw why" style="--nc:#4dd2ff"><div class="nw-in"><p>Некоторые проекты имеют авторские права и сделаны для приватного пользователя. Поэтому мы не выкладываем их в общий маркет: они доступны только в закрытом канале и чате.</p></div></div></section>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
     <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>`;
   clubEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
@@ -1548,7 +1589,7 @@ const KN={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"," ":"S",a:"L",d
 function pageHTML(m,kind){
   const desc=(m.desc!=null&&m.desc!==""?m.desc:DESC[m.id]||"").trim();
   return `<div class="pg">
-  <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><span class="beta">BETA 0.3</span></div>
+  <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button><span class="beta">BETA 0.3</span></div>
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
     <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
@@ -1578,7 +1619,7 @@ async function openPage(id,opt){
   $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
   $("#pgPlays").textContent=(m.played||0)+" plays";$("#bs").textContent=PG.best;
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
@@ -1674,7 +1715,7 @@ $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
-  try{await Promise.all([document.fonts.load('400 36px "Tiny5"'),document.fonts.load('400 20px "Tiny5"'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
+  try{await Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
   sync();await render(true);
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);

@@ -43,11 +43,11 @@ a swipeable news slider (autoplay, dots), a sponsors row and two buttons (Кан
 On short phones extras (tag chips, sponsors row) are hidden instead of scrolling.
 News: NEWS array in index.html (search "NEWS="): c = tag colour, app:"card id" makes the item open that app page.
 Sponsors: SPONSORS array. Links: LINKS object (replace the placeholder t.me URLs with the real ones).
-Dock is now: Home, Store, Top rated, Installed, Club (lock icon), Profile.
+Search bar (#sbar) sits above the card list in Store: it hides non-matching cards by title / tags without rebuilding them. Dock is now: Home, Store, Community (trophy icon), Profile. Store tabs: Home, Games, Favorites (heart, was Music), Mine, Settings. Heart on every card and on the app page toggles a favorite (saved in the card data as fav).
 
-Club tab: big slogan "Игру может сделать каждый" (.cl-hero), closed channel, closed chat, Boosty button, the "Зачем закрытый канал?" text and the sponsors list with
+Club tab (title "Community", buttons Канал / Чатик): big slogan "Игру может сделать каждый" (.cl-hero), closed channel, closed chat, Boosty button, the "Зачем закрытый канал?" text and the sponsors list with
 short messages (SPONSORS[].msg). Links live in LINKS (search "LINKS="): pchannel / pchat = invite links to the
 closed channel and chat, boosty = Boosty page. All three are placeholders, replace them with the real URLs.
 Tapping a sponsor chip on Home opens the Club tab.
 
-Font: UI uses Tiny5 (assets/fonts/tiny5-*.woff2, good Cyrillic). Pixelify Sans stays for the logo only.
+Font: UI uses Tektur (assets/fonts/tektur-*.woff2: 500 for regular, 700 for headings, latin + cyrillic). Pixelify Sans stays for the logo only.
