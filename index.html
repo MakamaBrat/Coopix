@@ -1211,7 +1211,11 @@ class Card{
     this.r.item.style.setProperty("--bd",(-(this.id%5))+"s");
     this.side=it.side;this.dx=(it.side==="left"?1:-1)*I.w*.5;
     this.focus=[(ix+I.w/2)/905,(cy)/220];
-    const f=window.FACES[it.case];this.r.cover.style.transform=quadCSS(256,256,f.q.map(([a,b])=>[a*C.w,b*C.h]));
+    const f=window.FACES[it.case];let fq=f.q.map(([a,b])=>[a*C.w,b*C.h]),cc="";
+    {const d=(p,q)=>Math.hypot(q[0]-p[0],q[1]-p[1]),[TL,TR,BR,BL]=fq,fw=(d(TL,TR)+d(BL,BR))/2,fh=(d(TL,BL)+d(TR,BR))/2,r=fw/fh,ex=(p,q,k)=>[p[0]+(q[0]-p[0])*k,p[1]+(q[1]-p[1])*k];
+      if(r<.88){const k=Math.sqrt(r),s=(1-k)/(2*k);fq=[ex(TL,TR,-s),ex(TL,TR,1+s),ex(BL,BR,1+s),ex(BL,BR,-s)];cc=`inset(0 ${(1-k)*50}% 0 ${(1-k)*50}%)`}
+      else if(r>1.14){const k=1/Math.sqrt(r),s=(1-k)/(2*k);fq=[ex(TL,BL,-s),ex(TR,BR,-s),ex(TR,BR,1+s),ex(TL,BL,1+s)];cc=`inset(${(1-k)*50}% 0 ${(1-k)*50}% 0)`}}
+    this.r.cover.style.clipPath=cc;this.r.cover.style.transform=quadCSS(256,256,fq);
     const H=Math.max(I.h,C.h),bx=Math.min(ix,cx);this.pb=[bx,cy-H/2,total,H];
     this.r.floor.style.cssText=`left:${bx-10}px;width:${total+20}px;top:${cy+H/2-16}px`;this.r.halo.style.left=(bx+total/2-280)+"px";
     this.r.glI.style.cssText=`--m:url(${I.src});--gx:${ix}px`;this.r.glC.style.cssText=`--m:url(${C.src});--gx:${cx}px`;
