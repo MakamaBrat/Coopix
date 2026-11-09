@@ -45,7 +45,7 @@ News: NEWS array in index.html (search "NEWS="): c = tag colour, app:"card id" m
 Sponsors: SPONSORS array. Links: LINKS object (replace the placeholder t.me URLs with the real ones).
 Dock is now: Home, Store, Top rated, Installed, Club (lock icon), Profile.
 
-Club tab: closed channel, closed chat, Boosty button, the "Зачем закрытый канал?" text and the sponsors list with
+Club tab: big slogan "Игру может сделать каждый" (.cl-hero), closed channel, closed chat, Boosty button, the "Зачем закрытый канал?" text and the sponsors list with
 short messages (SPONSORS[].msg). Links live in LINKS (search "LINKS="): pchannel / pchat = invite links to the
 closed channel and chat, boosty = Boosty page. All three are placeholders, replace them with the real URLs.
 Tapping a sponsor chip on Home opens the Club tab.

@@ -465,7 +465,7 @@ body.pgopen .mascot,body.pgopen .mascot *{animation-play-state:paused}
 @supports not (background:color-mix(in srgb,red,blue)){
  .page{background-image:linear-gradient(#0c0720,#07040f)}
  .pill,.tag{background:var(--c2)}
- .play,.bigplay{background:var(--c1)}.play::before{background:var(--c1)}
+ .play,.bigplay{background:var(--c1)}.gow .bigplay{background:none}.play::before{background:var(--c1)}
  .halo{background:radial-gradient(closest-side,var(--c1),transparent);opacity:.35}
  .floor{background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent)}
  .shell-in::before{background:linear-gradient(100deg,var(--c2),#0b0716 70%)}
@@ -514,7 +514,12 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .ts .tags{justify-content:center;margin:0;gap:6px}
 .ts .tag{height:28px;padding:0 11px;font-size:15px}
 .gow{width:100%;margin-top:2px;filter:drop-shadow(0 0 12px rgba(165,107,255,.55))}
-.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:400;animation:goglow 2.6s ease-in-out infinite}
+.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:400;animation:goglow 2.6s ease-in-out infinite;
+  /* no block behind the label: plain glowing text + pixel chevron */
+  background:none;clip-path:none;color:#fff7ee;gap:10px;text-shadow:2px 2px 0 #6a35e0,4px 4px 0 #2d1475,0 0 22px #8a4dff88}
+.gow .bigplay::after{content:"";width:.5em;height:.5em;border:solid #d6bcff;border-width:.16em .16em 0 0;transform:rotate(45deg);margin-left:-.1em;animation:gonudge 1.3s steps(4) infinite}
+@keyframes gonudge{50%{transform:translateX(4px) rotate(45deg)}}
+[data-q="0"] .gow .bigplay::after{animation:none}
 @keyframes goglow{50%{filter:brightness(1.14)}}
 .ts .spark{z-index:0}
 .pn{flex:none;display:flex;flex-direction:column;gap:10px}
@@ -584,6 +589,18 @@ body.onclub .top{margin-bottom:4px}
   clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
 .cl-lock svg{width:36px;height:36px}
 .cl-head .hero-t em{display:inline;margin:0}
+/* front slogan of the club tab */
+.cl-hero{position:relative;isolation:isolate;text-align:center;padding:22px 6px 20px}
+.cl-hero::before{content:"";position:absolute;z-index:-1;left:-10%;right:-10%;top:0;bottom:0;pointer-events:none;background:radial-gradient(closest-side,rgba(138,77,255,.38),transparent)}
+.cl-hero .spark{z-index:0}
+.cl-slogan{font-size:clamp(30px,10.6vw,52px);font-weight:400;line-height:1;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;
+  text-shadow:2px 2px 0 #a56bff,4px 4px 0 #6a35e0,6px 6px 0 #2d1475,0 0 28px #8a4dff99}
+.cl-slogan span{display:block}
+.cl-slogan em{display:block;margin-top:8px;font-style:normal;color:#ffd36b;
+  text-shadow:2px 2px 0 #ff8a3d,4px 4px 0 #b8481a,6px 6px 0 #5a1f0a,0 0 28px #ffa94d99;animation:sloglow 2.8s ease-in-out infinite}
+@keyframes sloglow{50%{filter:brightness(1.18)}}
+.cl-hero small{display:block;margin-top:14px;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+[data-q="0"] .cl-hero::before{display:none}[data-q="0"] .cl-slogan em{animation:none}
 .cl-btns{display:flex;flex-direction:column;gap:12px}
 .lbtn.big{height:62px;font-size:clamp(20px,6vw,26px)}
 .lbtn.big svg{width:28px;height:28px}
@@ -1255,6 +1272,13 @@ function renderHome(){
 function renderClub(){
   clearInterval(homeT);
   clubEl.innerHTML=`<div class="cl-head enter"><div class="cl-lock" aria-hidden="true">${IC.lock}</div><h2 class="hero-t">Закрытый <em>клуб</em></h2></div>
+  <div class="cl-hero enter" style="--i:.04s">
+    <i class="spark" style="left:3%;top:10%;--s:20px;--d:.2s" aria-hidden="true">${SPK}</i>
+    <i class="spark" style="right:5%;top:18%;--s:14px;--d:1.1s;color:#7fb2ff" aria-hidden="true">${SPK}</i>
+    <i class="spark" style="right:12%;bottom:12%;--s:18px;--d:1.7s;color:#fff" aria-hidden="true">${SPK}</i>
+    <i class="spark" style="left:10%;bottom:8%;--s:12px;--d:.7s" aria-hidden="true">${SPK}</i>
+    <h2 class="cl-slogan"><span>Игру может</span><em>сделать каждый</em></h2>
+  </div>
   <div class="cl-btns enter" style="--i:.08s">
     <div class="lw"><a class="lbtn big" href="${LINKS.pchannel}" target="_blank" rel="noopener" data-l="1">${IC.send}Закрытый канал</a></div>
     <div class="lw pk"><a class="lbtn big" style="--lc:#ff5ec4" href="${LINKS.pchat}" target="_blank" rel="noopener" data-l="1">${IC.chat}Закрытый чат</a></div>
