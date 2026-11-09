@@ -36,3 +36,8 @@ itself if the frame rate stays low (a toast tells the user), and the choice is r
 Branding: the header shows the Coopix Market logo and the pigeon mascot (assets/coopix-pigeon.png).
 The pigeon hops, its goggles glint, the bag screen blinks, and a tap makes it jump with confetti. Lite mode turns the motion off.
 The small planet sits behind its wing; to remove it, delete the <canvas id="planet"> line in index.html.
+
+Front page (Home): first tab in the bottom dock, opens by default. Hero "Быстрые офлайн игры с Мультиплеером",
+button "Перейти в маркет" (goes to Store), news block. News live in the NEWS array in index.html (search "NEWS=");
+tag colour = c, app:"card id" makes the item open that app page.
+Dock is now: Home, Store, Top rated, Installed, Profile. Cyrillic font files were added to assets/fonts.
