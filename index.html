@@ -50,6 +50,8 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 
 /* ---------- header ---------- */
 .top{position:relative;height:clamp(126px,33vw,155px);margin-bottom:6px}
+/* games window (Store): header with logo + pigeon shrunk by 40%, centered; the freed height is pulled back with a negative margin */
+body:not(.onhome):not(.onclub) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0;margin-bottom:calc(6px - clamp(126px,33vw,155px)*(1 - var(--ts)))}
 .swoosh{position:absolute;left:-4%;top:-6%;width:78%;height:100%;overflow:visible;pointer-events:none}
 .swoosh ellipse{fill:none;stroke:url(#swg);stroke-width:5;stroke-linecap:round;stroke-dasharray:640 260;stroke-dashoffset:640;
   animation:draw 1.6s .15s cubic-bezier(.2,.7,.2,1) forwards;filter:drop-shadow(0 0 8px #a56bff99)}
@@ -546,7 +548,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 [data-q="0"] .gow .bigplay::after{animation:none}
 @keyframes goglow{50%{filter:brightness(1.14)}}
 .ts .spark{z-index:0}
-.pn{flex:none;display:flex;flex-direction:column;gap:10px}
+.pn{flex:none;display:flex;flex-direction:column;gap:8px}
 .home .sec{margin-top:0}
 .home .sec h3{margin-bottom:6px;font-size:16px;font-weight:400;letter-spacing:.08em;color:var(--dim)}
 .home .sec h3 small{font-size:14px}
@@ -568,14 +570,15 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .nw-h svg{width:12px;height:12px;fill:var(--nc)}
 .nw h4{font-size:21px;font-weight:700;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nw p{margin-top:4px;font-size:16px;line-height:1.25;color:#e5d9ff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ns .nw-in{padding:16px 18px 18px 26px}
-.ns .nw-in::before{width:8px}
-.ns .nw-h{gap:10px;margin-bottom:10px}
-.ns .nw-tag{padding:3px 14px;font-size:15px}
-.ns .nw-h time{font-size:16px}
-.ns .nw h4{font-size:24px;line-height:1.12}
-.ns .nw p{margin-top:8px;font-size:18px;line-height:1.3;-webkit-line-clamp:3}
-.dots{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.ns .nw-in{padding:7px 12px 8px 19px}
+.ns .nw-in::before{width:6px}
+.ns .nw-h{gap:8px;margin-bottom:3px}
+.ns .nw-tag{padding:1px 10px;font-size:12px}
+.ns .nw-h time{font-size:13px}
+.ns .nw h4{font-size:17px;line-height:1.1}
+.ns .nw p{margin-top:2px;font-size:14px;line-height:1.2;-webkit-line-clamp:2}
+.lnks .lbtn{height:48px}
+.dots{display:flex;justify-content:center;gap:4px;margin-top:0}
 .dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
 .dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
 /* sponsors */
@@ -597,7 +600,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .lw{filter:drop-shadow(0 0 12px rgba(165,107,255,.45))}
 .lw.pk{filter:drop-shadow(0 0 12px rgba(255,94,196,.45))}
 /* short phones: drop extras instead of scrolling */
-@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:2}.ns .nw-in{padding:13px 16px 14px 24px}.pn{gap:8px}.lbtn{height:50px}}
+@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:1}.pn{gap:6px}.lbtn,.lnks .lbtn{height:46px}}
 @media(max-height:650px){.shelf{height:52px}}
 [data-q="0"] .gow,[data-q="0"] .lw,[data-q="0"] .lw.pk{filter:none}
 [data-q="0"] .gow .bigplay{animation:none}

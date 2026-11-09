@@ -33,7 +33,7 @@ use a flat static gradient. Auto turns it on at once for weak phones: Save-Data,
 old WebView (no aspect-ratio, Chrome < 88), software or very old GPU, no WebGL. It also switches on by
 itself if the frame rate stays low (a toast tells the user), and the choice is remembered.
 
-Branding: the header shows the Coopix Market logo and the pigeon mascot (assets/coopix-pigeon.png).
+Branding (in the Store tab the header is shown at 60% size, see "games window" in the CSS): the header shows the Coopix Market logo and the pigeon mascot (assets/coopix-pigeon.png).
 The pigeon hops, its goggles glint, the bag screen blinks, and a tap makes it jump with confetti. Lite mode turns the motion off.
 The small planet sits behind its wing; to remove it, delete the <canvas id="planet"> line in index.html.
 
