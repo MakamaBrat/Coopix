@@ -526,11 +526,14 @@ html[data-q="0"] .scr.burst .tvn{animation:none}
 :root{--vh:100vh}
 @supports (height:100dvh){:root{--vh:100dvh}}
 body.onhome .app{padding-bottom:calc(clamp(58px,15vw,74px) + 20px + var(--bot))}
-body.onhome .top{margin-bottom:4px}
+/* на широком и невысоком экране (десктопный Telegram: ~466x735) размеры шапки и заголовка считаются и от высоты, иначе кнопки уезжают под нижнюю панель */
+:root{--hh:clamp(104px,min(33vw,17.5vh),155px)}
+body.onhome .top{margin-bottom:4px;height:var(--hh)}
+body.onhome .mascot{width:clamp(86px,min(30vw,15vh),152px)}
 body.onhome .tabs,body.onhome .list,body.onhome .sbar{display:none}
 .home{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;display:none}
 body.onhome .home{display:flex;flex-direction:column;gap:12px;
-  min-height:calc(var(--vh) - var(--top) - 6px - clamp(126px,33vw,155px) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot))}
+  min-height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot))}
 .home .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .ts{position:relative;isolation:isolate;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,1.9vh,18px);text-align:center}
 .ts::before{content:"";position:absolute;z-index:-1;left:-12%;right:-12%;top:2%;bottom:2%;pointer-events:none;background:radial-gradient(closest-side,rgba(138,77,255,.32),transparent)}
@@ -587,11 +590,11 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
 .dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
 /* home tweaks: logo -20% (header height unchanged), hero title -10%, news card slightly larger */
-body.onhome .logo{font-size:clamp(24px,8.32vw,40.8px)}
+body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
 /* средний блок главной (гаджеты + заголовок + кнопка) -10%, освободившееся место отдано новостям: в карточке влезает 3 строки текста */
 .ts{zoom:.9}
 .ns .nw p{-webkit-line-clamp:3}
-.ts .hero-t{font-size:clamp(20px,6.66vw,32.4px)}
+.ts .hero-t{font-size:clamp(18px,min(6.66vw,4vh),32.4px)}
 .ns .nw-in{padding:9px 14px 10px 21px}
 .ns .nw h4{font-size:19px}
 .ns .nw p{font-size:15.5px;margin-top:3px}
