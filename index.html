@@ -43,22 +43,21 @@ body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:non
 .app{position:relative;z-index:1;width:var(--col);margin:0 auto;padding:6px 0 140px}
 
 /* ---------- header ---------- */
-.top{position:relative;height:clamp(148px,38.5vw,182px);margin-bottom:6px}
+.top{position:relative;height:clamp(126px,33vw,155px);margin-bottom:6px}
 .swoosh{position:absolute;left:-4%;top:-6%;width:78%;height:100%;overflow:visible;pointer-events:none}
 .swoosh ellipse{fill:none;stroke:url(#swg);stroke-width:5;stroke-linecap:round;stroke-dasharray:640 260;stroke-dashoffset:640;
   animation:draw 1.6s .15s cubic-bezier(.2,.7,.2,1) forwards;filter:drop-shadow(0 0 8px #a56bff99)}
 @keyframes draw{to{stroke-dashoffset:0}}
-.logo{position:absolute;left:3%;top:13%;z-index:1;font-weight:700;font-size:clamp(35px,12.2vw,60px);line-height:.86;letter-spacing:-.02em;
+.logo{position:absolute;left:3%;top:13%;z-index:1;font-weight:700;font-size:clamp(30px,10.4vw,51px);line-height:.86;letter-spacing:-.02em;
   transform:skewX(-9deg);transform-origin:left bottom;color:#fff7ee;text-transform:none;
   text-shadow:2px 2px 0 #a56bff,4px 4px 0 #6a35e0,6px 6px 0 #2d1475,0 0 26px #8a4dff88}
 .logo span{display:block}
-/* the font draws c almost like o, so cut a clear opening on its right side */
-.lc{font-style:normal;display:inline-block;padding:.12em .2em .2em .12em;margin:-.12em -.2em -.2em -.12em;
-  -webkit-mask:linear-gradient(#000,#000) 0 0/var(--cx,46%) 100% no-repeat,linear-gradient(#000,#000) 0 0/100% var(--cy0,52%) no-repeat,linear-gradient(#000,#000) 0 100%/100% var(--cy1,26%) no-repeat;
-  mask:linear-gradient(#000,#000) 0 0/var(--cx,46%) 100% no-repeat,linear-gradient(#000,#000) 0 0/100% var(--cy0,52%) no-repeat,linear-gradient(#000,#000) 0 100%/100% var(--cy1,26%) no-repeat}
+/* the font's c is almost an o (1-pixel gap), so the first letter is a vector c with a real opening; same face + extruded shadows as the text */
+.lc{display:inline-block;width:.603em;height:.478em;margin-right:-.02em;vertical-align:-.011em;overflow:visible;fill:currentColor;
+  filter:drop-shadow(2px 2px 0 #a56bff) drop-shadow(2px 2px 0 #6a35e0) drop-shadow(2px 2px 0 #2d1475) drop-shadow(0 0 13px #8a4dff88)}
 .logo span+span{margin-left:.3em;font-size:.88em}
 /* mascot: Coopix the pigeon (+ optional planet behind it) */
-.mascot{position:absolute;right:0;top:8px;width:clamp(120px,35vw,178px);z-index:2;cursor:pointer;-webkit-user-select:none;user-select:none;
+.mascot{position:absolute;right:0;top:6px;width:clamp(102px,30vw,152px);z-index:2;cursor:pointer;-webkit-user-select:none;user-select:none;
   animation:pgin .95s cubic-bezier(.2,1.3,.4,1) .3s both}
 @keyframes pgin{0%{opacity:0;transform:translateY(-60px) scale(.8) rotate(-8deg)}60%{opacity:1}100%{opacity:1;transform:none}}
 .mjump{transform-origin:50% 100%}
@@ -504,7 +503,7 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
       <defs><linearGradient id="swg" x1="0" x2="1"><stop offset="0" stop-color="#ff5ec4"/><stop offset=".55" stop-color="#8a52f5"/><stop offset="1" stop-color="#3b82ff"/></linearGradient></defs>
       <ellipse cx="190" cy="92" rx="178" ry="52" transform="rotate(-17 190 92)"/>
     </svg>
-    <h1 class="logo" aria-label="Coopix Market"><span><i class="lc">c</i>oopix</span><span>market</span></h1>
+    <h1 class="logo" aria-label="Coopix Market"><span><svg class="lc" viewBox="0 -467 603 478" aria-hidden="true"><path transform="scale(1 -1)" d="M149 -11V74H61V381H149V467H453V381H542V290H414V331H188V125H414V166H542V74H453V-11Z"/></svg>oopix</span><span>market</span></h1>
     <div class="mascot" id="mascot" role="img" aria-label="Coopix the pigeon">
       <canvas class="planet" id="planet" width="72" height="72" aria-hidden="true"></canvas>
       <i class="pshadow"></i>
