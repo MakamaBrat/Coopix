@@ -39,7 +39,7 @@ The small planet sits behind its wing; to remove it, delete the <canvas id="plan
 
 Front page (Home): first tab in the bottom dock, opens by default. It is a one-screen title screen (no scrolling):
 gadgets, headline "Быстрые офлайн игры с Мультиплеером", button "Перейти в маркет" (goes to Store),
-a swipeable news slider (autoplay, dots), a sponsors row and two buttons (Канал / Чатик).
+a swipeable news slider (autoplay, dots) and two buttons (Канал / Чатик).
 On short phones extras (tag chips, sponsors row) are hidden instead of scrolling.
 News: NEWS array in index.html (search "NEWS="): c = tag colour, app:"card id" makes the item open that app page.
 Sponsors: SPONSORS array. Links: LINKS object (replace the placeholder t.me URLs with the real ones).

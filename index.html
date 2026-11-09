@@ -568,7 +568,14 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .nw-h svg{width:12px;height:12px;fill:var(--nc)}
 .nw h4{font-size:21px;font-weight:700;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nw p{margin-top:4px;font-size:16px;line-height:1.25;color:#e5d9ff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.dots{display:flex;justify-content:center;gap:4px;margin-top:2px}
+.ns .nw-in{padding:16px 18px 18px 26px}
+.ns .nw-in::before{width:8px}
+.ns .nw-h{gap:10px;margin-bottom:10px}
+.ns .nw-tag{padding:3px 14px;font-size:15px}
+.ns .nw-h time{font-size:16px}
+.ns .nw h4{font-size:24px;line-height:1.12}
+.ns .nw p{margin-top:8px;font-size:18px;line-height:1.3;-webkit-line-clamp:3}
+.dots{display:flex;justify-content:center;gap:4px;margin-top:6px}
 .dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
 .dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
 /* sponsors */
@@ -590,8 +597,8 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .lw{filter:drop-shadow(0 0 12px rgba(165,107,255,.45))}
 .lw.pk{filter:drop-shadow(0 0 12px rgba(255,94,196,.45))}
 /* short phones: drop extras instead of scrolling */
-@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.pn{gap:8px}.lbtn{height:50px}}
-@media(max-height:650px){.sprow-h{display:none}.shelf{height:52px}}
+@media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:2}.ns .nw-in{padding:13px 16px 14px 24px}.pn{gap:8px}.lbtn{height:50px}}
+@media(max-height:650px){.shelf{height:52px}}
 [data-q="0"] .gow,[data-q="0"] .lw,[data-q="0"] .lw.pk{filter:none}
 [data-q="0"] .gow .bigplay{animation:none}
 [data-q="0"] .gad canvas{filter:drop-shadow(0 6px 6px rgba(0,0,0,.55))}
@@ -1292,12 +1299,10 @@ function renderHome(){
         <div class="nw-h"><span class="nw-tag">${n.tag}</span><time>${n.date}</time>${n.ok?IC.play:""}</div><h4>${n.title}</h4><p>${n.text}</p></div></div></div>`).join("")}</div>
       ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
     </section>
-    <section class="sec sprow-h"><h3>Спонсоры</h3><div class="sprow">${SPONSORS.map(n=>`<button type="button" class="spc" data-club style="--nc:${n.c}"><i>${n.name[0]}</i>${n.name}</button>`).join("")}<button type="button" class="spc me" data-club aria-label="Стать спонсором"><i>+</i>Вы?</button></div></section>
     <div class="lnks"><div class="lw"><a class="lbtn" href="${LINKS.channel}" target="_blank" rel="noopener" data-l="channel">${IC.send}Канал</a></div><div class="lw pk"><a class="lbtn" style="--lc:#ff5ec4" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat">${IC.chat}Чатик</a></div></div>
   </div>`;
   const cv=homeEl.querySelectorAll(".gad canvas");
   HOME_GADS.forEach((g,i)=>{const sp=SPR[g[0]];if(sp)recolor(sp,cv[i],palette(g[1],.85),1.9)});
-  homeEl.querySelectorAll("[data-club]").forEach(b=>b.addEventListener("click",()=>{sfx.tap();goView(2)}));
   $("#goMarket").addEventListener("click",()=>{sfx.in();goView(1)});
   homeEl.querySelectorAll("a[data-l]").forEach(a=>a.addEventListener("click",e=>{sfx.tap();if(openLink(a.href))e.preventDefault()}));
   homeEl.querySelectorAll(".nw[data-app]").forEach(el=>{const open=()=>{sfx.tap();openPage(el.dataset.app)};
