@@ -4,6 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
+<script>/* layout mode: phone = always portrait (lock + "rotate back" cover), PC/tablet landscape (>=900px) = horizontal windows (html.desk) */
+(function(){var de=document.documentElement;
+function mq(q){try{return matchMedia(q).matches}catch(e){return false}}
+var P=mq("(pointer:coarse)")&&Math.min(screen.width||9999,screen.height||9999)<600;
+function land(){var o=screen.orientation;if(o&&typeof o.type==="string")return o.type.indexOf("landscape")===0;if(typeof window.orientation==="number")return Math.abs(window.orientation)===90;return innerWidth>innerHeight*1.2}
+function lock(){if(!P)return;try{var o=screen.orientation;if(o&&o.lock)o.lock("portrait").catch(function(){})}catch(e){}
+  try{var w=window.Telegram&&Telegram.WebApp;if(w&&w.lockOrientation&&!land())w.lockOrientation()}catch(e){}}
+function upd(){de.classList.toggle("phone",P);de.classList.toggle("desk",!P&&innerWidth>=900);de.classList.toggle("rotate",P&&land())}
+upd();addEventListener("resize",upd);addEventListener("orientationchange",upd);
+if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener("change",upd);
+lock();document.addEventListener("DOMContentLoaded",lock);addEventListener("pointerdown",lock,{once:true,passive:true});
+})();</script>
 <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.tgInit&&tgInit()"></script>
 <script>window.tgInit=function(){try{var w=window.Telegram&&Telegram.WebApp;if(!w||!(w.initData||(w.platform&&w.platform!=="unknown")))return;document.documentElement.classList.add("tg");
 w.ready();w.expand();try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
@@ -806,9 +820,125 @@ body.onclub .top{display:none}
 .sl h4{font-size:22px}
 .sl p{display:block;-webkit-line-clamp:unset;margin-top:4px;font-size:18px}
 [data-q="0"] .lw.bo,[data-q="0"] .cl-lock{filter:none}
+
+/* ============ layout modes ============
+   phone (html.phone): always portrait; in landscape a cover asks to rotate back (and the orientation lock is requested).
+   PC / wide screens (html.desk, set by the script in <head>, width >= 900px): every window gets a horizontal layout. */
+.pg-l,.pg-r{display:contents}
+.rot{display:none}
+html.rotate .rot{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;
+  background:var(--bg0);color:var(--ink);touch-action:none}
+html.rotate .rot b{font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+html.rotate .rot small{font-size:16px;color:var(--dim)}
+.rot i{display:block;width:46px;height:78px;border:4px solid var(--acc);border-radius:9px;position:relative;box-shadow:0 0 18px rgba(165,107,255,.5);animation:rotph 2.4s ease-in-out infinite}
+.rot i::after{content:"";position:absolute;left:50%;bottom:5px;width:14px;height:4px;margin-left:-7px;background:var(--acc);border-radius:2px}
+@keyframes rotph{0%,25%{transform:rotate(90deg)}60%,100%{transform:rotate(0)}}
+html.rotate,html.rotate body{overflow:hidden}
+
+html.desk{--col:min(100vw - 64px,1400px);--pgw:min(100vw - 64px,1240px)}
+/* shell: tabs + search share one row, every view spans the full width */
+html.desk .app{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,380px);column-gap:28px;align-items:center;align-content:start;padding-top:18px}
+html.desk .app>.top,html.desk .app>.list,html.desk .app>.home,html.desk .app>.club,html.desk .app>.prof{grid-column:1/-1}
+html.desk .tabs{grid-column:1;width:100%;max-width:700px;margin:0 0 18px}
+html.desk .tab{height:58px}
+html.desk .sbar{grid-column:2;height:58px;margin:0 0 18px}
+html.desk .dock{width:min(var(--col),600px);height:66px}
+
+/* Store: cards in a grid */
+html.desk .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:22px}
+html.desk .list>.empty,html.desk .list>.nofound{grid-column:1/-1}
+
+/* Home: hero on the left, news + links on the right */
+html.desk body.onhome .top{width:min(440px,100%);justify-self:center;margin-bottom:6px}
+html.desk body.onhome .home{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;align-items:center;
+  min-height:calc(var(--vh) - var(--top) - 18px - var(--hh) - 6px - 74px - 20px - var(--bot))}
+html.desk .ts{zoom:1;flex:none}
+html.desk .ts .hero-t{font-size:clamp(28px,5vh,46px)}
+html.desk .shelf{height:clamp(90px,17vh,150px)}
+html.desk .gow{max-width:460px}
+html.desk .gow .bigplay{height:64px;font-size:clamp(22px,3.2vh,30px)}
+html.desk .pn{gap:18px}
+html.desk .ns .nw-in{padding:14px 18px 16px 24px}
+html.desk .ns .nw h4{font-size:23px}
+html.desk .ns .nw p{font-size:17px;-webkit-line-clamp:3}
+html.desk .ns .nw-tag{font-size:14px}html.desk .ns .nw-h time{font-size:15px}
+html.desk .lnks .lbtn{height:58px;font-size:24px}
+
+/* Community: slogan + Boosty | sponsors, charts side by side below */
+html.desk body.onclub .club{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px;align-items:start;padding-top:8px}
+html.desk .club>.cl-hero{grid-column:1;grid-row:1}
+html.desk .club>.cl-btns{grid-column:1;grid-row:2}
+html.desk .club>section:nth-of-type(1){grid-column:2;grid-row:1/span 2;margin-top:0}
+html.desk .club>section:nth-of-type(2){grid-column:1/-1;grid-row:3;margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 32px;align-items:start}
+html.desk .club>section:nth-of-type(2)>h3{grid-column:1/-1;margin-bottom:0}
+html.desk .club>section:nth-of-type(2)>.chc{margin:0}
+html.desk .cl-slogan{font-size:clamp(36px,4.6vw,64px)}
+
+/* Profile: card + level on the left, medals on the right */
+html.desk body.onprof .prof{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px 56px;align-items:start;padding-top:8px}
+html.desk .prof>.pf-card{grid-column:1;grid-row:1}
+html.desk .prof>.pf-lv{grid-column:1;grid-row:2}
+html.desk .prof>.pf-set{grid-column:1;grid-row:3}
+html.desk .prof>section{grid-column:2;grid-row:1/span 3;margin-top:0!important}
+html.desk .mdl{grid-template-columns:repeat(5,1fr);gap:16px 8px}
+
+/* App page: game + TV on the left (sticky), description + reviews on the right */
+html.desk #pgBody>.pg{width:var(--pgw);display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:48px;align-items:start}
+html.desk #pgBody>.pg>.pg-top{grid-column:1/-1}
+html.desk #pgBody>.pg>.pg-l{display:block;grid-column:1}
+html.desk #pgBody>.pg>.pg-r{display:block;grid-column:2;grid-row:2;min-width:0}
+html.desk .pg-r>.sec:first-child{margin-top:6px}
+@media(min-height:820px){html.desk #pgBody>.pg>.pg-l{position:sticky;top:12px}}
+html.desk .pbar{left:calc(50% - var(--pgw)/2);transform:none;width:calc((var(--pgw) - 48px)*5/11)}
+html.desk .pfade{left:calc(50% - var(--pgw)/2 - 24px);right:auto;width:calc((var(--pgw) - 48px)*5/11 + 48px)}
+html.desk .page{scrollbar-width:thin;scrollbar-color:#3a2a70 transparent}
+
+/* windows (dialogs): centered, wider, content in two columns */
+html.desk .sheet{align-items:center}
+html.desk .panel{width:min(100vw - 64px,720px);border-radius:14px;border-top:0;box-shadow:0 0 0 3px var(--acc)}
+html.desk .panel:has(.pfix){width:min(100vw - 64px,1080px)}
+html.desk .panel:has(.cmx){width:min(100vw - 64px,1040px)}
+html.desk .panel:has(.toggle){width:min(100vw - 64px,820px)}
+html.desk .panel:has(.av-row){width:min(100vw - 64px,780px)}
+/* card editor */
+html.desk .pfix .pv{max-width:640px;margin:0 auto}
+html.desk .pbody:has(#name){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-content:start}
+html.desk .pbody:has(#name)>.fld{margin:0 0 14px!important}
+html.desk .pbody:has(#name)>.two{grid-column:1/-1}
+html.desk .pbody:has(#name)>.hint2{grid-column:1/-1}
+html.desk .pbody>.fld:has(#name){order:1}
+html.desk .pbody>.fld:has(#tagbox){order:2}
+html.desk .pbody:has(#name)>.two{order:3}
+html.desk .pbody:has(#name)>.hint2{order:4}
+html.desk .pbody>.fld:has(#sw){order:5}
+html.desk .pbody>.fld:has(#drop){order:6}
+html.desk .pbody>.fld:has(#desc){order:7}
+html.desk .pbody>.fld:has(#chg){order:8}
+html.desk .pbody>.fld:has(#author){order:9}
+html.desk .pbody>.fld:has(#ver){order:10}
+html.desk .pbody>.fld:has(#dl){order:11}
+html.desk .pbody>.fld:has(#dlink){order:12}
+/* settings */
+html.desk .pbody:has(.toggle){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:36px;align-content:start}
+html.desk .pbody:has(.toggle)>.toggle{grid-column:1}
+html.desk .pbody:has(.toggle)>.fld{grid-column:2;margin-top:0!important}
+html.desk .pbody:has(.toggle)>.fld:first-of-type{grid-row:1/span 2}
+html.desk .pbody:has(.toggle)>.fld:last-of-type{grid-row:3/span 2}
+/* profile editor */
+html.desk .pbody:has(.av-row){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;align-content:start}
+html.desk .pbody:has(.av-row)>.av-row{grid-column:1;grid-row:1/span 2}
+html.desk .pbody:has(.av-row)>.fld{grid-column:2}
+/* reviews */
+html.desk .pbody.cmx{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);column-gap:40px;align-content:start;align-items:start}
+html.desk .cmx>#cmxSum{grid-column:1;grid-row:1}
+html.desk .cmx>.cmx-f{grid-column:1;grid-row:2}
+html.desk .cmx>.cmx-n{grid-column:1;grid-row:3}
+html.desk .cmx>#cmxList{grid-column:2;grid-row:1/span 3}
+html.desk .cmx>#cmxMore{grid-column:2;grid-row:4}
 </style>
 </head>
 <body class="scan">
+<div class="rot" id="rot" role="alert" aria-live="assertive"><i aria-hidden="true"></i><b>Поверните телефон вертикально</b><small>Coopix Market работает в портретном режиме</small></div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="boot" id="boot"><div>loading…<button class="lite" id="lite" type="button">Lite version</button><div class="lite-h">no effects, fastest start</div></div></div>
 <script>(function(){var b=document.getElementById("lite");if(!b)return;
@@ -1994,6 +2124,7 @@ function pageHTML(m,kind){
   const dlN=m.downloads!=null&&m.downloads!==""?+m.downloads:DOWNLOADS[m.id]||0,dl=nfmt(dlN)+" "+plr(dlN,["загрузка","загрузки","загрузок"]);
   return `<div class="pg">
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button>${ver?`<span class="beta">v${esc(ver)}</span>`:""}</div>
+  <div class="pg-l">
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
     <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
@@ -2007,13 +2138,14 @@ function pageHTML(m,kind){
     <div class="ctl"><button class="knob" id="knob" aria-pressed="true" aria-label="Noise filter"></button><span class="lab">noise</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
   <p class="hint2">${HINT[kind]}</p>
+  </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
     ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
   <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы · фильтры и сортировка</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
-      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div>`}
+      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div></div>`}
 
 async function openPage(id,opt){
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
