@@ -1,5 +1,10 @@
 import { createHub, WEIGHTS } from "./hub.js";
-import { cleanGame, gameWire, applyPatch, coverFor, newGameId } from "./games.js";
+import { randomBytes } from "node:crypto";
+import { cleanGame, gameWire, coverFor, AUTHOR_FIELDS } from "./games.js";
+import { createBot } from "./thanks.js";
+import { modWire, MOD_ID } from "./mods.js";
+
+const newGameId = () => "g" + Date.now().toString(36) + randomBytes(3).toString("hex");
 
 export const GENRES = ["Arcade", "Music", "Shooter", "Puzzle", "Other"];
 export const STATUSES = ["new", "seen", "pub"];
@@ -49,11 +54,14 @@ const toUser = (u, role) => ({
  * verify: (initData, botToken, maxAge) -> { ok, userId, user }
  * notify: (chatId, text) -> void
  */
-export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgFetch }) {
+export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null }) {
   const json = (status, body) => ({ status, body });
-  const hub = createHub({ store, botToken, notify, adminIds, ...(tgFetch ? { tgFetch } : {}) });
+  const hub = createHub({ store, botToken, notify, adminIds, tgApi, tgFile });
+  const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), notify, log: hub.log, weight: WEIGHTS.thank });
 
   async function handle(req) {
+    // вебхук Telegram (оплата звёздами): без initData, проверяется секретным заголовком
+    if (req.route === "bot") return req.method === "POST" ? bot.handle(req) : json(405, { error: "method_not_allowed" });
     const v = verify(req.headers?.["x-tg-init"], botToken, maxAgeSec);
     if (!v.ok) return json(401, { error: "unauthorized" });
 
@@ -199,15 +207,51 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       const g = await store.getGame(e.game_id);
       if (b.status === "approved") {
         if (!g) return json(404, { error: "not_found" });
-        const next = applyPatch(g, e.patch);
-        await store.updateGame(g.id, { description: next.description, changes: next.changes, version: next.version, link: next.link, item: next.item, bg: next.bg, tint: next.tint ?? null });
+        const { f, error } = cleanGame(e.patch, AUTHOR_FIELDS); // ещё раз через те же правила: в базе патч мог устареть
+        if (error) return json(400, { error });
+        await store.saveGame({ id: g.id, ...f });
       }
       const row = await store.updateEdit(id, { status: b.status, comment: clip(b.comment, 400) });
       notify(e.author_id, `Правки страницы «${g?.title ?? e.game_id}»: ${b.status === "approved" ? "одобрены, уже на сайте" : "отклонены"}` + (row.comment ? `\nКомментарий: ${row.comment}` : ""));
       return json(200, { id, status: row.status });
     }
 
+    // --- моды: проверка (админ и модераторы) ---
+    if (r === "mods") {
+      if (m !== "GET") return json(405, { error: "method_not_allowed" });
+      const mods = await store.listGameMods({ status: ["new", "approved", "rejected"].includes(q.status) ? q.status : undefined });
+      const games = new Map((await store.listGames()).map((g) => [g.id, g.title]));
+      return json(200, mods.map((x) => ({ ...modWire(x, { uid, pid: () => "" }), gameTitle: games.get(x.game_id) ?? x.game_id, authorId: String(x.author_id), file: x.file_name })));
+    }
+    if (r === "mod") {
+      const id = String(q.id ?? "");
+      const md = MOD_ID.test(id) ? await store.getGameMod(id) : null;
+      if (!md) return json(404, { error: "not_found" });
+      if (m === "DELETE") { await store.deleteGameMod(id); return json(200, { ok: true }); }
+      if (m !== "PATCH") return json(405, { error: "method_not_allowed" });
+      const b = parseBody(req.body);
+      if (!b || !["approved", "rejected"].includes(b.status)) return json(400, { error: "bad_status" });
+      const row = await store.updateGameMod(id, { status: b.status, comment: clip(b.comment, 400) });
+      if (md.status !== row.status) {
+        const g = await store.getGame(md.game_id);
+        notify(md.author_id, `Мод «${md.title}» для игры «${g?.title ?? md.game_id}»: ${b.status === "approved" ? "одобрен, уже на странице игры" : "отклонён"}` + (row.comment ? `\nКомментарий: ${row.comment}` : ""));
+      }
+      return json(200, { id, status: row.status });
+    }
+
     if (!isMain) return json(403, { error: "forbidden" }); // всё ниже только для главного админа
+
+    // --- подключить приём звёзд: регистрирует вебхук бота на этот сайт ---
+    if (r === "webhook") {
+      if (m !== "POST") return json(405, { error: "method_not_allowed" });
+      const url = String(parseBody(req.body)?.url ?? "");
+      if (!/^https:\/\/[a-z0-9.-]+(:\d+)?\/api\/bot$/i.test(url)) return json(400, { error: "bad_url" });
+      if (!tgApi) return json(503, { error: "payments_off" });
+      try {
+        await tgApi("setWebhook", { url, secret_token: bot.secret, allowed_updates: ["message", "pre_checkout_query"] });
+        return json(200, { ok: true, url });
+      } catch (e) { return json(502, { error: "telegram_error", detail: String(e?.message ?? "").slice(0, 200) }); }
+    }
 
     // --- каталог игр: список, доступ, порядок ---
     if (r === "games") {
@@ -220,7 +264,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
         const { f, error } = cleanGame(b);
         if (error) return json(400, { error });
         if (!f.title) return json(400, { error: "title_required" });
-        const row = await store.createGame({ id: newGameId(), tags: ["Arcade"], access: "staff", ...f });
+        const row = await store.saveGame({ id: newGameId(), tags: ["Arcade"], access: "staff", ...f });
         return json(201, gameWire(row, 0));
       }
       const id = String(q.id ?? "");
@@ -229,9 +273,8 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
         const { f, error } = cleanGame(b);
         if (error) return json(400, { error });
         if (!Object.keys(f).length) return json(400, { error: "empty_patch" });
-        const row = await store.updateGame(id, f);
-        if (!row) return json(404, { error: "not_found" });
-        return json(200, gameWire(row, 0));
+        if (!(await store.getGame(id))) return json(404, { error: "not_found" });
+        return json(200, gameWire(await store.saveGame({ id, ...f }), 0));
       }
       if (m === "DELETE") {
         if (!(await store.getGame(id))) return json(404, { error: "not_found" });
@@ -250,7 +293,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       if (!sub || !html) return json(404, { error: "not_found" });
       if ((await store.listGames()).some((g) => g.submission === sid)) return json(409, { error: "already_published" });
       const access = ["public", "staff"].includes(b.access) ? b.access : "staff";
-      const row = await store.createGame({
+      const row = await store.saveGame({
         id: newGameId(), title: sub.title.slice(0, 40), tags: [sub.genre], description: sub.description, version: sub.version,
         author_name: String(sub.author).slice(0, 24), author_id: sub.author_id, item: "cassette", cover: coverFor(sub.genre), access,
         sort: 100, file_html: html.file_html, submission: sid,

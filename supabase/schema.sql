@@ -244,9 +244,11 @@ as $$
   select jsonb_build_object(
     'base', (select coalesce(sum(weight), 0) from public.events where ts < p_start),
     'rows', (
-      select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w) order by b.i), '[]'::jsonb)
+      select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w, b.s) order by b.i), '[]'::jsonb)
         from (
-          select g.i, count(e.id) as a, coalesce(sum(e.weight), 0) as w
+          -- a = действия (без служебных invoice), w = ресурс, s = звёзды «спасибо автору»
+          select g.i, count(e.id) filter (where e.type <> 'invoice') as a, coalesce(sum(e.weight), 0) as w,
+                 coalesce(sum((e.meta->>'s')::int) filter (where e.type = 'thank'), 0) as s
             from generate_series(0, least(greatest(p_n, 1), 100) - 1) as g(i)
             left join public.events e
               on e.ts >= p_start + (g.i * p_step_sec) * interval '1 second'
@@ -293,6 +295,16 @@ create table if not exists public.games (
 );
 create index if not exists games_sort_idx on public.games (sort, created_at);
 
+-- Своя обложка (картинка JPEG 256×256 в data URL). cover = 'img:<хэш>' указывает, что она есть. Повторный запуск безопасен.
+alter table public.games add column if not exists cover_img text;
+alter table public.games drop constraint if exists games_cover_img_check;
+alter table public.games add constraint games_cover_img_check check (cover_img is null or char_length(cover_img) <= 280000);
+-- Фон карточки и страницы (картинка 16:9, поверх неё слабый эффект). bg_ref = 'img:<хэш>' или null.
+alter table public.games add column if not exists bg_ref text check (bg_ref is null or bg_ref ~ '^img:[0-9a-f]{12}$');
+alter table public.games add column if not exists bg_img text check (bg_img is null or char_length(bg_img) <= 420000);
+alter table public.games drop constraint if exists games_cover_check;
+alter table public.games add constraint games_cover_check check (cover in ('b:retro','b:space','b:toxic','b:blocks') or cover ~ '^img:[0-9a-f]{12}$');
+
 create table if not exists public.game_edits (
   id         uuid primary key default gen_random_uuid(),
   game_id    text   not null references public.games(id) on delete cascade,
@@ -329,3 +341,59 @@ insert into public.games (id, title, tags, description, changes, version, author
 Новые закатные цвета
 Исправлен сброс фигуры','0.3','Coopix','handheld','b:blocks','{"h":38,"s":0.95}','public',40)
 on conflict (id) do nothing;
+
+
+-- =====================================================================================
+-- «Спасибо автору»: поддержка игры звёздами Telegram (XTR). Пишет только вебхук бота (/api/bot) после успешной оплаты.
+-- Повторный запуск безопасен.
+-- =====================================================================================
+create table if not exists public.thanks (
+  id         uuid primary key default gen_random_uuid(),
+  charge_id  text   not null unique,               -- telegram_payment_charge_id: один платёж = одна запись
+  game_id    text   not null,
+  from_id    bigint not null,
+  author_id  bigint,                               -- автор на момент оплаты (null = игра проекта)
+  stars      integer not null check (stars between 1 and 100000),
+  created_at timestamptz not null default now()
+);
+create index if not exists thanks_game_idx on public.thanks (game_id);
+alter table public.thanks enable row level security;
+revoke all on public.thanks from anon, authenticated;
+
+create or replace function public.thanks_stats(p_ids text[])
+returns table (game_id text, stars bigint, backers bigint)
+language sql stable
+set search_path = public
+as $$
+  select t.game_id, sum(t.stars)::bigint, count(distinct t.from_id)::bigint
+    from public.thanks t
+   where t.game_id = any(p_ids)
+   group by t.game_id
+$$;
+revoke all on function public.thanks_stats(text[]) from public, anon, authenticated;
+grant execute on function public.thanks_stats(text[]) to service_role;
+
+
+-- =====================================================================================
+-- Моды игр: игрок предлагает мод (HTML-файл), админ или модератор одобряет. Повторный запуск безопасен.
+-- =====================================================================================
+create table if not exists public.game_mods (
+  id          uuid primary key default gen_random_uuid(),
+  game_id     text   not null references public.games(id) on delete cascade,
+  author_id   bigint not null,
+  author_name text   not null default '' check (char_length(author_name) <= 40),
+  title       text   not null check (char_length(title) between 1 and 40),
+  description text   not null default '' check (char_length(description) <= 400),
+  version     text   not null default '1.0' check (char_length(version) <= 12),
+  file_name   text   not null check (char_length(file_name) <= 100),
+  file_html   text   not null,
+  file_size   integer not null check (file_size between 1 and 1500000),
+  status      text   not null default 'new' check (status in ('new','approved','rejected')),
+  comment     text   not null default '' check (char_length(comment) <= 400),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists game_mods_game_idx   on public.game_mods (game_id, status, created_at desc);
+create index if not exists game_mods_author_idx on public.game_mods (author_id, created_at desc);
+alter table public.game_mods enable row level security;
+revoke all on public.game_mods from anon, authenticated;

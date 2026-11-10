@@ -124,6 +124,7 @@ main{max-width:1120px;margin:0 auto;padding:18px 16px}
   .perm td:not(:first-child),.perm th:not(:first-child){width:auto}
 }
 @media(max-width:480px){.me .nm{display:none}.bar h1{font-size:18px}}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px}table.cmp th,table.cmp td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}table.cmp thead th{color:var(--dim);font-weight:600}table.cmp tbody th{width:110px;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -162,10 +163,8 @@ const ERR = {
   bad_news: "Проверьте новость: заголовок обязателен, ссылка только https://", cannot_ban_self: "Нельзя заблокировать самого себя",
   cannot_ban_staff: "Нельзя заблокировать админа или модератора", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
-  title_required: "Введите название игры", bad_tags: "Укажите от 1 до 3 тегов", bad_item: "Неизвестный носитель", bad_cover: "Неизвестная обложка",
-  bad_bg: "Неизвестный фон", bad_link: "Ссылка: только https://, до 300 символов", bad_tint: "Цвет: оттенок 0–360, насыщенность 0–1",
-  bad_access: "Неизвестный режим доступа", empty_patch: "Нечего сохранять: ничего не изменилось", already_published: "Эта заявка уже опубликована в маркете",
-  bad_status: "Неверный статус", already_done: "Эти правки уже проверены", bad_json: "Неверные данные запроса",
+  already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
+  payments_off: "Бот не настроен на сервере", telegram_error: "Telegram отклонил запрос: проверьте BOT_TOKEN", bad_url: "Нужен адрес https://…/api/bot",
 };
 const errText = e => ERR[e.message] || (e.status === 401 ? ERR.unauthorized : "Ошибка сети или сервера, попробуйте ещё раз");
 
@@ -204,32 +203,25 @@ function screen(icon, title, text) {
   $("#top").hidden = true;
   $("#view").innerHTML = `<div class="center"><div><div class="ic">${icon}</div><h2>${esc(title)}</h2><p>${esc(text)}</p></div></div>`;
 }
-/* HTML игры: только в iframe без allow-same-origin, код игры не видит панель и initData */
-function preview(html) {
-  const o = document.createElement("div"); o.style.cssText = "position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column";
-  const fr = document.createElement("iframe"); fr.setAttribute("sandbox", "allow-scripts allow-pointer-lock");
-  fr.style.cssText = "flex:1;border:0;width:100%;background:#fff"; fr.srcdoc = html;
-  const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Закрыть превью"; b.style.cssText = "flex:none;width:100%"; b.onclick = () => o.remove();
-  o.append(fr, b); document.body.append(o);
-}
 const copy = async t => { try { await navigator.clipboard.writeText(t); toast("Скопировано: " + t); } catch (e) { toast("Не удалось скопировать", true); } };
 
 /* ---------- каркас ---------- */
-let ME = null, TAB = null, SUBS_NEW = 0, EDITS_NEW = 0;
+let ME = null, TAB = null, SUBS_NEW = 0;
 const TABS = [
   { id: "users", label: "Пользователи", main: true, render: viewUsers },
   { id: "subs", label: "Заявки", render: viewSubs },
-  { id: "games", label: "Игры", main: true, render: viewGames },
-  { id: "edits", label: "Правки", render: viewEdits },
+  { id: "edits", label: "Правки страниц", render: viewEdits },
+  { id: "mods", label: "Моды", render: viewMods },
   { id: "news", label: "Новости", main: true, render: viewNews },
   { id: "wallet", label: "Помощь · донат", main: true, render: viewWallet },
+  { id: "stars", label: "Звёзды", main: true, render: viewStars },
   { id: "team", label: "Команда", main: true, render: viewTeam },
 ];
 const tabsFor = () => TABS.filter(t => !t.main || ME.role === "main");
 
 function drawTabs() {
   const list = tabsFor();
-  $("#tabs").innerHTML = list.map(t => `<button class="tab" role="tab" data-id="${t.id}" aria-selected="${t.id === TAB}">${t.label}${t.id === "subs" && SUBS_NEW ? `<span class="n">${SUBS_NEW}</span>` : ""}${t.id === "edits" && EDITS_NEW ? `<span class="n">${EDITS_NEW}</span>` : ""}</button>`).join("");
+  $("#tabs").innerHTML = list.map(t => `<button class="tab" role="tab" data-id="${t.id}" aria-selected="${t.id === TAB}">${t.label}${t.id === "subs" && SUBS_NEW ? `<span class="n">${SUBS_NEW}</span>` : ""}</button>`).join("");
   $("#tabs").hidden = list.length < 2;
 }
 function go(id) {
@@ -343,6 +335,13 @@ async function viewSubs(root) {
   };
 
   const text = async s => (await api("/subs/" + encodeURIComponent(s.id) + "/file")).text;
+  const preview = html => {
+    const o = document.createElement("div"); o.style.cssText = "position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column";
+    const fr = document.createElement("iframe"); fr.setAttribute("sandbox", "allow-scripts allow-pointer-lock"); /* без allow-same-origin: код игры не видит панель и initData */
+    fr.style.cssText = "flex:1;border:0;width:100%;background:#fff"; fr.srcdoc = html;
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Закрыть превью"; b.style.cssText = "flex:none;width:100%"; b.onclick = () => o.remove();
+    o.append(fr, b); document.body.append(o);
+  };
 
   function detail(s) {
     let st = s.status;
@@ -350,26 +349,19 @@ async function viewSubs(root) {
       <div class="panel" style="margin-top:12px">${sBadge(s.status)}<h2 style="margin:8px 0 4px">${esc(s.title)}</h2>
       <p class="muted small" style="margin:0"><b style="color:#fff">Автор:</b> ${esc(s.author)}${s.tg ? " (@" + esc(s.tg) + ")" : ""} · id ${esc(s.authorId)}<br><b style="color:#fff">Контакт:</b> ${esc(s.contact || "—")}<br><b style="color:#fff">Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmt(s.at)}<br><b style="color:#fff">Файл:</b> ${esc(s.file.name)} · ${Math.round(s.file.size / 1024)} КБ</p>
       <p style="white-space:pre-wrap;margin:12px 0">${esc(s.desc)}</p>
-      <div class="row"><button class="btn ghost" id="o" type="button">Открыть HTML</button><button class="btn ghost" id="d" type="button">Скачать</button>${ME.role === "main" && s.status !== "pub" ? `<button class="btn ok" id="pb" type="button">Опубликовать в маркет</button>` : ""}</div>
+      <div class="row"><button class="btn ghost" id="o" type="button">Открыть HTML</button><button class="btn ghost" id="d" type="button">Скачать</button></div>
       <span class="lbl">Статус</span><div class="chips" id="st">${Object.keys(SST).map(k => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === st}">${SST[k].t}</button>`).join("")}</div>
       <span class="lbl">Комментарий автору (придёт ему от бота)</span><textarea class="in" id="cm" maxlength="400" placeholder="Что поправить или почему принято">${esc(s.comment || "")}</textarea>
-      <div class="row" style="margin-top:14px"><button class="btn" id="sv" type="button">Сохранить</button></div></div>`;
+      <div class="row" style="margin-top:14px"><button class="btn" id="sv" type="button">Сохранить</button></div>
+      ${ME.role === "main" ? `<div class="panel" style="margin-top:14px"><b>Опубликовать в маркет</b><p class="muted small" style="margin:4px 0 10px">Игра появится в каталоге с этим HTML-файлом. Автор сможет предлагать правки своей страницы (их одобряете вы).</p>
+        <div class="row"><button class="btn ghost" id="pubS" type="button">Только админам (проверить)</button><button class="btn" id="pubP" type="button">Сразу всем</button></div></div>` : ""}</div>`;
     $("#bk").onclick = list;
+    const pub = access => confirmBox("Опубликовать «" + s.title + "»?", access === "public" ? "Игру сразу увидят все игроки." : "Игру увидят только админы и модераторы. Открыть всем можно потом в приложении (карандаш на карточке → «Кто видит игру»).", "Опубликовать", "", async () => {
+      try { await api("/admin?r=publish", { method: "POST", body: { submission: s.id, access } }); s.status = "pub"; toast("Игра добавлена в маркет"); countNew(); list(); }
+      catch (e) { toast(errText(e), true); return false; } });
+    if ($("#pubS")) { $("#pubS").onclick = () => pub("staff"); $("#pubP").onclick = () => pub("public"); }
     $("#o").onclick = async () => { try { preview(await text(s)); } catch (e) { toast("Не удалось загрузить файл", true); } };
     $("#d").onclick = async () => { try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([await text(s)], { type: "text/html" })); a.download = s.file.name; a.click(); } catch (e) { toast("Не удалось загрузить файл", true); } };
-    const pb = $("#pb");
-    if (pb) pb.onclick = () => {
-      let acc = "staff";
-      const m = modal("Опубликовать в маркет", `<p style="margin:12px 0 0">Игра <b>${esc(s.title)}</b> появится в каталоге с HTML-файлом из заявки. Автор получит сообщение от бота и сможет предлагать правки страницы.</p>
-        <span class="lbl">Кто увидит</span><div class="chips" id="pa">${GACC_PUB.map(k => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === acc}">${GACC[k].t}</button>`).join("")}</div>
-        <p class="hint">«Только команда»: игру видят админы и модераторы, чтобы проверить перед выходом. Открыть всем можно потом во вкладке «Игры».</p>`,
-        [{ t: "Отмена", cls: "ghost" }, { t: "Опубликовать", cls: "ok", fn: async () => {
-          try { await api("/admin?r=publish", { method: "POST", body: { submission: s.id, access: acc } }); }
-          catch (e) { toast(errText(e), true); return false; }
-          s.status = "pub"; toast(acc === "public" ? "Игра в маркете, видна всем" : "Игра в маркете, пока видна только команде"); countNew(); detail(s);
-        } }]);
-      m.$("#pa").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; acc = b.dataset.k; m.el.querySelectorAll("#pa .chip").forEach(x => x.setAttribute("aria-pressed", x === b)); };
-    };
     $("#st").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; st = b.dataset.k; root.querySelectorAll("#st .chip").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#sv").onclick = async () => {
       const p = { status: st, comment: $("#cm").value.trim() };
@@ -380,125 +372,86 @@ async function viewSubs(root) {
   list();
 }
 
-/* ===================== КАТАЛОГ ИГР (только главный админ) ===================== */
-const GACC = { public: { t: "Все игроки", c: "#5dff8a" }, staff: { t: "Только команда", c: "#ffb23f" }, off: { t: "Скрыта", c: "#ff5e7a" } };
-const GACC_PUB = ["staff", "public"];
-const GITEMS = { cassette: "Кассета", cd: "CD", floppy: "Дискета", handheld: "Приставка" };
-const GCOVERS = { "b:retro": "Retro", "b:space": "Space", "b:toxic": "Toxic", "b:blocks": "Blocks" };
-const GBGS = { auto: "Авто", 0: "Волны", 1: "Мозаика", 2: "Закат", 3: "Дождь" };
-const opts = (o, cur) => Object.entries(o).map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(cur) ? " selected" : ""}>${esc(l)}</option>`).join("");
-const aBadge = k => `<span class="badge" style="--c:${(GACC[k] || GACC.off).c}">${(GACC[k] || GACC.off).t}</span>`;
-
-async function viewGames(root) {
-  let games = await api("/admin?r=games");
-  const draw = () => {
-    root.innerHTML = `<div class="sec-h"><h2>Каталог игр</h2><span class="muted small">${games.length}</span><button class="btn sp" id="ga" type="button">+ Добавить игру</button></div>
-      <div class="nws" id="gl">${games.length ? games.map((g, i) => `<div class="nw" data-id="${esc(g.id)}" style="--c:${(GACC[g.access] || GACC.off).c}">
-        <div>${aBadge(g.access)} <span class="muted small">${esc(g.id)} · порядок ${g.sort}${g.file ? " · HTML-файл" : " · встроенная"}</span>
-          <h4>${esc(g.title)}</h4><p>${esc((g.tags || []).join(" · "))} · v${esc(g.ver)} · ${esc(g.author || "—")}${g.authorId ? ` <span class="muted small">(id ${esc(g.authorId)})</span>` : ""}</p>
-          <div class="chips" style="margin-top:8px">${Object.keys(GACC).map(k => `<button class="chip" type="button" data-acc="${k}" aria-pressed="${k === g.access}">${GACC[k].t}</button>`).join("")}</div></div>
-        <div class="acts"><button class="btn ghost sm" data-a="up" type="button" ${i === 0 ? "disabled" : ""} aria-label="Выше">↑</button><button class="btn ghost sm" data-a="down" type="button" ${i === games.length - 1 ? "disabled" : ""} aria-label="Ниже">↓</button><button class="btn ghost sm" data-a="edit" type="button">Изменить</button>${g.file ? `<button class="btn ghost sm" data-a="play" type="button">Открыть</button>` : ""}<button class="btn ghost sm" data-a="del" type="button" style="color:var(--bad)">Удалить</button></div></div>`).join("") : `<div class="empty">Каталог пуст: в маркете не будет ни одной игры. Выполните supabase/schema.sql (добавит 4 встроенные) или добавьте игру.</div>`}</div>
-      <p class="hint">«Все игроки» = игра в маркете. «Только команда» = видят админы и модераторы (проверка перед выходом). «Скрыта» = не видит никто. Порядок здесь = порядок в маркете.</p>`;
-    $("#ga").onclick = () => form(null);
-  };
-  const reload = async () => { games = await api("/admin?r=games"); draw(); };
-  const patch = async (id, body, okMsg) => {
-    try { const n = await api("/admin?r=game&id=" + encodeURIComponent(id), { method: "PATCH", body }); Object.assign(games.find(g => g.id === id), n); if (okMsg) toast(okMsg); draw(); }
-    catch (e) { toast(errText(e), true); return false; }
-  };
-  root.onclick = async e => {
-    const row = e.target.closest(".nw"); if (!row) return;
-    const g = games.find(x => x.id === row.dataset.id); if (!g) return;
-    const ac = e.target.closest("[data-acc]");
-    if (ac) { if (ac.dataset.acc !== g.access) patch(g.id, { access: ac.dataset.acc }, "Доступ: " + GACC[ac.dataset.acc].t); return; }
-    const b = e.target.closest("[data-a]"); if (!b) return;
-    const a = b.dataset.a, i = games.indexOf(g);
-    if (a === "edit") return form(g);
-    if (a === "play") { try { const t = (await api("/hub?r=gamefile&id=" + encodeURIComponent(g.id))).text; preview(t); } catch (er) { toast(er.status === 404 ? "Файл недоступен: откройте доступ «Только команда» или «Все игроки»" : errText(er), true); } return; }
-    if (a === "del") return confirmBox("Удалить игру?", `«${esc(g.title)}» исчезнет из маркета вместе с правками страницы. Отзывы и счётчики останутся в базе. Это не отменить.`, "Удалить", "bad", async () => {
-      try { await api("/admin?r=game&id=" + encodeURIComponent(g.id), { method: "DELETE" }); toast("Игра удалена"); await reload(); } catch (er) { toast(errText(er), true); return false; } });
-    // порядок: переставляем и раздаём sort = 10, 20, 30…; сохраняем только изменившиеся
-    const j = a === "up" ? i - 1 : i + 1; if (j < 0 || j >= games.length) return;
-    const next = games.slice(); [next[i], next[j]] = [next[j], next[i]];
-    root.querySelectorAll("[data-a=up],[data-a=down]").forEach(x => { x.disabled = true; });
-    try { for (const [k, x] of next.entries()) if (x.sort !== (k + 1) * 10) await api("/admin?r=game&id=" + encodeURIComponent(x.id), { method: "PATCH", body: { sort: (k + 1) * 10 } }); toast("Порядок сохранён"); }
-    catch (er) { toast(errText(er), true); }
-    await reload();
-  };
-
-  function form(g) {
-    const n = g || { title: "", tags: ["Arcade"], desc: "", changes: "", ver: "0.1", author: "", item: "cassette", cover: "b:retro", bg: "auto", link: "", access: "staff", sort: (games.length + 1) * 10 };
-    const m = modal(g ? "Игра: " + g.title : "Новая игра", `
-      <span class="lbl">Название *</span><input class="in" id="gt" maxlength="40" value="${esc(n.title)}">
-      <span class="lbl">Теги через запятую (до 3, первый = жанр и мини-игра)</span><input class="in" id="gg" maxlength="50" value="${esc((n.tags || []).join(", "))}" placeholder="Arcade, Retro">
-      <span class="lbl">Описание</span><textarea class="in" id="gd" maxlength="600">${esc(n.desc)}</textarea>
-      <span class="lbl">Последние изменения (по одному на строку)</span><textarea class="in" id="gc" maxlength="200">${esc(n.changes)}</textarea>
-      <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="flex:1"><span class="lbl">Версия</span><input class="in" id="gv" maxlength="12" value="${esc(n.ver)}"></div><div style="flex:2"><span class="lbl">Автор (подпись)</span><input class="in" id="gu" maxlength="24" value="${esc(n.author)}"></div></div>
-      <span class="lbl">Ссылка на скачивание (https, необязательно)</span><input class="in" id="gl2" type="url" maxlength="300" value="${esc(n.link)}" placeholder="https://…">
-      <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="flex:1"><span class="lbl">Носитель</span><select class="in" id="gi">${opts(GITEMS, n.item)}</select></div><div style="flex:1"><span class="lbl">Обложка</span><select class="in" id="go">${opts(GCOVERS, n.cover)}</select></div><div style="flex:1"><span class="lbl">Фон</span><select class="in" id="gb">${opts(GBGS, n.bg)}</select></div></div>
-      <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="flex:2"><span class="lbl">Кто видит</span><select class="in" id="gs">${opts(Object.fromEntries(Object.entries(GACC).map(([k, v]) => [k, v.t])), n.access)}</select></div><div style="flex:1"><span class="lbl">Порядок</span><input class="in" id="gn" inputmode="numeric" maxlength="6" value="${esc(n.sort)}"></div></div>
-      ${g && g.authorId ? `<p class="hint">Автор-игрок: id ${esc(g.authorId)}. Он может предлагать правки описания, версии, ссылки, носителя и фона (вкладка «Правки»).</p>` : ""}
-      <div class="err" id="ge"></div>`,
-      [{ t: "Отмена", cls: "ghost" }, { t: g ? "Сохранить" : "Добавить", fn: async c => {
-        const v = s => c.$(s).value.trim();
-        const tags = v("#gg").split(",").map(x => x.trim()).filter(Boolean);
-        const link = v("#gl2");
-        if (!v("#gt")) { c.$("#ge").textContent = ERR.title_required; return false; }
-        if (!tags.length || tags.length > 3) { c.$("#ge").textContent = ERR.bad_tags; return false; }
-        if (link && !LINK.test(link)) { c.$("#ge").textContent = ERR.bad_link; return false; }
-        const body = { title: v("#gt"), tags, desc: v("#gd"), changes: v("#gc"), ver: v("#gv"), author: v("#gu"), link, item: v("#gi"), cover: v("#go"), bg: v("#gb"), access: v("#gs"), sort: Number(v("#gn")) || 0 };
-        // при правке отправляем только изменившиеся поля
-        const send = g ? Object.fromEntries(Object.entries(body).filter(([k, x]) => JSON.stringify(x) !== JSON.stringify(g[k]))) : body;
-        if (g && !Object.keys(send).length) { c.$("#ge").textContent = ERR.empty_patch; return false; }
-        try {
-          if (g) await api("/admin?r=game&id=" + encodeURIComponent(g.id), { method: "PATCH", body: send });
-          else await api("/admin?r=game", { method: "POST", body: send });
-        } catch (e) { c.$("#ge").textContent = errText(e); return false; }
-        toast(g ? "Сохранено, в маркете уже обновилось" : "Игра добавлена" + (body.access === "public" ? "" : " (пока не видна игрокам)")); await reload();
-      } }]);
-  }
-  draw();
-}
-
-/* ===================== ПРАВКИ СТРАНИЦ ОТ АВТОРОВ (админ и модератор) ===================== */
-const EST = { new: { t: "Новые", c: "#ffb23f" }, approved: { t: "Одобрено", c: "#5dff8a" }, rejected: { t: "Отклонено", c: "#ff5e7a" } };
-const EFIELD = { desc: "Описание", changes: "Изменения", ver: "Версия", link: "Ссылка", item: "Носитель", bg: "Фон", tint: "Цвет" };
-const eVal = (k, v) => {
-  if (v == null || v === "") return `<span class="muted">—</span>`;
-  if (k === "item") return esc(GITEMS[v] || v);
-  if (k === "bg") return esc(GBGS[v] || v);
-  if (k === "tint") return `<span style="display:inline-block;width:14px;height:14px;vertical-align:middle;background:hsl(${+v.h || 0} ${Math.round((+v.s || 0) * 100)}% 55%)"></span> ${esc(v.h)}° · ${esc(v.s)}`;
-  return `<span style="white-space:pre-wrap;word-break:break-word">${esc(v)}</span>`;
+/* ===================== ПРАВКИ СТРАНИЦ ИГР (от авторов) ===================== */
+const FLD = { desc: "Описание", changes: "Изменения", ver: "Версия", link: "Ссылка", item: "Носитель", bg: "Эффект фона", tint: "Цвет", cover: "Обложка", bgimg: "Фон-картинка" };
+const val = (k, v) => {
+  if ((k === "cover" || k === "bgimg") && /^data:image\/jpeg/.test(v || "")) return `<img src="${esc(v)}" alt="" style="max-width:100%;max-height:180px;display:block;border:2px solid var(--line)">`;
+  if (k === "bgimg" && !v) return "<i>убрать</i>";
+  if (k === "tint") return v ? `<span style="display:inline-block;width:18px;height:18px;vertical-align:middle;background:hsl(${v.h} ${Math.round(v.s * 100)}% 55%)"></span> ${v.h}°` : "авто";
+  return `<span style="white-space:pre-wrap">${esc(String(v ?? "")) || "<i>пусто</i>"}</span>`;
 };
-async function loadEditsCount() { try { EDITS_NEW = (await api("/admin?r=edits&status=new")).length; drawTabs(); } catch (e) {} }
-
+async function curImg(game, kind) { try { return (await api("/hub?r=cover&id=" + encodeURIComponent(game) + (kind ? "&kind=" + kind : ""))).img; } catch (e) { return ""; } }
 async function viewEdits(root) {
   let f = "new", all = [];
-  const load = async () => { all = await api("/admin?r=edits" + (f === "all" ? "" : "&status=" + f)); if (f === "new") { EDITS_NEW = all.length; drawTabs(); } };
-  const draw = () => {
-    root.innerHTML = `<div class="sec-h"><h2>Правки страниц от авторов</h2><button class="btn ghost sm sp" id="er" type="button">Обновить</button></div>
-      <div class="chips" id="ef">${[["new", "Новые"], ["approved", "Одобрено"], ["rejected", "Отклонено"], ["all", "Все"]].map(([k, l]) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === f}">${l}</button>`).join("")}</div>
-      <div id="el">${all.length ? all.map(e => `<div class="panel" style="margin-top:12px;border-left:8px solid ${EST[e.status].c}" data-id="${esc(e.id)}">
-        <span class="badge" style="--c:${EST[e.status].c}">${EST[e.status].t}</span> <span class="muted small">${fmt(e.at)} · ${esc(e.author || "игрок")} · id ${esc(e.authorId)}</span>
-        <h4 style="margin:6px 0 8px;font-size:19px">${esc(e.title)}${e.current ? "" : ` <span class="muted small">(игра удалена)</span>`}</h4>
-        <table class="perm"><thead><tr><th>Поле</th><th style="text-align:left;width:auto">Сейчас</th><th style="text-align:left;width:auto">Предлагает автор</th></tr></thead><tbody>
-          ${Object.keys(e.patch || {}).map(k => `<tr><td>${esc(EFIELD[k] || k)}</td><td style="text-align:left;width:auto">${eVal(k, e.current && e.current[k])}</td><td style="text-align:left;width:auto;color:#fff">${eVal(k, e.patch[k])}</td></tr>`).join("")}</tbody></table>
-        ${e.status === "new" ? `<span class="lbl">Комментарий автору (придёт от бота)</span><textarea class="in" data-cm maxlength="400" placeholder="Необязательно"></textarea>
-          <div class="row" style="margin-top:10px"><button class="btn ok" data-s="approved" type="button" ${e.current ? "" : "disabled"}>Одобрить и применить</button><button class="btn bad" data-s="rejected" type="button">Отклонить</button></div>`
-          : e.comment ? `<p class="hint">Комментарий: ${esc(e.comment)}</p>` : ""}</div>`).join("") : `<div class="empty">${f === "new" ? "Новых правок нет" : "Пусто"}</div>`}</div>
-      <p class="hint">Одобренные правки сразу появляются на странице игры. Автор может менять только описание, изменения, версию, ссылку, носитель, фон и цвет: название и доступ меняет главный админ.</p>`;
+  const load = async () => { all = await api("/admin?r=edits" + (f === "all" ? "" : "&status=" + f)); };
+  const ST = { new: ["На проверке", "#ffb23f"], approved: ["Одобрено", "#5dff8a"], rejected: ["Отклонено", "#ff5e7a"] };
+  const list = () => {
+    root.innerHTML = `<div class="sec-h"><h2>Правки страниц от авторов</h2></div>
+      <p class="muted small">Автор опубликованной игры может менять описание, обложку, фон и оформление. На сайте изменения появятся только после одобрения.</p>
+      <div class="chips" id="ef">${[["new", "На проверке"], ["approved", "Одобренные"], ["rejected", "Отклонённые"], ["all", "Все"]].map(([k, t]) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === f}">${t}</button>`).join("")}</div>
+      <div id="el">${all.length ? all.map(e => `<button type="button" class="item" data-id="${esc(e.id)}" style="--c:${ST[e.status][1]}"><span class="badge" style="--c:${ST[e.status][1]}">${ST[e.status][0]}</span><h4>${esc(e.title)}</h4><p>${esc(e.author || "автор")} · id ${esc(e.authorId)} · ${Object.keys(e.patch).map(k => FLD[k] || k).join(", ")} · ${fmt(e.at)}</p></button>`).join("") : `<div class="empty">Правок нет</div>`}</div>`;
+    $("#ef").onclick = async e => { const b = e.target.closest(".chip"); if (!b) return; f = b.dataset.k; try { await load(); list(); } catch (x) { toast(errText(x), true); } };
+    $("#el").onclick = e => { const b = e.target.closest(".item"); if (b) detail(all.find(x => x.id === b.dataset.id)); };
   };
-  root.onclick = async ev => {
-    if (ev.target.id === "er") { try { await load(); draw(); toast("Обновлено"); } catch (e) { toast(errText(e), true); } return; }
-    const c = ev.target.closest("#ef .chip"); if (c) { f = c.dataset.k; try { await load(); } catch (e) { toast(errText(e), true); } draw(); return; }
-    const b = ev.target.closest("[data-s]"); if (!b) return;
-    const box = b.closest("[data-id]"), id = box.dataset.id, status = b.dataset.s, comment = $("[data-cm]", box).value.trim();
-    box.querySelectorAll("[data-s]").forEach(x => { x.disabled = true; });
-    try { await api("/admin?r=edit&id=" + encodeURIComponent(id), { method: "PATCH", body: { status, comment } }); toast(status === "approved" ? "Одобрено: страница игры обновлена" : "Отклонено, автору ушло сообщение"); }
-    catch (e) { toast(errText(e), true); }
-    try { await load(); } catch (e) {} draw();
+  async function detail(e) {
+    const cur = e.current || {};
+    const curV = async k => k === "cover" ? (/^img:/.test(cur.cover || "") ? await curImg(e.game) : cur.cover) : k === "bgimg" ? (cur.bgimg ? await curImg(e.game, "bg") : "") : k === "desc" ? cur.desc : k === "ver" ? cur.ver : cur[k];
+    const rows = await Promise.all(Object.keys(e.patch).map(async k => `<tr><th>${FLD[k] || esc(k)}</th><td>${val(k, await curV(k))}</td><td>${val(k, e.patch[k])}</td></tr>`));
+    root.innerHTML = `<button class="btn ghost sm" id="bk" type="button">← К списку</button>
+      <div class="panel" style="margin-top:12px"><h2 style="margin:0 0 4px">${esc(e.title)}</h2><p class="muted small" style="margin:0">Автор: ${esc(e.author || "—")} · id ${esc(e.authorId)} · ${fmt(e.at)}</p>
+      <div style="overflow:auto;margin-top:12px"><table class="cmp"><thead><tr><th></th><th>Сейчас</th><th>Предлагает автор</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>
+      ${e.status === "new" ? `<span class="lbl">Комментарий автору (придёт от бота)</span><textarea class="in" id="cm" maxlength="400" placeholder="Например: обложка слишком тёмная"></textarea>
+      <div class="row" style="margin-top:14px"><button class="btn ghost danger" id="no" type="button">Отклонить</button><button class="btn" id="ok" type="button">Одобрить и опубликовать</button></div>` : `<p class="muted">Решение: ${e.status === "approved" ? "одобрено" : "отклонено"}${e.comment ? " · " + esc(e.comment) : ""}</p>`}</div>`;
+    $("#bk").onclick = list;
+    const act = status => async () => { try { await api("/admin?r=edit&id=" + encodeURIComponent(e.id), { method: "PATCH", body: { status, comment: $("#cm").value.trim() } }); toast(status === "approved" ? "Одобрено, уже на сайте" : "Отклонено, автор получит сообщение"); await load(); list(); } catch (x) { toast(errText(x), true); } };
+    if ($("#ok")) { $("#ok").onclick = act("approved"); $("#no").onclick = act("rejected"); }
+  }
+  await load(); list();
+}
+
+/* ===================== МОДЫ ===================== */
+async function viewMods(root) {
+  let f = "new", all = [];
+  const load = async () => { all = await api("/admin?r=mods" + (f === "all" ? "" : "&status=" + f)); };
+  const ST = { new: ["На проверке", "#ffb23f"], approved: ["Одобрен", "#5dff8a"], rejected: ["Отклонён", "#ff5e7a"] };
+  const file = async m => (await api("/hub?r=modfile&id=" + encodeURIComponent(m.id))).text;
+  const preview = html => { const o = document.createElement("div"); o.style.cssText = "position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column";
+    const fr = document.createElement("iframe"); fr.setAttribute("sandbox", "allow-scripts allow-pointer-lock"); fr.style.cssText = "flex:1;border:0;width:100%;background:#fff"; fr.srcdoc = html;
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Закрыть превью"; b.style.cssText = "flex:none;width:100%"; b.onclick = () => o.remove(); o.append(fr, b); document.body.append(o); };
+  const list = () => {
+    root.innerHTML = `<div class="sec-h"><h2>Моды игр</h2></div><p class="muted small">Игроки предлагают свои версии готовых игр. Одобренный мод появляется на странице игры во вкладке «Моды» с именем автора.</p>
+      <div class="chips" id="mf">${[["new", "На проверке"], ["approved", "Одобренные"], ["rejected", "Отклонённые"], ["all", "Все"]].map(([k, t]) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === f}">${t}</button>`).join("")}</div>
+      <div id="ml">${all.length ? all.map(m => `<button type="button" class="item" data-id="${esc(m.id)}" style="--c:${ST[m.status][1]}"><span class="badge" style="--c:${ST[m.status][1]}">${ST[m.status][0]}</span><h4>${esc(m.title)} <small class="muted">v${esc(m.ver)}</small></h4><p>для «${esc(m.gameTitle)}» · ${esc(m.author)} · id ${esc(m.authorId)} · ${Math.round(m.size / 1024)} КБ · ${fmt(m.at)}</p></button>`).join("") : `<div class="empty">Модов нет</div>`}</div>`;
+    $("#mf").onclick = async e => { const b = e.target.closest(".chip"); if (!b) return; f = b.dataset.k; try { await load(); list(); } catch (x) { toast(errText(x), true); } };
+    $("#ml").onclick = e => { const b = e.target.closest(".item"); if (b) detail(all.find(x => x.id === b.dataset.id)); };
   };
-  await load(); draw();
+  function detail(m) {
+    root.innerHTML = `<button class="btn ghost sm" id="bk" type="button">← К списку</button>
+      <div class="panel" style="margin-top:12px"><h2 style="margin:0 0 4px">${esc(m.title)} <small class="muted">v${esc(m.ver)}</small></h2>
+      <p class="muted small" style="margin:0">Игра: «${esc(m.gameTitle)}» · автор ${esc(m.author)} · id ${esc(m.authorId)} · ${esc(m.file)} · ${Math.round(m.size / 1024)} КБ · ${fmt(m.at)}</p>
+      <p style="white-space:pre-wrap;margin:12px 0">${esc(m.desc || "Без описания")}</p>
+      <div class="row"><button class="btn ghost" id="o" type="button">Открыть HTML</button><button class="btn ghost" id="d" type="button">Скачать</button></div>
+      <span class="lbl">Комментарий автору (придёт от бота)</span><textarea class="in" id="cm" maxlength="400">${esc(m.comment || "")}</textarea>
+      <div class="row" style="margin-top:14px"><button class="btn ghost danger" id="rm" type="button">Удалить</button><button class="btn ghost" id="no" type="button">Отклонить</button><button class="btn" id="ok" type="button">Одобрить</button></div></div>`;
+    $("#bk").onclick = list;
+    $("#o").onclick = async () => { try { preview(await file(m)); } catch (e) { toast("Не удалось загрузить файл", true); } };
+    $("#d").onclick = async () => { try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([await file(m)], { type: "text/html" })); a.download = m.file || "mod.html"; a.click(); } catch (e) { toast("Не удалось загрузить файл", true); } };
+    const act = status => async () => { try { await api("/admin?r=mod&id=" + encodeURIComponent(m.id), { method: "PATCH", body: { status, comment: $("#cm").value.trim() } }); toast(status === "approved" ? "Мод одобрен, уже на странице игры" : "Мод отклонён"); await load(); list(); } catch (x) { toast(errText(x), true); } };
+    $("#ok").onclick = act("approved"); $("#no").onclick = act("rejected");
+    $("#rm").onclick = () => confirmBox("Удалить мод?", "Мод исчезнет совсем, автор сможет прислать новый.", "Удалить", "danger", async () => { try { await api("/admin?r=mod&id=" + encodeURIComponent(m.id), { method: "DELETE" }); toast("Удалено"); await load(); list(); } catch (x) { toast(errText(x), true); return false; } });
+  }
+  await load(); list();
+}
+
+/* ===================== ЗВЁЗДЫ: «спасибо автору» ===================== */
+async function viewStars(root) {
+  const url = location.origin + "/api/bot";
+  root.innerHTML = `<div class="sec-h"><h2>Звёзды «Спасибо автору»</h2></div>
+    <div class="panel"><p style="margin:0 0 10px">На странице каждой игры есть кнопка «Спасибо автору»: игрок платит звёздами Telegram (⭐ 10–500), сумма видна на карточке игры золотой меткой.</p>
+    <p class="muted small" style="margin:0 0 10px">Звёзды приходят на баланс вашего бота. Автору они засчитываются в статистике, а выплату автору вы делаете сами (вывод звёзд бота — через @BotFather / Fragment).</p>
+    <p class="muted small" style="margin:0 0 14px">Чтобы бот принимал оплату, подключите вебхук один раз (и после смены домена): <code>${esc(url)}</code></p>
+    <div class="row"><button class="btn" id="wh" type="button">Подключить приём звёзд</button></div></div>`;
+  $("#wh").onclick = async () => { try { await api("/admin?r=webhook", { method: "POST", body: { url } }); toast("Готово: бот принимает оплату звёздами"); } catch (e) { toast(errText(e), true); } };
 }
 
 /* ===================== НОВОСТИ ===================== */
@@ -608,7 +561,7 @@ async function viewTeam(root) {
       <div class="hint">Свой id человек узнаёт у бота @userinfobot. В списке пользователей id копируется нажатием.</div><div class="err" id="me2"></div></div>
     <div class="panel" style="margin-top:14px"><span class="lbl" style="margin-top:0">Что кому доступно</span>
       <table class="perm"><thead><tr><th>Действие</th><th>Гл. админ</th><th>Модератор</th></tr></thead><tbody>
-        ${[["Обрабатывать заявки на игры", 1, 1], ["Одобрять правки страниц игр", 1, 1], ["Публиковать заявки и управлять каталогом игр", 1, 0], ["Просмотр и бан пользователей", 1, 0], ["Редактировать новости и ссылки", 1, 0], ["Менять адрес в «Помочь»", 1, 0], ["Управлять командой", 1, 0]].map(([a, x, y]) => `<tr><td>${a}</td><td style="color:var(--${x ? "ok" : "bad"})">${x ? "✓" : "—"}</td><td style="color:var(--${y ? "ok" : "bad"})">${y ? "✓" : "—"}</td></tr>`).join("")}</tbody></table></div>`;
+        ${[["Обрабатывать заявки на игры", 1, 1], ["Просмотр и бан пользователей", 1, 0], ["Редактировать новости и ссылки", 1, 0], ["Менять адрес в «Помочь»", 1, 0], ["Управлять командой", 1, 0]].map(([a, x, y]) => `<tr><td>${a}</td><td style="color:var(--${x ? "ok" : "bad"})">${x ? "✓" : "—"}</td><td style="color:var(--${y ? "ok" : "bad"})">${y ? "✓" : "—"}</td></tr>`).join("")}</tbody></table></div>`;
   root.onclick = async e => {
     const d = e.target.closest("[data-del]");
     if (d) return confirmBox("Убрать модератора?", `Доступ id ${esc(d.dataset.del)} к заявкам будет закрыт.`, "Убрать", "bad", async () => {
@@ -632,7 +585,6 @@ async function viewTeam(root) {
   $("#roleB").textContent = ME.role === "main" ? "Гл. админ" : "Модератор"; $("#roleB").style.setProperty("--c", ME.role === "main" ? "#ffd23f" : "#4dd2ff");
   const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user; $("#meName").textContent = u ? (u.first_name || "") + (u.username ? " @" + u.username : "") : "";
   go(ME.role === "main" ? "users" : "subs");
-  loadEditsCount();
 })();
 </script>
 </body>

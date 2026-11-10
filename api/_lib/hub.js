@@ -1,5 +1,7 @@
 import { pidCodec } from "./pid.js";
-import { cleanGame, gameWire, isVisible, AUTHOR_FIELDS } from "./games.js";
+import { cleanGame, gameWire, isVisible, toPatch, AUTHOR_FIELDS, IMG_REF } from "./games.js";
+import { STAR_OPTIONS, makePayload } from "./thanks.js";
+import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
 
 /**
  * Данные сообщества: отзывы и рейтинг, профили с постом, счётчики игр, журнал действий и график активности.
@@ -9,7 +11,7 @@ import { cleanGame, gameWire, isVisible, AUTHOR_FIELDS } from "./games.js";
 /** Вес действия в «ресурсе COOP» (график активности). Типы, которых здесь нет, весят 0. */
 export const WEIGHTS = {
   visit: 2, play: 5, download: 5, fav: 2,
-  review: 20, post: 10, card: 25, submit: 25,
+  review: 20, post: 10, card: 25, submit: 25, thank: 40, mod: 25,
 };
 
 /** Типы, которые клиент может прислать сам (/track). Остальные пишет только сервер в момент действия. */
@@ -49,43 +51,44 @@ function parseBody(body) {
 /** Ник игрока = имя из Telegram (проверенный initData, обновляется при каждом заходе). Сменить его в приложении нельзя. */
 const tgName = (u) => clip(u?.first_name || u?.username || "", 16) || "Игрок";
 
-export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgFetch = (...a) => fetch(...a) }) {
+export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgApi = null, tgFile = null }) {
   const pid = pidCodec(botToken);
   const json = (status, body) => ({ status, body });
 
-  /** Фото профиля Telegram через бота (браузер не может обработать картинку с t.me на canvas). Наименьший размер ≥ 128 px, только JPEG до 200 КБ. */
+  /**
+   * Фото профиля Telegram через бота (браузер не может обработать картинку с t.me на canvas).
+   * Наименьший размер от 128 px, только JPEG до 200 КБ. tgFile(path) -> Buffer.
+   */
   const tgPhotoAt = new Map(); // не чаще раза в 10 с на игрока в пределах одного экземпляра функции
   async function tgPhoto(uid) {
+    if (!tgApi || !tgFile) return json(200, { photo: "" });
     const now = Date.now();
     if ((tgPhotoAt.get(uid) ?? 0) > now - 10_000) return json(429, { error: "rate_limit" });
     if (tgPhotoAt.size > 5000) tgPhotoAt.clear();
     tgPhotoAt.set(uid, now);
-    const api = async (method, q) => (await tgFetch(`https://api.telegram.org/bot${botToken}/${method}?${new URLSearchParams(q)}`)).json();
     try {
-      const ph = await api("getUserProfilePhotos", { user_id: String(uid), limit: "1" });
-      const sizes = ph?.ok ? ph.result?.photos?.[0] : null;
+      const sizes = (await tgApi("getUserProfilePhotos", { user_id: uid, limit: 1 }))?.photos?.[0];
       if (!Array.isArray(sizes) || !sizes.length) return json(200, { photo: "" }); // фото нет или скрыто настройками приватности
       const s = [...sizes].sort((a, b) => a.width - b.width).find((x) => x.width >= 128) ?? sizes[sizes.length - 1];
-      const f = await api("getFile", { file_id: String(s.file_id) });
-      if (!f?.ok || !f.result?.file_path) return json(200, { photo: "" });
-      const img = await tgFetch(`https://api.telegram.org/file/bot${botToken}/${f.result.file_path}`);
-      const buf = Buffer.from(await img.arrayBuffer());
-      if (!img.ok || buf.length > 200_000 || buf[0] !== 0xff || buf[1] !== 0xd8) return json(200, { photo: "" });
-      return json(200, { photo: "data:image/jpeg;base64," + buf.toString("base64") });
+      const f = await tgApi("getFile", { file_id: s.file_id });
+      if (!f?.file_path) return json(200, { photo: "" });
+      const buf = await tgFile(f.file_path);
+      if (!buf || buf.length > 200_000 || buf[0] !== 0xff || buf[1] !== 0xd8) return json(200, { photo: "" });
+      return json(200, { photo: "data:image/jpeg;base64," + Buffer.from(buf).toString("base64") });
     } catch {
-      return json(502, { error: "telegram_unavailable" }); // без деталей: в URL токен бота
+      return json(502, { error: "telegram_unavailable" }); // без деталей: в URL файла токен бота
     }
   }
 
-  // Не называть gameWire: это имя импортировано из games.js (страница игры), здесь только счётчики.
-  const statsWire = (s = {}) => ({
+  const statWire = (s = {}) => ({
     plays: +s.plays || 0, playPlayers: +s.play_players || 0,
     downloads: +s.downloads || 0, dlPlayers: +s.dl_players || 0,
     reviews: +s.reviews || 0, rated: +s.rated || 0, rating: +s.rating || 0,
+    stars: +s.stars || 0, backers: +s.backers || 0,
   });
   async function statsFor(ids) {
-    const rows = await store.gameStats(ids);
-    return Object.fromEntries(ids.map((id) => [id, statsWire(rows.find((x) => x.game_id === id))]));
+    const [rows, th] = await Promise.all([store.gameStats(ids), store.thanksStats(ids)]);
+    return Object.fromEntries(ids.map((id) => [id, statWire({ ...rows.find((x) => x.game_id === id), ...th.find((x) => x.game_id === id) })]));
   }
   const gameIds = (v) => [...new Set(String(v ?? "").split(",").map((s) => s.trim()).filter((s) => GAME_ID.test(s)))].slice(0, 50);
 
@@ -178,6 +181,83 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
         return json(200, { text: (await store.gameHtml(id))?.file_html ?? "" });
       }
+      // обложка-картинка отдельно от списка (список лёгкий, картинки клиент кэширует по хэшу)
+      if (r === "cover") {
+        if (m !== "GET") return bad();
+        const id = String(q.id ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        const bg = q.kind === "bg", ref = g && (bg ? g.bg_ref : g.cover);
+        if (!g || !IMG_REF.test(ref ?? "") || !isVisible(g, staff) && !(g.author_id != null && Number(g.author_id) === uid)) return json(404, { error: "not_found" });
+        const row = await store.gameCover(id);
+        const img = bg ? row?.bg_img : row?.cover_img;
+        return img ? json(200, { ref, img }) : json(404, { error: "not_found" });
+      }
+      // ---------- моды: список одобренных, файл, предложить свой ----------
+      if (r === "mods") {
+        if (m !== "GET") return bad();
+        const id = String(q.game ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const W = { uid, pid: (a) => pid.encode(Number(a)) };
+        const all = await store.listGameMods({ gameId: id });
+        return json(200, { items: all.filter((x) => x.status === "approved").map((x) => modWire(x, W)), mine: all.filter((x) => Number(x.author_id) === uid && x.status !== "approved").map((x) => modWire(x, W)) });
+      }
+      if (r === "modfile") {
+        if (m !== "GET") return bad();
+        const id = String(q.id ?? "");
+        const md = MOD_ID.test(id) ? await store.getGameMod(id) : null;
+        const g = md ? await store.getGame(md.game_id) : null;
+        const can = md && (staff || Number(md.author_id) === uid || (md.status === "approved" && g && isVisible(g, false)));
+        if (!can) return json(404, { error: "not_found" });
+        return json(200, { name: md.file_name, text: (await store.gameModHtml(id))?.file_html ?? "" });
+      }
+      if (r === "mod" && m === "POST") {
+        const b = parseBody(req.body);
+        const id = String(b?.game ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const { f, error, status } = cleanMod(b);
+        if (error) return json(status, { error });
+        const mine = await store.listGameMods({ authorId: uid });
+        if (mine.filter((x) => x.status === "new").length >= MODS_PENDING_MAX) return json(429, { error: "too_many_pending" });
+        const u = await store.getUser(uid);
+        const row = await store.createGameMod({ ...f, game_id: g.id, author_id: uid, author_name: String(u?.first_name || "Игрок").slice(0, 40) });
+        await log(uid, "mod", g.id, {}, WEIGHTS.mod).catch(() => {});
+        const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
+        for (const a of staffIds) notify(a, `Новый мод «${row.title}» для игры «${g.title}». Админ-панель → Моды.`);
+        return json(201, modWire(row, { uid, pid: (a) => pid.encode(Number(a)) }));
+      }
+      if (r === "mod" && m === "DELETE") {
+        const id = String(q.id ?? "");
+        const md = MOD_ID.test(id) ? await store.getGameMod(id) : null;
+        if (!md || Number(md.author_id) !== uid) return json(404, { error: "not_found" });
+        await store.deleteGameMod(id);
+        return json(200, { ok: true });
+      }
+      if (r === "mymods") {
+        if (m !== "GET") return bad();
+        return json(200, { items: (await store.listGameMods({ authorId: uid })).slice(0, 30).map((x) => modWire(x, { uid, pid: (a) => pid.encode(Number(a)) })) });
+      }
+
+      // ---------- «Спасибо автору»: счёт в звёздах Telegram ----------
+      if (r === "thank") {
+        if (m !== "POST") return bad();
+        const b = parseBody(req.body);
+        const stars = Number(b?.stars), id = String(b?.game ?? "");
+        if (typeof b?.stars !== "number" || !STAR_OPTIONS.includes(stars)) return json(400, { error: "bad_stars" });
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        if (!tgApi) return json(503, { error: "payments_off" });
+        if ((await store.countEvents(uid, Date.now() - 3600e3, "invoice")) >= 30) return json(429, { error: "rate_limited" });
+        await log(uid, "invoice", g.id, { s: stars }, 0);
+        try {
+          const link = await tgApi("createInvoiceLink", {
+            title: "Спасибо автору", description: `Поддержка игры «${g.title}» в Coopix Market: ⭐ ${stars}`,
+            payload: makePayload(g.id, uid, stars), currency: "XTR", prices: [{ label: "Спасибо автору", amount: stars }],
+          });
+          return json(200, { link });
+        } catch (e) { console.error("[thank]", e?.message); return json(502, { error: "telegram_error" }); }
+      }
       // ---------- автор предлагает изменить страницу своей игры: попадает админу на одобрение ----------
       if (r === "myedit") {
         if (m !== "POST") return bad();
@@ -189,7 +269,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const { f, error } = cleanGame(b.patch, AUTHOR_FIELDS);
         if (error) return json(400, { error });
         if (!Object.keys(f).length) return json(400, { error: "empty_patch" });
-        const e = await store.createEdit({ game_id: g.id, author_id: uid, patch: Object.fromEntries(Object.entries(f).map(([k, v]) => [{ description: "desc", version: "ver" }[k] ?? k, v])) });
+        const e = await store.createEdit({ game_id: g.id, author_id: uid, patch: toPatch(f) });
         const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
         for (const a of staffIds) notify(a, `Автор предложил правки страницы игры «${g.title}». Откройте админ-панель → Правки.`);
         return json(201, { id: e.id, status: e.status });
@@ -342,6 +422,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       }
       if (r === "feed") {
         if (m !== "GET") return bad();
+        if (!staff) return json(403, { error: "forbidden" }); // журнал действий видят только админы и модераторы
         const limit = int(q.limit ?? 30, 1, FEED_MAX);
         const before = q.before ? int(q.before, 0, Number.MAX_SAFE_INTEGER) : undefined;
         const rows = await store.listEvents({ limit, before });

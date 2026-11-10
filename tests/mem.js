@@ -52,19 +52,23 @@ export function memStore() {
 
     // ---- каталог игр и правки ----
     games: new Map(), edits: [],
-    async listGames() { return [...this.games.values()].map((g) => ({ ...g, has_file: g.file_html != null })).sort((a, b) => a.sort - b.sort); },
+    async listGames() { return [...this.games.values()].map(({ cover_img, bg_img, ...g }) => ({ ...g, has_file: g.file_html != null })).sort((a, b) => a.sort - b.sort); },
     async getGame(id) { const g = this.games.get(id); return g ? { ...g, has_file: g.file_html != null } : null; },
+    modList: [],
+    async listGameMods({ gameId, authorId, status } = {}) { return this.modList.filter((x) => (!gameId || x.game_id === gameId) && (authorId === undefined || Number(x.author_id) === Number(authorId)) && (!status || x.status === status)).map(({ file_html, ...x }) => ({ ...x })).reverse(); },
+    async getGameMod(id) { const x = this.modList.find((y) => y.id === id); if (!x) return null; const { file_html, ...r } = x; return { ...r }; },
+    async gameModHtml(id) { const x = this.modList.find((y) => y.id === id); return x ? { file_html: x.file_html } : null; },
+    async createGameMod(row) { const x = { id: crypto.randomUUID(), status: "new", comment: "", ...row, created_at: new Date(Date.now() + this.modList.length).toISOString(), updated_at: new Date().toISOString() }; this.modList.push(x); const { file_html, ...r } = x; return { ...r }; },
+    async updateGameMod(id, p) { const x = this.modList.find((y) => y.id === id); Object.assign(x, p); const { file_html, ...r } = x; return { ...r }; },
+    async deleteGameMod(id) { this.modList = this.modList.filter((y) => y.id !== id); },
+    thanks: [],
+    async addThanks(row) { if (this.thanks.some((t) => t.charge_id === row.charge_id)) return null; const t = { id: crypto.randomUUID(), ...row, created_at: new Date().toISOString() }; this.thanks.push(t); return { id: t.id }; },
+    async thanksStats(ids) { return ids.map((g) => { const t = this.thanks.filter((x) => x.game_id === g); return { game_id: g, stars: t.reduce((a, x) => a + x.stars, 0), backers: new Set(t.map((x) => x.from_id)).size }; }).filter((x) => x.stars); },
+    async gameCover(id) { const g = this.games.get(id); return g ? { cover_img: g.cover_img ?? null, bg_img: g.bg_img ?? null } : null; },
     async gameHtml(id) { const g = this.games.get(id); return g ? { file_html: g.file_html ?? null } : null; },
-    // как в Postgres: insert падает на совпадении id и без title; update не создаёт строку
-    async createGame(row) {
-      if (this.games.has(row.id)) throw new Error("duplicate key value violates unique constraint games_pkey");
-      if (!row.title) throw new Error("null value in column title violates not-null constraint");
-      const base = { description: "", changes: "", version: "0.1", author_name: "", author_id: null, item: "cassette", cover: "b:retro", tint: null, bg: "auto", link: "", access: "staff", sort: 100, file_html: null, submission: null, tags: ["Arcade"] };
+    async saveGame(row) {
+      const base = this.games.get(row.id) ?? { description: "", changes: "", version: "0.1", author_name: "", author_id: null, item: "cassette", cover: "b:retro", tint: null, bg: "auto", link: "", access: "staff", sort: 100, file_html: null, submission: null, tags: ["Arcade"], title: "" };
       const g = { ...base, ...structuredClone(row) }; this.games.set(g.id, g); return { ...g, has_file: g.file_html != null };
-    },
-    async updateGame(id, patch) {
-      const g = this.games.get(id); if (!g) return null;
-      Object.assign(g, structuredClone(patch)); return { ...g, has_file: g.file_html != null };
     },
     async deleteGame(id) { this.games.delete(id); },
     async createEdit({ game_id, author_id, patch }) {
@@ -120,18 +124,27 @@ export function memStore() {
       }).filter((r) => r.plays || r.downloads || r.reviews);
     },
     async activitySeries({ startMs, stepSec, n }) {
-      const ev = this.events.map((e) => ({ t: Date.parse(e.ts), w: e.weight }));
-      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = ev.filter((e) => e.t >= a && e.t < b); return [x.length, x.reduce((t, e) => t + e.w, 0)]; });
+      const ev = this.events.map((e) => ({ t: Date.parse(e.ts), w: e.weight, k: e.type, s: e.type === "thank" ? +e.meta?.s || 0 : 0 }));
+      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = ev.filter((e) => e.t >= a && e.t < b); return [x.filter((e) => e.k !== "invoice").length, x.reduce((t, e) => t + e.w, 0), x.reduce((t, e) => t + e.s, 0)]; });
       return { base: ev.filter((e) => e.t < startMs).reduce((t, e) => t + e.w, 0), rows };
     },
   };
 }
 
-export function setup() {
-  const store = memStore(), sent = [];
-  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]) });
+// o.photos: размеры фото профиля для getUserProfilePhotos ([] = фото нет); o.file: что вернёт загрузка файла (функция или Buffer)
+export function setup(o = {}) {
+  const store = memStore(), sent = [], tg = [];
+  const tgApi = async (method, params) => {
+    tg.push([method, params]);
+    if (method === "createInvoiceLink") return "https://t.me/$inv" + tg.length;
+    if (method === "getUserProfilePhotos") return { total_count: o.photos?.length ? 1 : 0, photos: o.photos?.length ? [o.photos] : [] };
+    if (method === "getFile") return { file_id: params.file_id, file_path: "photos/" + params.file_id + ".jpg" };
+    return true;
+  };
+  const tgFile = async (path) => { tg.push(["file", path]); return typeof o.file === "function" ? o.file(path) : o.file ?? Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]); };
+  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile });
   const call = (route, method, hdr, o = {}) => core.handle({ route, method, headers: hdr ? { "x-tg-init": hdr } : {}, ...o });
-  return { store, sent, call };
+  return { store, sent, call, tg };
 }
 export const body = (o = {}) => ({ title: "Game", desc: "desc", genre: "Arcade", ver: "1.0", contact: "@a", author: "Ann", file: { name: "g.html", text: HTML }, ...o });
 

@@ -4,7 +4,8 @@ const COLS = "id,author_id,author,tg,title,genre,description,version,contact,fil
 const UCOLS = "tg_id,first_name,username,registered_at,last_seen_at,banned,ban_reason,banned_at,banned_by";
 const PROF_COLS = "tg_id,name,color,photo,xp,medals,stats,synced,post_title,post_text,post_at,updated_at";
 const REV_COLS = "id,game_id,author_id,rating,body,created_at,updated_at";
-const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,link,access,sort,has_file,submission,created_at,updated_at";
+const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,bg_ref,link,access,sort,has_file,submission,created_at,updated_at";
+const MOD_COLS = "id,game_id,author_id,author_name,title,description,version,file_name,file_size,status,comment,created_at,updated_at";
 const EDIT_COLS = "id,game_id,author_id,patch,status,comment,created_at,updated_at";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -100,14 +101,38 @@ export function supabaseStore(url, serviceKey) {
     // ---------- каталог игр и правки страниц ----------
     async listGames() { return ok(await db.from("games").select(GAME_COLS).order("sort").order("created_at")) ?? []; },
     async getGame(id) { return ok(await db.from("games").select(GAME_COLS).eq("id", id).maybeSingle()); },
-    async gameHtml(id) { return ok(await db.from("games").select("file_html").eq("id", id).maybeSingle()); },
-    /** Новая игра (insert: совпадение id = ошибка, а не перезапись чужой игры) */
-    async createGame(row) {
-      return ok(await db.from("games").insert(row).select(GAME_COLS).maybeSingle());
+    // ---- моды ----
+    async listGameMods({ gameId, authorId, status } = {}) {
+      let qb = db.from("game_mods").select(MOD_COLS).order("created_at", { ascending: false }).limit(200);
+      if (gameId) qb = qb.eq("game_id", gameId);
+      if (authorId !== undefined) qb = qb.eq("author_id", authorId);
+      if (status) qb = qb.eq("status", status);
+      return ok(await qb) ?? [];
     },
-    /** Частичное обновление по id. Не upsert: в Postgres INSERT … ON CONFLICT проверяет NOT NULL (title) до конфликта. */
-    async updateGame(id, patch) {
-      return ok(await db.from("games").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select(GAME_COLS).maybeSingle());
+    async getGameMod(id) { return ok(await db.from("game_mods").select(MOD_COLS).eq("id", id).maybeSingle()); },
+    async gameModHtml(id) { return ok(await db.from("game_mods").select("file_html").eq("id", id).maybeSingle()); },
+    async createGameMod(row) { return ok(await db.from("game_mods").insert(row).select(MOD_COLS).maybeSingle()); },
+    async updateGameMod(id, p) { return ok(await db.from("game_mods").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id).select(MOD_COLS).maybeSingle()); },
+    async deleteGameMod(id) { ok(await db.from("game_mods").delete().eq("id", id)); },
+    /** Запись платежа «спасибо». charge_id уникален: повтор вебхука вернёт null. */
+    async addThanks(row) {
+      const { data, error } = await db.from("thanks").insert(row).select("id").maybeSingle();
+      if (error) { if (error.code === "23505") return null; throw new Error(error.message); }
+      return data;
+    },
+    async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
+    async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img").eq("id", id).maybeSingle()); },
+    async gameHtml(id) { return ok(await db.from("games").select("file_html").eq("id", id).maybeSingle()); },
+    /**
+     * row — колонки таблицы games: update по id, а если строки нет — insert.
+     * Не upsert: в Postgres INSERT … ON CONFLICT проверяет NOT NULL (title) до конфликта,
+     * и частичная правка ({ id, access }) падала бы с not-null violation.
+     */
+    async saveGame({ id, ...rest }) {
+      const at = new Date().toISOString();
+      const upd = ok(await db.from("games").update({ ...rest, updated_at: at }).eq("id", id).select(GAME_COLS).maybeSingle());
+      if (upd) return upd;
+      return ok(await db.from("games").insert({ id, ...rest, updated_at: at }).select(GAME_COLS).maybeSingle());
     },
     async deleteGame(id) { ok(await db.from("games").delete().eq("id", id)); },
     /** У автора на игру одна заявка на правку «в очереди»: новая заменяет старую */

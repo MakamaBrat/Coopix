@@ -83,7 +83,7 @@ test("правки страницы: автор предлагает, админ
   const r = await w.hub("myedit", "POST", ANN, { body: { game: game.id, patch: { desc: "Новое описание", ver: "1.2", link: "https://example.com/g", title: "ХАК", access: "off", item: "cd" } } });
   assert.equal(r.status, 201);
   const cur = (await w.hub("games", "GET", BOB)).body.games[0];
-  assert.equal(cur.desc, "Игра Анны".length ? cur.desc : "", "до одобрения страница не меняется");
+  assert.notEqual(cur.desc, "Новое описание", "до одобрения страница не меняется");
   assert.notEqual(cur.ver, "1.2"); assert.equal(cur.item, "cassette");
   assert.ok(w.sent.some(([c, t]) => c === MAIN && /правки/i.test(t)));
   const list = (await w.adm("edits", "GET", MOD)).body;
@@ -123,4 +123,65 @@ test("правки: ссылка только https, длинные поля о�
   await w.hub("myedit", "POST", ANN, { body: { game: game.id, patch: { desc: "я".repeat(900), tint: { h: 120, s: 0.5 }, bg: "2" } } });
   const e = (await w.adm("edits", "GET", MAIN)).body[0];
   assert.equal(e.patch.desc.length, 600); assert.deepEqual(e.patch.tint, { h: 120, s: 0.5 }); assert.equal(e.patch.bg, "2");
+});
+
+const jpeg = (seed = 1) => "data:image/jpeg;base64," + Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, seed)]).toString("base64");
+
+test("обложка-картинка: админ ставит сразу, она хранится на сервере и отдаётся отдельно", async () => {
+  const w = await world();
+  const g = (await mk(w.adm, { access: "public" })).body;
+  const img = jpeg(7);
+  const r = await w.adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { cover: img } });
+  assert.equal(r.status, 200); assert.match(r.body.cover, /^img:[0-9a-f]{12}$/);
+  const list = (await w.hub("games", "GET", BOB)).body.games[0];
+  assert.equal(list.cover, r.body.cover); assert.ok(!JSON.stringify(list).includes("base64"), "картинка не раздувает список");
+  const c = await w.hub("cover", "GET", BOB, { query: { id: g.id } });
+  assert.equal(c.body.img, img); assert.equal(c.body.ref, r.body.cover);
+  // вернуть стандартную обложку
+  assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { cover: "b:toxic" } })).body.cover, "b:toxic");
+  assert.equal((await w.hub("cover", "GET", BOB, { query: { id: g.id } })).status, 404);
+});
+
+test("обложка: не JPEG, слишком большая или подделка отклоняются; скрытую игру чужой не видит", async () => {
+  const w = await world();
+  const g = (await mk(w.adm)).body;
+  const bad = ["data:image/png;base64,iVBORw0KGgo=", "data:image/jpeg;base64," + Buffer.alloc(400, 1).toString("base64"), "data:image/jpeg;base64," + "A".repeat(290000), "https://evil/x.jpg", "<svg onload=alert(1)>"];
+  for (const cover of bad) assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { cover } })).status, 400, cover.slice(0, 30));
+  await w.adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { cover: jpeg() } });
+  assert.equal((await w.hub("cover", "GET", BOB, { query: { id: g.id } })).status, 404); // access=staff
+  assert.equal((await w.hub("cover", "GET", MOD, { query: { id: g.id } })).status, 200);
+});
+
+test("обложка автора: уходит на проверку, видна админу в правке, применяется после одобрения", async () => {
+  const w = await world();
+  const { game } = await published(w);
+  const before = (await w.hub("games", "GET", BOB)).body.games[0].cover;
+  const img = jpeg(3);
+  assert.equal((await w.hub("myedit", "POST", ANN, { body: { game: game.id, patch: { cover: img } } })).status, 201);
+  assert.equal((await w.hub("myedit", "POST", BOB, { body: { game: game.id, patch: { cover: img } } })).status, 403);
+  assert.equal((await w.hub("games", "GET", BOB)).body.games[0].cover, before);
+  const e = (await w.adm("edits", "GET", MOD)).body[0];
+  assert.equal(e.patch.cover, img, "админ видит предложенную картинку");
+  await w.adm("edit", "PATCH", MOD, { query: { id: e.id }, body: { status: "approved" } });
+  const after = (await w.hub("games", "GET", BOB)).body.games[0].cover;
+  assert.match(after, /^img:/);
+  assert.equal((await w.hub("cover", "GET", BOB, { query: { id: game.id } })).body.img, img);
+});
+
+test("фон-картинка: админ ставит и убирает, автор только через одобрение", async () => {
+  const w = await world();
+  const { game } = await published(w);
+  const img = jpeg(9);
+  const r = await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { bgimg: img } });
+  assert.match(r.body.bgimg, /^img:[0-9a-f]{12}$/);
+  assert.equal((await w.hub("cover", "GET", BOB, { query: { id: game.id, kind: "bg" } })).body.img, img);
+  assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { bgimg: "" } })).body.bgimg, "");
+  assert.equal((await w.hub("cover", "GET", BOB, { query: { id: game.id, kind: "bg" } })).status, 404);
+  assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { bgimg: "data:image/png;base64,AAAA" } })).status, 400);
+  await w.hub("myedit", "POST", ANN, { body: { game: game.id, patch: { bgimg: jpeg(4) } } });
+  assert.equal((await w.hub("games", "GET", BOB)).body.games[0].bgimg, "");
+  const e = (await w.adm("edits", "GET", MAIN)).body[0];
+  assert.equal(e.patch.bgimg, jpeg(4));
+  await w.adm("edit", "PATCH", MAIN, { query: { id: e.id }, body: { status: "approved" } });
+  assert.match((await w.hub("games", "GET", BOB)).body.games[0].bgimg, /^img:/);
 });

@@ -747,12 +747,12 @@ body:not(.onhome) .top{display:none}
 .chc-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .chc-t{white-space:nowrap;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#cdbfff;font-weight:700}
 .chc-t em{font-style:normal;margin-left:6px;padding:0 6px;font-size:11px;font-weight:500;color:#ffb23f;border:1px solid #ffb23f66}
-.chc-v{white-space:nowrap;font-size:32px;font-weight:700;line-height:1.05;color:#fff;margin-top:6px;text-shadow:0 0 18px rgba(165,107,255,.45)}
-.chc-d{font-size:16px;margin-top:2px;font-weight:500}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
-.chc-p{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;padding:4px;background:#0d0724;border:2px solid #2a1f5e}
-.chc-p button{height:34px;font-size:15px;font-weight:500;color:var(--dim);background:transparent;border:0;transition:background .18s,color .18s}
+.chc-v{display:inline-block;white-space:nowrap;font-size:26px;font-weight:700;line-height:1.05;color:#fff;margin-top:4px;margin-right:10px;text-shadow:0 0 18px rgba(165,107,255,.45)}
+.chc-d{display:inline-block;font-size:14px;margin-top:2px;font-weight:500}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
+.chc-p{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;padding:3px;background:#0d0724;border:2px solid #2a1f5e}
+.chc-p button{height:28px;font-size:14px;font-weight:500;color:var(--dim);background:transparent;border:0;transition:background .18s,color .18s}
 .chc-p button[aria-pressed=true]{color:#140a28;font-weight:700;background:linear-gradient(90deg,#ff8fd8,#a56bff 55%,#6fa2ff)}
-.chw{position:relative;margin-top:10px}
+.chw{position:relative;margin-top:6px}
 .chc svg{display:block;width:100%;height:auto;touch-action:pan-y;-webkit-user-select:none;user-select:none;overflow:visible}
 .chc svg text{font-family:"Tektur",ui-monospace,monospace;fill:#8f82c4;font-size:11px}
 .chc svg text.pt{fill:#cdbfff;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
@@ -778,9 +778,14 @@ body:not(.onhome) .top{display:none}
 .chc svg text.hd{fill:#fff;font-size:14px;font-weight:700}.chc svg text.hs{fill:#a99be0;font-size:12px}
 .chc .gh{opacity:.55}
 .chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
-.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:9px;border-top:2px dashed #2f2360;text-align:center}
-.chc-s b{display:block;font-size:19px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px;padding-top:6px;border-top:2px dashed #2f2360;text-align:center}
+.chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .chc-n{margin-top:8px;font-size:13px;line-height:1.3;color:var(--dim)}
+.chc-lg{display:flex;gap:12px;font-size:12px;color:var(--dim);white-space:nowrap}.chc-lg span{display:inline-flex;align-items:center;gap:5px}
+.chc-lg i{display:inline-block;font-style:normal}.chc-lg .la{width:8px;height:12px;border-radius:2px;background:linear-gradient(#c9a4ff,#6a35e0)}.chc-lg .ls{color:#ffd23f;font-size:13px;line-height:1}.chc-lg .lc{width:14px;height:3px;border-radius:2px;background:linear-gradient(90deg,#ffb23f,#ff5ec4)}
+.chc-s .gold b{color:#ffd23f}.chc-tip em{font-style:normal;color:#ffd23f}
+.chc .sst{filter:drop-shadow(0 0 4px rgba(255,210,63,.7))}
+@media(max-width:420px){.chc-h{flex-direction:column;align-items:flex-start}.chc-lg{gap:10px;font-size:11px}}
 .chc+.chc{margin-top:12px}
 [data-q="0"] .chc .glow{filter:none}[data-q="0"] .chc .dr,[data-q="0"] .chc .fi,[data-q="0"] .chc .pul{animation:none}[data-q="0"] .chc .dr{stroke-dashoffset:0}
 @media (prefers-reduced-motion:reduce){.chc .dr,.chc .fi,.chc .pul{animation:none}.chc .dr{stroke-dashoffset:0}}
@@ -892,8 +897,8 @@ html.desk .lnks .lbtn svg{width:clamp(24px,3vh,32px);height:clamp(24px,3vh,32px)
 html.desk body.onclub .club{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px;align-items:start;padding-top:8px}
 html.desk .club>.cl-hero{grid-column:1;grid-row:1}
 html.desk .club>.cl-btns{grid-column:1;grid-row:2}
-html.desk .club>section:nth-of-type(1){grid-column:2;grid-row:1/span 3;margin-top:0}
-html.desk .club>section:nth-of-type(2){grid-column:1;grid-row:3;margin-top:8px}
+html.desk .club>section:nth-of-type(1){grid-column:2;grid-row:1/span 2;margin-top:0;align-self:center}
+html.desk .club>section:nth-of-type(2){grid-column:1/-1;grid-row:3;margin-top:8px}
 html.desk .cl-slogan{font-size:clamp(36px,4.6vw,64px)}
 
 /* Profile: card + level on the left, medals on the right */
@@ -990,6 +995,56 @@ html.desk .cmx>#cmxMore{grid-column:2;grid-row:4}
 .lg-r b{font-weight:600;color:#fff}.lg-r em{font-style:normal;color:var(--dim)}.lg-r span{overflow-wrap:anywhere}
 .lg .empty{margin:0}
 html.desk .club>section:nth-of-type(3){grid-column:1/-1;grid-row:4}
+/* спасибо автору */
+.thx-in{position:relative;padding:16px;background:linear-gradient(135deg,#2a1a08,#1a0f2e 60%);border:2px solid #ffd23f;box-shadow:0 0 0 1px rgba(255,210,63,.25),0 0 24px rgba(255,190,40,.15) inset}
+.thx-t b{display:block;font-size:20px;color:#ffe48a}.thx-t p{margin:4px 0 0;font-size:15px;line-height:1.35;color:#e8dcc0}
+.thx-ch{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.thx-ch button{height:36px;padding:0 12px;font-size:15px;color:#ffe48a;border:2px solid #6b5418;background:#1a1206;border-radius:18px}
+.thx-ch button[aria-checked="true"]{color:#1a1206;background:#ffd23f;border-color:#ffd23f}
+.thx-go{width:100%;flex:none;color:#1a1206;background:linear-gradient(180deg,#ffe27a,#ffb200)}.thx-go.done{background:linear-gradient(180deg,#a8ffbf,#3ccf6a)}
+.pg-sup{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:16px;color:var(--dim)}.pg-sup b{color:#ffd23f}.pg-sup:empty{display:none}
+
+/* золотые пиксельные блоки поддержки */
+.gb{display:inline-flex;gap:2px;vertical-align:middle;image-rendering:pixelated}
+.gb u{display:block;width:9px;height:9px;text-decoration:none;background:#2a1f10;box-shadow:inset 0 0 0 1px #4a3818}
+.gb u.on{background:#ffc72c;box-shadow:inset 2px 2px 0 #fff1a0,inset -2px -2px 0 #a86d00}
+.gb.one u{width:11px;height:11px}
+.info .sup{position:absolute;right:0;top:165px;display:flex;filter:drop-shadow(0 0 6px rgba(255,190,40,.45))}.info .sup .gb{gap:3px}.info .sup .gb u{width:14px;height:24px;box-shadow:inset 3px 3px 0 #fff1a0,inset -3px -3px 0 #a86d00}.info .sup .gb u:not(.on){background:#2a1f10;box-shadow:inset 0 0 0 2px #5a4420}
+.info.hsup .pill{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.pg-sup .gb u{width:12px;height:12px}
+.chc-s .gold b{display:inline-flex;align-items:center;gap:6px}
+/* сортировка и фильтры магазина */
+.fbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-6px 0 14px}
+.fsort,.fchip{height:36px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:15px;color:#cdbfff;background:#150d33;border:2px solid #3a2a70;border-radius:18px;white-space:nowrap}
+.fsort span{color:var(--dim)}.fsort b{color:#fff;font-weight:600}
+.fchip[aria-pressed="true"]{color:#140a28;background:#ffd23f;border-color:#ffd23f}.fchip[data-f="r4"][aria-pressed="true"]{background:#c9a4ff;border-color:#c9a4ff}
+.fchip .fst{font-style:normal;color:#c9a4ff}.fchip[aria-pressed="true"] .fst{color:#140a28}
+body.onhome .fbar,body.onclub .fbar,body.onprof .fbar{display:none}
+html.desk .fbar{grid-column:1/-1;margin:-8px 0 18px}
+@media(max-width:380px){.fsort span{display:none}}
+/* отзывы | моды */
+.pgtabs{display:flex;gap:0;margin-bottom:14px;border:3px solid var(--line);background:#0c0720}
+.pgtabs button{flex:1;height:46px;font-size:18px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.pgtabs button[aria-selected="true"]{color:#140a28;background:linear-gradient(90deg,var(--c3),var(--c1))}.pgtabs small{font-size:.8em;opacity:.8}
+.md{padding:12px 14px;margin-bottom:10px;background:#120a2a;border:2px solid var(--line);border-left:6px solid var(--c1)}
+.md-h{display:flex;justify-content:space-between;align-items:center;gap:8px}.md-h b{font-size:19px;color:#fff}.md-v{font-size:14px;color:var(--c3)}
+.md p{margin:6px 0 0;font-size:16px;line-height:1.35;color:#ddd2ff;white-space:pre-line}
+.md-f{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}.md-f time{font-size:13px;color:var(--dim)}.md-f .cm-av{width:30px;height:30px}
+.md-b{display:flex;gap:8px;margin-left:auto}.md-b .btn{flex:none;height:38px;padding:0 14px;font-size:15px}
+.md-own{margin-bottom:10px;padding:8px 12px;font-size:15px;background:#1c1146;border-left:6px solid #ffd23f;color:#e9ddff}.md-own.st-rejected{border-left-color:#ff7a8a}
+.md-new{width:100%;flex:none}
+/* своя фоновая картинка: под эффектом, эффект поверх слабый */
+.bgi{position:absolute;inset:0;background:var(--bgi,none) center/cover no-repeat;display:none}
+.card.hasbg .bgi{display:block}.card.hasbg .fx{opacity:.32;mix-blend-mode:screen}
+.page.hasbg{background:linear-gradient(180deg,rgba(9,5,26,.35) 0,rgba(9,5,26,.82) 46vh,#09051a 78vh),var(--pgbg) center top/cover no-repeat,#09051a}
+.bgpick{display:flex;gap:10px}.bgpick .btn{flex:1}
+/* каталог: заметки редактора и метки доступа (их видит только главный админ) */
+.ednote{margin:0 0 14px;padding:10px 12px;font-size:14px;line-height:1.35;color:#e9ddff;background:#1c1146;border-left:6px solid #ffb23f}
+.ednote.adm{border-left-color:#5dff8a}.ednote span{display:block;margin-top:4px;color:var(--dim)}.ednote .st-approved{color:#5dff8a}.ednote .st-rejected{color:#ff7a8a}.ednote .st-new{color:#ffd23f}
+.fld.off .tagbox{opacity:.6}.in:disabled{opacity:.6;cursor:not-allowed}
+.cardbox[data-acc]{position:relative}.cardbox[data-acc]::after{position:absolute;right:calc(var(--k,1)*120px);top:calc(var(--k,1)*10px);z-index:7;padding:2px 8px;font:700 12px/1.4 "Tektur",sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#140a28;pointer-events:none}
+.cardbox[data-acc="staff"]::after{content:"Только админы";background:#ffd23f}.cardbox[data-acc="off"]::after{content:"Скрыта";background:#ff7a8a}
+.cardbox[data-acc="off"] .card{filter:grayscale(.6) brightness(.8)}
+html.desk .chc svg text{font-size:13px}html.desk .chc svg text.pt{font-size:12px}
 </style>
 </head>
 <body class="scan">
@@ -1021,7 +1076,8 @@ b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.sett
   </header>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
-  <label class="sbar" id="sbar"><span class="si" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 2.1-2.1-5.4-5.4A8 8 0 0 0 10 2zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg></span><input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="Search games" aria-label="Search games"><button class="sx" id="qx" type="button" hidden aria-label="Clear search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l7 7 7-7 2 2-7 7 7 7-2 2-7-7-7 7-2-2 7-7-7-7z"/></svg></button></label>
+  <label class="sbar" id="sbar"><span class="si" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 2.1-2.1-5.4-5.4A8 8 0 0 0 10 2zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg></span><input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="Поиск игр" aria-label="Поиск игр"><button class="sx" id="qx" type="button" hidden aria-label="Clear search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l7 7 7-7 2 2-7 7 7 7-2 2-7-7-7 7-2-2 7-7-7-7z"/></svg></button></label>
+  <div class="fbar" id="fbar" role="toolbar" aria-label="Сортировка и фильтры"></div>
   <section class="list" id="list" aria-live="polite"></section>
   <section class="home" id="home" lang="ru"></section>
   <section class="club" id="club" lang="ru"></section>
@@ -1110,10 +1166,10 @@ async function loadSprites(){
       for(let i=0;i<w*h;i++){lum[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;al[i]=d[i*4+3]}
       SPR[k]={w,h,lum,al,src};res()};im.src=src}))); }
 const ITEMS={
-  cassette:{label:"Cassette",side:"left",case:"case_a",ov:.21},
+  cassette:{label:"Кассета",side:"left",case:"case_a",ov:.21},
   cd:{label:"CD",side:"left",case:"case_b",ov:.2},
-  floppy:{label:"Floppy",side:"right",case:"case_c",ov:.2},
-  handheld:{label:"Handheld",side:"right",case:"case_d",ov:.1}
+  floppy:{label:"Дискета",side:"right",case:"case_c",ov:.2},
+  handheld:{label:"Консоль",side:"right",case:"case_d",ov:.1}
 };
 
 (()=>{const c=document.createElement("canvas");c.width=c.height=48;const x=c.getContext("2d"),d=x.createImageData(48,48);
@@ -1201,13 +1257,22 @@ function resolveCover(ref){
   const src=ref.startsWith("b:")?coverSrc(ref.slice(2)):ref;
   const p=new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");
     x.imageSmoothingEnabled=!ref.startsWith("b:");const s=Math.max(256/im.width,256/im.height),w=im.width*s,h=im.height*s;x.drawImage(im,(256-w)/2,(256-h)/2,w,h);
-    res({canvas:c,dom:dominant(c)})};im.onerror=()=>{const c=document.createElement("canvas");c.width=c.height=256;res({canvas:c,dom:{h:265,s:.2,cands:[{h:265,s:.2}]}})};im.src=src});
+    let hi=null;if(!ref.startsWith("b:")){hi=document.createElement("canvas");hi.width=hi.height=512;const y=hi.getContext("2d");y.imageSmoothingQuality="high";const t=Math.max(512/im.width,512/im.height);y.drawImage(im,(512-im.width*t)/2,(512-im.height*t)/2,im.width*t,im.height*t)}
+    res({canvas:c,hi,dom:dominant(c)})};im.onerror=()=>{const c=document.createElement("canvas");c.width=c.height=256;res({canvas:c,dom:{h:265,s:.2,cands:[{h:265,s:.2}]}})};im.src=src});
   CCACHE.set(ref,p);return p}
 async function fileToCover(file){
   const url=URL.createObjectURL(file);
   try{const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
-    const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");const s=Math.max(256/im.width,256/im.height),w=im.width*s,h=im.height*s;
-    x.fillStyle="#111";x.fillRect(0,0,256,256);x.drawImage(im,(256-w)/2,(256-h)/2,w,h);return c.toDataURL("image/jpeg",.86)}finally{URL.revokeObjectURL(url)}}
+    const Z=512,c=document.createElement("canvas");c.width=c.height=Z;const x=c.getContext("2d");x.imageSmoothingQuality="high";const s=Math.max(Z/im.width,Z/im.height),w=im.width*s,h=im.height*s;
+    x.fillStyle="#111";x.fillRect(0,0,Z,Z);x.drawImage(im,(Z-w)/2,(Z-h)/2,w,h);
+    let u=c.toDataURL("image/jpeg",.93);for(const q of[.86,.78,.68])if(u.length>270000)u=c.toDataURL("image/jpeg",q);return u}finally{URL.revokeObjectURL(url)}}
+/* фон карточки и страницы: 1280×720 (обрезка по центру), хорошее качество, но в пределах лимита сервера */
+async function fileToBg(file){
+  const url=URL.createObjectURL(file);
+  try{const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+    const W=1280,H=720,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.imageSmoothingQuality="high";const s=Math.max(W/im.width,H/im.height),w=im.width*s,h=im.height*s;
+    x.fillStyle="#111";x.fillRect(0,0,W,H);x.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+    let u=c.toDataURL("image/jpeg",.88);for(const q of[.8,.7,.6,.5])if(u.length>400000)u=c.toDataURL("image/jpeg",q);return u}finally{URL.revokeObjectURL(url)}}
 
 /* homography: unit-rect (w,h) -> quad TL,TR,BR,BL */
 function quadCSS(w,h,q){const [x0,y0,x1,y1,x2,y2,x3,y3]=q.flat();
@@ -1351,11 +1416,11 @@ class Card{
     this.host=host;this.o=o;this.id=++UID;this.m=null;this.pal=palette(265,.5);this.vis=true;this.gray=o.intro?0:1;this.pulse=0;this.pt=null;this.busy=Promise.resolve();
     const el=this.el=document.createElement("article");el.className="card";
     el.innerHTML=`<div class="stage">
-      <div class="shell"><div class="shell-in"><canvas class="fx"></canvas><i class="beam"></i></div></div>
+      <div class="shell"><div class="shell-in"><i class="bgi"></i><canvas class="fx"></canvas><i class="beam"></i></div></div>
       <i class="stripes"><b></b><b></b><b></b></i>
       <i class="halo"></i><i class="floor"></i>
       <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="cdw"><canvas></canvas></div><div class="cdw"><canvas></canvas></div><div class="shine"></div><div class="gl"></div><div class="noise"></div></div></div></div>
-      <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="256" height="256"></canvas><canvas class="b" width="256" height="256"></canvas></div><div class="gl"></div></div>
+      <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="512" height="512"></canvas><canvas class="b" width="512" height="512"></canvas></div><div class="gl"></div></div>
       <canvas class="pt" width="453" height="110"></canvas>
       <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
       <button class="play" aria-label="Launch">${IC.play}</button>
@@ -1461,13 +1526,18 @@ class Card{
   setStars(){
     const box=this.r.stars,g=gstat(this.m),n=Math.round(g.rating),t=g.rated?"Рейтинг "+fmtRate(g.rating)+" из 5 · по отзывам":"Оценок пока нет";box.innerHTML="";
     box.setAttribute("role","img");box.setAttribute("aria-label",t);box.title=t;
-    for(let i=1;i<=5;i++){const b=document.createElement("span");b.innerHTML=starSvg(i<=n);box.append(b)}}
+    for(let i=1;i<=5;i++){const b=document.createElement("span");b.innerHTML=starSvg(i<=n);box.append(b)}
+    /* поддержка: абстрактная «цена» игры — 1–5 золотых блоков в строке жанра; точная сумма в подсказке и на странице игры */
+    const info=this.r.pill.parentElement;let su=info.querySelector(".sup");
+    if(g.stars){if(!su){su=document.createElement("span");su.className="sup";info.append(su)}su.title="Поддержка авторов: "+g.stars+" звёзд Telegram";su.setAttribute("aria-label",su.title);su.innerHTML=ingots(g.stars);info.classList.add("hsup")}
+    else if(su){su.remove();info.classList.remove("hsup")}}
   async drawCover(canvas,wipe){
-    const {canvas:src}=await resolveCover(this.m.cover),a=this.r.ca,b=this.r.cb;
-    if(!wipe||RM){a.getContext("2d").drawImage(src,0,0);return}
-    b.getContext("2d").drawImage(src,0,0);
+    const cv=await resolveCover(this.m.cover),src=cv.hi||cv.canvas,a=this.r.ca,b=this.r.cb,px=!cv.hi;
+    const put=k=>{const x=k.getContext("2d");x.imageSmoothingEnabled=!px;x.clearRect(0,0,512,512);x.drawImage(src,0,0,512,512)};
+    if(!wipe||RM){put(a);return}
+    put(b);
     const an=b.animate([{clipPath:"inset(0 100% 0 0)"},{clipPath:"inset(0 0 0 0)"}],{duration:520,easing:"steps(10,end)",fill:"forwards"});
-    await an.finished;a.getContext("2d").drawImage(src,0,0);an.cancel()}
+    await an.finished;put(a);an.cancel()}
   slide(inside){
     const el=this.r.item,from=inside?0:this.dx,to=inside?this.dx:0;if(!inside)setTimeout(()=>this.burst(),RM?0:260);
     if(RM){el.style.transform=`translateX(${to}px)`;return Promise.resolve()}
@@ -1481,10 +1551,11 @@ class Card{
   set(next,opt={}){return this.busy=this.busy.then(()=>this._set(next,opt))}
   async _set(next,opt){
     const prev=this.m,first=!prev;this.m={...next};const m=this.m;
+    {const hb=/^data:/.test(m.bgimg||"");this.el.classList.toggle("hasbg",hb);this.el.style.setProperty("--bgi",hb?`url("${m.bgimg}")`:"none")}
     const cov=await resolveCover(m.cover);this.art=cov.canvas;this.texDirty=true;this.syncFx();
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
-    this.r.title.textContent=m.title||"Untitled";this.r.pill.textContent=m.genre;this.setStars();
+    this.r.title.textContent=m.title||"Без названия";this.r.pill.textContent=m.genre;this.setStars();
     if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
     if(first){
       this.layout();this.pal=pal;this.paint();await this.drawCover(null,false);
@@ -1521,7 +1592,7 @@ function gov(now){
   if(String(SET.quality)!=="auto"||PGO||document.hidden||Q===0){GL=0;return}
   if(!GL){GL=now;return}const d=now-GL;GL=now;if(d>200)return;
   if(++GN<=45)return;GT+=d;
-  if(GN>=105){const avg=GT/60;GT=0;GN=0;if(avg>38){Q=avg>65?0:Q-1;store.set("am.qauto",Q);applyQ();bgResize();for(const c of CARDS)c.applyQ();if(Q===0)toast("Lite mode on: extra visuals off for smooth scrolling")}}}
+  if(GN>=105){const avg=GT/60;GT=0;GN=0;if(avg>38){Q=avg>65?0:Q-1;store.set("am.qauto",Q);applyQ();bgResize();for(const c of CARDS)c.applyQ();if(Q===0)toast("Включён облегчённый режим: эффекты выключены ради плавности")}}}
 function frame(now){
   const t=(now-T0)/1000;gov(now);
   if(!PGO&&now-LC>=FI-3){LC=now;for(const c of CARDS)if(c.m)c.tick(now,t)}
@@ -1579,10 +1650,11 @@ const tagsOf=m=>{const t=Array.isArray(m.tags)?m.tags.filter(Boolean):[];return 
 const hasTag=(m,g)=>tagsOf(m).some(t=>t.toLowerCase()===g.toLowerCase());
 const kindOf=m=>{for(const t of tagsOf(m)){const k=Object.keys(KIND).find(k=>k.toLowerCase()===t.toLowerCase());if(k)return KIND[k]}return"catch"};
 let DATA=store.get("am.cards.v1",null)||DEFAULTS.map(d=>({...d}));
-function persist(){if(!store.set("am.cards.v1",DATA))toast("Storage is full — new covers won't be saved")}
+function persist(){if(SUB_API&&CAT_OK){store.set(CATK,DATA.map(d=>({...d,cover:/^img:/.test(d.cref||"")?d.cref:d.cover,bgimg:d.bref||""})));return}
+  if(!store.set("am.cards.v1",DATA))toast("Память браузера заполнена: новые обложки не сохранятся")}
 
 /* ============ list / tabs / dock ============ */
-const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>!c.built],["gear","Settings",null]];
+const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>SUB_API?!!c.mine:!c.built],["gear","Settings",null]];
 const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Community",()=>true],["user","Profile",()=>true]];
 let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club"),profEl=$("#prof");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
@@ -1601,14 +1673,14 @@ function filterList(){
   const k=SQ.trim().toLowerCase(),boxes=[...listEl.querySelectorAll(".cardbox")];let shown=0,tagged=0;
   boxes.forEach(b=>{const s=b.dataset.s;if(s==null){b.hidden=!!k;return}tagged++;const ok=!k||s.includes(k);b.hidden=!ok;if(ok)shown++});
   let nf=listEl.querySelector(".nofound");
-  if(k&&tagged&&!shown){if(!nf){nf=document.createElement("p");nf.className="empty nofound";listEl.prepend(nf)}nf.textContent='Nothing found for "'+SQ.trim()+'"'}
+  if(k&&tagged&&!shown){if(!nf){nf=document.createElement("p");nf.className="empty nofound";listEl.prepend(nf)}nf.textContent='Ничего не найдено по запросу «'+SQ.trim()+'»'}
   else if(nf)nf.remove();
   qX.hidden=!SQ;
 }
 qIn.addEventListener("input",()=>{SQ=qIn.value;filterList()});
 qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";filterList()}else if(e.key==="Enter")qIn.blur()});
 qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
-function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"No favorites yet. Tap the heart on a card to add it here.":""}
+function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Нажмите сердечко на карточке, чтобы добавить игру.":""}
 async function render(intro){
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
@@ -1621,14 +1693,30 @@ async function render(intro){
   if(view===2){renderClub();return}
   if(view===3){renderProfile();return}
   const f=TABS[tab][2];
-  const rows=DATA.filter(f);
-  if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
+  const rows=sortRows(DATA.filter(f).filter(passF));drawFbar();
+  if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
+  else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")).toLowerCase();
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},
-      onDropCover:(c,url)=>{const d=DATA.find(x=>x.id===c.m.id);d.cover=url;d.tint=null;persist();c.set({...d})}});
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(TABS[tab][0]==="favt")render();else c.set({...d})},
+      onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
+    if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
   if(view===1&&TABS[tab][0]!=="favt")addCard();filterList();
 }
+/* ============ сортировка и фильтры магазина ============
+   Два разных рейтинга: оценки в отзывах (звёзды 1–5) и поддержка авторов (звёзды Telegram, золотые блоки). */
+const SORTS=[["def","Как в каталоге"],["rate","Оценки отзывов"],["sup","Поддержка авторов"],["pop","Больше всего играли"],["rev","Больше отзывов"]];
+let FL=Object.assign({sort:"def",r4:0,sup:0},store.get("am.fl.v1",{}));const saveFL=()=>store.set("am.fl.v1",FL);
+const passF=m=>{const g=gstat(m);return(!FL.r4||g.rated&&g.rating>=4)&&(!FL.sup||g.stars>0)};
+function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat(m);
+    return FL.sort==="rate"?[g.rated?g.rating:-1,g.rated]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.plays,g.pp]:[g.reviews,g.rating]};
+  return rows.map((m,i)=>({m,i,k:k(m)})).sort((a,b)=>b.k[0]-a.k[0]||b.k[1]-a.k[1]||a.i-b.i).map(x=>x.m)}
+function drawFbar(){const el=$("#fbar");if(!el)return;const lb=(SORTS.find(x=>x[0]===FL.sort)||SORTS[0])[1];
+  el.innerHTML=`<button type="button" class="fsort" id="fsort" aria-haspopup="menu" data-keep="1"><span>Сортировка:</span> <b>${lb}</b> ▾</button>
+    <button type="button" class="fchip" data-f="r4" aria-pressed="${!!FL.r4}"><i class="fst">★</i> 4 и выше</button>
+    <button type="button" class="fchip" data-f="sup" aria-pressed="${!!FL.sup}">${goldIc} с поддержкой</button>`;
+  $("#fsort").onclick=e=>openMenu(e.currentTarget,SORTS,FL.sort,v=>{FL.sort=v;saveFL();sfx.tap();render()});
+  el.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{const k=b.dataset.f;FL[k]=FL[k]?0:1;saveFL();sfx.tap();render()})}
 /* ============ home: title screen ============ */
 /* news: edit here. c = tag colour, app:"card id" makes the item open that app page */
 const NEWS=[
@@ -1834,7 +1922,7 @@ const CAP={cur:"₽",price:1,res:"COOP"};
 const PER=[["24ч"],["7д"],["30д"],["Всё"]];
 const nf=n=>Math.round(n).toLocaleString("ru-RU");
 const cf=n=>n>=1e6?(n/1e6).toFixed(1).replace(".",",")+"M":n>=1e3?(n/1e3).toFixed(n>=1e5?0:1).replace(".",",")+"К":Math.round(n)+"";
-const HM=210,HA=304,CW=340;
+const HM=210,HA=200,CW=340;
 /* данные графика: CAP.series.act[период] = [{a: действий, res: ресурс, cap: капитализация, t: подпись}] из журнала действий (loadActivity) */
 const getAct=pi=>((CAP.series&&CAP.series.act)||[])[pi]||[];
 const GOALS=[100,500,1e3,2500,5e3,1e4,25e3,5e4,1e5,25e4,5e5,1e6,5e6,1e7];
@@ -1854,14 +1942,16 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
   for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
-const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
+const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div>`;
 function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
-    <div class="chc-s" data-s></div><p class="chc-n">Каждое действие игроков из журнала ниже превращается в ресурс ${CAP.res}: ${rateText()}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность игроков</div><div class="chc-lg" aria-hidden="true"><span><i class="la"></i>действия</span><span>${goldIc}поддержка</span><span><i class="lc"></i>капитализация</span></div></div>${chBody(HA,"График: действия игроков, звёзды авторам и капитализация")}
+    <div class="chc-s" data-s></div></div></section>`}
 function initCharts(root){
-  const W=CW,anim=()=>!RM&&Q>0;
+  let W=CW;const anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
-    const run=()=>{box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
+    const run=()=>{W=Math.max(280,Math.round(svg.parentElement.clientWidth)||CW);svg.setAttribute("viewBox",`0 0 ${W} ${W>700?230:HA}`);
+      box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
+    if(window.ResizeObserver){let lw=0;const ro=new ResizeObserver(()=>{if(!box.isConnected){ro.disconnect();return}const w=Math.round(svg.parentElement.clientWidth);if(lw&&Math.abs(w-lw)>8)run();lw=w});ro.observe(svg.parentElement)}
     box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});
     const out=e=>{if(!box.isConnected){document.removeEventListener("pointerdown",out);return}if(!e.target.closest||e.target.closest("svg")!==svg)box._off&&box._off()};document.addEventListener("pointerdown",out);run()};
   /* ведение пальцем: плашка с цифрами остаётся после отрыва пальца, скрывается касанием вне графика; мышь: наведение показывает, клик закрепляет */
@@ -1886,32 +1976,38 @@ function initCharts(root){
   const goal=(el,v)=>{const g=GOALS.find(x=>x>v);if(!g){el.innerHTML='<div class="chc-gh"><span>Все цели достигнуты</span><b>★</b></div>';return}
     const pc=v/g*100;el.innerHTML=`<div class="chc-gh"><span>Следующая цель</span><b>${nf(g)} ${CAP.cur}</b></div><div class="chc-gb"><i style="--w:0%"></i></div><div class="chc-gp">${pc<1&&v>0?"меньше 1":pc.toFixed(pc<10?1:0).replace(".",",")}% · осталось ${nf(g-v)} ${CAP.cur}</div>`;
     const bar=el.querySelector("i");requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.setProperty("--w",Math.max(3,pc)+"%")))};
-  /* 2: активность (столбцы сверху) и капитализация актива (линия снизу) на общей оси времени */
+  /* График сообщества: сверху столбцы действий игроков, над ними золотые звёзды «спасибо автору» (размер по сумме),
+     снизу линия капитализации. Подписи только там, где без них не понять: ось денег справа и даты внизу. Остальное в плашке при касании. */
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
-    const H=HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
-    const pl=6,pr=46,aT=24,aB=96,bT=176,bB=H-26,acts=dt.map(o=>o.a),mxA=Math.max(...acts),sa=nscale(0,Math.max(mxA,4),2),cv=dt.map(o=>o.cap),mx=Math.max(...cv),sc=scaleOf(cv),lo=sc.lo,hi=sc.hi,
-      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,(W-pl-pr)/n*.62),
-      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),none=mxA<=0&&mx<=0;
-    let g=`<text class="pt" x="${pl}" y="14">Активность · действий</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${fv(sa.hi)}</text>
-      <line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/><text x="${W-pr+5}" y="${aB+4}">0</text><text class="pt" x="${pl}" y="${bT-14}">Капитализация актива · ${CAP.cur}</text>`;
-    sticks(sc).forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#2a1f5e"}" ${v===lo?"":'stroke-dasharray="2 4"'}/><text x="${W-pr+5}" y="${y+4}">${fv(v)}</text>`});
-    const bars=dt.map((o,i)=>{const h=o.a>0?Math.max(5,(aB-aT)*o.a/sa.hi):2;return `<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="${o.a>0?`url(#aB${pi})`:"#4a3a8a"}"${o.a>0?"":' opacity=".5"'}/>`}).join("");
-    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
-    let extra="";if(none){extra=`<path class="gh${fi}" d="${ghost(xs,bB,(bB-bT)*.6)}" fill="none" stroke="#ff9a5e" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
-      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+30}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+48}" text-anchor="middle">каждое действие добавит столбик</text>`}
-    else if(mxA>0){const pk=acts.indexOf(mxA);extra=star(xs[pk],aB-(aB-aT)*mxA/sa.hi-9)}
+    const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
+    const pl=6,pr=50,aT=14,aB=Math.round(H*.3),bT=aB+18,bB=H-22,acts=dt.map(o=>o.a),stars=dt.map(o=>o.s||0),mxA=Math.max(...acts),mxS=Math.max(...stars),sa=nscale(0,Math.max(mxA,4),2),
+      cv=dt.map(o=>o.cap),mx=Math.max(...cv),sc=scaleOf(cv),lo=sc.lo,hi=sc.hi,
+      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,Math.min(26,(W-pl-pr)/n*.62)),
+      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),totS=stars.reduce((s,a)=>s+a,0),none=mxA<=0&&mx<=0;
+    /* ось денег: только низ, середина и верх */
+    const tk=sticks(sc),keep=tk.length<=3?tk:[tk[0],tk[Math.round((tk.length-1)/2)],tk[tk.length-1]];
+    let g=`<line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/>`;
+    keep.forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#241a52"}"${v===lo?"":' stroke-dasharray="2 5"'}/><text x="${W-pr+14}" y="${y+4}">${fv(v)}</text>`});
+    const bars=dt.map((o,i)=>{const h=o.a>0?Math.max(4,(aB-aT)*o.a/sa.hi):0;return h?`<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="url(#aB${pi})"/>`:""}).join("");
+    /* звёзды: над столбцом, размер растёт с суммой (корень, чтобы крупная сумма не заслоняла остальное) */
+    const sts=stars.map((v,i)=>{if(!v)return"";const k=.75+.75*Math.sqrt(v/mxS),h=acts[i]>0?Math.max(4,(aB-aT)*acts[i]/sa.hi):0;
+      return `<g class="sst" transform="translate(${xs[i]} ${Math.max(9,aB-h-9*k)}) scale(${k.toFixed(2)})" shape-rendering="crispEdges"><rect x="-6" y="-6" width="12" height="12" fill="#ffc72c"/><rect x="-6" y="-6" width="12" height="2" fill="#fff1a0"/><rect x="-6" y="-6" width="2" height="12" fill="#fff1a0"/><rect x="-6" y="4" width="12" height="2" fill="#a86d00"/><rect x="4" y="-6" width="2" height="12" fill="#a86d00"/></g>`}).join("");
+    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-5}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
+    let extra="";if(none)extra=`<path class="gh${fi}" d="${ghost(xs,bB,(bB-bT)*.6)}" fill="none" stroke="#ff9a5e" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
+      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+22}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+40}" text-anchor="middle">каждое действие добавит столбик</text>`;
     svg.innerHTML=`<defs><linearGradient id="aB${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a4ff"/><stop offset="1" stop-color="#6a35e0"/></linearGradient>
       <linearGradient id="aL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ffb23f"/><stop offset=".6" stop-color="#ff7a8a"/><stop offset="1" stop-color="#ff5ec4"/></linearGradient>
-      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".42"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}${extra}
+      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".38"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}${sts}${extra}
       <path class="${fi}" d="${d}L${xs[n-1]} ${bB}L${xs[0]} ${bB}Z" fill="url(#aA${pi})"/>
       <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#aL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       <circle class="pul" cx="${xs[n-1]}" cy="${ys[n-1]}" r="9" fill="#ffb23f" opacity=".4"/><circle cx="${xs[n-1]}" cy="${ys[n-1]}" r="4" fill="#ffb23f" stroke="#fff" stroke-width="1.5"/>
-      <g data-x style="display:none"><line y1="${aT}" y2="${bB}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
-    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+8)/H*100)+"%";
-    box.querySelector("[data-v]").textContent=fx(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),dt[0].cap,last.cap,"капитализация за "+PER[pi][0],CAP.cur);
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>Действий за период</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
-    attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);brs.forEach((b,j)=>b.classList.toggle("hl",j===i));
-      return{x:xs[i],html:`<span>${o.tf||o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} ${plr(o.a,["действие","действия","действий"])} · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
+      <g data-x style="display:none"><line y1="${aT-8}" y2="${bB}" stroke="#fff" opacity=".4"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
+    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+6)/H*100)+"%";
+    box.querySelector("[data-v]").textContent=fx(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),dt[0].cap,last.cap,"за "+PER[pi][0],CAP.cur);
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,["действие","действия","действий"])}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>поддержка</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
+    const barOf=i=>{let k=-1;for(let j=0;j<=i;j++)if(acts[j]>0)k++;return acts[i]>0?k:-1};
+    attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);const bi=barOf(i);brs.forEach((b,j)=>b.classList.toggle("hl",j===bi));
+      return{x:xs[i],html:`<span>${o.tf||o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} ${plr(o.a,["действие","действия","действий"])}${o.s?` · <em>поддержка ${nf(o.s)}</em>`:""}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
 function renderClub(){
@@ -1928,12 +2024,12 @@ function renderClub(){
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
     <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}
-  <section class="sec enter" style="--i:.36s"><h3>Журнал действий</h3><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`;
+  ${SUB_API&&!isAdmin()?"":`<section class="sec enter" style="--i:.36s"><h3>Журнал действий</h3><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`}`;
   const chv=clubEl.querySelector("#chA [data-v]");if(chv)chv.textContent="…";
   loadActivity().then(a=>{CAP.series={act:a}}).catch(()=>{CAP.series={act:[[],[],[],[]]}}).then(()=>{if(view===2&&clubEl.isConnected)initCharts(clubEl)});
-  loadFeed(clubEl,false);
+  if(clubEl.querySelector("#lgList")){loadFeed(clubEl,false);
   clubEl.querySelector("#lgList").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;sfx.tap();openPlayer(b.dataset.p)});
-  clubEl.querySelector("#lgMore").addEventListener("click",()=>{sfx.tap();loadFeed(clubEl,true)});
+  clubEl.querySelector("#lgMore").addEventListener("click",()=>{sfx.tap();loadFeed(clubEl,true)})}
   clubEl.querySelector("#helpBtn").addEventListener("click",()=>{sfx.tap();openHelp()});
 }
 /* Help window: TRON (TRC20) USDT address + copy */
@@ -1965,20 +2061,21 @@ function addCard(){
     <div class="shell"><div class="shell-in"></div></div>
     <div class="slot case" style="left:60px;top:${116-A.h/2}px;width:${A.w}px;height:${A.h}px"><div class="bob" style="--bd:-1s"><canvas></canvas></div></div>
     <div class="slot case" style="left:${60+A.w-34}px;top:${112-B.h/2}px;width:${B.w}px;height:${B.h}px"><div class="bob" style="--bd:-3s"><canvas></canvas></div></div>
-    <div class="hint">Add yours<small>Pick a cover and an item. The card takes its colours.</small></div>
+    <div class="hint">${!SUB_API?"Своя карточка<small>Выберите обложку и носитель, карточка возьмёт их цвета.</small>":isMain()?"Новая игра<small>Добавить игру в каталог. Сначала её видят только админы.</small>":"Ваша игра<small>Пришлите HTML-игру. После проверки она появится здесь.</small>"}</div>
     <span class="play" style="--c1:#a56bff">${IC.plus}</span></div>`;
   box.append(el);box.style.setProperty("--k",box.clientWidth/905);
   const pal=palette(268,.5);recolor(A,el.querySelectorAll("canvas")[0],pal,1.9);recolor(B,el.querySelectorAll("canvas")[1],pal,1.9);
-  el.addEventListener("click",()=>openEditor(null));el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openEditor(null)}});
-  el.addEventListener("dragover",e=>e.preventDefault());el.addEventListener("drop",async e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>f.type.startsWith("image/"));if(f){openEditor(null,await fileToCover(f))}})}
+  const go=pc=>{if(SUB_API&&!isMain()){openSubmit();return}openEditor(null,pc)};
+  el.addEventListener("click",()=>go());el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
+  el.addEventListener("dragover",e=>e.preventDefault());el.addEventListener("drop",async e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>f.type.startsWith("image/"));if(f){go(await fileToCover(f))}})}
 let RT,LW=innerWidth,LH=innerHeight;
 addEventListener("resize",()=>{clearTimeout(RT);RT=setTimeout(()=>{const wc=innerWidth!==LW,hc=Math.abs(innerHeight-LH)>120;LW=innerWidth;LH=innerHeight;
   if(wc||hc)bgResize();if(!wc)return;LIVE.forEach(c=>c.resize());document.querySelectorAll(".card.add").forEach(el=>el.parentElement.style.setProperty("--k",el.parentElement.clientWidth/905));PV&&PV.resize()},140)});
 
 async function launch(c){
   const d=DATA.find(x=>x.id===c.m.id);if(d){d.played=(d.played||0)+1;persist()}
-  toast("Loading "+(c.m.title||"app"),true);sfx.in();
-  await c.slide(true);await wait(1100);sfx.play();toast("Ready · "+(c.m.title||"app"));await c.slide(false)}
+  toast("Загрузка "+(c.m.title||"игры"),true);sfx.in();
+  await c.slide(true);await wait(1100);sfx.play();toast("Готово · "+(c.m.title||"игра"));await c.slide(false)}
 
 /* ============ sheet ============ */
 const sheet=$("#sheet"),panel=$("#panel");let PV=null,lastFocus=null,onKey=null,MENU=null;
@@ -2003,10 +2100,10 @@ function openMenu(btn,opts,cur,pick){
   closeMenu();
   const el=document.createElement("div");el.className="menu";el.setAttribute("role","menu");
   opts.forEach(([v,l])=>{const o=document.createElement("button");o.type="button";o.setAttribute("role","menuitemradio");o.setAttribute("aria-checked",String(v)===String(cur));o.textContent=l;
-    o.onclick=()=>{closeMenu();btn.firstElementChild.textContent=l;btn.focus({preventScroll:true});pick(v,l)};el.append(o)});
+    o.onclick=()=>{closeMenu();if(!btn.dataset.keep&&btn.firstElementChild)btn.firstElementChild.textContent=l;btn.focus({preventScroll:true});pick(v,l)};el.append(o)});
   el.addEventListener("keydown",e=>{const k=e.key;if(k==="Tab"){closeMenu();return}if(k!=="ArrowDown"&&k!=="ArrowUp")return;e.preventDefault();
     const it=[...el.children],i=it.indexOf(document.activeElement);it[(i+(k==="ArrowDown"?1:-1)+it.length)%it.length].focus()});
-  sheet.append(el);btn.setAttribute("aria-expanded","true");
+  (sheet.contains(btn)?sheet:document.body).append(el);btn.setAttribute("aria-expanded","true");
   const r=btn.getBoundingClientRect(),h=el.scrollHeight+6,below=innerHeight-r.bottom-12,above=r.top-12,down=h<=below||below>=above;
   const mh=Math.max(120,Math.min(320,(down?below:above)-4));el.style.maxHeight=mh+"px";el.style.minWidth=r.width+"px";
   const w=el.offsetWidth,eh=Math.min(h,mh);
@@ -2015,61 +2112,71 @@ function openMenu(btn,opts,cur,pick){
   MENU={el,btn,away,sc};document.addEventListener("pointerdown",away,true);addEventListener("resize",closeMenu);sc&&sc.addEventListener("scroll",closeMenu,{passive:true});
   (el.querySelector('[aria-checked="true"]')||el.firstElementChild).focus({preventScroll:true})}
 const selBtn=(id,label)=>`<button type="button" class="sel" id="${id}" aria-haspopup="menu" aria-expanded="false"><span>${esc(label)}</span></button>`;
-const BGS=[["mix","Mix"],["0","Waves"],["1","Mosaic"],["2","Sunset"],["3","Rain"]];
-const BGS_CARD=[["auto","Auto"],...BGS.slice(1)];
+const BGS=[["mix","Смешанный"],["0","Волны"],["1","Мозаика"],["2","Закат"],["3","Дождь"]];
+const BGS_CARD=[["auto","Авто"],...BGS.slice(1)];
 
 function openSettings(){
-  const rows=[["shader","Animated card shader"],["stars","Starfield"],["scan","Scanlines"],["sound","Sound effects"]];
+  const rows=[["shader","Живой фон карточек"],["stars","Звёздное небо"],["scan","Линии развёртки"],["sound","Звуки"]];
   const bgL=(BGS.find(x=>x[0]===String(SET.bg))||BGS[0])[1];
-  openSheet(`<div class="ph"><h2 id="sheetTitle">Settings</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
+  openSheet(`<div class="ph"><h2 id="sheetTitle">Настройки</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
    <div class="pbody">
    ${rows.map(([k,l])=>`<button class="toggle" role="switch" aria-checked="${SET[k]}" data-k="${k}"><span>${l}</span><i></i></button>`).join("")}
-   <div class="fld" style="margin-top:16px"><span class="lbl">Quality</span><div class="chips" id="qchips" role="radiogroup" aria-label="Quality">${[["auto","Auto"],["2","High"],["1","Mid"],["0","Low"]].map(([v,l])=>`<button class="chip" role="radio" aria-checked="${String(SET.quality)===v}" data-v="${v}">${l}</button>`).join("")}</div></div>
-   <div class="fld" style="margin-top:16px"><span class="lbl">Card background</span>${selBtn("bgSel",bgL)}${Q===0?'<p class="hint2" style="text-align:left">Lite mode is on, so backgrounds are off. Pick High or Mid quality to see them.</p>':""}</div>
+   <div class="fld" style="margin-top:16px"><span class="lbl">Качество</span><div class="chips" id="qchips" role="radiogroup" aria-label="Качество">${[["auto","Авто"],["2","Высокое"],["1","Среднее"],["0","Низкое"]].map(([v,l])=>`<button class="chip" role="radio" aria-checked="${String(SET.quality)===v}" data-v="${v}">${l}</button>`).join("")}</div></div>
+   <div class="fld" style="margin-top:16px"><span class="lbl">Эффект фона карточек</span>${selBtn("bgSel",bgL)}${Q===0?'<p class="hint2" style="text-align:left">Включён облегчённый режим, эффекты выключены. Выберите высокое или среднее качество.</p>':""}</div>
    </div>
-   <div class="pfoot"><div class="row"><button class="btn ghost" id="reset">Reset cards</button><button class="btn" data-close>Done</button></div></div>`);
+   <div class="pfoot"><div class="row">${SUB_API?"":`<button class="btn ghost" id="reset">Сбросить карточки</button>`}<button class="btn" data-close>Готово</button></div></div>`);
   panel.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;SET[k]=!SET[k];b.setAttribute("aria-checked",SET[k]);saveSet();
     document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound")sfx.tap();if(k==="shader"){closeSheet();render()}}));
-  $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Background: "+l)}));
+  $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Фон: "+l)}));
   $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;saveSet();
-    if(v==="auto"){store.set("am.qauto",2);Q=autoQ()}else Q=+v;applyQ();closeSheet();bgResize();render();toast("Quality: "+b.textContent)});
-  $("#reset").addEventListener("click",()=>{DATA=DEFAULTS.map(d=>({...d}));persist();closeSheet();tab=0;view=1;sync();render();toast("Cards reset")})}
+    if(v==="auto"){store.set("am.qauto",2);Q=autoQ()}else Q=+v;applyQ();closeSheet();bgResize();render();toast("Качество: "+b.textContent)});
+  $("#reset")&&$("#reset").addEventListener("click",()=>{DATA=DEFAULTS.map(d=>({...d}));persist();closeSheet();tab=0;view=1;sync();render();toast("Карточки сброшены")})}
 
 function openEditor(id,preCover){
   const existing=id?DATA.find(d=>d.id===id):null;
+  /* local = демо без сервера; admin = главный админ, сохраняет сразу для всех; author = автор своей игры, правки идут админу на проверку */
+  const mode=!SUB_API?"local":isMain()?"admin":existing&&existing.mine?"author":null;if(!mode){toast("Менять эту карточку может только админ");return}
+  const ro=mode==="author"?" disabled":"";
   const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0",downloads:0};
-  if(!existing&&!preCover)draft.cover="b:space";
+  if(!existing&&!preCover)draft.cover="b:space";if(existing&&preCover){draft.cover=preCover;draft.tint=null}if(!existing&&mode==="admin")draft.access="staff";
   if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";if(draft.downloads==null)draft.downloads=0;
   let cands=[],tags=tagsOf(draft).slice();
   const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
-  openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
+  openSheet(`<div class="ph"><h2 id="sheetTitle">${mode==="author"?"Страница вашей игры":existing?"Редактировать игру":"Новая игра"}</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
    <div class="pfix"><div class="pv" id="pv"></div></div>
    <div class="pbody">
-   <label class="fld"><span class="lbl">Name</span><input class="in" id="name" maxlength="14" placeholder="My game" value="${esc(draft.title||"")}"></label>
-   <div class="fld"><span class="lbl">Tags <small id="tcnt"></small></span>
-     <div class="tagbox" id="tagbox"><input id="taginp" maxlength="14" placeholder="Add a tag…" enterkeyhint="done" autocomplete="off" autocapitalize="words" aria-label="Add a tag"></div>
+   ${mode==="author"?`<p class="ednote">Изменения увидят все после проверки админом. Название, теги и автор меняет только админ.<span id="edst"></span></p>`:""}
+   ${mode==="admin"?`<p class="ednote adm">Вы главный админ: изменения сразу видят все игроки.</p>`:""}
+   <label class="fld"><span class="lbl">Название</span><input class="in" id="name" maxlength="14" placeholder="Моя игра" value="${esc(draft.title||"")}"${ro}></label>
+   <div class="fld${ro?" off":""}"><span class="lbl">Теги <small id="tcnt"></small></span>
+     <div class="tagbox" id="tagbox"><input id="taginp" maxlength="14" placeholder="Добавить тег…" enterkeyhint="done" autocomplete="off" autocapitalize="words" aria-label="Добавить тег"${ro}></div>
      <div class="sugg" id="sugg"></div>
-     <p class="hint2" style="text-align:left">Up to ${MAXT}. The first tag is the main genre and picks the mini-game.</p></div>
+     <p class="hint2" style="text-align:left">До ${MAXT}. Первый тег — главный жанр, по нему выбирается мини-игра.</p></div>
+   ${mode==="admin"?`<div class="fld"><span class="lbl">Кто видит игру</span>${selBtn("accSel",ACC_L[draft.access||"public"])}</div>`:""}
    <div class="two" style="grid-template-columns:1fr 1fr">
-     <div class="fld"><span class="lbl">Gadget</span>${selBtn("itemSel",itemL(draft.item))}</div>
-     <div class="fld"><span class="lbl">Background</span>${selBtn("bgSel",bgL(draft.bg))}</div></div>
-   ${Q===0||!SET.shader?'<p class="hint2" style="text-align:left;margin:-6px 0 14px">Lite mode is on, backgrounds are off on this device.</p>':""}
-   <div class="fld"><span class="lbl">Colour</span><div class="sw" id="sw"></div></div>
-   <label class="fld"><span class="lbl">Cover</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Choose an image</b> or drop one here</span><span>You can also paste from the clipboard</span></label></label>
+     <div class="fld"><span class="lbl">Носитель</span>${selBtn("itemSel",itemL(draft.item))}</div>
+     <div class="fld"><span class="lbl">Фон</span>${selBtn("bgSel",bgL(draft.bg))}</div></div>
+   ${Q===0||!SET.shader?'<p class="hint2" style="text-align:left;margin:-6px 0 14px">Включён облегчённый режим: фоны на этом устройстве выключены.</p>':""}
+   <div class="fld"><span class="lbl">Цвет</span><div class="sw" id="sw"></div></div>
+   ${mode!=="local"?`<div class="fld"><span class="lbl">Фон карточки и страницы <small>картинка 16:9, эффект ляжет поверх</small></span>
+     <div class="bgpick"><label class="btn ghost" for="bgfile">${draft.bgimg?"Заменить фон":"Выбрать фон"}</label><input type="file" accept="image/*" hidden id="bgfile">
+     <button class="btn ghost danger" id="bgdel" type="button"${draft.bgimg?"":" hidden"}>Убрать</button></div></div>`:""}
+   <label class="fld"><span class="lbl">Обложка</span><label class="drop" id="drop"><input type="file" accept="image/*" hidden id="file"><span><b>Выберите картинку</b> или перетащите сюда</span><span>Можно и вставить из буфера обмена</span></label></label>
    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
-   <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"></label>
+   <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"${ro}></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Версия</span><input class="in" id="ver" maxlength="12" placeholder="Например 1.2.0" value="${esc(draft.version||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Ссылка на скачивание</span><input class="in" id="dlink" maxlength="300" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(draft.link||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="in" id="chg" maxlength="200" rows="3" placeholder="Что нового в этой версии?">${esc(draft.changes||"")}</textarea></label>
    </div>
-   <div class="pfoot"><div class="row">${existing?`<button class="btn ghost danger" id="del">Delete</button>`:""}<button class="btn" id="save">${existing?"Save":"Add to market"}</button></div></div>`);
+   <div class="pfoot"><div class="row">${existing&&mode!=="author"?`<button class="btn ghost danger" id="del">Удалить</button>`:""}<button class="btn" id="save">${mode==="author"?"Отправить на проверку":existing?"Сохранить":"Добавить в маркет"}</button></div></div>`);
+  if(mode==="author")edStatus(existing.id);
   const pv=$("#pv");PV=new Card(pv,draft,{preview:true});PV.set({...draft},{});
   pv.style.setProperty("--k",pv.clientWidth/905);fitSheet();
   const upd=()=>PV.set({...draft});
   /* colour */
   const drawSw=async()=>{const info=await resolveCover(draft.cover);cands=info.dom.cands||[];
-    const sw=$("#sw");if(!sw)return;sw.innerHTML=`<button class="auto" aria-pressed="${!draft.tint}" data-auto>Auto</button>`+cands.map((c,i)=>{const col=rgb(palette(c.h,c.s).A);const on=draft.tint&&Math.abs(draft.tint.h-c.h)<2;return `<button style="--c:${col}" aria-pressed="${!!on}" data-i="${i}" aria-label="Colour ${i+1}"></button>`}).join("")+
-      `<label class="pick" aria-label="Custom colour"><input type="color" id="cc" value="#a56bff"></label>`;
+    const sw=$("#sw");if(!sw)return;sw.innerHTML=`<button class="auto" aria-pressed="${!draft.tint}" data-auto>Авто</button>`+cands.map((c,i)=>{const col=rgb(palette(c.h,c.s).A);const on=draft.tint&&Math.abs(draft.tint.h-c.h)<2;return `<button style="--c:${col}" aria-pressed="${!!on}" data-i="${i}" aria-label="Цвет ${i+1}"></button>`}).join("")+
+      `<label class="pick" aria-label="Свой цвет"><input type="color" id="cc" value="#a56bff"></label>`;
     sw.querySelector("[data-auto]").onclick=()=>{draft.tint=null;upd();drawSw()};
     sw.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{const c=cands[+b.dataset.i];draft.tint={h:c.h,s:c.s};upd();drawSw()});
     sw.querySelector("#cc").oninput=e=>{const v=e.target.value,r=parseInt(v.slice(1,3),16)/255,g=parseInt(v.slice(3,5),16)/255,b=parseInt(v.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l=(mx+mn)/2;
@@ -2078,14 +2185,17 @@ function openEditor(id,preCover){
   /* cover */
   const setFile=async f=>{if(!f||!f.type.startsWith("image/"))return;draft.cover=await fileToCover(f);draft.tint=null;upd();drawSw();sfx.tap()};
   $("#file").onchange=e=>setFile(e.target.files[0]);
+  const bf=$("#bgfile");if(bf){bf.onchange=async e=>{const f=e.target.files[0];if(!f||!f.type.startsWith("image/"))return;draft.bgimg=await fileToBg(f);upd();$("#bgdel").hidden=false;bf.previousElementSibling.textContent="Заменить фон";sfx.tap()};
+    $("#bgdel").onclick=()=>{draft.bgimg="";upd();$("#bgdel").hidden=true;bf.previousElementSibling.textContent="Выбрать фон";sfx.tap()}}
   const drop=$("#drop");["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
   ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,()=>drop.classList.remove("over")));drop.addEventListener("drop",e=>{e.preventDefault();setFile(e.dataTransfer.files[0])});
   onPaste=e=>{const f=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));if(f)setFile(f)};addEventListener("paste",onPaste);
   /* gadget + background menus */
   $("#itemSel").addEventListener("click",e=>openMenu(e.currentTarget,Object.entries(ITEMS).map(([k,v])=>[k,v.label]),draft.item,v=>{draft.item=v;upd();sfx.tap()}));
+  $("#accSel")&&$("#accSel").addEventListener("click",e=>openMenu(e.currentTarget,Object.entries(ACC_L),draft.access||"public",v=>{draft.access=v;sfx.tap()}));
   $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS_CARD,draft.bg==null||draft.bg===""?"auto":draft.bg,v=>{draft.bg=v==="auto"?undefined:v;upd();sfx.tap()}));
   /* name / description */
-  $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
+  $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Без названия";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
   $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#dlink").addEventListener("input",e=>{draft.link=e.target.value.trim()});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
   /* tags: type + Enter / comma, or tap a suggestion; max 3 */
@@ -2095,7 +2205,7 @@ function openEditor(id,preCover){
   const drawTags=()=>{
     tb.querySelectorAll(".tchip").forEach(x=>x.remove());
     tags.forEach((t,i)=>{const sp=document.createElement("span");sp.className="tchip"+(i===0?" main":"");sp.append(t);
-      const bt=document.createElement("button");bt.type="button";bt.dataset.i=i;bt.setAttribute("aria-label","Remove "+t);bt.innerHTML=IC.x;sp.append(bt);tb.insertBefore(sp,ti)});
+      const bt=document.createElement("button");bt.type="button";bt.dataset.i=i;bt.setAttribute("aria-label","Убрать "+t);bt.innerHTML=IC.x;sp.append(bt);tb.insertBefore(sp,ti)});
     const full=tags.length>=MAXT;ti.hidden=full;$("#tcnt").textContent=tags.length+"/"+MAXT;
     sg.textContent="";const q=capT(ti.value);
     if(!full){
@@ -2103,6 +2213,7 @@ function openEditor(id,preCover){
       GENRES.filter(g=>!tags.some(t=>same(t,g))&&(!q||g.toLowerCase().startsWith(q.toLowerCase()))).forEach(g=>{const n=document.createElement("button");n.type="button";n.className="sg";n.dataset.g=g;n.textContent="+ "+g;sg.append(n)})}
     sg.hidden=!sg.children.length};
   const addTag=v=>{v=capT(v);if(!v||tags.length>=MAXT||tags.some(t=>same(t,v)))return false;tags.push(v);ti.value="";syncTags();drawTags();sfx.tap();return true};
+  if(ro){tb.style.pointerEvents="none";sg.hidden=true}
   ti.addEventListener("keydown",e=>{
     if(e.key==="Enter"||e.key===","){e.preventDefault();if(!addTag(ti.value))drawTags()}
     else if(e.key==="Backspace"&&!ti.value&&tags.length){tags.pop();syncTags();drawTags()}});
@@ -2112,11 +2223,24 @@ function openEditor(id,preCover){
   sg.addEventListener("click",e=>{const n=e.target.closest(".sg");if(n){addTag(n.dataset.g);ti.hidden||ti.focus({preventScroll:true})}});
   drawTags();
   /* save / delete */
-  $("#save").addEventListener("click",()=>{if(ti.value.trim())addTag(ti.value);
-    draft.title=(draft.title||"").trim()||"Untitled";if(!tags.length)tags=["Arcade"];syncTags();sfx.play();
+  $("#save").addEventListener("click",async()=>{if(!ro&&ti.value.trim())addTag(ti.value);
+    draft.title=(draft.title||"").trim()||"Без названия";if(!tags.length)tags=["Arcade"];if(!ro)syncTags();
+    const btn=$("#save");
+    if(mode==="author"){const patch=authorPatch(existing,draft);if(!Object.keys(patch).length){toast("Вы ничего не изменили");return}
+      btn.disabled=true;try{await hub("myedit",{method:"POST",body:{game:existing.id,patch}});sfx.play();closeSheet();toast("Отправлено админу на проверку")}catch(e){btn.disabled=false;toast(catErr(e))}return}
+    if(mode==="admin"){btn.disabled=true;
+      try{const body=adminBody(existing,draft),g=await admReq("game",existing?{id:existing.id}:{},existing?"PATCH":"POST",body);
+        if(/^img:/.test(g.cover)&&/^data:/.test(draft.cover)){COV[g.cover]=draft.cover;saveCov()}if(/^img:/.test(g.bgimg||"")&&/^data:/.test(draft.bgimg||"")){COV[g.bgimg]=draft.bgimg;saveCov()}
+        const nd=fromWire(g,existing);if(existing)Object.assign(existing,nd);else DATA.push(nd);persist();sfx.play();closeSheet();
+        if(view!==1){view=1;sync()}render();toast(existing?"Сохранено, видят все":"Игра добавлена. Сейчас её видят только админы")}
+      catch(e){btn.disabled=false;toast(catErr(e))}return}
+    sfx.play();
     if(existing)Object.assign(existing,draft);else{DATA.push(draft);profMade()}persist();closeSheet();
-    if(!existing||view!==1||tab===1&&hasTag(draft,"Music")){tab=0;view=1;sync()}render();if(!existing)setTimeout(()=>scrollTo({top:document.body.scrollHeight,behavior:RM?"auto":"smooth"}),200);toast(existing?"Saved":"Added to the market")});
-  $("#del")&&$("#del").addEventListener("click",()=>{DATA=DATA.filter(d=>d.id!==draft.id);persist();closeSheet();render();toast("Deleted")})}
+    if(!existing||view!==1||tab===1&&hasTag(draft,"Music")){tab=0;view=1;sync()}render();if(!existing)setTimeout(()=>scrollTo({top:document.body.scrollHeight,behavior:RM?"auto":"smooth"}),200);toast(existing?"Сохранено":"Добавлено в маркет")});
+  const del=$("#del");del&&del.addEventListener("click",async()=>{
+    if(!del.dataset.sure){del.dataset.sure=1;del.textContent="Точно удалить?";return}
+    if(mode==="admin"){del.disabled=true;try{await admReq("game",{id:draft.id},"DELETE")}catch(e){del.disabled=false;toast(catErr(e));return}}
+    DATA=DATA.filter(d=>d.id!==draft.id);persist();closeSheet();render();toast("Удалено")})}
 
 /* ============ app page (beta TV) ============ */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -2240,27 +2364,34 @@ function pageHTML(m,kind){
   return `<div class="pg">
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button>${ver?`<span class="beta">v${esc(ver)}</span>`:""}</div>
   <div class="pg-l">
-  <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
-    <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
+  <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="512" height="512" aria-hidden="true"></canvas>
+    <div><h2 class="pg-t">${esc(m.title||"Без названия")}</h2>
     <div class="pg-m"><span class="pg-stars" id="pgStars" role="img"></span><span id="pgRate"></span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div>
     <div class="pg-m"><span id="pgDl"></span></div>
-    <div class="pg-au">Автор: <b>${esc(author)}</b></div>${m.mine&&SUB_API?`<button class="btn ghost" data-myedit type="button" style="margin-top:8px">Изменить страницу</button>`:""}</div></div>
+    <div class="pg-au">Автор: <b>${esc(author)}</b></div>
+    <div class="pg-sup" id="pgSup"></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
       <canvas class="g" id="tvc" width="160" height="120"></canvas><div class="ov" id="ov"></div><i class="tvn"></i>
       <span class="rec">● BETA</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" aria-pressed="true" aria-label="Noise filter"></button><span class="lab">noise</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
-  <p class="hint2">${m.file&&SUB_API?"Нажмите на экран: игра откроется на весь экран":HINT[kind]}</p>
+  <p class="hint2">${m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
     ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
-  <section class="sec"><h3>Отзывы <small id="cmN"></small></h3><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы · фильтры и сортировка</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
+  <section class="sec thx"><div class="thx-in"><div class="thx-t"><b>Понравилась игра?</b><p>Если правда зашло, скажите автору спасибо звёздами Telegram. Поддержка видна на карточке игры.</p></div>
+    <div class="thx-ch" id="thxCh" role="radiogroup" aria-label="Сколько звёзд">${THX.map(v=>`<button type="button" role="radio" data-v="${v}" aria-checked="${v===THX_DEF}">⭐ ${v}</button>`).join("")}</div>
+    <button class="btn thx-go" id="thxGo" type="button">Спасибо автору · ⭐ ${THX_DEF}</button></div></section>
+  <section class="sec"><div class="pgtabs" role="tablist"><button type="button" role="tab" data-t="cm" aria-selected="true">Отзывы <small id="cmN"></small></button><button type="button" role="tab" data-t="md" aria-selected="false">Моды <small id="mdN"></small></button></div>
+  <div class="pgpane" id="tabCm"><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы · фильтры и сортировка</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
-      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></section></div></div>`}
+      <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></div>
+  <div class="pgpane" id="tabMd" hidden><div id="mdList"></div><button class="btn ghost md-new" id="mdNew" type="button">${IC.plus}&nbsp;Предложить мод</button>
+    <p class="hint2" style="text-align:left">Мод — ваша версия этой игры. Его проверит админ, потом он появится здесь с вашим именем.</p></div></section></div></div>`}
 
 async function openPage(id,opt){
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
@@ -2268,10 +2399,11 @@ async function openPage(id,opt){
   Object.assign(PG,{pal,art:cov.canvas,kind,run:false,score:0,best:store.get("am.best",{})[m.id]||0});
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;
-  $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
+  {const x=$("#pgCov").getContext("2d");x.imageSmoothingEnabled=!!cov.hi;x.drawImage(cov.hi||cov.canvas,0,0,512,512)}
+  pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
@@ -2279,7 +2411,7 @@ async function openPage(id,opt){
   addEventListener("keydown",pgKey);addEventListener("keyup",pgKeyUp);
   pageEl.querySelector(".back").focus({preventScroll:true})}
 function closePage(){
-  if(!PG)return;stopGame();const sv=document.getElementById("sbv");sv&&sv.remove();pageEl.classList.remove("open");pageEl.setAttribute("aria-hidden","true");
+  if(!PG)return;stopGame();pageEl.classList.remove("open");pageEl.setAttribute("aria-hidden","true");
   PGO=false;PG=null;document.body.classList.remove("pgopen");document.body.style.overflow="";removeEventListener("keydown",pgKey);removeEventListener("keyup",pgKeyUp);
   pgFocus&&pgFocus.focus&&pgFocus.focus({preventScroll:true});sfx.out()}
 function backClick(){history.state&&history.state.pg?history.back():closePage()}
@@ -2314,7 +2446,6 @@ function bindPage(){
   $("#cmAll").addEventListener("click",()=>{sfx.tap();openCMX()});
   $("#cmList").addEventListener("click",e=>{const p=e.target.closest("[data-p]");if(p){sfx.tap();openPlayer(p.dataset.p);return}const b=e.target.closest("[data-del]");if(b)delReview(m,+b.dataset.del)});
   pageEl.querySelector("[data-back]").addEventListener("click",backClick);
-  const me2=pageEl.querySelector("[data-myedit]");me2&&me2.addEventListener("click",()=>{sfx.tap();openMyGame(m.id)});
   renderCM()}
 const CM_PAGE=10,CM_MAX=300;
 function renderCM(){
@@ -2361,7 +2492,7 @@ function openCMX(){
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
   if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
-  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>${PG.m.file&&SUB_API?"full game · fullscreen":"beta · micro build"}</small></div>`}
+  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
   else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span class="blink">TAP TO RETRY</span></div>`}}
 function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=false;
   const g=x.createLinearGradient(0,0,0,120);g.addColorStop(0,rgb(PG.pal.B));g.addColorStop(1,rgb(PG.pal.D));x.fillStyle=g;x.fillRect(0,0,160,120);
@@ -2375,7 +2506,7 @@ async function tvBoot(me){
 function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void s.offsetWidth;s.classList.add("pon")}
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
-  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file&&SUB_API){playFile();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
+  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file){playFile();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
   Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
@@ -2400,6 +2531,8 @@ $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
 $("#dlbtn").addEventListener("click",()=>{if(!PG)return;const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
   /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
   if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
+  if((!u)&&d&&d.file&&SUB_API){const me=PG;hub("gamefile",{q:{id:d.id}}).then(j=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));
+      a.download=(d.title||"game").replace(/[^\wа-яё -]+/gi,"").trim().replace(/\s+/g,"-")+".html";document.body.appendChild(a);a.click();a.remove();sfx.play();toast("Файл игры скачан")}).catch(()=>toast("Не удалось скачать"));return}
   if(!/^(https?:\/\/|\.?\/?[\w-])/i.test(u)||!u){toast("Файл для скачивания пока не добавлен");return}
   const a=document.createElement("a");a.href=u;a.download="";a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();sfx.play();toast("Загрузка началась")});
 
@@ -2448,43 +2581,69 @@ const SUBS={async list(){if(SUB_API)return sbReq("/subs",{headers:sbH()});
    Встроенные игры (built) считаются на сервере, свои карточки остаются локальными. */
 async function hub(r,o={}){
   const q=new URLSearchParams({r,...(o.q||{})}),init={method:o.method||"GET",headers:sbH(o.body!=null)};if(o.body!=null)init.body=JSON.stringify(o.body);
-  const x=await fetch(SUB_API+"/hub?"+q,init);if(!x.ok){const e=new Error(String(x.status));e.status=x.status;throw e}return x.json()}
+  const x=await fetch(SUB_API+"/hub?"+q,init);if(!x.ok){const e=new Error(String(x.status));e.status=x.status;try{e.code=(await x.json()).error}catch(_){}throw e}return x.json()}
 const useSrv=m=>!!SUB_API&&!!m.built;
-/* ---- каталог игр с сервера (/api/hub?r=games): порядок, доступ и страница игры задаёт админ.
-   Демо или нет связи: остаётся сохранённый список (на первом запуске DEFAULTS). Свои карточки (built:0) всегда локальные. */
-let BOOTED=0;
-function fromSrv(g,old){
-  const o=old||{},own=o.cover&&!/^b:/.test(o.cover); /* обложку, которую игрок перетащил на карточку сам, не затираем */
-  return{...o,id:g.id,title:g.title,tags:g.tags,genre:(g.tags&&g.tags[0])||"Arcade",item:g.item,cover:own?o.cover:g.cover,tint:own?o.tint:(g.tint||null),
-    bg:g.bg&&g.bg!=="auto"?g.bg:undefined,desc:g.desc,changes:g.changes,version:g.ver,author:g.author,link:g.link,file:!!g.file,mine:!!g.mine,access:g.access,built:1}}
+/* ============ каталог игр с сервера ============
+   Список игр, доступ и обложки задаёт админ, всё хранится на сервере. Обложки-картинки приходят отдельно (cover = "img:<хэш>") и кэшируются по хэшу.
+   Менять карточку может только главный админ (сразу для всех) или автор своей опубликованной игры (через одобрение админа). */
+let ROLE=null,CAT_OK=false,BOOTED=false;
+const CATK="am.cat.v1",COVK="am.cov.v1";let COV=store.get(COVK,{})||{};
+const isMain=()=>SUB_API?ROLE==="main":isAdmin();
+const canEdit=m=>!!m&&(SUB_API?ROLE==="main"||!!m.mine:!m.built||isAdmin());
+const ACC_L={public:"Все игроки",staff:"Только админы (проверка)",off:"Скрыта от всех"};
+/* кэш картинок по хэшу: держим не больше ~3 МБ, старые выкидываем (они снова скачаются при надобности) */
+const saveCov=()=>{let ks=Object.keys(COV),sz=ks.reduce((t,k)=>t+COV[k].length,0);while(ks.length&&sz>3e6){sz-=COV[ks[0]].length;delete COV[ks.shift()]}
+  for(let i=0;i<4&&!store.set(COVK,COV);i++){const k=Object.keys(COV);k.slice(0,Math.ceil(k.length/2)).forEach(x=>delete COV[x])}};
+const covOf=ref=>/^img:/.test(ref||"")?COV[ref]||"b:retro":ref||"b:retro";
+function fromWire(g,old){const t=Array.isArray(g.tags)&&g.tags.length?g.tags:["Arcade"];old=old||{};
+  return{id:g.id,title:g.title,tags:t,genre:t[0],item:g.item,cref:g.cover,bref:g.bgimg||"",bgimg:g.bgimg?(old.bref===g.bgimg&&/^data:/.test(old.bgimg||"")?old.bgimg:COV[g.bgimg]||""):"",cover:/^img:/.test(g.cover)&&old.cref===g.cover&&/^data:/.test(old.cover||"")?old.cover:covOf(g.cover),tint:g.tint||null,bg:g.bg==="auto"?undefined:g.bg,
+    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,built:1,
+    fav:old.fav||0,played:old.played||0,downloads:old.downloads||0}}
+async function admReq(r,q,method,body){
+  const x=await fetch(SUB_API+"/admin?"+new URLSearchParams({r,...q}),{method,headers:sbH(body!=null),body:body!=null?JSON.stringify(body):undefined});
+  if(!x.ok){const e=new Error(String(x.status));e.status=x.status;try{e.code=(await x.json()).error}catch(_){}throw e}return x.json()}
+const CAT_ERR={bad_link:"Ссылка должна начинаться с https://",bad_cover:"Картинка не подошла: нужна JPG/PNG обычного размера",title_required:"Нужно название",bad_tags:"Нужен хотя бы один тег",forbidden:"Нет прав на эту игру",not_found:"Игра не найдена",empty_patch:"Вы ничего не изменили"};
+const catErr=e=>CAT_ERR[e&&e.code]||(e&&e.status===413?"Картинка слишком большая":"Не удалось сохранить, попробуйте ещё раз");
+/* загружает каталог: у главного админа все игры (и скрытые), у остальных только видимые им */
 async function loadCatalog(){
-  if(!SUB_API)return;let j;try{j=await hub("games")}catch(e){return}
-  if(!j||!Array.isArray(j.games))return;
-  const was=JSON.stringify(DATA),by=new Map(DATA.map(d=>[d.id,d]));
-  DATA=[...j.games.map(g=>fromSrv(g,by.get(g.id))),...DATA.filter(d=>!d.built)];
-  if(JSON.stringify(DATA)===was)return;persist();
-  if(BOOTED){loadStats();if(!PG)render()}} /* ответ пришёл после первого рендера: перерисовать список */
-/* ---- игра игрока с HTML-файлом: файл берём с сервера и запускаем в изолированном iframe ---- */
-const GFILE={};
-async function playFile(){
-  const me=PG;if(!me||me.fileBusy)return;me.fileBusy=1;
-  try{const t=GFILE[me.m.id]!=null?GFILE[me.m.id]:(GFILE[me.m.id]=(await hub("gamefile",{q:{id:me.m.id}})).text);
-    if(PG!==me)return;countPlay();sfx.in();sbView(t,"Закрыть игру")}
-  catch(e){toast(e.status===404?"Игра сейчас недоступна":e.status===401?"Откройте приложение из Telegram":"Не удалось загрузить игру. Проверьте связь.")}
-  finally{me.fileBusy=0}}
+  if(!SUB_API)return;
+  const prev=new Map([...DATA,...(store.get(CATK,null)||[])].map(d=>[d.id,d]));
+  let list;
+  try{list=ROLE==="main"?await admReq("games",{},"GET"):(await hub("games")).games}
+  catch(e){const c=store.get(CATK,null);if(Array.isArray(c)&&c.length){DATA=c.map(d=>({...d,cover:covOf(d.cover),bgimg:d.bref?COV[d.bref]||"":""}));CAT_OK=true}return}
+  if(!Array.isArray(list))return;
+  DATA=list.map(g=>fromWire(g,prev.get(g.id)));CAT_OK=true;persist();
+  const need=[...DATA.filter(d=>/^img:/.test(d.cref||"")&&!/^data:/.test(d.cover||"")).map(d=>[d,""]),...DATA.filter(d=>/^img:/.test(d.bref||"")&&!/^data:/.test(d.bgimg||"")).map(d=>[d,"bg"])];
+  if(need.length)await Promise.race([Promise.all(need.map(async([d,k])=>{try{const j=await hub("cover",{q:k?{id:d.id,kind:k}:{id:d.id}});if(j.ref===(k?d.bref:d.cref)&&/^data:image\/jpeg/.test(j.img||"")){COV[j.ref]=j.img;if(k)d.bgimg=j.img;else d.cover=j.img}}catch(e){}})).then(saveCov),wait(5000)]);
+  if(BOOTED&&view===1)render()}
+/* правки автора: отправляем только изменённые поля, которые автору можно менять */
+function authorPatch(o,d){const p={},bg=v=>v==null||v===""?"auto":String(v),tn=t=>t?{h:Math.round(t.h),s:Math.round(t.s*100)/100}:null;
+  if((d.desc||"")!==(o.desc||""))p.desc=d.desc||"";if((d.changes||"")!==(o.changes||""))p.changes=d.changes||"";if((d.version||"")!==(o.version||""))p.ver=d.version||"";
+  if((d.link||"")!==(o.link||""))p.link=d.link||"";if(d.item!==o.item)p.item=d.item;if(bg(d.bg)!==bg(o.bg))p.bg=bg(d.bg);
+  if(JSON.stringify(tn(d.tint))!==JSON.stringify(tn(o.tint)))p.tint=tn(d.tint);if(d.cover!==o.cover)p.cover=d.cover;if((d.bgimg||"")!==(o.bgimg||""))p.bgimg=d.bgimg||"";return p}
+function adminBody(o,d){const b={title:d.title,tags:tagsOf(d),desc:d.desc||"",changes:d.changes||"",ver:d.version||"",author:d.author||"",item:d.item,
+    bg:d.bg==null||d.bg===""?"auto":String(d.bg),link:d.link||"",tint:d.tint?{h:Math.round(d.tint.h),s:Math.round(d.tint.s*100)/100}:null,access:d.access||"public"};
+  if(!o||d.cover!==o.cover)b.cover=d.cover;if(!o?d.bgimg:(d.bgimg||"")!==(o.bgimg||""))b.bgimg=d.bgimg||"";return b}
+async function edStatus(id){const el=$("#edst");if(!el)return;
+  try{const j=await hub("myedits"),e=(j.items||[]).find(x=>x.game===id);if(!e||!el.isConnected)return;
+    el.textContent=" "+(e.status==="new"?"Прошлая правка ещё на проверке: новая её заменит.":e.status==="approved"?"Последняя правка одобрена.":"Последняя правка отклонена"+(e.comment?": "+e.comment:"."));
+    el.className="st-"+e.status}catch(e){}}
+/* игра игрока (HTML-файл): открываем в изолированном iframe, запуск считается как «Играли» */
+async function playFile(){const me=PG;if(!me)return;countPlay();toast("Загружаем игру…",true);
+  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;sbView(j.text,"Закрыть игру");toast("Приятной игры")}catch(e){toast("Не удалось загрузить игру")}}
 const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
 const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */
 const AUTH={};             /* pid -> { n, c, hp, p, f }: имя, цвет, фото авторов (фото подгружается лениво) */
 const fmtRate=v=>(+v||0).toFixed(1).replace(".",",");
 /* Рейтинг и счётчики игры. Рейтинг только для чтения: это среднее по оценкам из отзывов. */
 function gstat(m){
-  if(useSrv(m)){const s=STATS[m.id]||{};return{plays:s.plays||0,pp:s.playPlayers||0,dl:s.downloads||0,dp:s.dlPlayers||0,rating:s.rating||0,rated:s.rated||0,reviews:s.reviews||0,srv:1}}
+  if(useSrv(m)){const s=STATS[m.id]||{};return{plays:s.plays||0,pp:s.playPlayers||0,dl:s.downloads||0,dp:s.dlPlayers||0,rating:s.rating||0,rated:s.rated||0,reviews:s.reviews||0,stars:s.stars||0,backers:s.backers||0,srv:1}}
   const L=CM[m.id]||(SEED[m.id]?cmOf(m):[]),rt=L.filter(c=>c.r);
   return{plays:m.played||0,pp:0,dl:+m.downloads||0,dp:0,rating:rt.length?rt.reduce((t,c)=>t+c.r,0)/rt.length:0,rated:rt.length,reviews:L.length,srv:0}}
 const refreshCards=()=>LIVE.forEach(c=>c.setStars());
 async function loadStats(){
   if(!SUB_API)return;const ids=DATA.filter(d=>d.built).map(d=>d.id);if(!ids.length)return;
-  try{const j=await hub("stats",{q:{ids:ids.join(",")}});Object.assign(STATS,j.games);refreshCards();paintPage()}catch(e){}}
+  try{const j=await hub("stats",{q:{ids:ids.join(",")}});Object.assign(STATS,j.games);if(BOOTED&&view===1&&(FL.sort!=="def"||FL.r4||FL.sup))render();else refreshCards();paintPage()}catch(e){}}
 const PLW=["игрок","игрока","игроков"];
 function paintPage(){
   if(!PG)return;const st=$("#pgStars");if(!st)return;const g=gstat(PG.m);
@@ -2492,7 +2651,75 @@ function paintPage(){
   $("#pgRate").textContent=g.rated?fmtRate(g.rating)+" · "+g.rated+" "+plr(g.rated,["оценка","оценки","оценок"]):"нет оценок";
   const pl=nfmt(g.plays)+" "+plr(g.plays,["запуск","запуска","запусков"]),dl=nfmt(g.dl)+" "+plr(g.dl,["загрузка","загрузки","загрузок"]);
   $("#pgPlays").textContent=g.srv?"Играли: "+nfmt(g.pp)+" "+plr(g.pp,PLW)+" · "+pl:pl;
-  $("#pgDl").textContent=g.srv?"Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW)+" · "+dl:dl}
+  $("#pgDl").textContent=g.srv?"Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW)+" · "+dl:dl;
+  const sp=$("#pgSup");if(sp)sp.innerHTML=g.stars?`${ingots(g.stars)}<b>${nfmt(g.stars)}</b><span>поддержка · ${nfmt(g.backers)} ${plr(g.backers,PLW)}</span>`:""}
+
+/* ---- «Спасибо автору»: звёзды Telegram. Звёзды приходят на бот проекта и засчитываются автору игры ---- */
+const THX=[10,50,100,250,500],THX_DEF=50;
+const fmtK=n=>n>=1e4?(n/1e3).toFixed(n>=1e5?0:1).replace(".",",")+"K":String(n);
+/* золотые слитки: 1–5 по сумме поддержки (абстрактная «стоимость» игры) */
+const INGOT=[1,100,500,2000,10000];
+/* поддержка = золотые пиксельные блоки (5 ступеней по сумме), чтобы не путать со звёздами оценок в отзывах */
+const goldLv=n=>INGOT.filter(x=>n>=x).length;
+const ingots=n=>{const k=goldLv(n);return `<i class="gb" aria-hidden="true">${[0,1,2,3,4].map(i=>`<u class="${i<k?"on":""}"></u>`).join("")}</i>`};
+const goldIc='<i class="gb one" aria-hidden="true"><u class="on"></u></i>';
+async function sayThanks(m,stars,btn){
+  if(!SUB_API){toast("Поддержка звёздами работает в Telegram-версии маркета");return}
+  btn.disabled=true;
+  try{const j=await hub("thank",{method:"POST",body:{game:m.id,stars}}),W=window.Telegram&&Telegram.WebApp;
+    if(W&&typeof W.openInvoice==="function"){W.openInvoice(j.link,st=>{btn.disabled=false;
+        if(st==="paid"){sfx.play();toast("Спасибо! Автор увидит вашу поддержку");const t=$("#thxGo");t&&t.classList.add("done");setTimeout(loadStats,1500);setTimeout(loadStats,6000)}
+        else if(st==="failed")toast("Оплата не прошла")})}
+    else{btn.disabled=false;window.open(j.link,"_blank","noopener")}}
+  catch(e){btn.disabled=false;toast(e.code==="payments_off"?"Оплата звёздами пока не подключена":e.status===429?"Слишком много попыток, попробуйте позже":"Не удалось открыть оплату")}}
+
+/* ---- моды игры: одобренные админом + свои на проверке ---- */
+const MODS={};
+const MOD_ERR={too_many_pending:"У вас уже 3 мода на проверке. Дождитесь ответа",file_size:"Файл больше 1,5 МБ",not_html:"Это не похоже на HTML-игру",title_required:"Нужно название мода",not_found:"Игра недоступна"};
+async function loadMods(m){if(!useSrv(m))return;
+  try{const j=await hub("mods",{q:{game:m.id}});MODS[m.id]={items:j.items||[],mine:j.mine||[],ok:1}}catch(e){MODS[m.id]={items:[],mine:[],err:1}}
+  if(PG&&PG.m.id===m.id)renderMods()}
+function renderMods(){
+  const el=$("#mdList");if(!el||!PG)return;const M=MODS[PG.m.id],n=M?M.items.length:0;$("#mdN").textContent=n?"· "+n:"";
+  if(!SUB_API){el.innerHTML='<p class="empty">Моды появятся в Telegram-версии маркета.</p>';return}
+  if(!M){el.innerHTML='<p class="empty">Загрузка модов…</p>';return}
+  const own=M.mine.map(x=>`<div class="md-own st-${x.status}"><b>${esc(x.title)}</b> · ${x.status==="new"?"на проверке у админа":"отклонён"+(x.comment?": "+esc(x.comment):"")}</div>`).join("");
+  el.innerHTML=own+(M.err?'<p class="empty">Не удалось загрузить моды. Проверьте связь.</p>':n?M.items.map(x=>`<article class="md">
+    <div class="md-h"><b>${esc(x.title)}</b><span class="md-v">v${esc(x.ver)}</span></div>${x.desc?`<p>${esc(x.desc)}</p>`:""}
+    <div class="md-f">${cmAv({pid:x.mine?null:x.pid,me:x.mine?1:0,n:x.author})}<button type="button" class="cm-nm" data-p="${x.mine?"me":esc(x.pid)}">${esc(x.mine?(PROF.name||x.author):x.author)}</button><time>${ago(x.at)}</time>
+      <span class="md-b"><button class="btn ghost" type="button" data-mplay="${esc(x.id)}">Играть</button><button class="btn ghost" type="button" data-mdl="${esc(x.id)}">Скачать</button></span></div></article>`).join("")
+    :'<p class="empty">Модов пока нет. Возьмите игру за основу и предложите свою версию.</p>')}
+async function modFile(id){const j=await hub("modfile",{q:{id}});return j}
+function openModForm(m){
+  if(!SUB_API){toast("Моды доступны в Telegram-версии маркета");return}
+  let file=null;
+  openSheet(sbHead("Мод для «"+esc(m.title||"игры")+"»")+`<div class="pbody">
+    <p class="sbk" style="margin-bottom:8px">Мод — ваша версия игры одним HTML-файлом (до 1,5 МБ). Сначала его проверит админ, потом он появится во вкладке «Моды» с вашим именем.</p>
+    <label class="fld"><span class="lbl">Название мода *</span><input class="in" id="mdT" maxlength="40" placeholder="Например: Быстрый мяч"></label>
+    <label class="fld"><span class="lbl">Что изменено</span><textarea class="in" id="mdD" maxlength="400" rows="3" placeholder="Коротко: что нового в моде"></textarea></label>
+    <label class="fld"><span class="lbl">Версия</span><input class="in" id="mdV" maxlength="12" value="1.0"></label>
+    <div class="fld"><span class="lbl">HTML-файл *</span><label class="drop"><input type="file" accept=".html,.htm,text/html" hidden id="mdF"><span id="mdFn"><b>Выберите файл</b> .html</span></label></div>
+  </div><div class="pfoot"><div class="row"><button class="btn" id="mdSend" type="button">Отправить на проверку</button></div></div>`);
+  $("#mdF").onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>SUB_MAX){toast("Файл больше 1,5 МБ");return}file=f;$("#mdFn").textContent=f.name};
+  $("#mdSend").onclick=async e=>{const b=e.currentTarget,t=$("#mdT").value.trim();if(!t){toast("Нужно название мода");return}if(!file){toast("Выберите HTML-файл");return}
+    b.disabled=true;try{await hub("mod",{method:"POST",body:{game:m.id,title:t,desc:$("#mdD").value,ver:$("#mdV").value,file:{name:file.name,text:await file.text()}}});
+      sfx.play();closeSheet();toast("Мод отправлен админу на проверку");loadMods(m)}
+    catch(err){b.disabled=false;toast(MOD_ERR[err.code]||"Не удалось отправить мод")}}}
+function bindExtras(m){
+  /* спасибо */
+  let amt=THX_DEF;const ch=$("#thxCh"),go=$("#thxGo");
+  ch.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;amt=+b.dataset.v;ch.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-checked",x===b));go.textContent="Спасибо автору · ⭐ "+amt;sfx.tap()});
+  go.addEventListener("click",()=>{sfx.tap();sayThanks(m,amt,go)});
+  /* вкладки отзывы / моды */
+  const tabs=pageEl.querySelectorAll(".pgtabs [data-t]");
+  tabs.forEach(t=>t.addEventListener("click",()=>{tabs.forEach(x=>x.setAttribute("aria-selected",x===t));$("#tabCm").hidden=t.dataset.t!=="cm";$("#tabMd").hidden=t.dataset.t!=="md";sfx.tap()}));
+  $("#mdNew").addEventListener("click",()=>{sfx.tap();openModForm(m)});
+  $("#mdList").addEventListener("click",async e=>{const p=e.target.closest("[data-p]");if(p){sfx.tap();openPlayer(p.dataset.p);return}
+    const pl=e.target.closest("[data-mplay]"),dl=e.target.closest("[data-mdl]");if(!pl&&!dl)return;sfx.tap();
+    try{const j=await modFile((pl||dl).dataset[pl?"mplay":"mdl"]);
+      if(pl)sbView(j.text,"Закрыть мод");else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));a.download=j.name||"mod.html";document.body.appendChild(a);a.click();a.remove();toast("Мод скачан")}}
+    catch(err){toast("Не удалось загрузить мод")}});
+  renderMods();loadMods(m)}
 
 /* ---- отзывы ---- */
 async function loadReviews(m){
@@ -2564,7 +2791,7 @@ const WEIGHTS={visit:2,play:5,download:5,fav:2,review:20,post:10,card:25,submit:
 const pad2=x=>String(x).padStart(2,"0");
 const tl=(t,step)=>{const d=new Date(t),hm=pad2(d.getHours())+":"+pad2(d.getMinutes()),dm=pad2(d.getDate())+"."+pad2(d.getMonth()+1);return step<10800?hm:dm};
 const tlf=(t,step)=>{const d=new Date(t);return step<86400?pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):tl(t,step)};
-const toPts=s=>{let res=s.base;return s.rows.map(([a,w],i)=>{res+=w;const ts=s.t0+i*s.step*1000;return{a,res,cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
+const toPts=s=>{let res=s.base;return s.rows.map(([a,w,st],i)=>{res+=w;const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
 const rateText=()=>"игра = "+WEIGHTS.play+" · скачивание = "+WEIGHTS.download+" · отзыв = "+WEIGHTS.review+" · пост = "+WEIGHTS.post+" · своя карточка = "+WEIGHTS.card+" "+CAP.res;
 function localSeries(){
   const ev=ALOG(),now=Date.now(),off=-new Date().getTimezoneOffset()*60000,first=ev.length?Math.min(...ev.map(e=>e.t)):now,
@@ -2579,7 +2806,7 @@ const gtl=id=>{const d=DATA.find(x=>x.id===id);return"«"+esc((d&&d.title)||id||
 const ACTX={visit:()=>"заход в маркет",open:e=>"открыта страница игры "+gtl(e.game),play:e=>"запуск игры "+gtl(e.game),download:e=>"нажато «Скачать» · "+gtl(e.game),
   review:e=>(e.meta.e?"отзыв обновлён · ":"отзыв · ")+gtl(e.game)+(e.meta.r?" · ★"+(e.meta.r|0):""),review_del:e=>"отзыв удалён · "+gtl(e.game),
   fav:e=>"в избранное · "+gtl(e.game),unfav:e=>"убрано из избранного · "+gtl(e.game),post:e=>e.meta.e?"пост обновлён":"пост опубликован",post_del:()=>"пост удалён",
-  profile:()=>"профиль изменён",medal:e=>"медаль «"+esc((MEDALS.find(m=>m.id===e.meta.m)||{n:"?"}).n)+"»",level:e=>"новый уровень · "+(e.meta.lv|0),card:()=>"добавлена своя карточка",submit:()=>"игра отправлена на проверку"};
+  profile:()=>"профиль изменён",medal:e=>"медаль «"+esc((MEDALS.find(m=>m.id===e.meta.m)||{n:"?"}).n)+"»",level:e=>"новый уровень · "+(e.meta.lv|0),card:()=>"добавлена своя карточка",submit:()=>"игра отправлена на проверку",thank:e=>"⭐ "+(e.meta.s|0)+" спасибо автору · "+gtl(e.game),mod:e=>"предложен мод · "+gtl(e.game),invoice:e=>"открыт счёт ⭐ "+(e.meta.s|0)+" · "+gtl(e.game)};
 const ACOL={play:"#5dff8a",download:"#4dd2ff",review:"#ffb23f",review_del:"#ff5e7a",post:"#ff5ec4",post_del:"#ff5e7a",medal:"#ffd23f",level:"#b98bff",fav:"#ff5e7a",unfav:"#9aa4c8",submit:"#7fb2ff",card:"#7fb2ff",visit:"#9aa4c8",open:"#9aa4c8",profile:"#ff5ec4"};
 const fmtT=t=>{const d=new Date(t);return pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes())+":"+pad2(d.getSeconds())};
 const FEED={items:[],next:null,au:{}};
@@ -2594,7 +2821,7 @@ async function loadFeed(root,more){
   if(!root.isConnected)return;
   list.innerHTML=FEED.items.length?FEED.items.map(lgRow).join(""):`<p class="empty" style="border:0">Пока нет действий. Запустите игру или оставьте отзыв.</p>`;btn.hidden=!next}
 /* Чужой HTML открываем только в изолированном iframe (sandbox без allow-same-origin): у кода игры нет доступа к приложению, initData и cookies. */
-const adminProbe=async(n)=>{if(!SUB_API)return;try{const m=await sbReq("/me",{headers:sbH()});if(m&&m.admin&&!ADMIN_OK){ADMIN_OK=true;try{renderProfile()}catch(e){}}}catch(e){if(!n)setTimeout(()=>adminProbe(1),1500)}};
+const adminProbe=async(n)=>{if(!SUB_API)return;try{const m=await sbReq("/me",{headers:sbH()});ROLE=(m&&m.role)||null;if(m&&m.admin&&!ADMIN_OK){ADMIN_OK=true;try{renderProfile()}catch(e){}}}catch(e){if(!n)setTimeout(()=>adminProbe(1),1500)}};
 /* Доступ и серверные настройки. Новости и адрес доната приходят с сервера (меняются в /admin.html).
    Забаненному сервер отвечает 403 banned: показываем экран блокировки и не грузим маркет.
    Демо-режим или нет связи: остаются встроенные значения NEWS и WALLET. */
@@ -2616,9 +2843,9 @@ async function accessInit(){
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
   }catch(e){}
   return true}
-const sbView=(t,label)=>{const old=document.getElementById("sbv");old&&old.remove();const o=document.createElement("div");o.id="sbv";o.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";
+const sbView=(t,lbl)=>{const o=document.createElement("div");o.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";
   const f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.style.cssText="flex:1;border:0;width:100%;background:#fff";f.srcdoc=t;
-  const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=label||"Закрыть превью";b.style.cssText="flex:none;width:100%";b.onclick=()=>o.remove();o.append(f,b);document.body.append(o)};
+  const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lbl||"Закрыть превью";b.style.cssText="flex:none;width:100%";b.onclick=()=>o.remove();o.append(f,b);document.body.append(o)};
 {const st=document.createElement("style");st.textContent=`.sb{display:inline-block;padding:2px 10px;font-size:15px;font-weight:700;text-transform:uppercase;color:#140a28;background:var(--c)}
 .sbi{display:block;width:100%;text-align:left;margin-top:10px;padding:12px 14px;background:#120a2a;border:3px solid var(--line);border-left:8px solid var(--c)}
 .sbi h4{font-size:21px;margin:6px 0 2px}.sbi p{font-size:16px;color:var(--dim);margin:0}.sbi .cm{margin-top:6px;color:#fff;font-size:17px}
@@ -2655,47 +2882,8 @@ function openSubmit(){
 async function openMine(){
   let all=[];try{all=(await SUBS.list()).filter(s=>s.authorId===meId())}catch(e){toast("Не удалось загрузить заявки")}
   openSheet(sbHead("Мои заявки")+`<div class="pbody" lang="ru">${all.length?all.map(s=>`<div class="sbi" style="--c:${SST[s.status].c}">${sbBadge(s.status)}<h4>${esc(s.title)}</h4><p>${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}</p>${s.comment?`<p class="cm">Комментарий: ${esc(s.comment)}</p>`:""}</div>`).join(""):`<p class="sbk">Заявок пока нет.</p>`}</div>
-  <div class="pfoot"><div class="row">${SUB_API&&DATA.some(d=>d.mine)?`<button class="btn ghost" id="sbGames" type="button">Мои игры</button>`:`<button class="btn ghost" data-close>Закрыть</button>`}<button class="btn" id="sbNew" type="button">Новая заявка</button></div></div>`);
-  $("#sbNew").addEventListener("click",()=>{sfx.tap();openSubmit()});
-  const g=$("#sbGames");g&&g.addEventListener("click",()=>{sfx.tap();openMyGames()})}
-/* ---- «Мои игры»: автор опубликованной игры предлагает правки страницы, они появятся после одобрения админом ---- */
-const EST={new:{t:"На проверке",c:"#ffb23f"},approved:{t:"Одобрено",c:"#5dff8a"},rejected:{t:"Отклонено",c:"#ff5e7a"}};
-async function openMyGames(){
-  openSheet(sbHead("Мои игры")+`<div class="pbody"><p class="sbk">Загрузка…</p></div>`);
-  await loadCatalog();let ed=[];try{ed=(await hub("myedits")).items||[]}catch(e){}
-  const mine=DATA.filter(d=>d.mine),last=id=>ed.find(e=>e.game===id); /* сервер отдаёт правки от новых к старым */
-  panel.innerHTML=sbHead("Мои игры")+`<div class="pbody" lang="ru"><p class="sbk" style="margin-bottom:8px">Изменения страницы появятся в маркете после проверки админом.</p>
-   <div id="mgL">${mine.length?mine.map(d=>{const e=last(d.id),s=e&&EST[e.status];
-     return`<button type="button" class="sbi" data-id="${esc(d.id)}" style="--c:${s?s.c:"#9aa4c8"}">${s?`<span class="sb" style="--c:${s.c}">${s.t}</span>`:""}<h4>${esc(d.title)}</h4><p>v${esc(d.version||"")}${e?" · правки от "+fmtDate(e.at):""}</p>${e&&e.comment?`<p class="cm">Комментарий: ${esc(e.comment)}</p>`:""}</button>`}).join("")
-     :`<p class="sbk">Опубликованных игр пока нет. Когда админ добавит вашу игру в маркет, она появится здесь.</p>`}</div></div>
-   <div class="pfoot"><div class="row"><button class="btn" data-close>Закрыть</button></div></div>`;
-  $("#mgL").addEventListener("click",ev=>{const b=ev.target.closest(".sbi");if(b){sfx.tap();openMyGame(b.dataset.id)}});fitSheet()}
-function openMyGame(id){
-  const d=DATA.find(x=>x.id===id);if(!d)return;
-  const cur={desc:d.desc||"",changes:d.changes||"",ver:d.version||"",link:d.link||"",item:d.item||"cassette",bg:d.bg==null||d.bg===""?"auto":String(d.bg)},f={...cur};
-  const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===v)||BGS_CARD[0])[1];
-  openSheet(sbHead("Страница игры")+`<div class="pbody" lang="ru"><h3 style="margin:0 0 6px;font-size:24px">${esc(d.title)}</h3>
-   <p class="sbk" style="margin-bottom:8px">Правки уйдут админу на проверку. Новая отправка заменяет предыдущую, если та ещё не проверена.</p>
-   <label class="fld"><span class="lbl">Описание</span><textarea class="sbt" id="meD" maxlength="600">${esc(cur.desc)}</textarea></label>
-   <label class="fld"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="sbt" id="meC" maxlength="200">${esc(cur.changes)}</textarea></label>
-   <label class="fld"><span class="lbl">Версия</span><input class="in" id="meV" maxlength="12" value="${esc(cur.ver)}"></label>
-   <label class="fld"><span class="lbl">Ссылка на скачивание <small>только https</small></span><input class="in" id="meL" maxlength="300" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(cur.link)}"></label>
-   <div class="two" style="grid-template-columns:1fr 1fr"><div class="fld"><span class="lbl">Носитель</span>${selBtn("meI",itemL(cur.item))}</div><div class="fld"><span class="lbl">Фон</span>${selBtn("meB",bgL(cur.bg))}</div></div>
-   <p class="sbk" id="meErr" style="color:#ff9aa8;min-height:20px;margin-top:8px"></p></div>
-   <div class="pfoot"><div class="row"><button class="btn ghost" id="meBack" type="button">Мои игры</button><button class="btn" id="meSend" type="button">Отправить на проверку</button></div></div>`);
-  const err=m=>{$("#meErr").textContent=m};
-  $("#meI").addEventListener("click",e=>openMenu(e.currentTarget,Object.keys(ITEMS).map(k=>[k,ITEMS[k].label]),f.item,v=>{f.item=v;sfx.tap()}));
-  $("#meB").addEventListener("click",e=>openMenu(e.currentTarget,BGS_CARD,f.bg,v=>{f.bg=v;sfx.tap()}));
-  $("#meBack").addEventListener("click",()=>{sfx.tap();openMyGames()});
-  $("#meSend").addEventListener("click",async e=>{
-    Object.assign(f,{desc:$("#meD").value.trim(),changes:$("#meC").value.trim(),ver:$("#meV").value.trim(),link:$("#meL").value.trim()});
-    const patch=Object.fromEntries(Object.entries(f).filter(([k,v])=>v!==cur[k]));
-    if(!Object.keys(patch).length){err("Ничего не изменилось");return}
-    if(patch.link&&!/^https:\/\/\S+$/i.test(patch.link)){err("Ссылка должна начинаться с https://");return}
-    const btn=e.currentTarget;if(btn.disabled)return;btn.disabled=true;
-    try{await hub("myedit",{method:"POST",body:{game:d.id,patch}})}
-    catch(x){btn.disabled=false;err(x.status===400?"Проверьте поля (ссылка только https)":x.status===403?"Это не ваша игра":x.status===401?"Откройте приложение из Telegram":"Не удалось отправить. Проверьте связь.");return}
-    sfx.tap();toast("Правки отправлены на проверку");openMyGames()})}
+  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Закрыть</button><button class="btn" id="sbNew" type="button">Новая заявка</button></div></div>`);
+  $("#sbNew").addEventListener("click",()=>{sfx.tap();openSubmit()})}
 async function openAdmin(){
   let all=[],q="",f="all",cur=null;
   const draw=()=>{
@@ -2734,8 +2922,8 @@ async function openAdmin(){
   if(!(await accessInit())){const b=$("#boot");b&&b.remove();return}
   {const n=tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера */
   profVisit();sync();if(!SUB_API)tgIdentity();
-  if(SUB_API)await Promise.race([loadCatalog().then(loadStats),wait(1500)]);
-  await render(true);BOOTED=1;adminProbe();act("visit");if(SUB_API){flushActs();pullProfile()}
+  if(SUB_API){await Promise.race([adminProbe(),wait(1500)]);await Promise.race([loadCatalog(),wait(3500)]);await Promise.race([loadStats(),wait(1200)])}
+  await render(true);BOOTED=true;act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
 })();

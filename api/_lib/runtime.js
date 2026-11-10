@@ -22,6 +22,21 @@ export function getCore() {
     try { waitUntil(p); } catch { /* вне Vercel */ }
   };
 
+  // вызов Bot API: результат или ошибка с описанием Telegram
+  const tgApi = async (method, params) => {
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(params) });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) throw new Error(j.description || "telegram " + r.status);
+    return j.result;
+  };
+
+  // файл с серверов Telegram (фото профиля): путь из getFile -> Buffer
+  const tgFile = async (path) => {
+    const r = await fetch(`https://api.telegram.org/file/bot${botToken}/${path}`);
+    if (!r.ok) throw new Error("telegram file " + r.status);
+    return Buffer.from(await r.arrayBuffer());
+  };
+
   core = createCore({
     store: supabaseStore(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY),
     verify: verifyTelegramInitData,
@@ -29,6 +44,8 @@ export function getCore() {
     adminIds: process.env.ADMIN_IDS.split(",").map((s) => Number(s.trim())).filter(Number.isSafeInteger),
     maxAgeSec: Number(process.env.INITDATA_MAX_AGE) || 86400,
     notify,
+    tgApi,
+    tgFile,
   });
   return core;
 }
