@@ -76,6 +76,13 @@ test("забаненный модератор по-прежнему модера
   assert.equal((await call("config", "GET", init(MAIN))).status, 200);
 });
 
+test("config сразу отдаёт роль (маркету на старте не нужен отдельный /me)", async () => {
+  const { call } = await world();
+  assert.deepEqual([(await call("config", "GET", init(MAIN))).body.role, (await call("config", "GET", init(MAIN))).body.admin], ["main", true]);
+  assert.deepEqual([(await call("config", "GET", init(MOD))).body.role, (await call("config", "GET", init(MOD))).body.admin], ["moderator", true]);
+  assert.deepEqual([(await call("config", "GET", init(USER))).body.role, (await call("config", "GET", init(USER))).body.admin], [null, false]);
+});
+
 test("новости: сохранение, чистка полей, ссылки только https", async () => {
   const { adm, call } = await world();
   const put = (items) => adm("news", "PUT", MAIN, { body: { items } });

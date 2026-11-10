@@ -92,7 +92,7 @@ test("лимит записей отзывов в сутки", async () => {
   assert.equal(last.status, 429);
 });
 
-test("track: играть/скачать считаются по игрокам и по нажатиям, пауза между нажатиями", async () => {
+test("track: играть/скачать считаются только по игрокам (один игрок = один раз), пауза между нажатиями", async () => {
   const { hub, age } = await world();
   const t = (who, type, game = "retro") => hub("track", "POST", who, { body: { type, game } });
   assert.equal((await t(ANN, "play")).body.accepted, 1);
@@ -100,7 +100,7 @@ test("track: играть/скачать считаются по игрокам 
   age(10_000);
   await t(ANN, "play"); await t(BOB, "play"); await t(BOB, "download");
   const s = (await hub("stats", "GET", ANN, { query: { ids: "retro,space" } })).body.games;
-  assert.equal(s.retro.plays, 3); assert.equal(s.retro.playPlayers, 2);
+  assert.equal(s.retro.plays, 2, "Анна запускала дважды, но считается один раз"); assert.equal(s.retro.playPlayers, 2);
   assert.equal(s.retro.downloads, 1); assert.equal(s.retro.dlPlayers, 1);
   assert.deepEqual(s.space, { plays: 0, playPlayers: 0, downloads: 0, dlPlayers: 0, reviews: 0, rated: 0, rating: 0, stars: 0, backers: 0 });
   const r = await t(BOB, "play", "space");

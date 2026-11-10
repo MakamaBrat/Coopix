@@ -80,9 +80,10 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
     }
   }
 
+  // «Играли» и «Скачали» = разные игроки: один игрок никогда не считается дважды (повторные запуски видны только в журнале)
   const statWire = (s = {}) => ({
-    plays: +s.plays || 0, playPlayers: +s.play_players || 0,
-    downloads: +s.downloads || 0, dlPlayers: +s.dl_players || 0,
+    plays: +s.play_players || 0, playPlayers: +s.play_players || 0,
+    downloads: +s.dl_players || 0, dlPlayers: +s.dl_players || 0,
     reviews: +s.reviews || 0, rated: +s.rated || 0, rating: +s.rating || 0,
     stars: +s.stars || 0, backers: +s.backers || 0,
   });

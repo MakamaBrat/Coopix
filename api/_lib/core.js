@@ -88,7 +88,8 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     if (req.route === "config") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
       const [news, wallet] = await Promise.all([store.getSetting("news"), store.getSetting("wallet")]);
-      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null });
+      // role/admin здесь же: маркету на старте не нужен отдельный запрос /me (минус один круг до сервера)
+      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, role, admin: staff });
     }
 
     // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----

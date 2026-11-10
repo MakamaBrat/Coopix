@@ -742,29 +742,44 @@ body:not(.onhome) .top{display:none}
 [data-q="0"] .pf-card,[data-q="0"] .pf-in{filter:none}
 
 
-/* ---------- графики капитализации (вкладка кубка) ---------- */
+/* ---------- график «Пульс маркета» (вкладка кубка) ---------- */
 .chc{padding:12px 12px 12px;background:linear-gradient(180deg,#171040,#120a2c);border:3px solid var(--line)}
 .chc-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .chc-t{white-space:nowrap;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#cdbfff;font-weight:700}
 .chc-t em{font-style:normal;margin-left:6px;padding:0 6px;font-size:11px;font-weight:500;color:#ffb23f;border:1px solid #ffb23f66}
-.chc-v{display:inline-block;white-space:nowrap;font-size:26px;font-weight:700;line-height:1.05;color:#fff;margin-top:4px;margin-right:10px;text-shadow:0 0 18px rgba(165,107,255,.45)}
+.chc-v{display:inline-block;white-space:nowrap;font-size:clamp(30px,8.5vw,40px);font-weight:700;line-height:1.05;color:#fff;margin-top:6px;margin-right:12px}
+.chc-v small{margin-left:8px;font-size:.42em;font-weight:500;color:var(--dim)}
 .chc-d{display:inline-block;font-size:14px;margin-top:2px;font-weight:500}.chc-d.up{color:#5dff8a}.chc-d.dn{color:#ff5e7a}
 .chc-p{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;padding:3px;background:#0d0724;border:2px solid #2a1f5e}
 .chc-p button{height:28px;font-size:14px;font-weight:500;color:var(--dim);background:transparent;border:0;transition:background .18s,color .18s}
-.chc-p button[aria-pressed=true]{color:#140a28;font-weight:700;background:linear-gradient(90deg,#ff8fd8,#a56bff 55%,#6fa2ff)}
+.chc-p button[aria-pressed=true]{color:#140a28;font-weight:700;background:var(--acc)}
 .chw{position:relative;margin-top:6px}
 .chc svg{display:block;width:100%;height:auto;touch-action:pan-y;-webkit-user-select:none;user-select:none;overflow:visible}
 .chc svg text{font-family:"Tektur",ui-monospace,monospace;fill:#8f82c4;font-size:11px}
 .chc svg text.pt{fill:#cdbfff;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
 .chc .glow{filter:drop-shadow(0 0 5px rgba(165,107,255,.75))}
-.chc .bar{opacity:.82;transition:opacity .12s}.chc .bar.hl{opacity:1;stroke:#fff;stroke-width:1}
+/* «Пульс маркета»: цвета серий проверены валидатором палитры на фоне #150d34 (линия, действия, звёзды) */
+.chc{--cl:#e8489f;--cb:#7a62f0;--cs:#bf8a00;--surf:#150d34}
+.chc svg:focus{outline:none}.chc svg:focus-visible{outline:2px solid var(--acc);outline-offset:4px}
+.chc .gl{stroke:#231a50;stroke-width:1}.chc .gb{stroke:#3a2c78;stroke-width:1}
+.chc svg text.ax{fill:#8f82c4;font-size:11px;font-variant-numeric:tabular-nums}
+.chc svg text.lab{fill:#a99be0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.chc .ln{fill:none;stroke:var(--cl);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chc .ar{fill:var(--cl);fill-opacity:.1;stroke:none}
+.chc .ed{fill:var(--cl);stroke:var(--surf);stroke-width:2}
+.chc .bar{fill:var(--cb);transition:fill .12s}.chc .bar.hl{fill:#a593ff}
+.chc .cn{fill:var(--cs)}.chc .cnh{fill:#e2b43c}
+.chc .xh{stroke:#efe3ff;stroke-opacity:.35;stroke-width:1}.chc .xd{fill:var(--cl);stroke:var(--surf);stroke-width:2}
 .chc .dr{stroke-dasharray:1;stroke-dashoffset:1;animation:chdraw 1s cubic-bezier(.3,.7,.2,1) forwards}
 .chc .fi{animation:chfade .9s ease both}
 .chc .pul{transform-box:fill-box;transform-origin:center;animation:chpul 1.8s ease-out infinite}
 @keyframes chdraw{to{stroke-dashoffset:0}}@keyframes chfade{from{opacity:0}}
 @keyframes chpul{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.5);opacity:0}}
-.chc-tip{position:absolute;top:-4px;left:0;z-index:2;pointer-events:none;min-width:104px;padding:6px 10px;background:rgba(24,14,64,.96);border:2px solid #7a58e0;color:#fff;font-size:14px;line-height:1.35;white-space:nowrap;opacity:0;transition:opacity .12s}
-.chc-tip.on{opacity:1}.chc-tip span{display:block;font-size:12px;color:#a99be0}.chc-tip b{display:block;font-size:16px;color:#fff}.chc-tip i{font-style:normal;color:#cdbfff}
+/* плашка: число главное и белое, подпись тише, рядом ключ серии в форме её метки (черта, столбик, монетка) */
+.chc-tip{position:absolute;top:0;left:0;z-index:2;pointer-events:none;padding:8px 10px;background:rgba(14,9,38,.97);border:1px solid #3a2c78;box-shadow:0 6px 20px rgba(0,0,0,.45);color:#a99be0;font-size:13px;line-height:1.45;white-space:nowrap;opacity:0;transition:opacity .12s}
+.chc-tip.on{opacity:1}.chc-tip .tt{display:block;margin-bottom:3px;font-size:12px;color:#8f82c4}
+.chc-tip div{display:flex;align-items:center;gap:6px}.chc-tip div b{font-size:15px;color:#fff;font-variant-numeric:tabular-nums}
+.chc-tip .k{flex:none;display:inline-block}.chc-tip .kl{width:12px;height:2px;background:#e8489f}.chc-tip .kb{width:8px;height:10px;border-radius:2px 2px 0 0;background:#7a62f0}.chc-tip .ks{width:8px;height:8px;background:#bf8a00;box-shadow:inset 0 2px #e2b43c}
 .chc-g{margin-top:10px}
 .chc-gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}.chc-gh b{font-size:15px;color:#ffd23f;letter-spacing:0}
 .chc-gb{position:relative;height:12px;margin-top:5px;background:#0d0724;border:2px solid #2a1f5e;overflow:hidden}
@@ -778,11 +793,16 @@ body:not(.onhome) .top{display:none}
 .chc svg text.hd{fill:#fff;font-size:14px;font-weight:700}.chc svg text.hs{fill:#a99be0;font-size:12px}
 .chc .gh{opacity:.55}
 .chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
-.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px;padding-top:6px;border-top:2px dashed #2f2360;text-align:center}
+.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:10px;border-top:1px solid #2a2160;text-align:center}
+.chc-tb{margin-top:10px;font-size:13px;color:var(--dim)}.chc-tb summary{cursor:pointer;color:#cdbfff;width:max-content}
+.chc-tb [data-tb]{max-height:260px;overflow:auto;margin-top:6px}
+.chc-tb table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.chc-tb th,.chc-tb td{padding:5px 6px;text-align:right;border-bottom:1px solid #231a50;white-space:nowrap}.chc-tb th{position:sticky;top:0;background:#130b31;color:#a99be0;font-weight:500}
+.chc-tb th:first-child,.chc-tb td:first-child{text-align:left}.chc-tb td{color:#e9ddff}
 .chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .chc-n{margin-top:8px;font-size:13px;line-height:1.3;color:var(--dim)}
 .chc-lg{display:flex;gap:12px;font-size:12px;color:var(--dim);white-space:nowrap}.chc-lg span{display:inline-flex;align-items:center;gap:5px}
-.chc-lg i{display:inline-block;font-style:normal}.chc-lg .la{width:8px;height:12px;border-radius:2px;background:linear-gradient(#c9a4ff,#6a35e0)}.chc-lg .ls{color:#ffd23f;font-size:13px;line-height:1}.chc-lg .lc{width:14px;height:3px;border-radius:2px;background:linear-gradient(90deg,#ffb23f,#ff5ec4)}
+.chc-lg i{display:inline-block;font-style:normal}.chc-lg .ll{width:14px;height:2px;background:#e8489f}.chc-lg .lb{width:8px;height:11px;border-radius:2px 2px 0 0;background:#7a62f0}.chc-lg .ls2{width:9px;height:9px;background:#bf8a00;box-shadow:inset 0 2px #e2b43c}.chc-lg .la{width:8px;height:12px;border-radius:2px;background:linear-gradient(#c9a4ff,#6a35e0)}.chc-lg .ls{color:#ffd23f;font-size:13px;line-height:1}.chc-lg .lc{width:14px;height:3px;border-radius:2px;background:linear-gradient(90deg,#ffb23f,#ff5ec4)}
 .chc-s .gold b{color:#ffd23f}.chc-tip em{font-style:normal;color:#ffd23f}
 .chc .sst{filter:drop-shadow(0 0 4px rgba(255,210,63,.7))}
 @media(max-width:420px){.chc-h{flex-direction:column;align-items:flex-start}.chc-lg{gap:10px;font-size:11px}}
@@ -851,6 +871,8 @@ html.desk .dock{width:min(var(--col),600px);height:66px}
 
 /* Store: cards in a grid */
 html.desk .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:22px}
+/* большой монитор: две широкие колонки вместо трёх мелких (карточка масштабируется по ширине) */
+@media(min-width:1500px){html.desk .list{grid-template-columns:repeat(auto-fill,minmax(600px,1fr));gap:26px}}
 html.desk .list>.empty,html.desk .list>.nofound{grid-column:1/-1}
 
 /* Home: hero on the left, news + links on the right */
@@ -892,6 +914,16 @@ html.desk .ns .nw-h time{font-size:clamp(15px,1.8vh,19px)}
 html.desk .lnks{gap:14px}
 html.desk .lnks .lbtn{height:clamp(58px,7.4vh,84px);font-size:clamp(24px,3.1vh,32px)}
 html.desk .lnks .lbtn svg{width:clamp(24px,3vh,32px);height:clamp(24px,3vh,32px)}
+/* Десктоп, главная, одна композиция по центру экрана: слева крупная шапка (логотип + голубь) прямо над витриной,
+   справа новости и ссылки на всю высоту. .home растворяется (display:contents), её колонки встают в сетку .app,
+   поэтому нет отдельной узкой полосы с маленьким логотипом и пустоты по бокам. */
+html.desk{--hh:clamp(160px,25vh,300px)}
+html.desk body.onhome .app{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);grid-template-rows:auto auto;column-gap:clamp(40px,5vw,120px);row-gap:clamp(4px,1.5vh,20px);
+  align-content:center;min-height:calc(var(--vh) - var(--top));padding-top:clamp(12px,3vh,36px)}
+html.desk body.onhome .home{display:contents}
+html.desk body.onhome .app>.top{grid-column:1;grid-row:1;justify-self:center;align-self:end}
+html.desk body.onhome .ts{grid-column:1;grid-row:2;align-self:start}
+html.desk body.onhome .pn{grid-column:2;grid-row:1/span 2;align-self:center;width:100%;max-width:640px;justify-self:start}
 
 /* Community: slogan + help button + chart | sponsors */
 html.desk body.onclub .club{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 56px;align-items:start;padding-top:8px}
@@ -1050,11 +1082,12 @@ html.desk .chc svg text{font-size:13px}html.desk .chc svg text.pt{font-size:12px
 <body class="scan">
 <div class="rot" id="rot" role="alert" aria-live="assertive"><i aria-hidden="true"></i><b>Поверните телефон вертикально</b><small>Coopix Market работает в портретном режиме</small></div>
 <canvas id="bg" aria-hidden="true"></canvas>
-<div class="boot" id="boot"><div>loading…<button class="lite" id="lite" type="button">Lite version</button><div class="lite-h">no effects, fastest start</div></div></div>
-<script>(function(){var b=document.getElementById("lite");if(!b)return;
-function get(){try{return JSON.parse(localStorage.getItem("am.settings")||"{}")}catch(e){return{}}}
-if(String(get().quality)==="0"){b.textContent="Lite mode is on";b.disabled=true;return}
-b.onclick=function(){var s=get();s.quality="0";try{localStorage.setItem("am.settings",JSON.stringify(s))}catch(e){}b.textContent="Switching…";b.disabled=true;location.reload()}})();</script>
+<div class="boot" id="boot"><div>загрузка…<button class="lite" id="lite" type="button">Лёгкая версия</button><div class="lite-h">без эффектов, до закрытия приложения</div></div></div>
+<script>/* лёгкий режим с экрана загрузки действует только до закрытия приложения (sessionStorage): следующий запуск снова полный */
+(function(){var b=document.getElementById("lite");if(!b)return;
+function on(){try{return sessionStorage.getItem("am.lite")==="1"}catch(e){return false}}
+if(on()){b.textContent="Лёгкий режим включён";b.disabled=true;return}
+b.onclick=function(){try{sessionStorage.setItem("am.lite","1")}catch(e){}b.textContent="Переключаем…";b.disabled=true;location.reload()}})();</script>
 
 <main class="app">
   <header class="top">
@@ -1110,7 +1143,13 @@ const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait=ms=>new Promise(r=>setTimeout(r,RM?0:ms));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const SET=Object.assign({shader:true,stars:true,sound:false,scan:true,quality:"auto",bg:"mix"},store.get("am.settings",{}));
-const saveSet=()=>store.set("am.settings",SET);
+/* Качество не переживает перезапуск: каждый запуск начинается в полном режиме.
+   Выбор в настройках и кнопка «Лёгкая версия» живут в sessionStorage (до закрытия приложения), в localStorage всегда "auto". */
+const ses={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}};
+SET.quality=ses.get("am.lite")==="1"?"0":ses.get("am.q")||"auto";
+const saveSet=()=>store.set("am.settings",{...SET,quality:"auto"});
+if(String(store.get("am.settings",{}).quality||"auto")!=="auto")saveSet(); /* у кого лёгкий режим застрял с прошлых версий */
+try{localStorage.removeItem("am.qauto")}catch(e){}
 /* quality: 2 high, 1 mid, 0 low. Auto = hints from the device, then a frame-time governor can step it down */
 const MEM=navigator.deviceMemory||8,CORES=navigator.hardwareConcurrency||4,SAVE=!!(navigator.connection&&navigator.connection.saveData);
 let Q=2,FI=33,BI=33;
@@ -1123,7 +1162,8 @@ function gpuWeak(){if(GPUW>=0)return GPUW;GPUW=1;try{const c=document.createElem
 const autoQ=()=>SAVE||OLD||MEM<=2||CORES<=2||gpuWeak()?0:navigator.deviceMemory&&MEM<=4?1:2;
 function applyQ(){document.documentElement.dataset.q=Q;FI=[100,50,40][Q];BI=[250,100,50][Q];bgPainted=false}
 var bgPainted=false;
-Q=String(SET.quality)==="auto"?Math.min(autoQ(),store.get("am.qauto",2)):+SET.quality;applyQ();
+/* старт всегда полный (2); «Авто» может понизить качество позже, по реальной плавности, и только до закрытия приложения */
+Q=String(SET.quality)==="auto"?2:+SET.quality;applyQ();
 
 /* ============ icons ============ */
 function gear(cx,cy,r1,r2,n){let d="";for(let i=0;i<n;i++){const a=i/n*Math.PI*2,w=Math.PI/n*.5,w2=Math.PI/n*.3;
@@ -1587,12 +1627,15 @@ class Card{
 
 /* ============ main loop ============ */
 let T0=performance.now();
-let LC=0,GT=0,GN=0,GL=0;
+let LC=0,GT=0,GN=0,GL=0,GOV0=0;
+/* «Авто»: понижает качество, если кадры долгие. Первые 6 с после старта не меряем (появление карточек, догрузка обложек),
+   и понижение не сохраняется: следующий запуск снова полный */
 function gov(now){
+  if(!GOV0)GOV0=now+6000;if(now<GOV0){GL=0;return}
   if(String(SET.quality)!=="auto"||PGO||document.hidden||Q===0){GL=0;return}
   if(!GL){GL=now;return}const d=now-GL;GL=now;if(d>200)return;
   if(++GN<=45)return;GT+=d;
-  if(GN>=105){const avg=GT/60;GT=0;GN=0;if(avg>38){Q=avg>65?0:Q-1;store.set("am.qauto",Q);applyQ();bgResize();for(const c of CARDS)c.applyQ();if(Q===0)toast("Включён облегчённый режим: эффекты выключены ради плавности")}}}
+  if(GN>=105){const avg=GT/60;GT=0;GN=0;if(avg>38){Q=avg>65?0:Q-1;applyQ();bgResize();for(const c of CARDS)c.applyQ();if(Q===0)toast("Включён облегчённый режим: эффекты выключены ради плавности")}}}
 function frame(now){
   const t=(now-T0)/1000;gov(now);
   if(!PGO&&now-LC>=FI-3){LC=now;for(const c of CARDS)if(c.m)c.tick(now,t)}
@@ -1709,7 +1752,7 @@ const SORTS=[["def","Как в каталоге"],["rate","Оценки отзы
 let FL=Object.assign({sort:"def",r4:0,sup:0},store.get("am.fl.v1",{}));const saveFL=()=>store.set("am.fl.v1",FL);
 const passF=m=>{const g=gstat(m);return(!FL.r4||g.rated&&g.rating>=4)&&(!FL.sup||g.stars>0)};
 function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat(m);
-    return FL.sort==="rate"?[g.rated?g.rating:-1,g.rated]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.plays,g.pp]:[g.reviews,g.rating]};
+    return FL.sort==="rate"?[g.rated?g.rating:-1,g.rated]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.pp,g.dp]:[g.reviews,g.rating]};
   return rows.map((m,i)=>({m,i,k:k(m)})).sort((a,b)=>b.k[0]-a.k[0]||b.k[1]-a.k[1]||a.i-b.i).map(x=>x.m)}
 function drawFbar(){const el=$("#fbar");if(!el)return;const lb=(SORTS.find(x=>x[0]===FL.sort)||SORTS[0])[1];
   el.innerHTML=`<button type="button" class="fsort" id="fsort" aria-haspopup="menu" data-keep="1"><span>Сортировка:</span> <b>${lb}</b> ▾</button>
@@ -1915,10 +1958,9 @@ function openProfileEditor(){
     if(d.photo!==PROF.photo)PROF.tgph=0;
     Object.assign(PROF,{color:d.color,photo:d.photo});if(ch){PROF.custom=1;act("profile")}saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
 
-/* ============ графики капитализации ============ */
-/* ВНИМАНИЕ: цифры демонстрационные. Настоящие значения подставьте в CAP ниже (now = текущая капитализация, ресурс/цена считаются от активности) */
-/* Цена 1 COOP в ₽: капитализация актива = ресурс COOP × цена. Ресурс копится из действий игроков (веса WEIGHTS), цену задайте здесь. */
-const CAP={cur:"₽",price:1,res:"COOP"};
+/* ============ график «Пульс маркета» (вкладка кубка) ============ */
+/* Очки активности копятся из действий игроков (веса WEIGHTS в api/_lib/hub.js); денег на графике нет. */
+const CAP={price:1,res:"COOP"};
 const PER=[["24ч"],["7д"],["30д"],["Всё"]];
 const nf=n=>Math.round(n).toLocaleString("ru-RU");
 const cf=n=>n>=1e6?(n/1e6).toFixed(1).replace(".",",")+"M":n>=1e3?(n/1e3).toFixed(n>=1e5?0:1).replace(".",",")+"К":Math.round(n)+"";
@@ -1942,72 +1984,94 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
   for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
-const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div>`;
-function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность игроков</div><div class="chc-lg" aria-hidden="true"><span><i class="la"></i>действия</span><span>${goldIc}поддержка</span><span><i class="lc"></i>капитализация</span></div></div>${chBody(HA,"График: действия игроков, звёзды авторам и капитализация")}
-    <div class="chc-s" data-s></div></div></section>`}
+const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" tabindex="0" aria-label="${label}"></svg><div class="chc-tip" data-tip role="status" aria-live="polite"></div></div>`;
+/* «Пульс маркета»: три полосы на общей оси времени. Сверху линия «очки активности» (накопленный итог действий),
+   ниже столбцы «действия» за отрезок, внизу строка «звёзды» (поддержка авторов). Цвета проверены валидатором палитры
+   (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
+function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Пульс маркета</h3>
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Очки активности</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>всего очков</span><span><i class="lb"></i>действия</span><span><i class="ls2"></i>звёзды</span></div></div>${chBody(HA,"График: очки активности, действия игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
+    <div class="chc-s" data-s></div>
+    <details class="chc-tb"><summary>Таблица</summary><div data-tb></div></details></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
-    const run=()=>{W=Math.max(280,Math.round(svg.parentElement.clientWidth)||CW);svg.setAttribute("viewBox",`0 0 ${W} ${W>700?230:HA}`);
+    const run=()=>{W=Math.max(280,Math.round(svg.parentElement.clientWidth)||CW);svg.setAttribute("viewBox",`0 0 ${W} ${W>700?260:HA+20}`);
       box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
     if(window.ResizeObserver){let lw=0;const ro=new ResizeObserver(()=>{if(!box.isConnected){ro.disconnect();return}const w=Math.round(svg.parentElement.clientWidth);if(lw&&Math.abs(w-lw)>8)run();lw=w});ro.observe(svg.parentElement)}
     box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});
     const out=e=>{if(!box.isConnected){document.removeEventListener("pointerdown",out);return}if(!e.target.closest||e.target.closest("svg")!==svg)box._off&&box._off()};document.addEventListener("pointerdown",out);run()};
   /* ведение пальцем: плашка с цифрами остаётся после отрыва пальца, скрывается касанием вне графика; мышь: наведение показывает, клик закрепляет */
-  const attach=(box,svg,n,pl,pr,show,hide)=>{const tip=box.querySelector("[data-tip]");let pin=false;
+  /* Плашка встаёт сбоку от перекрестья (у правого края — слева от него), чтобы не закрывать точку, на которую смотрят.
+     Клавиатура: фокус на графике, стрелки листают отрезки, Home/End — края, Esc — убрать. */
+  const attach=(box,svg,n,pl,pr,show,hide)=>{const tip=box.querySelector("[data-tip]");let pin=false,cur=-1;
     const idx=e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;return clamp(Math.round((px-pl)/(W-pl-pr)*(n-1)),0,n-1)};
-    const go=i=>{box.classList.add("used");const o=show(i);tip.innerHTML=o.html;tip.classList.add("on");
-      const sw=svg.clientWidth,w=tip.offsetWidth,px=o.x/W*sw;tip.style.left=clamp(px-w/2,0,Math.max(0,sw-w))+"px"};
-    const off=()=>{pin=false;tip.classList.remove("on");hide()};box._off=off;
+    const go=i=>{cur=i;box.classList.add("used");const o=show(i);tip.innerHTML=o.html;tip.classList.add("on");
+      const sw=svg.clientWidth,w=tip.offsetWidth,px=o.x/W*sw,gap=12,right=px+gap+w<=sw;
+      tip.style.left=(right?px+gap:clamp(px-gap-w,0,Math.max(0,sw-w)))+"px"};
+    const off=()=>{pin=false;cur=-1;tip.classList.remove("on");hide()};box._off=off;
     svg.onpointerdown=e=>{pin=true;go(idx(e))};svg.onpointermove=e=>{if(e.pointerType==="mouse"||pin)go(idx(e))};
-    svg.onpointerleave=e=>{if(e.pointerType==="mouse"&&!pin)off()}};
+    svg.onpointerleave=e=>{if(e.pointerType==="mouse"&&!pin)off()};
+    svg.onfocus=()=>{if(cur<0)go(n-1)};svg.onblur=()=>{if(!pin)off()};
+    svg.onkeydown=e=>{const k=e.key,m={ArrowLeft:-1,ArrowRight:1}[k];
+      if(m){e.preventDefault();go(clamp((cur<0?n-1:cur)+m,0,n-1))}else if(k==="Home"){e.preventDefault();go(0)}else if(k==="End"){e.preventDefault();go(n-1)}else if(k==="Escape")off()}};
   const ticks=n=>[...new Set([0,.25,.5,.75,1].map(k=>Math.round(k*(n-1))))];
-  const empty=(box,svg,h)=>{svg.innerHTML=`<text x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";const g=box.querySelector("[data-g]");g&&(g.innerHTML="");box._off=null};
-  /* изменение за период: от нуля процент не считаем (деление на 0), показываем прирост в деньгах */
+  const empty=(box,svg,h)=>{svg.innerHTML=`<text class="hs" x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";const t=box.querySelector("[data-tb]");t&&(t.innerHTML="");box._off=null};
+  /* изменение за период: от нуля процент не считаем (деление на 0), показываем прирост в очках */
   const delta=(el,a,b,tail,unit)=>{
     if(a>0){const ch=(b/a-1)*100,up=ch>=0,big=Math.abs(ch)>=1000;el.className="chc-d "+(up?"up":"dn");el.textContent=big?"▲ ×"+(b/a).toFixed(0)+" "+tail:(up?"▲ +":"▼ ")+Math.abs(ch).toFixed(1).replace(".",",")+"% "+tail}
     else if(b>0){el.className="chc-d up";el.textContent="▲ +"+fx(b-a)+" "+unit+" "+tail}
     else{el.className="chc-d nu";el.textContent="● Старт положен · ждём первых игроков"}};
-  /* призрачная кривая «потенциала» для пустого графика */
-  const ghost=(xs,y0,hgt)=>{const n=xs.length,ys=xs.map((_,i)=>y0-hgt*Math.pow(i/(n-1),1.7));return curve(xs,ys)};
-  const star=(x,y)=>`<g transform="translate(${x} ${y})" class="glow"><path d="M0-7L2.1-2.2L7.4-2.1L3.3 1.2L4.7 6.5L0 3.5L-4.7 6.5L-3.3 1.2L-7.4-2.1L-2.1-2.2Z" fill="#ffd23f" stroke="#fff" stroke-width=".8"/></g>`;
-  /* цель: ближайший круглый рубеж и полоса прогресса */
-  const goal=(el,v)=>{const g=GOALS.find(x=>x>v);if(!g){el.innerHTML='<div class="chc-gh"><span>Все цели достигнуты</span><b>★</b></div>';return}
-    const pc=v/g*100;el.innerHTML=`<div class="chc-gh"><span>Следующая цель</span><b>${nf(g)} ${CAP.cur}</b></div><div class="chc-gb"><i style="--w:0%"></i></div><div class="chc-gp">${pc<1&&v>0?"меньше 1":pc.toFixed(pc<10?1:0).replace(".",",")}% · осталось ${nf(g-v)} ${CAP.cur}</div>`;
-    const bar=el.querySelector("i");requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.setProperty("--w",Math.max(3,pc)+"%")))};
-  /* График сообщества: сверху столбцы действий игроков, над ними золотые звёзды «спасибо автору» (размер по сумме),
-     снизу линия капитализации. Подписи только там, где без них не понять: ось денег справа и даты внизу. Остальное в плашке при касании. */
+  /* Пульс маркета: три полосы на общей оси времени (у каждой своя шкала, поэтому они не смешиваются в один график).
+     1) линия «очки активности»: накопленный итог, 2px, лёгкая заливка ~10%, точка в конце с кольцом цвета фона;
+     2) столбцы «действия» за отрезок: до 24px, скруглён только верх, 2px зазор между соседями, справа максимум шкалы;
+     3) строка «звёзды»: пиксельные монетки, сторона растёт с суммой (корень, чтобы крупная сумма не заслоняла остальное).
+     Сетка сплошная и тихая; без svg-фильтров свечения и бесконечных анимаций: линия прорисовывается один раз. */
+  const colPath=(x,y,w,h)=>{const r=Math.min(3,w/2,h),f=v=>v.toFixed(1);
+    return `M${f(x)} ${f(y+h)}V${f(y+r)}Q${f(x)} ${f(y)} ${f(x+r)} ${f(y)}H${f(x+w-r)}Q${f(x+w)} ${f(y)} ${f(x+w)} ${f(y+r)}V${f(y+h)}Z`};
+  const coin=(x,y,s)=>{const h=s/2,p=Math.max(1.5,s/5),f=v=>v.toFixed(1);
+    return `<rect class="cn" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(s)}"/><rect class="cnh" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(p)}"/>`};
+  /* таблица: те же цифры без наведения (строится только когда её открыли) */
+  const table=(box,dt)=>{const el=box.querySelector("[data-tb]"),dd=box.querySelector("details");if(!el||!dd)return;
+    const fill=()=>{el.innerHTML=`<table><thead><tr><th>Время</th><th>Действия</th><th>Звёзды</th><th>Очки, всего</th></tr></thead><tbody>${dt.slice().reverse().map(o=>`<tr><td>${o.tf||o.t}</td><td>${nf(o.a)}</td><td>${nf(o.s||0)}</td><td>${nf(o.res)}</td></tr>`).join("")}</tbody></table>`};
+    dd.ontoggle=()=>{if(dd.open)fill()};if(dd.open)fill();else el.innerHTML=""};
+  const PLA=["действие","действия","действий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
-    const pl=6,pr=50,aT=14,aB=Math.round(H*.3),bT=aB+18,bB=H-22,acts=dt.map(o=>o.a),stars=dt.map(o=>o.s||0),mxA=Math.max(...acts),mxS=Math.max(...stars),sa=nscale(0,Math.max(mxA,4),2),
-      cv=dt.map(o=>o.cap),mx=Math.max(...cv),sc=scaleOf(cv),lo=sc.lo,hi=sc.hi,
-      X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,Math.min(26,(W-pl-pr)/n*.62)),
-      dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),totS=stars.reduce((s,a)=>s+a,0),none=mxA<=0&&mx<=0;
-    /* ось денег: только низ, середина и верх */
+    const narrow=W<420,pl=2,pr=narrow?40:50,lT=12,lB=Math.round(H*.48),aT=lB+30,sY=H-30,aB=sY-15,xB=H-4,
+      acts=dt.map(o=>o.a),stars=dt.map(o=>o.s||0),rv=dt.map(o=>o.res),mxA=Math.max(...acts),mxS=Math.max(...stars),
+      sa=nscale(0,Math.max(mxA,4),1),sc=scaleOf(rv),lo=sc.lo,hi=sc.hi,
+      slot=(W-pl-pr)/n,bw=Math.max(2,Math.min(24,slot-2)), /* 2px зазор между соседними столбцами */
+      X=i=>pl+slot*(i+.5),Y=v=>lT+(lB-lT)*(1-(v-lo)/((hi-lo)||1)),xs=rv.map((_,i)=>X(i)),ys=rv.map(Y),d=curve(xs,ys),
+      an=anim(),last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),totS=stars.reduce((s,a)=>s+a,0),quiet=mxA<=0&&rv[n-1]<=0,
+      x0=pl,x1=W-pr,cx=(x0+x1)/2,ax=x1+6;
+    /* шкала очков: низ, середина, верх */
     const tk=sticks(sc),keep=tk.length<=3?tk:[tk[0],tk[Math.round((tk.length-1)/2)],tk[tk.length-1]];
-    let g=`<line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/>`;
-    keep.forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#241a52"}"${v===lo?"":' stroke-dasharray="2 5"'}/><text x="${W-pr+14}" y="${y+4}">${fv(v)}</text>`});
-    const bars=dt.map((o,i)=>{const h=o.a>0?Math.max(4,(aB-aT)*o.a/sa.hi):0;return h?`<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="url(#aB${pi})"/>`:""}).join("");
-    /* звёзды: над столбцом, размер растёт с суммой (корень, чтобы крупная сумма не заслоняла остальное) */
-    const sts=stars.map((v,i)=>{if(!v)return"";const k=.75+.75*Math.sqrt(v/mxS),h=acts[i]>0?Math.max(4,(aB-aT)*acts[i]/sa.hi):0;
-      return `<g class="sst" transform="translate(${xs[i]} ${Math.max(9,aB-h-9*k)}) scale(${k.toFixed(2)})" shape-rendering="crispEdges"><rect x="-6" y="-6" width="12" height="12" fill="#ffc72c"/><rect x="-6" y="-6" width="12" height="2" fill="#fff1a0"/><rect x="-6" y="-6" width="2" height="12" fill="#fff1a0"/><rect x="-6" y="4" width="12" height="2" fill="#a86d00"/><rect x="4" y="-6" width="2" height="12" fill="#a86d00"/></g>`}).join("");
-    const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-5}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
-    let extra="";if(none)extra=`<path class="gh${fi}" d="${ghost(xs,bB,(bB-bT)*.6)}" fill="none" stroke="#ff9a5e" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
-      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+22}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+40}" text-anchor="middle">каждое действие добавит столбик</text>`;
-    svg.innerHTML=`<defs><linearGradient id="aB${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a4ff"/><stop offset="1" stop-color="#6a35e0"/></linearGradient>
-      <linearGradient id="aL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ffb23f"/><stop offset=".6" stop-color="#ff7a8a"/><stop offset="1" stop-color="#ff5ec4"/></linearGradient>
-      <linearGradient id="aA${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a5e" stop-opacity=".38"/><stop offset="1" stop-color="#ff9a5e" stop-opacity="0"/></linearGradient></defs>${g}${tx}${bars}${sts}${extra}
-      <path class="${fi}" d="${d}L${xs[n-1]} ${bB}L${xs[0]} ${bB}Z" fill="url(#aA${pi})"/>
-      <path class="glow${dr}" pathLength="1" d="${d}" fill="none" stroke="url(#aL${pi})" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle class="pul" cx="${xs[n-1]}" cy="${ys[n-1]}" r="9" fill="#ffb23f" opacity=".4"/><circle cx="${xs[n-1]}" cy="${ys[n-1]}" r="4" fill="#ffb23f" stroke="#fff" stroke-width="1.5"/>
-      <g data-x style="display:none"><line y1="${aT-8}" y2="${bB}" stroke="#fff" opacity=".4"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
-    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+6)/H*100)+"%";
-    box.querySelector("[data-v]").textContent=fx(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),dt[0].cap,last.cap,"за "+PER[pi][0],CAP.cur);
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,["действие","действия","действий"])}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>поддержка</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
-    const barOf=i=>{let k=-1;for(let j=0;j<=i;j++)if(acts[j]>0)k++;return acts[i]>0?k:-1};
-    attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);const bi=barOf(i);brs.forEach((b,j)=>b.classList.toggle("hl",j===bi));
-      return{x:xs[i],html:`<span>${o.tf||o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} ${plr(o.a,["действие","действия","действий"])}${o.s?` · <em>поддержка ${nf(o.s)}</em>`:""}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
+    let g="";
+    keep.forEach(v=>{const y=Y(v).toFixed(1);g+=`<line class="${v===lo?"gb":"gl"}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="ax" x="${ax}" y="${(+y+4).toFixed(1)}">${fv(v)}</text>`});
+    /* полоса действий: подпись, верх шкалы и базовая линия */
+    g+=`<text class="lab" x="${x0}" y="${aT-9}">Действия</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
+    /* строка звёзд: тонкая дорожка и сумма за период справа */
+    g+=`<line class="gl" x1="${x0}" x2="${x1}" y1="${sY}" y2="${sY}"/><text class="ax" x="${ax}" y="${sY+4}">★${fv(totS)}</text>`;
+    const bars=acts.map((a,i)=>a>0?`<path class="bar" data-i="${i}" d="${colPath(xs[i]-bw/2,aB-Math.max(2,(aB-aT)*a/sa.hi),bw,Math.max(2,(aB-aT)*a/sa.hi))}"/>`:"").join("");
+    const coins=mxS>0?stars.map((v,i)=>v?coin(xs[i],sY,Math.min(Math.max(slot-2,4),6+8*Math.sqrt(v/mxS))):"").join(""):"";
+    const tix=[...new Set((narrow?[0,.5,1]:[0,.25,.5,.75,1]).map(k=>Math.round(k*(n-1))))];
+    const tx=tix.map(i=>`<text class="ax" x="${xs[i].toFixed(1)}" y="${xB}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
+    svg.innerHTML=`${g}${tx}
+      <path class="ar${an?" fi":""}" d="${d}L${xs[n-1].toFixed(1)} ${lB}L${xs[0].toFixed(1)} ${lB}Z"/>
+      <path class="ln${an?" dr":""}" pathLength="1" d="${d}"/>
+      <circle class="ed" cx="${xs[n-1].toFixed(1)}" cy="${ys[n-1].toFixed(1)}" r="4"/>
+      <g class="${an?"fi":""}">${bars}${coins}</g>
+      ${quiet?`<text class="hd" x="${cx}" y="${(lT+lB)/2}" text-anchor="middle">Пока тихо</text><text class="hs" x="${cx}" y="${(lT+lB)/2+18}" text-anchor="middle">каждое действие игроков добавит очки</text>`:""}
+      <g data-x style="display:none"><line class="xh" y1="${lT-4}" y2="${sY+8}"/><circle class="xd" r="4"/></g>`;
+    const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");let hb=null;
+    box.querySelector("[data-v]").innerHTML=`${nf(last.res)}<small>${plr(Math.round(last.res),PLO)}</small>`;
+    delta(box.querySelector("[data-d]"),dt[0].res,last.res,"за "+PER[pi][0],"очков");
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,PLA)}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)}</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
+    attach(box,svg,n,pl+slot/2,pr+slot/2,i=>{const o=dt[i],x=xs[i].toFixed(1);G.style.display="";gl.setAttribute("x1",x);gl.setAttribute("x2",x);gc.setAttribute("cx",x);gc.setAttribute("cy",ys[i].toFixed(1));
+      hb&&hb.classList.remove("hl");hb=svg.querySelector(`.bar[data-i="${i}"]`);hb&&hb.classList.add("hl");
+      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kl"></i><b>${nf(o.res)}</b>${plr(Math.round(o.res),PLO)} всего</div><div><i class="k kb"></i><b>${nf(o.a)}</b>${plr(o.a,PLA)}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)}</div>`}},
+      ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null});
+    table(box,dt)})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
 function renderClub(){
@@ -2128,8 +2192,8 @@ function openSettings(){
   panel.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;SET[k]=!SET[k];b.setAttribute("aria-checked",SET[k]);saveSet();
     document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound")sfx.tap();if(k==="shader"){closeSheet();render()}}));
   $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Фон: "+l)}));
-  $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;saveSet();
-    if(v==="auto"){store.set("am.qauto",2);Q=autoQ()}else Q=+v;applyQ();closeSheet();bgResize();render();toast("Качество: "+b.textContent)});
+  $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;ses.set("am.lite",null);ses.set("am.q",v==="auto"?null:v); /* до закрытия приложения */
+    Q=v==="auto"?2:+v;applyQ();closeSheet();bgResize();render();toast("Качество: "+b.textContent)});
   $("#reset")&&$("#reset").addEventListener("click",()=>{DATA=DEFAULTS.map(d=>({...d}));persist();closeSheet();tab=0;view=1;sync();render();toast("Карточки сброшены")})}
 
 function openEditor(id,preCover){
@@ -2586,7 +2650,7 @@ const useSrv=m=>!!SUB_API&&!!m.built;
 /* ============ каталог игр с сервера ============
    Список игр, доступ и обложки задаёт админ, всё хранится на сервере. Обложки-картинки приходят отдельно (cover = "img:<хэш>") и кэшируются по хэшу.
    Менять карточку может только главный админ (сразу для всех) или автор своей опубликованной игры (через одобрение админа). */
-let ROLE=null,CAT_OK=false,BOOTED=false;
+let ROLE=null,CAT_OK=false,BOOTED=false,CFG_ROLE=false;
 const CATK="am.cat.v1",COVK="am.cov.v1";let COV=store.get(COVK,{})||{};
 const isMain=()=>SUB_API?ROLE==="main":isAdmin();
 const canEdit=m=>!!m&&(SUB_API?ROLE==="main"||!!m.mine:!m.built||isAdmin());
@@ -2605,17 +2669,25 @@ async function admReq(r,q,method,body){
 const CAT_ERR={bad_link:"Ссылка должна начинаться с https://",bad_cover:"Картинка не подошла: нужна JPG/PNG обычного размера",title_required:"Нужно название",bad_tags:"Нужен хотя бы один тег",forbidden:"Нет прав на эту игру",not_found:"Игра не найдена",empty_patch:"Вы ничего не изменили"};
 const catErr=e=>CAT_ERR[e&&e.code]||(e&&e.status===413?"Картинка слишком большая":"Не удалось сохранить, попробуйте ещё раз");
 /* загружает каталог: у главного админа все игры (и скрытые), у остальных только видимые им */
+/* каталог из кэша прошлого запуска: маркет показывается сразу, свежий список приходит следом */
+function restoreCatalog(){const c=store.get(CATK,null);if(!Array.isArray(c)||!c.length)return false;
+  DATA=c.map(d=>({...d,cover:covOf(d.cover),bgimg:d.bref?COV[d.bref]||"":""}));CAT_OK=true;return true}
+const reRender=()=>{if(BOOTED&&!PGO&&(view===0||view===1))render()};
 async function loadCatalog(){
   if(!SUB_API)return;
   const prev=new Map([...DATA,...(store.get(CATK,null)||[])].map(d=>[d.id,d]));
   let list;
   try{list=ROLE==="main"?await admReq("games",{},"GET"):(await hub("games")).games}
-  catch(e){const c=store.get(CATK,null);if(Array.isArray(c)&&c.length){DATA=c.map(d=>({...d,cover:covOf(d.cover),bgimg:d.bref?COV[d.bref]||"":""}));CAT_OK=true}return}
+  catch(e){if(!CAT_OK)restoreCatalog();return}
   if(!Array.isArray(list))return;
-  DATA=list.map(g=>fromWire(g,prev.get(g.id)));CAT_OK=true;persist();
+  const sig=JSON.stringify(list),same=CAT_OK&&sig===store.get("am.catsig",""); /* ничего не поменялось: без перерисовки */
+  DATA=list.map(g=>fromWire(g,prev.get(g.id)));CAT_OK=true;persist();store.set("am.catsig",sig);
+  /* обложки и фоны догружаются в фоне: на старте ждём их совсем недолго, потом перерисуем */
   const need=[...DATA.filter(d=>/^img:/.test(d.cref||"")&&!/^data:/.test(d.cover||"")).map(d=>[d,""]),...DATA.filter(d=>/^img:/.test(d.bref||"")&&!/^data:/.test(d.bgimg||"")).map(d=>[d,"bg"])];
-  if(need.length)await Promise.race([Promise.all(need.map(async([d,k])=>{try{const j=await hub("cover",{q:k?{id:d.id,kind:k}:{id:d.id}});if(j.ref===(k?d.bref:d.cref)&&/^data:image\/jpeg/.test(j.img||"")){COV[j.ref]=j.img;if(k)d.bgimg=j.img;else d.cover=j.img}}catch(e){}})).then(saveCov),wait(5000)]);
-  if(BOOTED&&view===1)render()}
+  if(need.length){const p=Promise.all(need.map(async([d,k])=>{try{const j=await hub("cover",{q:k?{id:d.id,kind:k}:{id:d.id}});if(j.ref===(k?d.bref:d.cref)&&/^data:image\/jpeg/.test(j.img||"")){COV[j.ref]=j.img;if(k)d.bgimg=j.img;else d.cover=j.img}}catch(e){}}))
+      .then(()=>{saveCov();if(BOOTED)reRender()});
+    if(!BOOTED)await Promise.race([p,wait(700)])}
+  if(BOOTED&&!same)reRender()}
 /* правки автора: отправляем только изменённые поля, которые автору можно менять */
 function authorPatch(o,d){const p={},bg=v=>v==null||v===""?"auto":String(v),tn=t=>t?{h:Math.round(t.h),s:Math.round(t.s*100)/100}:null;
   if((d.desc||"")!==(o.desc||""))p.desc=d.desc||"";if((d.changes||"")!==(o.changes||""))p.changes=d.changes||"";if((d.version||"")!==(o.version||""))p.ver=d.version||"";
@@ -2639,7 +2711,8 @@ const fmtRate=v=>(+v||0).toFixed(1).replace(".",",");
 function gstat(m){
   if(useSrv(m)){const s=STATS[m.id]||{};return{plays:s.plays||0,pp:s.playPlayers||0,dl:s.downloads||0,dp:s.dlPlayers||0,rating:s.rating||0,rated:s.rated||0,reviews:s.reviews||0,stars:s.stars||0,backers:s.backers||0,srv:1}}
   const L=CM[m.id]||(SEED[m.id]?cmOf(m):[]),rt=L.filter(c=>c.r);
-  return{plays:m.played||0,pp:0,dl:+m.downloads||0,dp:0,rating:rt.length?rt.reduce((t,c)=>t+c.r,0)/rt.length:0,rated:rt.length,reviews:L.length,srv:0}}
+  /* без сервера игрок на этом устройстве один: запускал = 1, не запускал = 0 */
+  return{plays:m.played?1:0,pp:m.played?1:0,dl:+m.downloads?1:0,dp:+m.downloads?1:0,rating:rt.length?rt.reduce((t,c)=>t+c.r,0)/rt.length:0,rated:rt.length,reviews:L.length,srv:0}}
 const refreshCards=()=>LIVE.forEach(c=>c.setStars());
 async function loadStats(){
   if(!SUB_API)return;const ids=DATA.filter(d=>d.built).map(d=>d.id);if(!ids.length)return;
@@ -2649,9 +2722,9 @@ function paintPage(){
   if(!PG)return;const st=$("#pgStars");if(!st)return;const g=gstat(PG.m);
   st.innerHTML=starRow(Math.round(g.rating));st.setAttribute("aria-label",g.rated?"Рейтинг "+fmtRate(g.rating)+" из 5":"Оценок пока нет");
   $("#pgRate").textContent=g.rated?fmtRate(g.rating)+" · "+g.rated+" "+plr(g.rated,["оценка","оценки","оценок"]):"нет оценок";
-  const pl=nfmt(g.plays)+" "+plr(g.plays,["запуск","запуска","запусков"]),dl=nfmt(g.dl)+" "+plr(g.dl,["загрузка","загрузки","загрузок"]);
-  $("#pgPlays").textContent=g.srv?"Играли: "+nfmt(g.pp)+" "+plr(g.pp,PLW)+" · "+pl:pl;
-  $("#pgDl").textContent=g.srv?"Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW)+" · "+dl:dl;
+  /* только разные игроки: один игрок не считается дважды */
+  $("#pgPlays").textContent="Играли: "+nfmt(g.pp)+" "+plr(g.pp,PLW);
+  $("#pgDl").textContent="Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW);
   const sp=$("#pgSup");if(sp)sp.innerHTML=g.stars?`${ingots(g.stars)}<b>${nfmt(g.stars)}</b><span>поддержка · ${nfmt(g.backers)} ${plr(g.backers,PLW)}</span>`:""}
 
 /* ---- «Спасибо автору»: звёзды Telegram. Звёзды приходят на бот проекта и засчитываются автору игры ---- */
@@ -2839,6 +2912,7 @@ async function accessInit(){
     if(r.status===403){let j={};try{j=await r.json()}catch(e){}if(j.error==="banned"){banScreen(j.reason);return false}}
     if(!r.ok)return true;
     const c=await r.json();
+    if("role" in c){CFG_ROLE=true;ROLE=c.role||null;if(c.admin)ADMIN_OK=true} /* роль приходит вместе с настройками: /me на старте не нужен */
     if(Array.isArray(c.news))NEWS.splice(0,NEWS.length,...c.news);
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
   }catch(e){}
@@ -2917,12 +2991,18 @@ async function openAdmin(){
 
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
-  await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
-  try{await Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
-  if(!(await accessInit())){const b=$("#boot");b&&b.remove();return}
+  /* сеть и картинки параллельно: /config (доступ, роль, новости) уходит, пока декодируются спрайты и шрифты */
+  const cfgP=accessInit();
+  await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0,
+    Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')]).catch(()=>{})]);
+  if(!(await cfgP)){const b=$("#boot");b&&b.remove();return}
   {const n=tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера */
   profVisit();sync();if(!SUB_API)tgIdentity();
-  if(SUB_API){await Promise.race([adminProbe(),wait(1500)]);await Promise.race([loadCatalog(),wait(3500)]);await Promise.race([loadStats(),wait(1200)])}
+  if(SUB_API){
+    if(!CFG_ROLE)await Promise.race([adminProbe(),wait(1500)]); /* старый сервер без роли в /config */
+    /* есть кэш прошлого запуска: показываем его почти сразу, свежий каталог и счётчики приходят следом */
+    const cached=restoreCatalog(),cat=loadCatalog().then(loadStats);
+    await Promise.race([cat,wait(cached?250:3500)])}
   await render(true);BOOTED=true;act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
