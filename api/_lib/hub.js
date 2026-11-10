@@ -46,9 +46,36 @@ function parseBody(body) {
  * listReviews, getReview, getUserReview, saveReview, deleteReview,
  * addEvents, countEvents, lastEventTs, listEvents, firstEventTs, gameStats, activitySeries.
  */
-export function createHub({ store, botToken, notify = () => {}, adminIds = [] }) {
+/** Ник игрока = имя из Telegram (проверенный initData, обновляется при каждом заходе). Сменить его в приложении нельзя. */
+const tgName = (u) => clip(u?.first_name || u?.username || "", 16) || "Игрок";
+
+export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgFetch = (...a) => fetch(...a) }) {
   const pid = pidCodec(botToken);
   const json = (status, body) => ({ status, body });
+
+  /** Фото профиля Telegram через бота (браузер не может обработать картинку с t.me на canvas). Наименьший размер ≥ 128 px, только JPEG до 200 КБ. */
+  const tgPhotoAt = new Map(); // не чаще раза в 10 с на игрока в пределах одного экземпляра функции
+  async function tgPhoto(uid) {
+    const now = Date.now();
+    if ((tgPhotoAt.get(uid) ?? 0) > now - 10_000) return json(429, { error: "rate_limit" });
+    if (tgPhotoAt.size > 5000) tgPhotoAt.clear();
+    tgPhotoAt.set(uid, now);
+    const api = async (method, q) => (await tgFetch(`https://api.telegram.org/bot${botToken}/${method}?${new URLSearchParams(q)}`)).json();
+    try {
+      const ph = await api("getUserProfilePhotos", { user_id: String(uid), limit: "1" });
+      const sizes = ph?.ok ? ph.result?.photos?.[0] : null;
+      if (!Array.isArray(sizes) || !sizes.length) return json(200, { photo: "" }); // фото нет или скрыто настройками приватности
+      const s = [...sizes].sort((a, b) => a.width - b.width).find((x) => x.width >= 128) ?? sizes[sizes.length - 1];
+      const f = await api("getFile", { file_id: String(s.file_id) });
+      if (!f?.ok || !f.result?.file_path) return json(200, { photo: "" });
+      const img = await tgFetch(`https://api.telegram.org/file/bot${botToken}/${f.result.file_path}`);
+      const buf = Buffer.from(await img.arrayBuffer());
+      if (!img.ok || buf.length > 200_000 || buf[0] !== 0xff || buf[1] !== 0xd8) return json(200, { photo: "" });
+      return json(200, { photo: "data:image/jpeg;base64," + buf.toString("base64") });
+    } catch {
+      return json(502, { error: "telegram_unavailable" }); // без деталей: в URL токен бота
+    }
+  }
 
   // Не называть gameWire: это имя импортировано из games.js (страница игры), здесь только счётчики.
   const statsWire = (s = {}) => ({
@@ -63,7 +90,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [] })
   const gameIds = (v) => [...new Set(String(v ?? "").split(",").map((s) => s.trim()).filter((s) => GAME_ID.test(s)))].slice(0, 50);
 
   /** Имя и цвет автора. Фото отдельно (/avatars), чтобы список отзывов не тянул десятки килобайт. */
-  const authorWire = (p) => ({ n: p?.name || p?.first_name || "Игрок", c: COLOR.test(p?.color || "") ? p.color : "#a56bff", hp: !!p?.photo });
+  const authorWire = (p) => ({ n: tgName(p), c: COLOR.test(p?.color || "") ? p.color : "#a56bff", hp: !!p?.photo });
   async function authors(ids) {
     const rows = ids.length ? await store.profilesByIds(ids) : [];
     const by = new Map(rows.map((r) => [Number(r.tg_id), r]));
@@ -78,7 +105,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [] })
   const postWire = (p, hide) => (p && p.post_text && !hide ? { title: p.post_title, text: p.post_text, at: ts(p.post_at) } : null);
   const profileWire = (u, p, me) => ({
     id: pid.encode(u.tg_id), me, has: !!p, synced: !!p?.synced,
-    name: p?.name || u.first_name || "Игрок",
+    name: tgName(u),
     color: COLOR.test(p?.color || "") ? p.color : "#a56bff",
     photo: p?.photo || "",
     xp: p?.xp || 0, medals: p?.medals || {}, stats: p?.stats || {},
@@ -222,6 +249,12 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [] })
         return json(200, Object.fromEntries(rows.map((p) => [pid.encode(p.tg_id), { p: PHOTO.test(p.photo || "") ? p.photo : "", c: authorWire(p).c }])));
       }
 
+      // ---------- фото из Telegram (только своё) ----------
+      if (r === "tgphoto") {
+        if (m !== "GET") return bad();
+        return tgPhoto(uid);
+      }
+
       // ---------- профиль ----------
       if (r === "profile") {
         if (m === "GET") {
@@ -236,7 +269,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [] })
           if (!b) return json(400, { error: "bad_json" });
           const prev = await store.getProfile(uid);
           const f = {};
-          if (b.name !== undefined) f.name = clip(b.name, 16);
+          f.name = tgName(await store.getUser(uid)); // ник только из Telegram: присланный клиентом игнорируем
           if (b.color !== undefined) { if (!COLOR.test(b.color)) return json(400, { error: "bad_color" }); f.color = b.color.toLowerCase(); }
           if (b.photo !== undefined) {
             if (b.photo !== "" && !(typeof b.photo === "string" && b.photo.length <= PHOTO_MAX && PHOTO.test(b.photo))) return json(400, { error: "bad_photo" });
@@ -261,7 +294,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [] })
           if (prev?.synced) {
             const ev = [];
             const base = { user_id: uid, game_id: null, weight: 0, ts: new Date() };
-            if ((f.name !== undefined && f.name !== prev.name) || (f.color !== undefined && f.color !== prev.color) || (f.photo !== undefined && f.photo !== prev.photo)) ev.push({ ...base, type: "profile", meta: {} });
+            if ((f.color !== undefined && f.color !== prev.color) || (f.photo !== undefined && f.photo !== prev.photo)) ev.push({ ...base, type: "profile", meta: {} });
             for (const k of Object.keys(medals)) if (!prev.medals?.[k]) ev.push({ ...base, type: "medal", meta: { m: k } });
             if (lvOf(f.xp) > lvOf(prev.xp ?? 0)) ev.push({ ...base, type: "level", meta: { lv: lvOf(f.xp) } });
             if (ev.length) await store.addEvents(ev);

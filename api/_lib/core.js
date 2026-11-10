@@ -49,9 +49,9 @@ const toUser = (u, role) => ({
  * verify: (initData, botToken, maxAge) -> { ok, userId, user }
  * notify: (chatId, text) -> void
  */
-export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {} }) {
+export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgFetch }) {
   const json = (status, body) => ({ status, body });
-  const hub = createHub({ store, botToken, notify, adminIds });
+  const hub = createHub({ store, botToken, notify, adminIds, ...(tgFetch ? { tgFetch } : {}) });
 
   async function handle(req) {
     const v = verify(req.headers?.["x-tg-init"], botToken, maxAgeSec);

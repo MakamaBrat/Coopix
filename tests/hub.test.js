@@ -135,12 +135,12 @@ test("track: пачка из очереди «нет связи» берёт в�
   assert.ok(by.toxic >= now - 5);
 });
 
-test("профиль: снимок сохраняется, опыт и медали не откатываются, фото и цвет проверяются", async () => {
+test("профиль: снимок сохраняется, опыт и медали не откатываются, фото и цвет проверяются, ник только из Telegram", async () => {
   const { hub } = await world();
   const put = (b, who = ANN) => hub("profile", "PUT", who, { body: b });
   const ok = await put({ name: "  Анна  ", color: "#FF5EC4", photo: JPG, xp: 120, medals: { first: 1700000000000 }, stats: { plays: 3, ids: 2 } });
   assert.equal(ok.status, 200);
-  assert.equal(ok.body.name, "Анна"); assert.equal(ok.body.color, "#ff5ec4"); assert.equal(ok.body.xp, 120);
+  assert.equal(ok.body.name, "U42", "присланный ник игнорируется"); assert.equal(ok.body.color, "#ff5ec4"); assert.equal(ok.body.xp, 120);
   assert.equal(ok.body.me, true); assert.equal(ok.body.stats.plays, 3);
   const back = await put({ xp: 10, medals: { rev1: 1700000001000 }, stats: { plays: 1 } });
   assert.equal(back.body.xp, 120);
@@ -162,7 +162,7 @@ test("профиль другого игрока: по pid из отзыва, б
   const rv = (await review(hub, ANN)).body.item;
   const prof = await hub("profile", "GET", BOB, { query: { id: rv.pid } });
   assert.equal(prof.status, 200);
-  assert.equal(prof.body.name, "Анна"); assert.equal(prof.body.me, false); assert.equal(prof.body.xp, 60);
+  assert.equal(prof.body.name, "U42"); assert.equal(prof.body.me, false); assert.equal(prof.body.xp, 60);
   assert.deepEqual(prof.body.post.title, "Привет");
   assert.ok(!JSON.stringify(prof.body).includes('"42"'));
   assert.equal(prof.body.id, rv.pid);
@@ -229,7 +229,7 @@ test("журнал: пишет сервер (отзыв, пост, профил�
   const { hub, store } = await world();
   await hub("profile", "PUT", ANN, { body: { name: "A", xp: 10 } });              // первая синхронизация: событий нет
   assert.equal(store.events.length, 0);
-  await hub("profile", "PUT", ANN, { body: { name: "Анна", xp: 60, medals: { first: 1 } } });
+  await hub("profile", "PUT", ANN, { body: { name: "Анна", color: "#4dd2ff", xp: 60, medals: { first: 1 } } });
   await review(hub, ANN, { rating: 4 });
   await review(hub, ANN, { rating: 5, text: "Правка" });
   await hub("post", "PUT", ANN, { body: { text: "Привет" } });
@@ -320,4 +320,42 @@ test("профиль: synced = сервер уже хранит данные и�
   const after = (await hub("profile", "GET", ANN)).body;
   assert.equal(after.synced, true); assert.equal(after.xp, 60);
   assert.equal((await hub("profile", "GET", BOB, { query: { id: after.id } })).body.synced, true);
+});
+
+test("ник = имя из Telegram: меняется вместе с Telegram, в отзывах тоже", async () => {
+  const { hub, call } = await world();
+  const rv = (await review(hub, ANN)).body.item;
+  await call("me", "GET", init(ANN, { first_name: "Анна Новая" }));        // игрок переименовался в Telegram
+  const p = (await hub("profile", "GET", BOB, { query: { id: rv.pid } })).body;
+  assert.equal(p.name, "Анна Новая");
+  assert.equal((await hub("reviews", "GET", BOB, { query: { game: "retro" } })).body.authors[rv.pid].n, "Анна Новая");
+});
+
+test("фото из Telegram: через бота, только JPEG; нет фото = пустая строка; Telegram недоступен = 502 без деталей", async () => {
+  const { setup: _s } = await import("./mem.js");
+  const { createCore } = await import("../api/_lib/core.js");
+  const { verifyTelegramInitData } = await import("../api/_lib/telegramAuth.js");
+  const mk = (tgFetch) => {
+    const w = _s(); const core = createCore({ store: w.store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], tgFetch });
+    return (who) => core.handle({ route: "hub", method: "GET", headers: { "x-tg-init": init(who) }, query: { r: "tgphoto" } });
+  };
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+  const urls = [];
+  const ok = mk(async (u) => { urls.push(u);
+    if (u.includes("getUserProfilePhotos")) return { json: async () => ({ ok: true, result: { photos: [[{ file_id: "s", width: 160 }, { file_id: "m", width: 320 }, { file_id: "x", width: 90 }]] } }) };
+    if (u.includes("getFile")) return { json: async () => ({ ok: true, result: { file_path: "photos/a.jpg" } }) };
+    return { ok: true, arrayBuffer: async () => jpeg };
+  });
+  const r = await ok(ANN);
+  assert.equal(r.status, 200); assert.equal(r.body.photo, "data:image/jpeg;base64," + jpeg.toString("base64"));
+  assert.ok(urls[0].includes("user_id=42")); assert.ok(urls[1].includes("file_id=s"), "наименьший размер от 128 px");
+  assert.equal((await ok(ANN)).status, 429, "не чаще раза в 10 секунд");
+  const none = mk(async () => ({ json: async () => ({ ok: true, result: { photos: [] } }) }));
+  assert.equal((await none(ANN)).body.photo, "");
+  const png = mk(async (u) => u.includes("getUserProfilePhotos") ? { json: async () => ({ ok: true, result: { photos: [[{ file_id: "s", width: 160 }]] } }) }
+    : u.includes("getFile") ? { json: async () => ({ ok: true, result: { file_path: "a" } }) } : { ok: true, arrayBuffer: async () => Buffer.from([0x89, 0x50]) });
+  assert.equal((await png(ANN)).body.photo, "");
+  const down = mk(async () => { throw new Error("ECONNRESET https://api.telegram.org/bot" + TOK); });
+  const d = await down(ANN);
+  assert.equal(d.status, 502); assert.ok(!JSON.stringify(d.body).includes(TOK));
 });

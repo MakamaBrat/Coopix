@@ -1700,7 +1700,7 @@ const MEDALS=[
  {id:"rev5",n:"Голос маркета",d:"Напишите 5 отзывов",c:"#ff8a3d",ic:"chat",xp:40,v:p=>p.reviews,need:5},
  {id:"fav3",n:"Коллекционер",d:"Добавьте 3 игры в избранное",c:"#ff5e7a",ic:"heart",xp:25,v:p=>p.favs.length,need:3},
  {id:"make1",n:"Создатель",d:"Добавьте свою карточку",c:"#7fb2ff",ic:"plus",xp:30,v:p=>p.made,need:1},
- {id:"me",n:"Личность",d:"Смените ник или аватар",c:"#ff5ec4",ic:"user",xp:10,v:p=>p.custom,need:1},
+ {id:"me",n:"Личность",d:"Смените аватар или цвет рамки",c:"#ff5ec4",ic:"user",xp:10,v:p=>p.custom,need:1},
  {id:"days3",n:"Постоянный гость",d:"Зайдите в 3 разных дня",c:"#4dd2ff",ic:"star",xp:20,v:p=>p.days,need:3},
  {id:"days7",n:"Свой в маркете",d:"Зайдите в 7 разных дней",c:"#ffe27a",ic:"star",xp:50,v:p=>p.days,need:7}];
 const dayKey=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
@@ -1811,20 +1811,21 @@ function openProfileEditor(){
   <div class="pbody" lang="ru">
     <div class="av-row"><div class="pf-av" id="pfAv" style="--pc:${d.color}"><i></i></div>
       <div class="btns"><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer">Загрузить фото<input type="file" accept="image/*" hidden id="pfFile"></label><button class="btn ghost" id="pfNoPh" type="button">Голубь</button></div></div>
-    <label class="fld"><span class="lbl">Ник</span><input class="in" id="pfName" maxlength="16" placeholder="Ваш ник" value="${esc(d.name)}"></label>
+    <div class="fld"><span class="lbl">Ник</span><div class="in" id="pfName" aria-readonly="true" style="opacity:.75">${esc(d.name)}</div><p class="hint2" style="text-align:left;margin-top:6px">Ник берётся из Telegram. Поменяйте имя в Telegram, и оно обновится здесь.</p></div>
     <div class="fld"><span class="lbl">Цвет рамки</span><div class="sw" id="pfSw" role="radiogroup" aria-label="Цвет рамки">${AVC.map(c=>`<button type="button" role="radio" aria-checked="${c===d.color}" data-c="${c}" style="--sc:${c}" aria-label="${c}"></button>`).join("")}</div></div>
   </div>
   <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="pfSave">Сохранить</button></div></div>`);
   const av=$("#pfAv"),draw=()=>{const i=av.querySelector("i");av.style.setProperty("--pc",d.color);i.className=d.photo?"":"pg";i.style.backgroundImage=d.photo?`url(${d.photo})`:"url(assets/coopix-pigeon.png)"};draw();
-  $("#pfName").addEventListener("input",e=>{d.name=e.target.value});
   $("#pfSw").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;d.color=b.dataset.c;panel.querySelectorAll("#pfSw button").forEach(x=>x.setAttribute("aria-checked",x===b));draw();sfx.tap()});
   $("#pfNoPh").addEventListener("click",()=>{d.photo="";draw();sfx.tap()});
   $("#pfFile").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
     im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);d.photo=c.toDataURL("image/jpeg",.82);URL.revokeObjectURL(u);draw()};
     im.onerror=()=>{URL.revokeObjectURL(u);toast("Не удалось открыть картинку")};im.src=u});
-  $("#pfSave").addEventListener("click",()=>{const nm=(d.name||"").trim()||"Игрок";
-    const ch=nm!==PROF.name||d.color!==PROF.color||d.photo!==PROF.photo;
-    Object.assign(PROF,{name:nm,color:d.color,photo:d.photo});if(ch){PROF.custom=1;act("profile")}saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
+  $("#pfSave").addEventListener("click",()=>{
+    const ch=d.color!==PROF.color||d.photo!==PROF.photo;
+    /* свой аватар или «Голубь» = больше не подменяем фото из Telegram */
+    if(d.photo!==PROF.photo)PROF.tgph=0;
+    Object.assign(PROF,{color:d.color,photo:d.photo});if(ch){PROF.custom=1;act("profile")}saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
 
 /* ============ графики капитализации ============ */
 /* ВНИМАНИЕ: цифры демонстрационные. Настоящие значения подставьте в CAP ниже (now = текущая капитализация, ресурс/цена считаются от активности) */
@@ -2521,14 +2522,25 @@ let PSYNC=0,pushT=0,MYPID="";
 const snap=()=>({name:PROF.name,color:PROF.color,photo:PROF.photo,xp:PROF.xp,medals:PROF.medals,stats:{plays:PROF.plays,ids:PROF.ids.length,best:PROF.best,reviews:PROF.reviews,favs:PROF.favs.length,made:PROF.made,custom:PROF.custom,days:PROF.days}});
 function queuePush(now){if(!SUB_API||!PSYNC)return;clearTimeout(pushT);pushT=setTimeout(pushProfile,now?0:2500)}
 async function pushProfile(){clearTimeout(pushT);pushT=0;if(!SUB_API||!PSYNC)return;try{await hub("profile",{method:"PUT",body:snap()})}catch(e){}}
+/* ---- профиль из Telegram: ник всегда, фото пока игрок не поставил свой (PROF.custom). Фото через сервер раз в сутки ---- */
+const tgName=()=>{const u=tgU();return u?String(u.first_name||u.username||"").trim().slice(0,16):""};
+const jpeg128=src=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),s=Math.min(im.width,im.height);
+  x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);ok(c.toDataURL("image/jpeg",.82))};im.onerror=no;im.src=src});
+async function tgIdentity(){
+  if(!tgU())return;const n=tgName();let ch=0;if(n&&n!==PROF.name){PROF.name=n;ch=1}
+  if(SUB_API&&!PROF.custom&&(!PROF.photo||PROF.tgph)&&Date.now()-(+store.get("am.tgph",0)||0)>864e5){store.set("am.tgph",Date.now());
+    try{const j=await hub("tgphoto");if(!PROF.custom){const p=j.photo&&PHOTO_RE.test(j.photo)?await jpeg128(j.photo):"";
+      if(p!==PROF.photo&&(p||PROF.tgph)){PROF.photo=p;PROF.tgph=p?1:0;ch=1}}}catch(e){store.set("am.tgph",0)}}
+  if(ch){store.set("am.profile",PROF);if(view===3)renderProfile()}}
 async function pullProfile(n){
   if(!SUB_API)return;
   try{const j=await hub("profile");MYPID=j.id;
+    if(j.name)PROF.name=j.name; /* ник = имя из Telegram, сервер берёт его из проверенного initData */
     if(j.synced){
-      if(!PROF.custom&&j.name){PROF.name=j.name;PROF.color=COLOR_RE.test(j.color)?j.color:PROF.color;PROF.photo=PHOTO_RE.test(j.photo||"")?j.photo:""}
+      if(!PROF.custom){PROF.color=COLOR_RE.test(j.color)?j.color:PROF.color;if(PHOTO_RE.test(j.photo||"")){PROF.photo=j.photo;PROF.tgph=1}}
       PROF.xp=Math.max(PROF.xp,j.xp|0);for(const[k,v]of Object.entries(j.medals||{}))if(!PROF.medals[k]||PROF.medals[k]>v)PROF.medals[k]=v;
       const s=j.stats||{};for(const k of["plays","best","reviews","made","custom","days"])PROF[k]=Math.max(PROF[k]|0,s[k]|0)}
-    PROF.post=j.post||null;saveProf();PSYNC=1;await pushProfile();if(view===3)renderProfile()}
+    PROF.post=j.post||null;saveProf();PSYNC=1;await tgIdentity();await pushProfile();if(view===3)renderProfile()}
   catch(e){if(!n)setTimeout(()=>pullProfile(1),5000)}}
 
 /* ---- журнал действий: каждое действие = строка с временем ----
@@ -2720,7 +2732,8 @@ async function openAdmin(){
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
   try{await Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
   if(!(await accessInit())){const b=$("#boot");b&&b.remove();return}
-  profVisit();sync();
+  {const n=tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера */
+  profVisit();sync();if(!SUB_API)tgIdentity();
   if(SUB_API)await Promise.race([loadCatalog().then(loadStats),wait(1500)]);
   await render(true);BOOTED=1;adminProbe();act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
