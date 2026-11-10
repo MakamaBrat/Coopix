@@ -49,6 +49,81 @@ export function memStore() {
     async getSetting(k) { return settings.get(k) ?? null; },
     async setSetting(k, value, by) { settings.set(k, { value, updated_by: by, updated_at: new Date().toISOString() }); },
     async update(id, p) { const r = rows.find((x) => x.id === id); if (!r) return null; Object.assign(r, p); return strip(r); },
+
+    // ---- каталог игр и правки ----
+    games: new Map(), edits: [],
+    async listGames() { return [...this.games.values()].map((g) => ({ ...g, has_file: g.file_html != null })).sort((a, b) => a.sort - b.sort); },
+    async getGame(id) { const g = this.games.get(id); return g ? { ...g, has_file: g.file_html != null } : null; },
+    async gameHtml(id) { const g = this.games.get(id); return g ? { file_html: g.file_html ?? null } : null; },
+    // как в Postgres: insert падает на совпадении id и без title; update не создаёт строку
+    async createGame(row) {
+      if (this.games.has(row.id)) throw new Error("duplicate key value violates unique constraint games_pkey");
+      if (!row.title) throw new Error("null value in column title violates not-null constraint");
+      const base = { description: "", changes: "", version: "0.1", author_name: "", author_id: null, item: "cassette", cover: "b:retro", tint: null, bg: "auto", link: "", access: "staff", sort: 100, file_html: null, submission: null, tags: ["Arcade"] };
+      const g = { ...base, ...structuredClone(row) }; this.games.set(g.id, g); return { ...g, has_file: g.file_html != null };
+    },
+    async updateGame(id, patch) {
+      const g = this.games.get(id); if (!g) return null;
+      Object.assign(g, structuredClone(patch)); return { ...g, has_file: g.file_html != null };
+    },
+    async deleteGame(id) { this.games.delete(id); },
+    async createEdit({ game_id, author_id, patch }) {
+      this.edits = this.edits.filter((e) => !(e.game_id === game_id && e.author_id === author_id && e.status === "new"));
+      const e = { id: crypto.randomUUID(), game_id, author_id, patch, status: "new", comment: "", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      this.edits.push(e); return { ...e };
+    },
+    async listEdits({ status, authorId } = {}) { return this.edits.filter((e) => (!status || e.status === status) && (authorId === undefined || e.author_id === authorId)).map((e) => ({ ...e })).reverse(); },
+    async getEdit(id) { const e = this.edits.find((x) => x.id === id); return e ? { ...e } : null; },
+    async updateEdit(id, p) { const e = this.edits.find((x) => x.id === id); Object.assign(e, p); return { ...e }; },
+
+    // ---- профили, отзывы, журнал (та же семантика, что в store.js и SQL-функциях) ----
+    profiles: new Map(), reviews: [], events: [],
+    async getUser(id) { return users.get(id) ?? null; },
+    async getProfile(id) { const p = this.profiles.get(id); return p ? structuredClone(p) : null; },
+    async saveProfile(id, f) {
+      const p = this.profiles.get(id) ?? { tg_id: id, name: "", color: "#a56bff", photo: "", xp: 0, medals: {}, stats: {}, synced: false, post_title: "", post_text: "", post_at: null };
+      this.profiles.set(id, { ...p, ...structuredClone(f), updated_at: new Date().toISOString() });
+      return this.getProfile(id);
+    },
+    async setPost(id, post) {
+      return this.saveProfile(id, post ? { post_title: post.title, post_text: post.text, post_at: new Date().toISOString() } : { post_title: "", post_text: "", post_at: null });
+    },
+    async profilesByIds(ids) {
+      return ids.filter((i) => users.has(i)).map((i) => { const p = this.profiles.get(i); return { tg_id: i, first_name: users.get(i).first_name, name: p?.name ?? "", color: p?.color ?? "", photo: p?.photo ?? "" }; });
+    },
+    seq: 0,
+    async listReviews(game, limit) { return this.reviews.filter((r) => r.game_id === game).sort((a, b) => b.seq - a.seq).slice(0, limit).map((r) => ({ ...r })); },
+    async getReview(id) { const r = this.reviews.find((x) => x.id === id); return r ? { ...r } : null; },
+    async getUserReview(game, uid) { const r = this.reviews.find((x) => x.game_id === game && x.author_id === uid); return r ? { ...r } : null; },
+    async saveReview({ id, game, uid, rating, body }) {
+      const t = new Date().toISOString();
+      if (id) { const r = this.reviews.find((x) => x.id === id); Object.assign(r, { rating, body, updated_at: t, seq: ++this.seq }); return { ...r }; }
+      if (this.reviews.some((x) => x.game_id === game && x.author_id === uid)) throw new Error("duplicate key");
+      const r = { id: crypto.randomUUID(), game_id: game, author_id: uid, rating, body, created_at: t, updated_at: t, seq: ++this.seq };
+      this.reviews.push(r); return { ...r };
+    },
+    async deleteReview(id) { const i = this.reviews.findIndex((x) => x.id === id); if (i >= 0) this.reviews.splice(i, 1); },
+    async addEvents(rows) { for (const r of rows) this.events.push({ id: this.events.length + 1, ...structuredClone({ ...r, ts: 0 }), ts: r.ts.toISOString() }); },
+    async countEvents(uid, sinceMs, type) { return this.events.filter((e) => e.user_id === uid && Date.parse(e.ts) > sinceMs && (!type || e.type === type)).length; },
+    async lastEventTs(uid, type, game) {
+      const a = this.events.filter((e) => e.user_id === uid && e.type === type && (game ? e.game_id === game : e.game_id == null)).map((e) => Date.parse(e.ts));
+      return a.length ? Math.max(...a) : null;
+    },
+    async listEvents({ limit, before }) { return this.events.filter((e) => !before || e.id < before).sort((a, b) => b.id - a.id).slice(0, limit).map((e) => ({ ...e })); },
+    async firstEventTs() { return this.events.length ? Math.min(...this.events.map((e) => Date.parse(e.ts))) : null; },
+    async gameStats(ids) {
+      return ids.map((g) => {
+        const pl = this.events.filter((e) => e.game_id === g && e.type === "play"), dl = this.events.filter((e) => e.game_id === g && e.type === "download");
+        const rv = this.reviews.filter((r) => r.game_id === g), rated = rv.filter((r) => r.rating > 0);
+        return { game_id: g, plays: pl.length, play_players: new Set(pl.map((e) => e.user_id)).size, downloads: dl.length, dl_players: new Set(dl.map((e) => e.user_id)).size,
+          reviews: rv.length, rated: rated.length, rating: rated.length ? Math.round((rated.reduce((t, r) => t + r.rating, 0) / rated.length) * 100) / 100 : 0 };
+      }).filter((r) => r.plays || r.downloads || r.reviews);
+    },
+    async activitySeries({ startMs, stepSec, n }) {
+      const ev = this.events.map((e) => ({ t: Date.parse(e.ts), w: e.weight }));
+      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = ev.filter((e) => e.t >= a && e.t < b); return [x.length, x.reduce((t, e) => t + e.w, 0)]; });
+      return { base: ev.filter((e) => e.t < startMs).reduce((t, e) => t + e.w, 0), rows };
+    },
   };
 }
 

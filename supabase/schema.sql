@@ -147,3 +147,185 @@ $$;
 
 revoke all on function public.touch_user(bigint, text, text) from public, anon, authenticated;
 grant execute on function public.touch_user(bigint, text, text) to service_role;
+
+
+-- =====================================================================================
+-- Сообщество: профили с постом, отзывы (из них считается рейтинг), журнал действий, счётчики игр.
+-- Выполнить один раз в SQL Editor (повторный запуск безопасен).
+-- =====================================================================================
+
+-- Профиль игрока: ник, рамка, фото (JPEG 128×128 в base64), опыт, медали и один пост.
+-- Клиент присылает снимок профиля, сервер только копит: опыт и медали не уменьшаются.
+create table if not exists public.profiles (
+  tg_id      bigint primary key references public.users(tg_id) on delete cascade,
+  name       text    not null default '' check (char_length(name) <= 16),
+  color      text    not null default '#a56bff' check (color ~ '^#[0-9a-fA-F]{6}$'),
+  photo      text    not null default '' check (char_length(photo) <= 40000),
+  xp         integer not null default 0 check (xp between 0 and 1000000),
+  medals     jsonb   not null default '{}'::jsonb,   -- { "id медали": время получения (мс) }
+  stats      jsonb   not null default '{}'::jsonb,   -- { plays, ids, best, reviews, favs, made, custom, days }
+  synced     boolean not null default false,         -- true после первой синхронизации с клиента
+  post_title text    not null default '' check (char_length(post_title) <= 60),
+  post_text  text    not null default '' check (char_length(post_text) <= 600),
+  post_at    timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+-- Отзывы. Один отзыв на игрока и игру: рейтинг игры = среднее по оценкам (1–5), 0 = отзыв без оценки.
+create table if not exists public.reviews (
+  id         uuid primary key default gen_random_uuid(),
+  game_id    text     not null check (game_id ~ '^[a-z0-9_-]{1,32}$'),
+  author_id  bigint   not null references public.users(tg_id) on delete cascade,
+  rating     smallint not null default 0 check (rating between 0 and 5),
+  body       text     not null check (char_length(body) between 2 and 240),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (game_id, author_id)
+);
+create index if not exists reviews_game_idx on public.reviews (game_id, updated_at desc);
+
+-- Журнал действий: каждая строка = одно действие игрока. Из него считаются «играли / скачали» и график активности.
+create table if not exists public.events (
+  id      bigint generated always as identity primary key,
+  ts      timestamptz not null default now(),
+  user_id bigint not null references public.users(tg_id) on delete cascade,
+  type    text   not null check (type ~ '^[a-z_]{2,16}$'),
+  game_id text   check (game_id is null or game_id ~ '^[a-z0-9_-]{1,32}$'),
+  weight  integer not null default 0,                -- вклад в «ресурс COOP» на момент действия
+  meta    jsonb  not null default '{}'::jsonb
+);
+create index if not exists events_ts_idx   on public.events (ts desc);
+create index if not exists events_user_idx on public.events (user_id, type, ts desc);
+create index if not exists events_game_idx on public.events (game_id, type, user_id) where game_id is not null;
+
+alter table public.profiles enable row level security;
+alter table public.reviews  enable row level security;
+alter table public.events   enable row level security;
+revoke all on public.profiles, public.reviews, public.events from anon, authenticated;
+
+-- Счётчики и рейтинг игр. «Игроков» = разных людей, «запусков/загрузок» = всех нажатий.
+create or replace function public.game_stats(p_ids text[])
+returns table (game_id text, plays bigint, play_players bigint, downloads bigint, dl_players bigint,
+               reviews bigint, rated bigint, rating numeric)
+language sql stable
+set search_path = public
+as $$
+  with e as (
+    select ev.game_id,
+           count(*) filter (where ev.type = 'play')                    as plays,
+           count(distinct ev.user_id) filter (where ev.type = 'play')  as play_players,
+           count(*) filter (where ev.type = 'download')                as downloads,
+           count(distinct ev.user_id) filter (where ev.type = 'download') as dl_players
+      from public.events ev
+     where ev.game_id = any(p_ids) and ev.type in ('play', 'download')
+     group by ev.game_id
+  ), r as (
+    select rv.game_id,
+           count(*)                                         as reviews,
+           count(*) filter (where rv.rating > 0)            as rated,
+           coalesce(round(avg(rv.rating) filter (where rv.rating > 0), 2), 0) as rating
+      from public.reviews rv
+     where rv.game_id = any(p_ids)
+     group by rv.game_id
+  )
+  select coalesce(e.game_id, r.game_id),
+         coalesce(e.plays, 0), coalesce(e.play_players, 0),
+         coalesce(e.downloads, 0), coalesce(e.dl_players, 0),
+         coalesce(r.reviews, 0), coalesce(r.rated, 0), coalesce(r.rating, 0)
+    from e full join r on e.game_id = r.game_id;
+$$;
+
+-- График активности: p_n корзин по p_step_sec секунд от p_start. base = вес всех событий до начала окна.
+create or replace function public.activity_series(p_start timestamptz, p_step_sec int, p_n int)
+returns jsonb
+language sql stable
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'base', (select coalesce(sum(weight), 0) from public.events where ts < p_start),
+    'rows', (
+      select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w) order by b.i), '[]'::jsonb)
+        from (
+          select g.i, count(e.id) as a, coalesce(sum(e.weight), 0) as w
+            from generate_series(0, least(greatest(p_n, 1), 100) - 1) as g(i)
+            left join public.events e
+              on e.ts >= p_start + (g.i * p_step_sec) * interval '1 second'
+             and e.ts <  p_start + ((g.i + 1) * p_step_sec) * interval '1 second'
+           group by g.i
+        ) b
+    )
+  );
+$$;
+
+revoke all on function public.game_stats(text[])                     from public, anon, authenticated;
+revoke all on function public.activity_series(timestamptz, int, int) from public, anon, authenticated;
+grant execute on function public.game_stats(text[])                     to service_role;
+grant execute on function public.activity_series(timestamptz, int, int) to service_role;
+
+
+-- =====================================================================================
+-- Каталог игр (список в магазине, доступ) и правки страниц игр авторами (с одобрением админа).
+-- Выполнить один раз в SQL Editor (повторный запуск безопасен).
+-- =====================================================================================
+
+-- access: public = видят все, staff = только админы и модераторы (проверка перед выходом), off = скрыта от всех.
+create table if not exists public.games (
+  id          text primary key check (id ~ '^[a-z0-9_-]{1,32}$'),
+  title       text   not null check (char_length(title) between 1 and 40),
+  tags        jsonb  not null default '["Arcade"]'::jsonb,   -- до 3 тегов, первый = жанр
+  description text   not null default '' check (char_length(description) <= 600),
+  changes     text   not null default '' check (char_length(changes) <= 200),
+  version     text   not null default '0.1' check (char_length(version) <= 12),
+  author_name text   not null default '' check (char_length(author_name) <= 24),
+  author_id   bigint,                                         -- автор-игрок (может подавать правки страницы)
+  item        text   not null default 'cassette' check (item in ('cassette','cd','floppy','handheld')),
+  cover       text   not null default 'b:retro'  check (cover in ('b:retro','b:space','b:toxic','b:blocks')),
+  tint        jsonb,                                          -- { h: 0..360, s: 0..1 } или null = авто
+  bg          text   not null default 'auto' check (bg in ('auto','0','1','2','3')),
+  link        text   not null default '' check (char_length(link) <= 300),
+  access      text   not null default 'staff' check (access in ('public','staff','off')),
+  sort        integer not null default 100,
+  file_html   text,                                           -- HTML опубликованной игры игрока (null у встроенных)
+  submission  uuid,
+  has_file    boolean generated always as (file_html is not null) stored,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists games_sort_idx on public.games (sort, created_at);
+
+create table if not exists public.game_edits (
+  id         uuid primary key default gen_random_uuid(),
+  game_id    text   not null references public.games(id) on delete cascade,
+  author_id  bigint not null,
+  patch      jsonb  not null,                                  -- только разрешённые поля страницы
+  status     text   not null default 'new' check (status in ('new','approved','rejected')),
+  comment    text   not null default '' check (char_length(comment) <= 400),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists game_edits_status_idx on public.game_edits (status, created_at desc);
+create index if not exists game_edits_game_idx   on public.game_edits (game_id, author_id, created_at desc);
+
+alter table public.games      enable row level security;
+alter table public.game_edits enable row level security;
+revoke all on public.games, public.game_edits from anon, authenticated;
+
+-- Четыре встроенные игры (как были в коде). Уже существующие не трогаем.
+insert into public.games (id, title, tags, description, changes, version, author_name, item, cover, tint, access, sort) values
+ ('retro','Retro Mix','["Arcade"]','Аркадный микстейп из 90-х. Отбивайте мяч, разбивайте неоновые кирпичи и не давайте кассете остановиться.
+Бета-версия: один бесконечный уровень, после каждой очищенной стены скорость растёт.','Скорость растёт после каждой стены
+Новые неоновые кирпичи
+Исправлено залипание платформы','0.3','Coopix','cassette','b:retro','{"h":318,"s":0.92}','public',10),
+ ('space','Space Vibes','["Music"]','Космический синтовый джем. Попадайте по светящимся падам в такт падающим нотам и собирайте мелодию из ничего.
+Бета-версия: один бесконечный трек, после пяти промахов песня заканчивается.','Ноты падают плавнее
+Добавлен счётчик промахов
+Исправлены задержки звука','0.3','Coopix','cd','b:space','{"h":222,"s":0.88}','public',20),
+ ('toxic','Toxic Run','["Shooter"]','Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.
+Бета-версия: пока без боссов и бонусов.','Пушка стреляет чаще
+Черепа стали живее
+Исправлен вылет на старых телефонах','0.3','Coopix','floppy','b:toxic','{"h":112,"s":0.62}','public',30),
+ ('blocks','Block Drop','["Puzzle"]','Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.
+Бета-версия: пока без слота хранения и без призрачной фигуры.','Свайпы стали отзывчивее
+Новые закатные цвета
+Исправлен сброс фигуры','0.3','Coopix','handheld','b:blocks','{"h":38,"s":0.95}','public',40)
+on conflict (id) do nothing;

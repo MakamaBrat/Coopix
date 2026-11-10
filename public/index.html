@@ -961,6 +961,35 @@ html.desk .cmx>.cmx-f{grid-column:1;grid-row:2}
 html.desk .cmx>.cmx-n{grid-column:1;grid-row:3}
 html.desk .cmx>#cmxList{grid-column:2;grid-row:1/span 3}
 html.desk .cmx>#cmxMore{grid-column:2;grid-row:4}
+
+/* ---- profile tabs (post / medals), post card, review avatars as links, action log ---- */
+.stars span{width:38px;height:38px;display:grid;place-items:center}
+.pg-m:has(#pgPlays),.pg-m:has(#pgDl){font-size:16px;margin-top:4px}.pg-m:has(#pgRate) #pgRate{color:#e5d9ff}
+.pf-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 12px;padding:4px;background:#0d0724;border:2px solid #2a1f5e}
+.pf-tabs button{height:42px;font-size:18px;font-weight:500;color:var(--dim);background:transparent;border:0;transition:background .18s,color .18s}
+.pf-tabs button small{margin-left:6px;font-size:14px;opacity:.8}
+.pf-tabs button[aria-selected=true]{color:#140a28;font-weight:700;background:linear-gradient(90deg,#ff8fd8,#a56bff 55%,#6fa2ff)}
+.pf-pane[hidden]{display:none}
+.pf-post{padding:12px 14px 12px 18px;background:#120a2a;border:3px solid var(--line);border-left:8px solid var(--pc,#a56bff)}
+.pf-post h4{font-size:22px;font-weight:700;line-height:1.1;text-transform:uppercase;color:#fff4ee;overflow-wrap:anywhere}
+.pf-post p{margin-top:8px;font-size:19px;line-height:1.35;color:#e5d9ff;white-space:pre-wrap;overflow-wrap:anywhere}
+.pf-post time{display:block;margin-top:10px;font-size:14px;color:var(--dim)}
+.pf-pa{display:flex;gap:10px;margin-top:12px}.pf-pa .btn{flex:1;min-width:0;height:42px;padding:0 10px;font-size:17px}
+.pf-newpost{display:flex;align-items:center;justify-content:center;width:100%;height:50px;margin-top:12px;font-size:19px}
+.pf-newpost svg{width:20px;height:20px;fill:currentColor}
+.pfv .pf-lv{margin-top:10px}
+.cm-avb{display:block;width:44px;height:44px;padding:0;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.cm-avb:active{transform:scale(.92)}
+.cm-nm{font:inherit;font-size:19px;font-weight:600;color:#fff;background:none;border:0;padding:0;cursor:pointer;text-align:left;overflow-wrap:anywhere}
+.cm-nm:hover,.cm-avb:focus-visible+div .cm-nm{text-decoration:underline}
+.lg{border:3px solid var(--line);background:#120a2a}
+.lg-r{display:grid;grid-template-columns:auto 10px 1fr;gap:10px;align-items:start;width:100%;padding:9px 12px;text-align:left;color:#e5d9ff;border-bottom:2px solid #2a1a66;font-size:16px;line-height:1.3;-webkit-tap-highlight-color:transparent}
+.lg-r:last-child{border-bottom:0}.lg-r:hover{background:#1b1141}
+.lg-r time{font-size:13px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:2px}
+.lg-r i{width:10px;height:10px;margin-top:6px;background:var(--c,#a56bff)}
+.lg-r b{font-weight:600;color:#fff}.lg-r em{font-style:normal;color:var(--dim)}.lg-r span{overflow-wrap:anywhere}
+.lg .empty{margin:0}
+html.desk .club>section:nth-of-type(3){grid-column:1/-1;grid-row:4}
 </style>
 </head>
 <body class="scan">
@@ -1428,10 +1457,11 @@ class Card{
     for(let i=this.P.length-1;i>=0;i--){const p=this.P[i];p.l+=dt;if(p.l>=p.d){this.P.splice(i,1);continue}
       p.x+=p.vx*dt;p.y+=p.vy*dt;px.globalAlpha=Math.sin(p.l/p.d*Math.PI)*.9;px.fillStyle=rgb(this.pal[p.c]);px.fillRect((p.x/2)|0,(p.y/2)|0,p.s,p.s)}
     px.globalAlpha=1}
-  setStars(n,editable){
-    const box=this.r.stars;box.innerHTML="";
-    for(let i=1;i<=5;i++){const b=document.createElement("button");b.innerHTML=starSvg(i<=n);b.setAttribute("aria-label",i+" star"+(i>1?"s":""));
-      b.addEventListener("click",e=>{e.stopPropagation();this.o.onRate&&this.o.onRate(this,i===n?i-1:i)});box.append(b)}}
+  /* Рейтинг только для чтения: его считает сервер по оценкам в отзывах (gstat), на карточке менять нельзя */
+  setStars(){
+    const box=this.r.stars,g=gstat(this.m),n=Math.round(g.rating),t=g.rated?"Рейтинг "+fmtRate(g.rating)+" из 5 · по отзывам":"Оценок пока нет";box.innerHTML="";
+    box.setAttribute("role","img");box.setAttribute("aria-label",t);box.title=t;
+    for(let i=1;i<=5;i++){const b=document.createElement("span");b.innerHTML=starSvg(i<=n);box.append(b)}}
   async drawCover(canvas,wipe){
     const {canvas:src}=await resolveCover(this.m.cover),a=this.r.ca,b=this.r.cb;
     if(!wipe||RM){a.getContext("2d").drawImage(src,0,0);return}
@@ -1454,7 +1484,7 @@ class Card{
     const cov=await resolveCover(m.cover);this.art=cov.canvas;this.texDirty=true;this.syncFx();
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
-    this.r.title.textContent=m.title||"Untitled";this.r.pill.textContent=m.genre;this.setStars(m.rating);
+    this.r.title.textContent=m.title||"Untitled";this.r.pill.textContent=m.genre;this.setStars();
     if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
     if(first){
       this.layout();this.pal=pal;this.paint();await this.drawCover(null,false);
@@ -1503,7 +1533,9 @@ function bgResize(){const s=Q===0?4:3;bgBase=null;BW=Math.ceil(innerWidth/s);BH=
   const rn=seedRand(11);STARS=Array.from({length:Math.round(BW*BH/260)},()=>({x:rn()*BW|0,y:rn()*BH|0,p:rn()*6.28,s:.4+rn()*1.6,c:rn()<.12?"#ffcf5a":rn()<.3?"#ff7ae0":"#cbb8ff"}))}
 let shoot=null,nextShoot=3000;
 function drawBg(now){
-  if(PGO||now-LB<BI)return;if(bgPainted&&(Q===0||!SET.stars))return;LB=now;
+  if(PGO||now-LB<BI)return;if(bgPainted&&(Q===0||!SET.stars))return;
+  if(!BW||!BH){bgResize();if(!BW||!BH)return} /* окно ещё 0×0 (скрытая вкладка, WebView до разметки): иначе drawImage бросит и цикл frame встанет */
+  LB=now;
   if(!bgBase){bgBase=document.createElement("canvas");bgBase.width=BW;bgBase.height=BH;const b=bgBase.getContext("2d");
     const g=b.createLinearGradient(0,0,0,BH);g.addColorStop(0,"#07040f");g.addColorStop(.6,"#0d0720");g.addColorStop(1,"#150a30");b.fillStyle=g;b.fillRect(0,0,BW,BH);
     b.fillStyle="rgba(120,80,220,.07)";for(let x=0;x<BW;x+=9)b.fillRect(x,0,1,BH);for(let y=0;y<BH;y+=9)b.fillRect(0,y,BW,1)}
@@ -1534,10 +1566,10 @@ function toast(msg,load){clearTimeout(toastT);toastEl.className="toast";void toa
 
 /* ============ data ============ */
 const DEFAULTS=[
- {id:"retro",title:"Retro Mix",genre:"Arcade",rating:4,item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
- {id:"space",title:"Space Vibes",genre:"Music",rating:4,item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
- {id:"toxic",title:"Toxic Run",genre:"Shooter",rating:5,item:"floppy",cover:"b:toxic",tint:{h:112,s:.62},built:1},
- {id:"blocks",title:"Block Drop",genre:"Puzzle",rating:5,item:"handheld",cover:"b:blocks",tint:{h:38,s:.95},built:1}
+ {id:"retro",title:"Retro Mix",genre:"Arcade",item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
+ {id:"space",title:"Space Vibes",genre:"Music",item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
+ {id:"toxic",title:"Toxic Run",genre:"Shooter",item:"floppy",cover:"b:toxic",tint:{h:112,s:.62},built:1},
+ {id:"blocks",title:"Block Drop",genre:"Puzzle",item:"handheld",cover:"b:blocks",tint:{h:38,s:.95},built:1}
 ];
 const GENRES=["Arcade","Music","Shooter","Puzzle","Adventure","Racing","Sport","Photo"];
 /* a card has up to 3 tags; the first one is the main genre (it picks the mini-game). card.genre mirrors tags[0] */
@@ -1592,7 +1624,7 @@ async function render(intro){
   const rows=DATA.filter(f);
   if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")).toLowerCase();
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},onRate:(c,n)=>{const d=DATA.find(x=>x.id===c.m.id);d.rating=n;persist();c.set({...d})},
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(TABS[tab][0]==="favt")render();else c.set({...d})},
       onDropCover:(c,url)=>{const d=DATA.find(x=>x.id===c.m.id);d.cover=url;d.tint=null;persist();c.set({...d})}});
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
   if(view===1&&TABS[tab][0]!=="favt")addCard();filterList();
@@ -1672,54 +1704,107 @@ const MEDALS=[
  {id:"days3",n:"Постоянный гость",d:"Зайдите в 3 разных дня",c:"#4dd2ff",ic:"star",xp:20,v:p=>p.days,need:3},
  {id:"days7",n:"Свой в маркете",d:"Зайдите в 7 разных дней",c:"#ffe27a",ic:"star",xp:50,v:p=>p.days,need:7}];
 const dayKey=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
-const PROF=Object.assign({name:"Игрок",color:AVC[0],photo:"",reg:Date.now(),xp:0,plays:0,ids:[],best:0,reviews:0,favs:[],made:0,custom:0,days:0,last:"",medals:{}},store.get("am.profile",{}));
+const PROF=Object.assign({name:"Игрок",color:AVC[0],photo:"",reg:Date.now(),xp:0,plays:0,ids:[],best:0,reviews:0,favs:[],made:0,custom:0,days:0,last:"",medals:{},post:null},store.get("am.profile",{}));
 if(!store.get("am.profile",null)){PROF.plays=DATA.reduce((a,d)=>a+(d.played||0),0);PROF.ids=DATA.filter(d=>d.played).map(d=>d.id);PROF.xp=PROF.plays*5;PROF.favs=DATA.filter(d=>d.fav).map(d=>d.id)}
-const saveProf=()=>store.set("am.profile",PROF);
+const saveProf=()=>{store.set("am.profile",PROF);queuePush()};
 let profQ=[],profT=0;
 function profSay(m){profQ.push(m);if(profT)return;const go=()=>{const x=profQ.shift();if(!x){profT=0;return}toast(x);profT=setTimeout(go,2300)};profT=setTimeout(go,1500)}
 function profCheck(){let again=true;
   while(again){again=false;
-    for(const m of MEDALS){if(!PROF.medals[m.id]&&m.v(PROF)>=m.need){PROF.medals[m.id]=Date.now();const l0=lvOf(PROF.xp);PROF.xp+=m.xp;again=true;profSay("Медаль: <b>"+m.n+"</b> · +"+m.xp+" XP");if(lvOf(PROF.xp)>l0)profSay("Уровень "+lvOf(PROF.xp)+" · "+RANKS[lvOf(PROF.xp)-1])}}}
+    for(const m of MEDALS){if(!PROF.medals[m.id]&&m.v(PROF)>=m.need){PROF.medals[m.id]=Date.now();const l0=lvOf(PROF.xp);PROF.xp+=m.xp;again=true;profSay("Медаль: <b>"+m.n+"</b> · +"+m.xp+" XP");act("medal",null,{m:m.id});if(lvOf(PROF.xp)>l0){profSay("Уровень "+lvOf(PROF.xp)+" · "+RANKS[lvOf(PROF.xp)-1]);act("level",null,{lv:lvOf(PROF.xp)})}}}}
   saveProf()}
-function addXp(n){const l0=lvOf(PROF.xp);PROF.xp+=n;if(lvOf(PROF.xp)>l0)profSay("Уровень "+lvOf(PROF.xp)+" · звание «"+RANKS[lvOf(PROF.xp)-1]+"»");profCheck()}
+function addXp(n){const l0=lvOf(PROF.xp);PROF.xp+=n;if(lvOf(PROF.xp)>l0){profSay("Уровень "+lvOf(PROF.xp)+" · звание «"+RANKS[lvOf(PROF.xp)-1]+"»");act("level",null,{lv:lvOf(PROF.xp)})}profCheck()}
 function profPlay(id){PROF.plays++;if(!PROF.ids.includes(id))PROF.ids.push(id);addXp(5)}
 function profScore(s){if(s>PROF.best)PROF.best=s;addXp(Math.min(30,Math.floor(s/10)))}
 function profReview(){PROF.reviews++;addXp(20)}
-function profFav(id,on){if(on&&!PROF.favs.includes(id)){PROF.favs.push(id);addXp(5)}}
-function profMade(){PROF.made++;addXp(25)}
+function profFav(id,on){act(on?"fav":"unfav",id);if(on&&!PROF.favs.includes(id)){PROF.favs.push(id);addXp(5)}}
+function profMade(){PROF.made++;act("card");addXp(25)}
 function profVisit(){const k=dayKey();if(PROF.last!==k){PROF.last=k;PROF.days++;PROF.xp+=PROF.days>1?10:0;profCheck()}}
 const fmtDate=t=>{const d=new Date(t),p=n=>String(n).padStart(2,"0");return p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear()};
-function avatarBg(){return PROF.photo?`style="background-image:url(${PROF.photo})"`:`class="pg" style="background-image:url(assets/coopix-pigeon.png)"`}
+/* безопасные значения для style="": фото только JPEG data-URL, цвет только #rrggbb (в том числе то, что пришло с сервера) */
+const PHOTO_RE=/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/,COLOR_RE=/^#[0-9a-f]{6}$/i;
+const safeC=c=>COLOR_RE.test(c||"")?c:AVC[0];
+function avatarBg(P=PROF){return P.photo&&PHOTO_RE.test(P.photo)?`style="background-image:url(${P.photo})"`:`class="pg" style="background-image:url(assets/coopix-pigeon.png)"`}
 const mTier=m=>m.xp>=50?3:m.xp>=25?2:1;
-function medalHTML(m,i){const ok=!!PROF.medals[m.id],v=Math.min(m.v(PROF),m.need);
+function medalHTML(m,i,P=PROF){const ok=!!P.medals[m.id],v=Math.min(m.v(P),m.need);
   const N=Math.min(m.need,5),f=Math.floor(v/m.need*N),pips=ok||m.need<2?"":`<span class="md-pips">${Array.from({length:N},(_,k)=>`<i class="${k<f?"on":""}"></i>`).join("")}</span>`;
   return `<button type="button" class="md${ok?"":" off"}" data-m="${m.id}" data-t="${mTier(m)}" style="--mc:${m.c};--d:${(i%6)*.5}s" aria-label="${m.n}"><span class="mh"><i class="mr"></i><i class="mi">${ok?IC[m.ic]:IC.lock}</i></span><b>${m.n}</b>${pips}</button>`}
-function medalInfo(id){const m=MEDALS.find(x=>x.id===id),ok=!!PROF.medals[id],v=Math.min(m.v(PROF),m.need);
-  return `<b>${m.n}</b>${m.d}<br><span>${ok?"Получена "+fmtDate(PROF.medals[id])+" · +"+m.xp+" XP":"Прогресс: "+v+" / "+m.need+" · награда +"+m.xp+" XP"}</span>`}
+function medalInfo(id,P=PROF){const m=MEDALS.find(x=>x.id===id),ok=!!P.medals[id],v=Math.min(m.v(P),m.need);
+  return `<b>${m.n}</b>${m.d}<br><span>${ok?"Получена "+fmtDate(P.medals[id])+" · +"+m.xp+" XP":"Прогресс: "+v+" / "+m.need+" · награда +"+m.xp+" XP"}</span>`}
+
+/* Карточка игрока, уровень и вкладки «Пост / Медали» общие для своего профиля и для профиля другого игрока (P = снимок профиля) */
+function pfCard(P,own){const lv=lvOf(P.xp);
+  return `<div class="pf-card enter" style="--pc:${RCOL[lv-1]}"><div class="pf-in">
+    <div class="pf-av" style="--pc:${safeC(P.color)}"><i ${avatarBg(P)}></i></div>
+    <div><h2 class="pf-name">${esc(P.name)}</h2><span class="pf-rank">${RANKS[lv-1]}</span><p class="pf-reg">Регистрация: ${P.reg?fmtDate(P.reg):"—"}</p></div>
+    </div>${own?`<button class="pf-edit" id="pfEdit" type="button" aria-label="Изменить профиль">${IC.edit}</button>`:""}</div>`}
+function pfLevel(P){const lv=lvOf(P.xp),max=lv>=10,a=xpAt(lv),b=xpAt(lv+1),pct=max?100:Math.round((P.xp-a)/(b-a)*100),n=Object.keys(P.medals).length;
+  return {pct,html:`<div class="pf-lv enter" style="--i:.06s"><div class="pf-lvh"><b>Уровень ${lv}</b><span>${P.xp} XP</span></div>
+    <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
+    <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-P.xp)+" XP · «"+RANKS[lv]+"»"}</div>
+    <div class="pf-st"><div><b>${P.plays}</b><span>Игр</span></div><div><b>${P.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>`}}
+const animBar=(root,pct)=>requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=root.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
+const PTABS=[["post","Пост"],["medals","Медали"]];
+function pfTabs(P,own,tab){const n=Object.keys(P.medals).length;let post;
+  if(P.post)post=`<article class="pf-post" style="--pc:${safeC(P.color)}">${P.post.title?`<h4>${esc(P.post.title)}</h4>`:""}<p>${esc(P.post.text)}</p><time>${fmtDate(P.post.at||Date.now())}</time>${own?`<div class="pf-pa"><button class="btn ghost" id="postEdit" type="button">Изменить</button><button class="btn ghost danger" id="postDel" type="button">Удалить</button></div>`:""}</article>`;
+  else post=`<p class="empty">${own?"У вас пока нет поста. Расскажите о себе, своих играх или идеях.":"Игрок пока ничего не написал."}</p>${own?`<button class="btn pf-newpost" id="postNew" type="button">${IC.plus}&nbsp;Создать пост</button>`:""}`;
+  return `<section class="sec pf-sec enter" style="--i:.12s;margin-top:4px"><div class="pf-tabs" role="tablist" aria-label="Раздел профиля">${PTABS.map(([k,l])=>`<button type="button" role="tab" data-t="${k}" aria-selected="${k===tab}">${l}${k==="medals"?`<small>${n}/${MEDALS.length}</small>`:""}</button>`).join("")}</div>
+    <div class="pf-pane" data-pane="post"${tab==="post"?"":" hidden"}>${post}</div>
+    <div class="pf-pane" data-pane="medals"${tab==="medals"?"":" hidden"}><div class="mdl">${MEDALS.map((m,i)=>medalHTML(m,i,P)).join("")}</div><div class="md-info" data-mi></div></div></section>`}
+let PFTAB="post";
+function bindPf(root,P,own){
+  const tabs=root.querySelector(".pf-tabs"),pick=id=>{const m=MEDALS.find(x=>x.id===id),info=root.querySelector("[data-mi]");info.style.setProperty("--ic",m.c);info.innerHTML=medalInfo(id,P);root.querySelectorAll(".md").forEach(x=>x.classList.toggle("pk",x.dataset.m===id))};
+  const have=Object.entries(P.medals).sort((x,y)=>y[1]-x[1]);pick(have.length?have[0][0]:(MEDALS.find(m=>!P.medals[m.id])||MEDALS[0]).id);
+  tabs.addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;sfx.tap();const k=b.dataset.t;if(own)PFTAB=k;
+    tabs.querySelectorAll("[data-t]").forEach(x=>x.setAttribute("aria-selected",x===b));root.querySelectorAll(".pf-pane").forEach(p=>{p.hidden=p.dataset.pane!==k})});
+  root.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)})}
 function renderProfile(){
   profVisit();
-  const lv=lvOf(PROF.xp),max=lv>=10,a=xpAt(lv),b=xpAt(lv+1),pct=max?100:Math.round((PROF.xp-a)/(b-a)*100),n=Object.keys(PROF.medals).length;
-  profEl.innerHTML=`<div class="pf-card enter" style="--pc:${RCOL[lv-1]}"><div class="pf-in">
-    <div class="pf-av" style="--pc:${PROF.color}"><i ${avatarBg()}></i></div>
-    <div><h2 class="pf-name">${esc(PROF.name)}</h2><span class="pf-rank">${RANKS[lv-1]}</span><p class="pf-reg">Регистрация: ${fmtDate(PROF.reg)}</p></div>
-    </div><button class="pf-edit" id="pfEdit" type="button" aria-label="Изменить профиль">${IC.edit}</button></div>
-  <div class="pf-lv enter" style="--i:.06s"><div class="pf-lvh"><b>Уровень ${lv}</b><span>${PROF.xp} XP</span></div>
-    <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
-    <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-PROF.xp)+" XP · «"+RANKS[lv]+"»"}</div>
-    <div class="pf-st"><div><b>${PROF.plays}</b><span>Игр</span></div><div><b>${PROF.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>
+  const L=pfLevel(PROF);
+  profEl.innerHTML=pfCard(PROF,1)+L.html+`
   <div class="pf-sub enter" style="--i:.09s"><div class="pf-subh"><b>Ваша игра в маркете</b><span>Отправьте HTML-файл на рассмотрение и следите за статусом</span></div>
     <button class="btn pf-subb" id="pfSub" type="button">${IC.plus}&nbsp;Отправить игру</button>
     <div class="pf-subr"><button class="btn ghost" id="pfMine" type="button">Мои заявки</button>${isAdmin()?'<button class="btn ghost" id="pfAdm" type="button">Админ-панель</button>':""}</div></div>
-  <section class="sec enter" style="--i:.12s;margin-top:4px"><h3>Медали<small>${n}/${MEDALS.length}</small></h3><div class="mdl">${MEDALS.map(medalHTML).join("")}</div>
-    <div class="md-info" id="mdInfo"></div></section>
+  ${pfTabs(PROF,1,PFTAB)}
   <div class="pf-set enter" style="--i:.18s"><button class="btn ghost" id="pfSet" type="button" style="flex:none;width:100%">Настройки</button></div>`;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=profEl.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
-  const pick=id=>{const m=MEDALS.find(x=>x.id===id);const info=$("#mdInfo");info.style.setProperty("--ic",m.c);info.innerHTML=medalInfo(id);profEl.querySelectorAll(".md").forEach(x=>x.classList.toggle("pk",x.dataset.m===id))};
-  const first=MEDALS.find(m=>!PROF.medals[m.id])||MEDALS[0];pick(Object.keys(PROF.medals).length?Object.entries(PROF.medals).sort((x,y)=>y[1]-x[1])[0][0]:first.id);
-  profEl.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)});
+  animBar(profEl,L.pct);bindPf(profEl,PROF,1);
   $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
   $("#pfSub").addEventListener("click",()=>{sfx.tap();openSubmit()});$("#pfMine").addEventListener("click",()=>{sfx.tap();openMine()});const ad=$("#pfAdm");ad&&ad.addEventListener("click",()=>{sfx.tap();location.href="/admin.html"});
+  const pn=$("#postNew"),pe=$("#postEdit"),pd=$("#postDel");pn&&pn.addEventListener("click",()=>{sfx.tap();openPostEditor()});pe&&pe.addEventListener("click",()=>{sfx.tap();openPostEditor()});
+  pd&&pd.addEventListener("click",async e=>{const b=e.currentTarget;
+    if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Точно удалить?";setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent="Удалить"}},3000);return}
+    try{if(SUB_API)await hub("post",{method:"DELETE"})}catch(err){toast("Не удалось удалить пост");return}
+    PROF.post=null;saveProf();act("post_del");sfx.tap();toast("Пост удалён");renderProfile()});
   $("#pfSet").addEventListener("click",()=>{sfx.tap();openSettings()})}
+/* Один пост на игрока: заголовок (по желанию) и описание. Сохраняется на сервере и виден всем в профиле. */
+function openPostEditor(){
+  const cur=PROF.post||{title:"",text:""};
+  openSheet(`<div class="ph"><h2 id="sheetTitle">${PROF.post?"Изменить пост":"Новый пост"}</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
+  <div class="pbody" lang="ru">
+    <label class="fld"><span class="lbl">Заголовок <small>необязательно</small></span><input class="in" id="poT" maxlength="60" placeholder="О чём пост" value="${esc(cur.title||"")}"></label>
+    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание *</span><textarea class="sbt" id="poX" maxlength="600" rows="6" placeholder="Расскажите о себе, своих играх или идеях">${esc(cur.text||"")}</textarea></label>
+    <p class="cnt" id="poC" style="margin-top:6px;text-align:right"></p><p class="sbk" id="poE" style="color:#ff9aa8;min-height:20px"></p></div>
+  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="poS" type="button">${PROF.post?"Сохранить":"Опубликовать"}</button></div></div>`);
+  const x=$("#poX"),err=m=>{$("#poE").textContent=m},cnt=()=>{$("#poC").textContent=x.value.length+"/600"};cnt();x.addEventListener("input",cnt);
+  $("#poS").addEventListener("click",async()=>{const t=x.value.trim(),h=$("#poT").value.trim(),b=$("#poS");
+    if(!t){err("Напишите описание поста");return}
+    b.disabled=true;
+    try{if(SUB_API){const j=await hub("post",{method:"PUT",body:{title:h,text:t}});PROF.post=j.post}
+      else PROF.post={title:h.slice(0,60),text:t.slice(0,600),at:Date.now()}}
+    catch(e){b.disabled=false;err(e.status===429?"Слишком часто, попробуйте через час":e.status===401?"Откройте приложение из Telegram":"Не удалось сохранить пост");return}
+    saveProf();act("post");sfx.play();closeSheet();PFTAB="post";if(view===3)renderProfile();toast("Пост сохранён")})}
+/* Профиль другого игрока: открывается по нажатию на аватар или ник в отзыве и в журнале действий */
+async function openPlayer(pid){
+  if(pid==="me"){closeSheet();if(PG)backClick();goView(3);return}
+  if(!SUB_API){toast("Профили игроков доступны при подключённом сервере");return}
+  const foot=`<div class="pfoot"><div class="row"><button class="btn" data-close>Закрыть</button></div></div>`;
+  openSheet(sbHead("Профиль игрока")+`<div class="pbody" lang="ru"><p class="sbk">Загрузка…</p></div>`+foot);panel.dataset.pp=pid;
+  let j;try{j=await hub("profile",{q:{id:pid}})}catch(e){if(panel.dataset.pp===pid){const pb=panel.querySelector(".pbody");if(pb)pb.innerHTML=`<p class="sbk">${e.status===404?"Профиль не найден":"Не удалось загрузить профиль"}</p>`}return}
+  if(panel.dataset.pp!==pid||!sheet.classList.contains("open"))return;
+  if(j.me){closeSheet();if(PG)backClick();goView(3);return}
+  const s=j.stats||{},P={name:j.name||"Игрок",color:j.color,photo:j.photo||"",reg:j.reg,xp:j.xp|0,medals:j.medals||{},plays:s.plays|0,ids:Array(s.ids|0),best:s.best|0,reviews:s.reviews|0,favs:Array(s.favs|0),made:s.made|0,custom:s.custom|0,days:s.days|0,post:j.post},L=pfLevel(P);
+  panel.innerHTML=sbHead("Профиль игрока")+`<div class="pbody pfv" lang="ru">${pfCard(P,0)}${L.html}${pfTabs(P,0,"post")}</div>`+foot;
+  animBar(panel,L.pct);bindPf(panel,P,0);fitSheet()}
 function openProfileEditor(){
   const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
   openSheet(`<div class="ph"><h2 id="sheetTitle">Профиль</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
@@ -1739,26 +1824,18 @@ function openProfileEditor(){
     im.onerror=()=>{URL.revokeObjectURL(u);toast("Не удалось открыть картинку")};im.src=u});
   $("#pfSave").addEventListener("click",()=>{const nm=(d.name||"").trim()||"Игрок";
     const ch=nm!==PROF.name||d.color!==PROF.color||d.photo!==PROF.photo;
-    Object.assign(PROF,{name:nm,color:d.color,photo:d.photo});if(ch)PROF.custom=1;saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
+    Object.assign(PROF,{name:nm,color:d.color,photo:d.photo});if(ch){PROF.custom=1;act("profile")}saveProf();profCheck();sfx.play();closeSheet();if(view===3)render();toast("Профиль сохранён")})}
 
 /* ============ графики капитализации ============ */
 /* ВНИМАНИЕ: цифры демонстрационные. Настоящие значения подставьте в CAP ниже (now = текущая капитализация, ресурс/цена считаются от активности) */
-const CAP={cur:"₽",now:184500,res:"COOP",rate:"1 игра = 5 COOP · 1 отзыв = 20 COOP"};
-const PER=[["24ч",24,3,.012,.0015,36e5],["7д",28,5,.03,.004,6*36e5],["30д",30,7,.06,.012,864e5],["Всё",40,9,.12,.045,7*864e5]];
-const rng=seed=>()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
+/* Цена 1 COOP в ₽: капитализация актива = ресурс COOP × цена. Ресурс копится из действий игроков (веса WEIGHTS), цену задайте здесь. */
+const CAP={cur:"₽",price:1,res:"COOP"};
+const PER=[["24ч"],["7д"],["30д"],["Всё"]];
 const nf=n=>Math.round(n).toLocaleString("ru-RU");
 const cf=n=>n>=1e6?(n/1e6).toFixed(1).replace(".",",")+"M":n>=1e3?(n/1e3).toFixed(n>=1e5?0:1).replace(".",",")+"К":Math.round(n)+"";
-const lbl=(i,n,step)=>{const d=new Date(Date.now()-(n-1-i)*step),p=x=>String(x).padStart(2,"0");return step<=36e5?p(d.getHours())+":00":p(d.getDate())+"."+p(d.getMonth()+1)};
-function mkMoney(pi){const [,n,seed,vol,tr,step]=PER[pi],r=rng(seed*7+3);let v=[1];for(let i=1;i<n;i++)v.push(Math.max(.15,v[i-1]*(1+(r()-.45)*vol+tr)));const k=CAP.now/v[n-1];
-  return v.map((x,i)=>({v:x*k,t:lbl(i,n,step)}))}
-function mkAct(pi){const [,n,seed,vol,tr,step]=PER[pi],r=rng(seed*13+5),per=Math.max(1,step/864e5),base=Math.max(6,Math.round(120*Math.pow(per,.55)));
-  let res=CAP.now/1.8*Math.pow(.62,Math.max(0,PER[3][1]-n)/20),out=[];
-  for(let i=0;i<n;i++){const a=Math.round(base*(.55+r()*.9)*(1+i/n*.5));res+=a*5+Math.round(a*.08)*20;const price=1.1+i/n*.4+a/(base*3)*.2;out.push({a,res,cap:res*price,t:lbl(i,n,step)})}
-  const k=CAP.now*1.35/out[n-1].cap;out.forEach(o=>o.cap*=k);return out}
 const HM=210,HA=304,CW=340;
-/* реальные данные: CAP.series={money:[[{v,t}…] на каждый период],act:[[{a,res,cap,t}…]]}; без series показываются демо-данные */
-const getMoney=pi=>CAP.series?((CAP.series.money||[])[pi]||[]):mkMoney(pi);
-const getAct=pi=>CAP.series?((CAP.series.act||[])[pi]||[]):mkAct(pi);
+/* данные графика: CAP.series.act[период] = [{a: действий, res: ресурс, cap: капитализация, t: подпись}] из журнала действий (loadActivity) */
+const getAct=pi=>((CAP.series&&CAP.series.act)||[])[pi]||[];
 const GOALS=[100,500,1e3,2500,5e3,1e4,25e3,5e4,1e5,25e4,5e5,1e6,5e6,1e7];
 /* формат малых чисел: <10 с десятыми, <1000 целые, дальше К/M */
 const fv=v=>{const a=Math.abs(v);return a>=1e3?cf(v):a>=10||Number.isInteger(v)?String(Math.round(v)):v.toFixed(1).replace(".",",")};
@@ -1777,9 +1854,9 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
 const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" aria-label="${label}"></svg><div class="chc-tip" data-tip></div></div><div class="chc-hint">Коснитесь графика и ведите пальцем</div>`;
-function chartsHTML(){const demo=CAP.series?"":"<em>демо</em>";return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс${demo}</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
-    <div class="chc-s" data-s></div><p class="chc-n">Активность игроков превращается в ресурс ${CAP.res}: ${CAP.rate}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
+function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Капитализация</h3>
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность → ресурс</div></div>${chBody(HA,"График: активность игроков и капитализация актива")}
+    <div class="chc-s" data-s></div><p class="chc-n">Каждое действие игроков из журнала ниже превращается в ресурс ${CAP.res}: ${rateText()}. Капитализация актива = ресурс × цена ${CAP.res}.</p></div></section>`}
 function initCharts(root){
   const W=CW,anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
@@ -1814,13 +1891,13 @@ function initCharts(root){
     const pl=6,pr=46,aT=24,aB=96,bT=176,bB=H-26,acts=dt.map(o=>o.a),mxA=Math.max(...acts),sa=nscale(0,Math.max(mxA,4),2),cv=dt.map(o=>o.cap),mx=Math.max(...cv),sc=scaleOf(cv),lo=sc.lo,hi=sc.hi,
       X=i=>pl+(W-pl-pr)*i/(n-1),Y=v=>bT+(bB-bT)*(1-(v-lo)/(hi-lo)),xs=cv.map((_,i)=>X(i)),ys=cv.map(Y),d=curve(xs,ys),bw=Math.max(2,(W-pl-pr)/n*.62),
       dr=anim()?" dr":"",fi=anim()?" fi":"",last=dt[n-1],tot=acts.reduce((s,a)=>s+a,0),none=mxA<=0&&mx<=0;
-    let g=`<text class="pt" x="${pl}" y="14">Активность · игр</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${fv(sa.hi)}</text>
+    let g=`<text class="pt" x="${pl}" y="14">Активность · действий</text><line x1="${pl}" x2="${W-pr}" y1="${aT}" y2="${aT}" stroke="#2a1f5e" stroke-dasharray="2 4"/><text x="${W-pr+5}" y="${aT+4}">${fv(sa.hi)}</text>
       <line x1="${pl}" x2="${W-pr}" y1="${aB}" y2="${aB}" stroke="#3a2a70"/><text x="${W-pr+5}" y="${aB+4}">0</text><text class="pt" x="${pl}" y="${bT-14}">Капитализация актива · ${CAP.cur}</text>`;
     sticks(sc).forEach(v=>{const y=Y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="${v===lo?"#3a2a70":"#2a1f5e"}" ${v===lo?"":'stroke-dasharray="2 4"'}/><text x="${W-pr+5}" y="${y+4}">${fv(v)}</text>`});
     const bars=dt.map((o,i)=>{const h=o.a>0?Math.max(5,(aB-aT)*o.a/sa.hi):2;return `<rect class="bar" x="${xs[i]-bw/2}" y="${aB-h}" width="${bw}" height="${h}" rx="2" fill="${o.a>0?`url(#aB${pi})`:"#4a3a8a"}"${o.a>0?"":' opacity=".5"'}/>`}).join("");
     const tx=ticks(n).map(i=>`<text x="${xs[i]}" y="${H-6}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
     let extra="";if(none){extra=`<path class="gh${fi}" d="${ghost(xs,bB,(bB-bT)*.6)}" fill="none" stroke="#ff9a5e" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/>
-      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+30}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+48}" text-anchor="middle">каждая игра добавит столбик</text>`}
+      <text class="hd" x="${(pl+W-pr)/2}" y="${aT+30}" text-anchor="middle">Здесь будет активность</text><text class="hs" x="${(pl+W-pr)/2}" y="${aT+48}" text-anchor="middle">каждое действие добавит столбик</text>`}
     else if(mxA>0){const pk=acts.indexOf(mxA);extra=star(xs[pk],aB-(aB-aT)*mxA/sa.hi-9)}
     svg.innerHTML=`<defs><linearGradient id="aB${pi}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a4ff"/><stop offset="1" stop-color="#6a35e0"/></linearGradient>
       <linearGradient id="aL${pi}" gradientUnits="userSpaceOnUse" x1="${pl}" x2="${W-pr}" y1="0" y2="0"><stop offset="0" stop-color="#ffb23f"/><stop offset=".6" stop-color="#ff7a8a"/><stop offset="1" stop-color="#ff5ec4"/></linearGradient>
@@ -1831,9 +1908,9 @@ function initCharts(root){
       <g data-x style="display:none"><line y1="${aT}" y2="${bB}" stroke="#fff" opacity=".45"/><circle r="5" fill="#fff" stroke="#ff9a5e" stroke-width="2.5"/></g>`;
     const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle"),brs=svg.querySelectorAll(".bar");box.querySelector("[data-tip]").style.top=((aB+8)/H*100)+"%";
     box.querySelector("[data-v]").textContent=fx(last.cap)+" "+CAP.cur;delta(box.querySelector("[data-d]"),dt[0].cap,last.cap,"капитализация за "+PER[pi][0],CAP.cur);
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>Активность, игр</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>Действий за период</span></div><div><b>${nf(last.res)}</b><span>Ресурс, ${CAP.res}</span></div><div><b>${nf(PROF.xp)}</b><span>Ваш вклад</span></div>`;
     attach(box,svg,n,pl,pr,i=>{const o=dt[i];G.style.display="";gl.setAttribute("x1",xs[i]);gl.setAttribute("x2",xs[i]);gc.setAttribute("cx",xs[i]);gc.setAttribute("cy",ys[i]);brs.forEach((b,j)=>b.classList.toggle("hl",j===i));
-      return{x:xs[i],html:`<span>${o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} игр · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
+      return{x:xs[i],html:`<span>${o.tf||o.t}</span><b>${fx(o.cap)} ${CAP.cur}</b><i>${nf(o.a)} ${plr(o.a,["действие","действия","действий"])} · ${nf(o.res)} ${CAP.res}</i>`}},()=>{G.style.display="none";brs.forEach(b=>b.classList.remove("hl"))})})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
 function renderClub(){
@@ -1849,8 +1926,13 @@ function renderClub(){
     <div class="lw bo"><button class="lbtn big" id="helpBtn" type="button" style="--lc:#ff8a3d;width:100%">${IC.heart}Помочь</button></div>
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
-    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}`;
-  initCharts(clubEl);
+    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}
+  <section class="sec enter" style="--i:.36s"><h3>Журнал действий</h3><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`;
+  const chv=clubEl.querySelector("#chA [data-v]");if(chv)chv.textContent="…";
+  loadActivity().then(a=>{CAP.series={act:a}}).catch(()=>{CAP.series={act:[[],[],[],[]]}}).then(()=>{if(view===2&&clubEl.isConnected)initCharts(clubEl)});
+  loadFeed(clubEl,false);
+  clubEl.querySelector("#lgList").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;sfx.tap();openPlayer(b.dataset.p)});
+  clubEl.querySelector("#lgMore").addEventListener("click",()=>{sfx.tap();loadFeed(clubEl,true)});
   clubEl.querySelector("#helpBtn").addEventListener("click",()=>{sfx.tap();openHelp()});
 }
 /* Help window: TRON (TRC20) USDT address + copy */
@@ -1954,9 +2036,9 @@ function openSettings(){
 
 function openEditor(id,preCover){
   const existing=id?DATA.find(d=>d.id===id):null;
-  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",rating:4,item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0",downloads:0};
+  const draft=existing?{...existing}:{id:"u"+Date.now().toString(36),title:"",genre:"Arcade",item:"cassette",cover:preCover||"b:retro",tint:null,built:0,desc:"",author:PROF.name,changes:"",version:"1.0",downloads:0};
   if(!existing&&!preCover)draft.cover="b:space";
-  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";if(draft.downloads==null)draft.downloads=DOWNLOADS[draft.id]||0;
+  if(draft.desc==null)draft.desc=DESC[draft.id]||"";if(draft.author==null)draft.author=AUTHORS[draft.id]||PROF.name;if(draft.changes==null)draft.changes=CHANGES[draft.id]||"";if(draft.version==null)draft.version=VERSIONS[draft.id]||"";if(draft.downloads==null)draft.downloads=0;
   let cands=[],tags=tagsOf(draft).slice();
   const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===(v==null||v===""?"auto":String(v)))||BGS_CARD[0])[1];
   openSheet(`<div class="ph"><h2 id="sheetTitle">${existing?"Edit card":"New card"}</h2><button class="x" data-close aria-label="Close">${IC.x}</button></div>
@@ -1976,7 +2058,6 @@ function openEditor(id,preCover){
    <label class="fld" style="margin-bottom:0"><span class="lbl">Описание</span><textarea class="in" id="desc" maxlength="300" rows="3" placeholder="О чём это приложение?">${esc(draft.desc||"")}</textarea></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Автор</span><input class="in" id="author" maxlength="24" placeholder="Кто сделал игру?" value="${esc(draft.author||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Версия</span><input class="in" id="ver" maxlength="12" placeholder="Например 1.2.0" value="${esc(draft.version||"")}"></label>
-   <label class="fld" style="margin:14px 0 0"><span class="lbl">Загрузки</span><input class="in" id="dl" inputmode="numeric" maxlength="9" placeholder="0" value="${draft.downloads||0}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Ссылка на скачивание</span><input class="in" id="dlink" maxlength="300" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(draft.link||"")}"></label>
    <label class="fld" style="margin:14px 0 0"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="in" id="chg" maxlength="200" rows="3" placeholder="Что нового в этой версии?">${esc(draft.changes||"")}</textarea></label>
    </div>
@@ -2005,7 +2086,7 @@ function openEditor(id,preCover){
   /* name / description */
   $("#name").addEventListener("input",e=>{draft.title=e.target.value;PV.r.title.textContent=draft.title||"Untitled";PV.m.title=draft.title});
   $("#desc").addEventListener("input",e=>{draft.desc=e.target.value});
-  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#dlink").addEventListener("input",e=>{draft.link=e.target.value.trim()});$("#dl").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"");e.target.value=v;draft.downloads=+v||0});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
+  $("#author").addEventListener("input",e=>{draft.author=e.target.value});$("#chg").addEventListener("input",e=>{draft.changes=e.target.value});$("#dlink").addEventListener("input",e=>{draft.link=e.target.value.trim()});$("#ver").addEventListener("input",e=>{draft.version=e.target.value.replace(/^[vV]\s*/,"")});
   /* tags: type + Enter / comma, or tap a suggestion; max 3 */
   const tb=$("#tagbox"),ti=$("#taginp"),sg=$("#sugg");
   const syncTags=()=>{draft.tags=tags.slice();draft.genre=tags[0]||"Arcade";PV.r.pill.textContent=draft.genre;PV.m.genre=draft.genre;PV.m.tags=draft.tags};
@@ -2122,7 +2203,6 @@ const DESC={
  blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
 const DL_LINKS={retro:"",space:"",toxic:"",blocks:""};
-const DOWNLOADS={retro:1280,space:964,toxic:742,blocks:1530};
 const nfmt=n=>(+n||0).toLocaleString("ru-RU");
 const plr=(n,a)=>{n=Math.abs(n)%100;const k=n%10;return n>10&&n<20?a[2]:k>1&&k<5?a[1]:k===1?a[0]:a[2]};
 const VERSIONS={retro:"0.3",space:"0.3",toxic:"0.3",blocks:"0.3"};
@@ -2137,12 +2217,17 @@ const SEED={
  toxic:[["bitbaker",4,"Черепа так извиваются! Хочу босса в конце.",1],["Lena",5,"Автострельба на сенсорных экранах — правильное решение.",5]],
  blocks:[["oldschool",5,"Управление свайпами работает намного лучше, чем я ожидал.",4],["pixelfox",4,"Добавьте призрачную фигуру в следующей бете, пожалуйста.",8]]};
 let CM=store.get("am.comments.v1",{});const saveCM=()=>store.set("am.comments.v1",CM);
-const cmOf=m=>{if(!CM[m.id]){CM[m.id]=(SEED[m.id]||[]).map(([n,r,t,d],i)=>({n,r,t,d:Date.now()-d*864e5-i*36e5}));saveCM()}return CM[m.id]};
-const cmAv=c=>{const ph=c.me?PROF.photo:"",col=c.me?PROF.color:AVC[hue(c.n)%AVC.length];
-  return `<div class="pf-av cm-av" style="--pc:${col}"><i ${ph?`style="background-image:url(${ph})"`:`style="background-image:url(assets/coopix-pigeon.png);background-size:118%;background-position:50% 30%"`}></i></div>`};
+const cmOf=m=>{if(useSrv(m))return(REV[m.id]||(REV[m.id]={items:[],ok:0})).items;
+  if(!CM[m.id]){CM[m.id]=(SEED[m.id]||[]).map(([n,r,t,d],i)=>({n,r,t,d:Date.now()-d*864e5-i*36e5}));saveCM()}return CM[m.id]};
+/* аватар автора отзыва: нажатие открывает его профиль (свой отзыв ведёт на вкладку «Профиль») */
+const cmAv=c=>{const A=c.pid?AUTH[c.pid]:null,ph=c.me?PROF.photo:(A&&A.p)||"",ok=PHOTO_RE.test(ph||""),col=c.me?PROF.color:(A&&A.c)||AVC[hue(c.n)%AVC.length];
+  const av=`<div class="pf-av cm-av" ${c.pid&&!c.me?`data-av="${esc(c.pid)}"`:""} style="--pc:${safeC(col)}"><i ${ok?`style="background-image:url(${ph})"`:`style="background-image:url(assets/coopix-pigeon.png);background-size:118%;background-position:50% 30%"`}></i></div>`;
+  return c.me||c.pid?`<button type="button" class="cm-avb" data-p="${c.me?"me":esc(c.pid)}" aria-label="Профиль: ${esc(c.me?PROF.name:c.n)}">${av}</button>`:av};
 const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?"только что":s<3600?(s/60|0)+" мин назад":s<86400?(s/3600|0)+" ч назад":(s/86400|0)+" дн назад"};
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
 const starRow=n=>[1,2,3,4,5].map(i=>starSvg(i<=n)).join("");
+const cmItem=(c,i)=>{const nm=c.me?(PROF.name||"Игрок"):c.n;
+  return `<article class="cm">${cmAv(c)}<div><div class="cm-h">${c.me||c.pid?`<button type="button" class="cm-nm" data-p="${c.me?"me":esc(c.pid)}">${esc(nm)}</button>`:`<b>${esc(nm)}</b>`}${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${canDel(c)?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`};
 
 const pageEl=$("#page"),pgBody=$("#pgBody");let PG=null,PGO=false,pgKey=null,pgKeyUp=null,pgFocus=null;
 const KN={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"," ":"S",a:"L",d:"R",w:"U",s:"D"};
@@ -2151,23 +2236,22 @@ function pageHTML(m,kind){
   const desc=(m.desc!=null&&m.desc!==""?m.desc:DESC[m.id]||"").trim();
   const author=(m.author||AUTHORS[m.id]||PROF.name||"Неизвестен").trim(),chl=(m.changes!=null&&m.changes!==""?m.changes:CHANGES[m.id]||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4);
   const ver=(m.version!=null&&m.version!==""?m.version:VERSIONS[m.id]||"").toString().trim();
-  const dlN=m.downloads!=null&&m.downloads!==""?+m.downloads:DOWNLOADS[m.id]||0,dl=nfmt(dlN)+" "+plr(dlN,["загрузка","загрузки","загрузок"]);
   return `<div class="pg">
   <div class="pg-top"><button class="back" data-back aria-label="Back">${IC.back}</button><button class="pg-fav" data-fav type="button" aria-pressed="${!!m.fav}" aria-label="Favorite">${IC.favo}</button>${ver?`<span class="beta">v${esc(ver)}</span>`:""}</div>
   <div class="pg-l">
   <div class="pg-hero"><canvas class="pg-cov" id="pgCov" width="256" height="256" aria-hidden="true"></canvas>
     <div><h2 class="pg-t">${esc(m.title||"Untitled")}</h2>
-    <div class="pg-m"><span class="pg-stars" aria-label="${m.rating} of 5 stars">${starRow(m.rating)}</span><span>${esc(tagsOf(m).join(" · "))}</span></div>
+    <div class="pg-m"><span class="pg-stars" id="pgStars" role="img"></span><span id="pgRate"></span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div>
-    <div class="pg-m"><span id="pgDl">${dl}</span></div>
-    <div class="pg-au">Автор: <b>${esc(author)}</b></div></div></div>
+    <div class="pg-m"><span id="pgDl"></span></div>
+    <div class="pg-au">Автор: <b>${esc(author)}</b></div>${m.mine&&SUB_API?`<button class="btn ghost" data-myedit type="button" style="margin-top:8px">Изменить страницу</button>`:""}</div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
       <canvas class="g" id="tvc" width="160" height="120"></canvas><div class="ov" id="ov"></div><i class="tvn"></i>
       <span class="rec">● BETA</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" aria-pressed="true" aria-label="Noise filter"></button><span class="lab">noise</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
-  <p class="hint2">${HINT[kind]}</p>
+  <p class="hint2">${m.file&&SUB_API?"Нажмите на экран: игра откроется на весь экран":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
@@ -2184,7 +2268,7 @@ async function openPage(id,opt){
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;
   $("#pgCov").getContext("2d").drawImage(cov.canvas,0,0);
-  $("#pgPlays").textContent=(m.played||0)+" игр";
+  paintPage();loadReviews(m);act("open",m.id);
   PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   try{history.pushState({pg:id},"")}catch(e){}bindPage();pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Added to favorites":"Removed from favorites");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
@@ -2194,7 +2278,7 @@ async function openPage(id,opt){
   addEventListener("keydown",pgKey);addEventListener("keyup",pgKeyUp);
   pageEl.querySelector(".back").focus({preventScroll:true})}
 function closePage(){
-  if(!PG)return;stopGame();pageEl.classList.remove("open");pageEl.setAttribute("aria-hidden","true");
+  if(!PG)return;stopGame();const sv=document.getElementById("sbv");sv&&sv.remove();pageEl.classList.remove("open");pageEl.setAttribute("aria-hidden","true");
   PGO=false;PG=null;document.body.classList.remove("pgopen");document.body.style.overflow="";removeEventListener("keydown",pgKey);removeEventListener("keyup",pgKeyUp);
   pgFocus&&pgFocus.focus&&pgFocus.focus({preventScroll:true});sfx.out()}
 function backClick(){history.state&&history.state.pg?history.back():closePage()}
@@ -2217,20 +2301,28 @@ function bindPage(){
   const drawPk=()=>{pk.innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-i="${i}" aria-label="Звёзд: ${i}">${starSvg(i<=rate)}</button>`).join("")};drawPk();
   pk.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;rate=i===rate?0:i;drawPk();sfx.tap()});
   txt.addEventListener("input",()=>{$("#cnt").textContent=txt.value.length+"/240"});
-  $("#cmPost").addEventListener("click",()=>{const t=txt.value.trim();if(t.length<2){toast("Напишите пару слов");txt.focus();return}
-    const n=(PROF.name||"").trim()||"Игрок";const L=cmOf(m);L.unshift({n,r:rate,t,d:Date.now(),me:1});if(L.length>CM_MAX)L.length=CM_MAX;saveCM();
-    txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();profReview();renderCM();sfx.play();toast("Отзыв отправлен")});
+  $("#cmPost").addEventListener("click",async()=>{const t=txt.value.trim();if(t.length<2){toast("Напишите пару слов");txt.focus();return}
+    const btn=$("#cmPost");if(btn.disabled)return;btn.disabled=true;let created=true;
+    try{
+      if(useSrv(m)){await pushProfile();const j=await hub("reviews",{method:"POST",body:{game:m.id,rating:rate,text:t}});created=j.created;
+        const L=cmOf(m),k=L.findIndex(c=>c.me);if(k>=0)L.splice(k,1);L.unshift({id:j.item.id,pid:j.item.pid,r:j.item.r,t:j.item.t,d:j.item.d,me:1,n:PROF.name});if(L.length>CM_MAX)L.length=CM_MAX;if(j.stats)STATS[m.id]=j.stats}
+      else{const L=cmOf(m),k=L.findIndex(c=>c.me);created=k<0;if(k>=0)L.splice(k,1);L.unshift({n:(PROF.name||"").trim()||"Игрок",r:rate,t,d:Date.now(),me:1});if(L.length>CM_MAX)L.length=CM_MAX;saveCM();act("review",m.id,{r:rate})}
+    }catch(e){btn.disabled=false;toast(e.status===429?"Слишком много отзывов, попробуйте позже":e.status===401?"Откройте приложение из Telegram":"Не удалось отправить отзыв");return}
+    btn.disabled=false;txt.value="";$("#cnt").textContent="0/240";rate=0;drawPk();if(created)profReview();renderCM();paintPage();refreshCards();sfx.play();toast(created?"Отзыв отправлен":"Отзыв обновлён")});
   $("#cmMore").addEventListener("click",()=>{PG.cmN=(PG.cmN||CM_PAGE)+CM_PAGE;renderCM();sfx.tap()});
   $("#cmAll").addEventListener("click",()=>{sfx.tap();openCMX()});
-  $("#cmList").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;cmOf(m).splice(+b.dataset.del,1);saveCM();renderCM()});
+  $("#cmList").addEventListener("click",e=>{const p=e.target.closest("[data-p]");if(p){sfx.tap();openPlayer(p.dataset.p);return}const b=e.target.closest("[data-del]");if(b)delReview(m,+b.dataset.del)});
   pageEl.querySelector("[data-back]").addEventListener("click",backClick);
+  const me2=pageEl.querySelector("[data-myedit]");me2&&me2.addEventListener("click",()=>{sfx.tap();openMyGame(m.id)});
   renderCM()}
 const CM_PAGE=10,CM_MAX=300;
 function renderCM(){
-  const a=cmOf(PG.m),lim=PG.cmN||(PG.cmN=CM_PAGE),shown=a.slice(0,lim);$("#cmN").textContent=a.length?"· "+a.length:"";
+  const a=cmOf(PG.m),R=useSrv(PG.m)?REV[PG.m.id]:null,lim=PG.cmN||(PG.cmN=CM_PAGE),shown=a.slice(0,lim);$("#cmN").textContent=a.length?"· "+a.length:"";
   const ab=$("#cmAll");if(ab)ab.hidden=!a.length;const mb=$("#cmMore");if(mb){const left=a.length-shown.length;mb.hidden=left<=0;mb.textContent="Показать ещё "+Math.min(CM_PAGE,left)+" · осталось "+left}
-  $("#cmList").innerHTML=a.length?shown.map((c,i)=>`<article class="cm">${cmAv(c)}<div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`).join("")
-   :`<p class="empty">Отзывов пока нет. Станьте первым, кто попробует бету.</p>`}
+  const pb=$("#cmPost");if(pb)pb.textContent=a.some(c=>c.me)?"Обновить":"Отправить";
+  $("#cmList").innerHTML=a.length?shown.map(cmItem).join("")
+   :`<p class="empty">${R&&R.err?"Не удалось загрузить отзывы. Проверьте связь.":R&&!R.ok?"Загрузка отзывов…":"Отзывов пока нет. Станьте первым, кто попробует бету."}</p>`;
+  loadAv($("#cmList"))}
 
 /* ---- expanded reviews: filters by stars / date / text, sorting ---- */
 const CMX_SORT=[["new","Сначала новые"],["old","Сначала старые"],["hi","Высокая оценка"],["lo","Низкая оценка"]];
@@ -2252,8 +2344,8 @@ function openCMX(){
     const shown=r.slice(0,X.n),left=r.length-shown.length;
     $("#cmxCnt").textContent=L.length?"Найдено "+r.length+" из "+L.length:"";
     const mb=$("#cmxMore");mb.hidden=left<=0;mb.textContent="Показать ещё "+Math.min(20,left)+" · осталось "+left;
-    $("#cmxList").innerHTML=r.length?shown.map(({c,i})=>`<article class="cm">${cmAv(c)}<div><div class="cm-h"><b>${esc(c.n)}</b>${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${c.me?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`).join("")
-     :`<p class="empty" style="margin-top:12px">${L.length?"Ничего не найдено. Измените фильтры или нажмите «Сбросить».":"Отзывов пока нет."}</p>`};
+    $("#cmxList").innerHTML=r.length?shown.map(({c,i})=>cmItem(c,i)).join("")
+     :`<p class="empty" style="margin-top:12px">${L.length?"Ничего не найдено. Измените фильтры или нажмите «Сбросить».":"Отзывов пока нет."}</p>`;loadAv($("#cmxList"))};
   const all=()=>{sum();list()};all();
   const reset=()=>{Object.assign(X,{stars:0,sort:"new",per:"all",q:"",mine:false,n:20});$("#cmxQ").value="";$("#cmxSort").firstElementChild.textContent=CMX_SORT[0][1];$("#cmxPer").firstElementChild.textContent=CMX_PER[0][1];$("#cmxMine").setAttribute("aria-checked","false");all()};
   const set=(k,v)=>{X[k]=v;X.n=20;all()};
@@ -2264,11 +2356,11 @@ function openCMX(){
   $("#cmxMine").addEventListener("click",e=>{const on=e.currentTarget.getAttribute("aria-checked")!=="true";e.currentTarget.setAttribute("aria-checked",on);sfx.tap();set("mine",on)});
   $("#cmxReset").addEventListener("click",()=>{sfx.tap();reset()});
   $("#cmxMore").addEventListener("click",()=>{X.n+=20;sfx.tap();list()});
-  $("#cmxList").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;A().splice(+b.dataset.del,1);saveCM();all();renderCM()})}
+  $("#cmxList").addEventListener("click",e=>{const p=e.target.closest("[data-p]");if(p){sfx.tap();openPlayer(p.dataset.p);return}const b=e.target.closest("[data-del]");if(b)delReview(m,+b.dataset.del).then(all)})}
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
   if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
-  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
+  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>${PG.m.file&&SUB_API?"full game · fullscreen":"beta · micro build"}</small></div>`}
   else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span class="blink">TAP TO RETRY</span></div>`}}
 function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=false;
   const g=x.createLinearGradient(0,0,0,120);g.addColorStop(0,rgb(PG.pal.B));g.addColorStop(1,rgb(PG.pal.D));x.fillStyle=g;x.fillRect(0,0,160,120);
@@ -2282,7 +2374,7 @@ async function tvBoot(me){
 function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void s.offsetWidth;s.classList.add("pon")}
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
-  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}stopGame();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
+  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file&&SUB_API){playFile();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
   Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
@@ -2291,6 +2383,8 @@ function startGame(){
     if(g.score!==PG.score)PG.score=g.score;
     if(g.over){endGame();return}PG.raf=requestAnimationFrame(loop)};
   PG.raf=requestAnimationFrame(loop)}
+/* каждый запуск игры = одно действие «play»: растёт счётчик игры, опыт игрока и журнал */
+function countPlay(){const d=DATA.find(x=>x.id===PG.m.id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id)}act("play",PG.m.id);paintPage()}
 function stopGame(){if(!PG)return;PG.run=false;cancelAnimationFrame(PG.raf);const s=$("#scr"),l=$("#led");s&&s.classList.remove("playing");l&&l.classList.remove("on")}
 function endGame(){
   const s=PG.score,b=store.get("am.best",{}),nb=s>(b[PG.m.id]||0);
@@ -2298,14 +2392,14 @@ function endGame(){
   profScore(s);stopGame();PG.endT=performance.now();burst();setOv("end",nb&&s>0);sfx.out()}
 async function playBeta(){
   const me=PG;if(!me||!me.pal)return;if(!me.ready){me.want=true;return}
-  const d=DATA.find(x=>x.id===me.m.id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id);$("#pgPlays").textContent=d.played+" игр"}
   sfx.in();stopGame();setOv("idle");
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
 $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
 $("#dlbtn").addEventListener("click",()=>{if(!PG)return;const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
+  /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
+  if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
   if(!/^(https?:\/\/|\.?\/?[\w-])/i.test(u)||!u){toast("Файл для скачивания пока не добавлен");return}
-  if(d){d.downloads=(d.downloads!=null&&d.downloads!==""?+d.downloads:DOWNLOADS[d.id]||0)+1;persist();const n=d.downloads;$("#pgDl").textContent=nfmt(n)+" "+plr(n,["загрузка","загрузки","загрузок"])}
   const a=document.createElement("a");a.href=u;a.download="";a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove();sfx.play();toast("Загрузка началась")});
 
 /* ============ no page zoom (iOS ignores user-scalable, so block gestures by hand) ============ */
@@ -2347,6 +2441,146 @@ const SUBS={async list(){if(SUB_API)return sbReq("/subs",{headers:sbH()});
   async upd(id,p){if(SUB_API){await sbReq("/subs/"+encodeURIComponent(id),{method:"PATCH",headers:sbH(1),body:JSON.stringify(p)});return}
     const a=await this.list(),s=a.find(x=>x.id===id);if(s)Object.assign(s,p,{upd:Date.now()});await this.save(a)},
   async text(s){if(s.file&&s.file.text!=null)return s.file.text;return(await sbReq("/subs/"+encodeURIComponent(s.id)+"/file",{headers:sbH()})).text}};
+/* ============ сообщество: общие данные с сервера (отзывы, профили, счётчики, журнал действий) ============
+   SUB_API="" = демо: всё живёт в localStorage этого браузера, чужих профилей нет.
+   С сервером (/api/hub) отзывы, рейтинг, пост и счётчики «играли / скачали» общие для всех игроков.
+   Встроенные игры (built) считаются на сервере, свои карточки остаются локальными. */
+async function hub(r,o={}){
+  const q=new URLSearchParams({r,...(o.q||{})}),init={method:o.method||"GET",headers:sbH(o.body!=null)};if(o.body!=null)init.body=JSON.stringify(o.body);
+  const x=await fetch(SUB_API+"/hub?"+q,init);if(!x.ok){const e=new Error(String(x.status));e.status=x.status;throw e}return x.json()}
+const useSrv=m=>!!SUB_API&&!!m.built;
+/* ---- каталог игр с сервера (/api/hub?r=games): порядок, доступ и страница игры задаёт админ.
+   Демо или нет связи: остаётся сохранённый список (на первом запуске DEFAULTS). Свои карточки (built:0) всегда локальные. */
+let BOOTED=0;
+function fromSrv(g,old){
+  const o=old||{},own=o.cover&&!/^b:/.test(o.cover); /* обложку, которую игрок перетащил на карточку сам, не затираем */
+  return{...o,id:g.id,title:g.title,tags:g.tags,genre:(g.tags&&g.tags[0])||"Arcade",item:g.item,cover:own?o.cover:g.cover,tint:own?o.tint:(g.tint||null),
+    bg:g.bg&&g.bg!=="auto"?g.bg:undefined,desc:g.desc,changes:g.changes,version:g.ver,author:g.author,link:g.link,file:!!g.file,mine:!!g.mine,access:g.access,built:1}}
+async function loadCatalog(){
+  if(!SUB_API)return;let j;try{j=await hub("games")}catch(e){return}
+  if(!j||!Array.isArray(j.games))return;
+  const was=JSON.stringify(DATA),by=new Map(DATA.map(d=>[d.id,d]));
+  DATA=[...j.games.map(g=>fromSrv(g,by.get(g.id))),...DATA.filter(d=>!d.built)];
+  if(JSON.stringify(DATA)===was)return;persist();
+  if(BOOTED){loadStats();if(!PG)render()}} /* ответ пришёл после первого рендера: перерисовать список */
+/* ---- игра игрока с HTML-файлом: файл берём с сервера и запускаем в изолированном iframe ---- */
+const GFILE={};
+async function playFile(){
+  const me=PG;if(!me||me.fileBusy)return;me.fileBusy=1;
+  try{const t=GFILE[me.m.id]!=null?GFILE[me.m.id]:(GFILE[me.m.id]=(await hub("gamefile",{q:{id:me.m.id}})).text);
+    if(PG!==me)return;countPlay();sfx.in();sbView(t,"Закрыть игру")}
+  catch(e){toast(e.status===404?"Игра сейчас недоступна":e.status===401?"Откройте приложение из Telegram":"Не удалось загрузить игру. Проверьте связь.")}
+  finally{me.fileBusy=0}}
+const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
+const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */
+const AUTH={};             /* pid -> { n, c, hp, p, f }: имя, цвет, фото авторов (фото подгружается лениво) */
+const fmtRate=v=>(+v||0).toFixed(1).replace(".",",");
+/* Рейтинг и счётчики игры. Рейтинг только для чтения: это среднее по оценкам из отзывов. */
+function gstat(m){
+  if(useSrv(m)){const s=STATS[m.id]||{};return{plays:s.plays||0,pp:s.playPlayers||0,dl:s.downloads||0,dp:s.dlPlayers||0,rating:s.rating||0,rated:s.rated||0,reviews:s.reviews||0,srv:1}}
+  const L=CM[m.id]||(SEED[m.id]?cmOf(m):[]),rt=L.filter(c=>c.r);
+  return{plays:m.played||0,pp:0,dl:+m.downloads||0,dp:0,rating:rt.length?rt.reduce((t,c)=>t+c.r,0)/rt.length:0,rated:rt.length,reviews:L.length,srv:0}}
+const refreshCards=()=>LIVE.forEach(c=>c.setStars());
+async function loadStats(){
+  if(!SUB_API)return;const ids=DATA.filter(d=>d.built).map(d=>d.id);if(!ids.length)return;
+  try{const j=await hub("stats",{q:{ids:ids.join(",")}});Object.assign(STATS,j.games);refreshCards();paintPage()}catch(e){}}
+const PLW=["игрок","игрока","игроков"];
+function paintPage(){
+  if(!PG)return;const st=$("#pgStars");if(!st)return;const g=gstat(PG.m);
+  st.innerHTML=starRow(Math.round(g.rating));st.setAttribute("aria-label",g.rated?"Рейтинг "+fmtRate(g.rating)+" из 5":"Оценок пока нет");
+  $("#pgRate").textContent=g.rated?fmtRate(g.rating)+" · "+g.rated+" "+plr(g.rated,["оценка","оценки","оценок"]):"нет оценок";
+  const pl=nfmt(g.plays)+" "+plr(g.plays,["запуск","запуска","запусков"]),dl=nfmt(g.dl)+" "+plr(g.dl,["загрузка","загрузки","загрузок"]);
+  $("#pgPlays").textContent=g.srv?"Играли: "+nfmt(g.pp)+" "+plr(g.pp,PLW)+" · "+pl:pl;
+  $("#pgDl").textContent=g.srv?"Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW)+" · "+dl:dl}
+
+/* ---- отзывы ---- */
+async function loadReviews(m){
+  if(!useSrv(m))return;const R=REV[m.id]||(REV[m.id]={items:[],ok:0});R.err=0;
+  try{const j=await hub("reviews",{q:{game:m.id}});
+    for(const[k,a]of Object.entries(j.authors||{}))AUTH[k]=Object.assign(AUTH[k]||{},a);
+    R.items=j.items.map(x=>({id:x.id,pid:x.pid,r:x.r,t:x.t,d:x.d,me:x.me?1:0,n:(AUTH[x.pid]||{}).n||"Игрок"}));R.ok=1;
+    if(j.stats)STATS[m.id]=j.stats;refreshCards()}
+  catch(e){R.err=1}
+  if(PG&&PG.m.id===m.id){renderCM();paintPage()}}
+const canDel=c=>!!c.me||(!!SUB_API&&ADMIN_OK&&!!c.id);
+async function delReview(m,idx){
+  const L=cmOf(m),c=L[idx];if(!c)return;
+  if(useSrv(m)&&c.id){try{const j=await hub("reviews",{method:"DELETE",q:{id:c.id}});if(j.stats)STATS[m.id]=j.stats}catch(e){toast("Не удалось удалить отзыв");return}}
+  L.splice(idx,1);if(!useSrv(m)){saveCM();act("review_del",m.id)}
+  renderCM();paintPage();refreshCards();sfx.tap()}
+/* фото авторов отзывов: пачкой и только для тех, кто на экране */
+async function loadAv(root){
+  const ids=[...new Set([...root.querySelectorAll("[data-av]")].map(e=>e.dataset.av))].filter(k=>AUTH[k]&&AUTH[k].hp&&!AUTH[k].f).slice(0,30);if(!ids.length)return;
+  ids.forEach(k=>{AUTH[k].f=1});
+  try{const j=await hub("avatars",{q:{ids:ids.join(",")}});ids.forEach(k=>{const a=j[k];if(a){AUTH[k].p=a.p||"";if(COLOR_RE.test(a.c||""))AUTH[k].c=a.c}})}catch(e){ids.forEach(k=>{AUTH[k].f=0});return}
+  document.querySelectorAll("[data-av]").forEach(el=>{const a=AUTH[el.dataset.av],i=el.querySelector("i");
+    if(a&&a.p&&PHOTO_RE.test(a.p)&&i){i.style.backgroundImage=`url(${a.p})`;i.style.backgroundSize="cover";i.style.backgroundPosition="center";if(COLOR_RE.test(a.c||""))el.style.setProperty("--pc",a.c)}})}
+
+/* ---- профиль: снимок уходит на сервер (опыт и медали там только растут), пост хранится на сервере ---- */
+let PSYNC=0,pushT=0,MYPID="";
+const snap=()=>({name:PROF.name,color:PROF.color,photo:PROF.photo,xp:PROF.xp,medals:PROF.medals,stats:{plays:PROF.plays,ids:PROF.ids.length,best:PROF.best,reviews:PROF.reviews,favs:PROF.favs.length,made:PROF.made,custom:PROF.custom,days:PROF.days}});
+function queuePush(now){if(!SUB_API||!PSYNC)return;clearTimeout(pushT);pushT=setTimeout(pushProfile,now?0:2500)}
+async function pushProfile(){clearTimeout(pushT);pushT=0;if(!SUB_API||!PSYNC)return;try{await hub("profile",{method:"PUT",body:snap()})}catch(e){}}
+async function pullProfile(n){
+  if(!SUB_API)return;
+  try{const j=await hub("profile");MYPID=j.id;
+    if(j.synced){
+      if(!PROF.custom&&j.name){PROF.name=j.name;PROF.color=COLOR_RE.test(j.color)?j.color:PROF.color;PROF.photo=PHOTO_RE.test(j.photo||"")?j.photo:""}
+      PROF.xp=Math.max(PROF.xp,j.xp|0);for(const[k,v]of Object.entries(j.medals||{}))if(!PROF.medals[k]||PROF.medals[k]>v)PROF.medals[k]=v;
+      const s=j.stats||{};for(const k of["plays","best","reviews","made","custom","days"])PROF[k]=Math.max(PROF[k]|0,s[k]|0)}
+    PROF.post=j.post||null;saveProf();PSYNC=1;await pushProfile();if(view===3)renderProfile()}
+  catch(e){if(!n)setTimeout(()=>pullProfile(1),5000)}}
+
+/* ---- журнал действий: каждое действие = строка с временем ----
+   С сервером игрок отправляет только свои нажатия (visit, open, play, download, fav, unfav, card), остальное (отзыв, пост, профиль,
+   медаль, уровень, заявка) сервер записывает сам в момент действия. Нет связи: события ждут в очереди и уйдут позже. */
+const CLIENT_ACT=new Set(["visit","open","play","download","fav","unfav","card"]);
+let aq=store.get("am.aq.v1",[]),aBusy=0;
+const ALOG=()=>store.get("am.log.v1",[]);
+function act(type,game,meta){
+  if(SUB_API){if(!CLIENT_ACT.has(type))return;aq.push({type,game:game||null,t:Date.now()});if(aq.length>200)aq.splice(0,aq.length-200);store.set("am.aq.v1",aq);flushActs();return}
+  const a=ALOG();a.push({t:Date.now(),type,game:game||null,meta:meta||{},n:PROF.name});if(a.length>2000)a.splice(0,a.length-2000);store.set("am.log.v1",a)}
+async function flushActs(){
+  if(aBusy||!aq.length||!SUB_API)return;aBusy=1;
+  try{while(aq.length){const b=aq.slice(0,20);
+    try{const j=await hub("track",{method:"POST",body:{events:b}});aq.splice(0,b.length);store.set("am.aq.v1",aq);if(j.stats){Object.assign(STATS,j.stats);refreshCards();paintPage()}}
+    catch(e){if(e.status&&e.status<500){aq.splice(0,b.length);store.set("am.aq.v1",aq);if(e.status===401||e.status===403)break;continue}break}}}
+  finally{aBusy=0}}
+
+/* ---- график и журнал на вкладке кубка ---- */
+const WEIGHTS={visit:2,play:5,download:5,fav:2,review:20,post:10,card:25,submit:25}; /* как на сервере; сервер присылает свои */
+const pad2=x=>String(x).padStart(2,"0");
+const tl=(t,step)=>{const d=new Date(t),hm=pad2(d.getHours())+":"+pad2(d.getMinutes()),dm=pad2(d.getDate())+"."+pad2(d.getMonth()+1);return step<10800?hm:dm};
+const tlf=(t,step)=>{const d=new Date(t);return step<86400?pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):tl(t,step)};
+const toPts=s=>{let res=s.base;return s.rows.map(([a,w],i)=>{res+=w;const ts=s.t0+i*s.step*1000;return{a,res,cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
+const rateText=()=>"игра = "+WEIGHTS.play+" · скачивание = "+WEIGHTS.download+" · отзыв = "+WEIGHTS.review+" · пост = "+WEIGHTS.post+" · своя карточка = "+WEIGHTS.card+" "+CAP.res;
+function localSeries(){
+  const ev=ALOG(),now=Date.now(),off=-new Date().getTimezoneOffset()*60000,first=ev.length?Math.min(...ev.map(e=>e.t)):now,
+    allStep=Math.max(3600,Math.ceil(Math.max((now-first)/1000,1)/40/3600)*3600),w=e=>WEIGHTS[e.type]||0;
+  return[[24,3600],[28,21600],[30,86400],[40,allStep]].map(([n,step])=>{const ms=step*1000,end=Math.ceil((now+off)/ms)*ms-off,start=end-n*ms;
+    const rows=Array.from({length:n},(_,i)=>{const a=start+i*ms,b=a+ms,x=ev.filter(e=>e.t>=a&&e.t<b);return[x.length,x.reduce((t,e)=>t+w(e),0)]});
+    return toPts({base:ev.filter(e=>e.t<start).reduce((t,e)=>t+w(e),0),rows,t0:start,step})})}
+async function loadActivity(){
+  if(!SUB_API)return localSeries();
+  const j=await hub("activity",{q:{tz:new Date().getTimezoneOffset()}});Object.assign(WEIGHTS,j.weights||{});return j.series.map(toPts)}
+const gtl=id=>{const d=DATA.find(x=>x.id===id);return"«"+esc((d&&d.title)||id||"игра")+"»"};
+const ACTX={visit:()=>"заход в маркет",open:e=>"открыта страница игры "+gtl(e.game),play:e=>"запуск игры "+gtl(e.game),download:e=>"нажато «Скачать» · "+gtl(e.game),
+  review:e=>(e.meta.e?"отзыв обновлён · ":"отзыв · ")+gtl(e.game)+(e.meta.r?" · ★"+(e.meta.r|0):""),review_del:e=>"отзыв удалён · "+gtl(e.game),
+  fav:e=>"в избранное · "+gtl(e.game),unfav:e=>"убрано из избранного · "+gtl(e.game),post:e=>e.meta.e?"пост обновлён":"пост опубликован",post_del:()=>"пост удалён",
+  profile:()=>"профиль изменён",medal:e=>"медаль «"+esc((MEDALS.find(m=>m.id===e.meta.m)||{n:"?"}).n)+"»",level:e=>"новый уровень · "+(e.meta.lv|0),card:()=>"добавлена своя карточка",submit:()=>"игра отправлена на проверку"};
+const ACOL={play:"#5dff8a",download:"#4dd2ff",review:"#ffb23f",review_del:"#ff5e7a",post:"#ff5ec4",post_del:"#ff5e7a",medal:"#ffd23f",level:"#b98bff",fav:"#ff5e7a",unfav:"#9aa4c8",submit:"#7fb2ff",card:"#7fb2ff",visit:"#9aa4c8",open:"#9aa4c8",profile:"#ff5ec4"};
+const fmtT=t=>{const d=new Date(t);return pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes())+":"+pad2(d.getSeconds())};
+const FEED={items:[],next:null,au:{}};
+const lgRow=e=>{const a=e.me?{n:PROF.name}:(FEED.au[e.pid]||{n:"Игрок"}),f=ACTX[e.type];e.meta=e.meta||{};
+  return `<button type="button" class="lg-r" data-p="${e.me?"me":esc(e.pid)}" style="--c:${ACOL[e.type]||"#a56bff"}"><time>${fmtT(e.t)}</time><i></i><span><b>${esc(a.n)}</b>${e.me?" <em>· вы</em>":""} — ${f?f(e):esc(e.type)}</span></button>`};
+async function loadFeed(root,more){
+  const list=root.querySelector("#lgList"),btn=root.querySelector("#lgMore");if(!list)return;let items,next;
+  if(SUB_API){try{const j=await hub("feed",{q:{limit:30,...(more&&FEED.next?{before:FEED.next}:{})}});Object.assign(FEED.au,j.authors||{});items=j.items;next=j.next}
+    catch(e){if(!more||!FEED.items.length)list.innerHTML=`<p class="empty" style="border:0">Не удалось загрузить журнал. Проверьте связь.</p>`;return}}
+  else{const all=ALOG().slice().reverse().map((e,i)=>({...e,id:i,me:true,pid:"me"})),off=more?FEED.items.length:0;items=all.slice(off,off+30);next=off+30<all.length?1:null}
+  FEED.items=more?FEED.items.concat(items):items;FEED.next=next;
+  if(!root.isConnected)return;
+  list.innerHTML=FEED.items.length?FEED.items.map(lgRow).join(""):`<p class="empty" style="border:0">Пока нет действий. Запустите игру или оставьте отзыв.</p>`;btn.hidden=!next}
 /* Чужой HTML открываем только в изолированном iframe (sandbox без allow-same-origin): у кода игры нет доступа к приложению, initData и cookies. */
 const adminProbe=async(n)=>{if(!SUB_API)return;try{const m=await sbReq("/me",{headers:sbH()});if(m&&m.admin&&!ADMIN_OK){ADMIN_OK=true;try{renderProfile()}catch(e){}}}catch(e){if(!n)setTimeout(()=>adminProbe(1),1500)}};
 /* Доступ и серверные настройки. Новости и адрес доната приходят с сервера (меняются в /admin.html).
@@ -2370,9 +2604,9 @@ async function accessInit(){
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
   }catch(e){}
   return true}
-const sbView=t=>{const o=document.createElement("div");o.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";
+const sbView=(t,label)=>{const old=document.getElementById("sbv");old&&old.remove();const o=document.createElement("div");o.id="sbv";o.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";
   const f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.style.cssText="flex:1;border:0;width:100%;background:#fff";f.srcdoc=t;
-  const b=document.createElement("button");b.type="button";b.className="btn";b.textContent="Закрыть превью";b.style.cssText="flex:none;width:100%";b.onclick=()=>o.remove();o.append(f,b);document.body.append(o)};
+  const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=label||"Закрыть превью";b.style.cssText="flex:none;width:100%";b.onclick=()=>o.remove();o.append(f,b);document.body.append(o)};
 {const st=document.createElement("style");st.textContent=`.sb{display:inline-block;padding:2px 10px;font-size:15px;font-weight:700;text-transform:uppercase;color:#140a28;background:var(--c)}
 .sbi{display:block;width:100%;text-align:left;margin-top:10px;padding:12px 14px;background:#120a2a;border:3px solid var(--line);border-left:8px solid var(--c)}
 .sbi h4{font-size:21px;margin:6px 0 2px}.sbi p{font-size:16px;color:var(--dim);margin:0}.sbi .cm{margin-top:6px;color:#fff;font-size:17px}
@@ -2405,12 +2639,51 @@ function openSubmit(){
     const s={id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),authorId:meId(),author:PROF.name,tg:(tgU()&&tgU().username)||"",
       title:t,genre:$("#sbG").value,desc:d,ver:$("#sbV").value.trim()||"0.1",contact:$("#sbC").value.trim(),file,at:Date.now(),status:"new",comment:"",upd:Date.now()};
     try{await SUBS.add(s)}catch(e){err(e.message==="429"?"Слишком много заявок за сутки, попробуйте завтра":e.message==="401"?"Откройте приложение из Telegram, чтобы отправить заявку":"Не удалось отправить заявку (нет связи или файл слишком большой)");return}
-    sfx.tap();toast("Заявка отправлена");openMine()})}
+    sfx.tap();act("submit");toast("Заявка отправлена");openMine()})}
 async function openMine(){
   let all=[];try{all=(await SUBS.list()).filter(s=>s.authorId===meId())}catch(e){toast("Не удалось загрузить заявки")}
   openSheet(sbHead("Мои заявки")+`<div class="pbody" lang="ru">${all.length?all.map(s=>`<div class="sbi" style="--c:${SST[s.status].c}">${sbBadge(s.status)}<h4>${esc(s.title)}</h4><p>${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}</p>${s.comment?`<p class="cm">Комментарий: ${esc(s.comment)}</p>`:""}</div>`).join(""):`<p class="sbk">Заявок пока нет.</p>`}</div>
-  <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Закрыть</button><button class="btn" id="sbNew" type="button">Новая заявка</button></div></div>`);
-  $("#sbNew").addEventListener("click",()=>{sfx.tap();openSubmit()})}
+  <div class="pfoot"><div class="row">${SUB_API&&DATA.some(d=>d.mine)?`<button class="btn ghost" id="sbGames" type="button">Мои игры</button>`:`<button class="btn ghost" data-close>Закрыть</button>`}<button class="btn" id="sbNew" type="button">Новая заявка</button></div></div>`);
+  $("#sbNew").addEventListener("click",()=>{sfx.tap();openSubmit()});
+  const g=$("#sbGames");g&&g.addEventListener("click",()=>{sfx.tap();openMyGames()})}
+/* ---- «Мои игры»: автор опубликованной игры предлагает правки страницы, они появятся после одобрения админом ---- */
+const EST={new:{t:"На проверке",c:"#ffb23f"},approved:{t:"Одобрено",c:"#5dff8a"},rejected:{t:"Отклонено",c:"#ff5e7a"}};
+async function openMyGames(){
+  openSheet(sbHead("Мои игры")+`<div class="pbody"><p class="sbk">Загрузка…</p></div>`);
+  await loadCatalog();let ed=[];try{ed=(await hub("myedits")).items||[]}catch(e){}
+  const mine=DATA.filter(d=>d.mine),last=id=>ed.find(e=>e.game===id); /* сервер отдаёт правки от новых к старым */
+  panel.innerHTML=sbHead("Мои игры")+`<div class="pbody" lang="ru"><p class="sbk" style="margin-bottom:8px">Изменения страницы появятся в маркете после проверки админом.</p>
+   <div id="mgL">${mine.length?mine.map(d=>{const e=last(d.id),s=e&&EST[e.status];
+     return`<button type="button" class="sbi" data-id="${esc(d.id)}" style="--c:${s?s.c:"#9aa4c8"}">${s?`<span class="sb" style="--c:${s.c}">${s.t}</span>`:""}<h4>${esc(d.title)}</h4><p>v${esc(d.version||"")}${e?" · правки от "+fmtDate(e.at):""}</p>${e&&e.comment?`<p class="cm">Комментарий: ${esc(e.comment)}</p>`:""}</button>`}).join("")
+     :`<p class="sbk">Опубликованных игр пока нет. Когда админ добавит вашу игру в маркет, она появится здесь.</p>`}</div></div>
+   <div class="pfoot"><div class="row"><button class="btn" data-close>Закрыть</button></div></div>`;
+  $("#mgL").addEventListener("click",ev=>{const b=ev.target.closest(".sbi");if(b){sfx.tap();openMyGame(b.dataset.id)}});fitSheet()}
+function openMyGame(id){
+  const d=DATA.find(x=>x.id===id);if(!d)return;
+  const cur={desc:d.desc||"",changes:d.changes||"",ver:d.version||"",link:d.link||"",item:d.item||"cassette",bg:d.bg==null||d.bg===""?"auto":String(d.bg)},f={...cur};
+  const itemL=k=>(ITEMS[k]||ITEMS.cassette).label,bgL=v=>(BGS_CARD.find(x=>x[0]===v)||BGS_CARD[0])[1];
+  openSheet(sbHead("Страница игры")+`<div class="pbody" lang="ru"><h3 style="margin:0 0 6px;font-size:24px">${esc(d.title)}</h3>
+   <p class="sbk" style="margin-bottom:8px">Правки уйдут админу на проверку. Новая отправка заменяет предыдущую, если та ещё не проверена.</p>
+   <label class="fld"><span class="lbl">Описание</span><textarea class="sbt" id="meD" maxlength="600">${esc(cur.desc)}</textarea></label>
+   <label class="fld"><span class="lbl">Последние изменения <small>по одному на строку</small></span><textarea class="sbt" id="meC" maxlength="200">${esc(cur.changes)}</textarea></label>
+   <label class="fld"><span class="lbl">Версия</span><input class="in" id="meV" maxlength="12" value="${esc(cur.ver)}"></label>
+   <label class="fld"><span class="lbl">Ссылка на скачивание <small>только https</small></span><input class="in" id="meL" maxlength="300" inputmode="url" autocapitalize="off" placeholder="https://…" value="${esc(cur.link)}"></label>
+   <div class="two" style="grid-template-columns:1fr 1fr"><div class="fld"><span class="lbl">Носитель</span>${selBtn("meI",itemL(cur.item))}</div><div class="fld"><span class="lbl">Фон</span>${selBtn("meB",bgL(cur.bg))}</div></div>
+   <p class="sbk" id="meErr" style="color:#ff9aa8;min-height:20px;margin-top:8px"></p></div>
+   <div class="pfoot"><div class="row"><button class="btn ghost" id="meBack" type="button">Мои игры</button><button class="btn" id="meSend" type="button">Отправить на проверку</button></div></div>`);
+  const err=m=>{$("#meErr").textContent=m};
+  $("#meI").addEventListener("click",e=>openMenu(e.currentTarget,Object.keys(ITEMS).map(k=>[k,ITEMS[k].label]),f.item,v=>{f.item=v;sfx.tap()}));
+  $("#meB").addEventListener("click",e=>openMenu(e.currentTarget,BGS_CARD,f.bg,v=>{f.bg=v;sfx.tap()}));
+  $("#meBack").addEventListener("click",()=>{sfx.tap();openMyGames()});
+  $("#meSend").addEventListener("click",async e=>{
+    Object.assign(f,{desc:$("#meD").value.trim(),changes:$("#meC").value.trim(),ver:$("#meV").value.trim(),link:$("#meL").value.trim()});
+    const patch=Object.fromEntries(Object.entries(f).filter(([k,v])=>v!==cur[k]));
+    if(!Object.keys(patch).length){err("Ничего не изменилось");return}
+    if(patch.link&&!/^https:\/\/\S+$/i.test(patch.link)){err("Ссылка должна начинаться с https://");return}
+    const btn=e.currentTarget;if(btn.disabled)return;btn.disabled=true;
+    try{await hub("myedit",{method:"POST",body:{game:d.id,patch}})}
+    catch(x){btn.disabled=false;err(x.status===400?"Проверьте поля (ссылка только https)":x.status===403?"Это не ваша игра":x.status===401?"Откройте приложение из Telegram":"Не удалось отправить. Проверьте связь.");return}
+    sfx.tap();toast("Правки отправлены на проверку");openMyGames()})}
 async function openAdmin(){
   let all=[],q="",f="all",cur=null;
   const draw=()=>{
@@ -2447,7 +2720,9 @@ async function openAdmin(){
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0]);
   try{await Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')])}catch(e){}
   if(!(await accessInit())){const b=$("#boot");b&&b.remove();return}
-  profVisit();sync();await render(true);adminProbe();
+  profVisit();sync();
+  if(SUB_API)await Promise.race([loadCatalog().then(loadStats),wait(1500)]);
+  await render(true);BOOTED=1;adminProbe();act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
 })();

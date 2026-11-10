@@ -2,6 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const COLS = "id,author_id,author,tg,title,genre,description,version,contact,file_name,file_size,status,comment,created_at,updated_at";
 const UCOLS = "tg_id,first_name,username,registered_at,last_seen_at,banned,ban_reason,banned_at,banned_by";
+const PROF_COLS = "tg_id,name,color,photo,xp,medals,stats,synced,post_title,post_text,post_at,updated_at";
+const REV_COLS = "id,game_id,author_id,rating,body,created_at,updated_at";
+const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,link,access,sort,has_file,submission,created_at,updated_at";
+const EDIT_COLS = "id,game_id,author_id,patch,status,comment,created_at,updated_at";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function supabaseStore(url, serviceKey) {
@@ -91,6 +95,121 @@ export function supabaseStore(url, serviceKey) {
     async update(id, patch) {
       if (!UUID.test(id)) return null;
       return ok(await db.from(T).update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select(COLS).maybeSingle());
+    },
+
+    // ---------- каталог игр и правки страниц ----------
+    async listGames() { return ok(await db.from("games").select(GAME_COLS).order("sort").order("created_at")) ?? []; },
+    async getGame(id) { return ok(await db.from("games").select(GAME_COLS).eq("id", id).maybeSingle()); },
+    async gameHtml(id) { return ok(await db.from("games").select("file_html").eq("id", id).maybeSingle()); },
+    /** Новая игра (insert: совпадение id = ошибка, а не перезапись чужой игры) */
+    async createGame(row) {
+      return ok(await db.from("games").insert(row).select(GAME_COLS).maybeSingle());
+    },
+    /** Частичное обновление по id. Не upsert: в Postgres INSERT … ON CONFLICT проверяет NOT NULL (title) до конфликта. */
+    async updateGame(id, patch) {
+      return ok(await db.from("games").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select(GAME_COLS).maybeSingle());
+    },
+    async deleteGame(id) { ok(await db.from("games").delete().eq("id", id)); },
+    /** У автора на игру одна заявка на правку «в очереди»: новая заменяет старую */
+    async createEdit({ game_id, author_id, patch }) {
+      ok(await db.from("game_edits").delete().eq("game_id", game_id).eq("author_id", author_id).eq("status", "new"));
+      return ok(await db.from("game_edits").insert({ game_id, author_id, patch }).select(EDIT_COLS).maybeSingle());
+    },
+    async listEdits({ status, authorId } = {}) {
+      let q = db.from("game_edits").select(EDIT_COLS).order("created_at", { ascending: false }).limit(200);
+      if (status) q = q.eq("status", status);
+      if (authorId !== undefined) q = q.eq("author_id", authorId);
+      return ok(await q) ?? [];
+    },
+    async getEdit(id) { return ok(await db.from("game_edits").select(EDIT_COLS).eq("id", id).maybeSingle()); },
+    async updateEdit(id, patch) {
+      return ok(await db.from("game_edits").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select(EDIT_COLS).maybeSingle());
+    },
+
+    // ---------- профили и посты ----------
+    async getUser(id) {
+      return ok(await db.from("users").select("tg_id,first_name,username,registered_at,banned").eq("tg_id", id).maybeSingle());
+    },
+    async getProfile(id) {
+      return ok(await db.from("profiles").select(PROF_COLS).eq("tg_id", id).maybeSingle());
+    },
+    /** Пишет только переданные поля (upsert по tg_id). Строка игрока в users уже есть: её создаёт touch_user при каждом запросе. */
+    async saveProfile(id, fields) {
+      ok(await db.from("profiles").upsert({ tg_id: id, ...fields, updated_at: new Date().toISOString() }, { onConflict: "tg_id" }));
+      return this.getProfile(id);
+    },
+    /** post = { title, text } или null (удалить) */
+    async setPost(id, post) {
+      return this.saveProfile(id, post
+        ? { post_title: post.title, post_text: post.text, post_at: new Date().toISOString() }
+        : { post_title: "", post_text: "", post_at: null });
+    },
+    /** Имя/цвет/фото профиля + имя из Telegram как запасное: [{ tg_id, name, color, photo, first_name }] */
+    async profilesByIds(ids) {
+      if (!ids.length) return [];
+      const [p, u] = await Promise.all([
+        db.from("profiles").select("tg_id,name,color,photo").in("tg_id", ids),
+        db.from("users").select("tg_id,first_name").in("tg_id", ids),
+      ]);
+      const prof = new Map((ok(p) ?? []).map((x) => [Number(x.tg_id), x]));
+      return (ok(u) ?? []).map((x) => ({ first_name: x.first_name, ...(prof.get(Number(x.tg_id)) ?? { name: "", color: "", photo: "" }), tg_id: x.tg_id }));
+    },
+
+    // ---------- отзывы ----------
+    async listReviews(game, limit) {
+      return ok(await db.from("reviews").select(REV_COLS).eq("game_id", game).order("updated_at", { ascending: false }).limit(limit)) ?? [];
+    },
+    async getReview(id) {
+      return ok(await db.from("reviews").select(REV_COLS).eq("id", id).maybeSingle());
+    },
+    async getUserReview(game, uid) {
+      return ok(await db.from("reviews").select(REV_COLS).eq("game_id", game).eq("author_id", uid).maybeSingle());
+    },
+    /** Один отзыв на игрока и игру: есть id -> правка, нет -> новый (уникальный индекс закрывает гонку) */
+    async saveReview({ id, game, uid, rating, body }) {
+      const now = new Date().toISOString();
+      if (id) return ok(await db.from("reviews").update({ rating, body, updated_at: now }).eq("id", id).select(REV_COLS).maybeSingle());
+      return ok(await db.from("reviews").insert({ game_id: game, author_id: uid, rating, body }).select(REV_COLS).maybeSingle());
+    },
+    async deleteReview(id) { ok(await db.from("reviews").delete().eq("id", id)); },
+
+    // ---------- журнал действий ----------
+    async addEvents(rows) {
+      if (!rows.length) return;
+      ok(await db.from("events").insert(rows.map((r) => ({ ...r, ts: r.ts.toISOString() }))));
+    },
+    async countEvents(uid, sinceMs, type) {
+      let q = db.from("events").select("id", { count: "exact", head: true }).eq("user_id", uid).gt("ts", new Date(sinceMs).toISOString());
+      if (type) q = q.eq("type", type);
+      const r = await q;
+      if (r.error) throw new Error(r.error.message);
+      return r.count ?? 0;
+    },
+    async lastEventTs(uid, type, game) {
+      let q = db.from("events").select("ts").eq("user_id", uid).eq("type", type);
+      q = game ? q.eq("game_id", game) : q.is("game_id", null);
+      const r = ok(await q.order("ts", { ascending: false }).limit(1));
+      return r?.[0] ? Date.parse(r[0].ts) : null;
+    },
+    async listEvents({ limit, before }) {
+      let q = db.from("events").select("id,ts,user_id,type,game_id,meta").order("id", { ascending: false }).limit(limit);
+      if (before) q = q.lt("id", before);
+      return ok(await q) ?? [];
+    },
+    async firstEventTs() {
+      const r = ok(await db.from("events").select("ts").order("ts", { ascending: true }).limit(1));
+      return r?.[0] ? Date.parse(r[0].ts) : null;
+    },
+
+    // ---------- статистика (SQL-функции из schema.sql) ----------
+    async gameStats(ids) {
+      if (!ids.length) return [];
+      return ok(await db.rpc("game_stats", { p_ids: ids })) ?? [];
+    },
+    /** -> { base, rows: [[действий, вес], …] }: base = вес всех событий до startMs */
+    async activitySeries({ startMs, stepSec, n }) {
+      const r = ok(await db.rpc("activity_series", { p_start: new Date(startMs).toISOString(), p_step_sec: stepSec, p_n: n }));
+      return { base: Number(r?.base ?? 0), rows: (r?.rows ?? []).map(([a, w]) => [Number(a), Number(w)]) };
     },
   };
 }

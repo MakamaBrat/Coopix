@@ -1,3 +1,6 @@
+import { createHub, WEIGHTS } from "./hub.js";
+import { cleanGame, gameWire, applyPatch, coverFor, newGameId } from "./games.js";
+
 export const GENRES = ["Arcade", "Music", "Shooter", "Puzzle", "Other"];
 export const STATUSES = ["new", "seen", "pub"];
 export const FILE_MAX = 1_500_000; // байт, как SUB_MAX на фронте
@@ -48,6 +51,7 @@ const toUser = (u, role) => ({
  */
 export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {} }) {
   const json = (status, body) => ({ status, body });
+  const hub = createHub({ store, botToken, notify, adminIds });
 
   async function handle(req) {
     const v = verify(req.headers?.["x-tg-init"], botToken, maxAgeSec);
@@ -78,6 +82,9 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       const [news, wallet] = await Promise.all([store.getSetting("news"), store.getSetting("wallet")]);
       return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null });
     }
+
+    // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----
+    if (req.route === "hub") return hub.handle(req, { uid, staff, isMain });
 
     // ---- /api/admin?r=...: панель управления ----
     if (req.route === "admin") return admin(req, { uid, role, staff, isMain });
@@ -154,6 +161,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       file_html: html,
     });
     if (!row) return json(429, { error: "rate_limit" }); // 5 заявок в сутки, считается в БД атомарно
+    await hub.log(uid, "submit", null, {}, WEIGHTS.submit).catch((e) => console.error("[event]", e.message)); // журнал не должен ломать отправку
 
     const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
     for (const a of staffIds) {
@@ -166,7 +174,91 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
   async function admin(req, { uid, role, isMain }) {
     if (!role) return json(403, { error: "forbidden" });
     const m = req.method, q = req.query ?? {}, r = String(q.r ?? "");
+
+    // --- правки страниц игр от авторов: смотрят админ и модератор ---
+    if (r === "edits") {
+      if (m !== "GET") return json(405, { error: "method_not_allowed" });
+      const edits = await store.listEdits({ status: ["new", "approved", "rejected"].includes(q.status) ? q.status : undefined });
+      const games = new Map((await store.listGames()).map((g) => [g.id, g]));
+      const names = await store.usersByIds([...new Set(edits.map((e) => Number(e.author_id)))]);
+      return json(200, edits.map((e) => ({
+        id: e.id, game: e.game_id, title: games.get(e.game_id)?.title ?? e.game_id, current: games.get(e.game_id) ? gameWire(games.get(e.game_id), 0) : null,
+        authorId: String(e.author_id), author: names.find((u) => Number(u.tg_id) === Number(e.author_id))?.first_name ?? "",
+        patch: e.patch, status: e.status, comment: e.comment, at: Date.parse(e.created_at),
+      })));
+    }
+    if (r === "edit") {
+      if (m !== "PATCH") return json(405, { error: "method_not_allowed" });
+      const id = String(q.id ?? "");
+      if (!UUID.test(id)) return json(404, { error: "not_found" });
+      const b = parseBody(req.body);
+      if (!b || !["approved", "rejected"].includes(b.status)) return json(400, { error: "bad_status" });
+      const e = await store.getEdit(id);
+      if (!e) return json(404, { error: "not_found" });
+      if (e.status !== "new") return json(409, { error: "already_done" });
+      const g = await store.getGame(e.game_id);
+      if (b.status === "approved") {
+        if (!g) return json(404, { error: "not_found" });
+        const next = applyPatch(g, e.patch);
+        await store.updateGame(g.id, { description: next.description, changes: next.changes, version: next.version, link: next.link, item: next.item, bg: next.bg, tint: next.tint ?? null });
+      }
+      const row = await store.updateEdit(id, { status: b.status, comment: clip(b.comment, 400) });
+      notify(e.author_id, `Правки страницы «${g?.title ?? e.game_id}»: ${b.status === "approved" ? "одобрены, уже на сайте" : "отклонены"}` + (row.comment ? `\nКомментарий: ${row.comment}` : ""));
+      return json(200, { id, status: row.status });
+    }
+
     if (!isMain) return json(403, { error: "forbidden" }); // всё ниже только для главного админа
+
+    // --- каталог игр: список, доступ, порядок ---
+    if (r === "games") {
+      if (m !== "GET") return json(405, { error: "method_not_allowed" });
+      return json(200, (await store.listGames()).map((g) => ({ ...gameWire(g, 0), authorId: g.author_id == null ? null : String(g.author_id), submission: g.submission })));
+    }
+    if (r === "game") {
+      const b = parseBody(req.body);
+      if (m === "POST") {
+        const { f, error } = cleanGame(b);
+        if (error) return json(400, { error });
+        if (!f.title) return json(400, { error: "title_required" });
+        const row = await store.createGame({ id: newGameId(), tags: ["Arcade"], access: "staff", ...f });
+        return json(201, gameWire(row, 0));
+      }
+      const id = String(q.id ?? "");
+      if (!/^[a-z0-9_-]{1,32}$/.test(id)) return json(404, { error: "not_found" });
+      if (m === "PATCH") {
+        const { f, error } = cleanGame(b);
+        if (error) return json(400, { error });
+        if (!Object.keys(f).length) return json(400, { error: "empty_patch" });
+        const row = await store.updateGame(id, f);
+        if (!row) return json(404, { error: "not_found" });
+        return json(200, gameWire(row, 0));
+      }
+      if (m === "DELETE") {
+        if (!(await store.getGame(id))) return json(404, { error: "not_found" });
+        await store.deleteGame(id);
+        return json(200, { ok: true });
+      }
+      return json(405, { error: "method_not_allowed" });
+    }
+    // --- заявка -> игра в каталоге (по умолчанию «только админы», чтобы проверить перед выходом) ---
+    if (r === "publish") {
+      if (m !== "POST") return json(405, { error: "method_not_allowed" });
+      const b = parseBody(req.body);
+      const sid = String(b?.submission ?? "");
+      if (!UUID.test(sid)) return json(404, { error: "not_found" });
+      const sub = await store.get(sid), html = await store.getHtml(sid);
+      if (!sub || !html) return json(404, { error: "not_found" });
+      if ((await store.listGames()).some((g) => g.submission === sid)) return json(409, { error: "already_published" });
+      const access = ["public", "staff"].includes(b.access) ? b.access : "staff";
+      const row = await store.createGame({
+        id: newGameId(), title: sub.title.slice(0, 40), tags: [sub.genre], description: sub.description, version: sub.version,
+        author_name: String(sub.author).slice(0, 24), author_id: sub.author_id, item: "cassette", cover: coverFor(sub.genre), access,
+        sort: 100, file_html: html.file_html, submission: sid,
+      });
+      await store.update(sid, { status: "pub" });
+      notify(sub.author_id, `Ваша игра «${sub.title}» добавлена в маркет` + (access === "public" ? "." : " (пока в режиме проверки, скоро откроем всем)."));
+      return json(201, gameWire(row, 0));
+    }
 
     // --- пользователи ---
     if (r === "stats") {
