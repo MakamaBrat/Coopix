@@ -939,7 +939,7 @@ html.desk .prof>.pf-card{grid-column:1;grid-row:1}
 html.desk .prof>.pf-lv{grid-column:1;grid-row:2}
 html.desk .prof>.pf-set{grid-column:1;grid-row:3}
 html.desk .prof>section{grid-column:2;grid-row:1/span 3;margin-top:0!important}
-html.desk .mdl{grid-template-columns:repeat(5,1fr);gap:16px 8px}
+html.desk .mdl{grid-template-columns:repeat(6,minmax(0,1fr));gap:16px 8px} /* 12 медалей = 2 ровных ряда */
 
 /* App page: game + TV on the left (sticky), description + reviews on the right */
 html.desk #pgBody>.pg{width:var(--pgw);display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:48px;align-items:start}
@@ -959,6 +959,17 @@ html.desk .panel:has(.pfix){width:min(100vw - 64px,1080px)}
 html.desk .panel:has(.cmx){width:min(100vw - 64px,1040px)}
 html.desk .panel:has(.toggle){width:min(100vw - 64px,820px)}
 html.desk .panel:has(.av-row){width:min(100vw - 64px,780px)}
+/* Профиль другого игрока в окне на компьютере: две колонки (карточка и уровень | пост и медали), медали ровными рядами 6×2,
+   всё помещается без прокрутки на ноутбуке (раньше одна длинная колонка и 5 редких столбцов: 5+5+2) */
+/* класс, а не :has(.pfv): профиль подставляется в уже открытое окно, и Chrome не пересчитывает :has после innerHTML */
+html.desk .panel.pw{width:min(100vw - 64px,960px)}
+html.desk .pfv{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto 1fr;gap:12px 28px;align-items:start;align-content:start}
+html.desk .pfv>.pf-card{grid-column:1;grid-row:1}
+html.desk .pfv>.pf-lv{grid-column:1;grid-row:2;margin-top:0}
+html.desk .pfv>.pf-sec{grid-column:2;grid-row:1/span 2;margin-top:0!important}
+html.desk .pfv .mdl{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
+html.desk .pfv .md b{font-size:10.5px;letter-spacing:-.03em}
+html.desk .pfv .md-info{min-height:64px}
 /* card editor */
 html.desk .pfix .pv{max-width:640px;margin:0 auto}
 html.desk .pbody:has(#name){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-content:start}
@@ -1929,12 +1940,12 @@ async function openPlayer(pid){
   if(pid==="me"){closeSheet();if(PG)backClick();goView(3);return}
   if(!SUB_API){toast("Профили игроков доступны при подключённом сервере");return}
   const foot=`<div class="pfoot"><div class="row"><button class="btn" data-close>Закрыть</button></div></div>`;
-  openSheet(sbHead("Профиль игрока")+`<div class="pbody" lang="ru"><p class="sbk">Загрузка…</p></div>`+foot);panel.dataset.pp=pid;
+  openSheet(sbHead("Профиль игрока")+`<div class="pbody" lang="ru"><p class="sbk">Загрузка…</p></div>`+foot);panel.dataset.pp=pid;panel.classList.add("pw"); /* сразу нужной ширины: без рывка, когда придёт профиль */
   let j;try{j=await hub("profile",{q:{id:pid}})}catch(e){if(panel.dataset.pp===pid){const pb=panel.querySelector(".pbody");if(pb)pb.innerHTML=`<p class="sbk">${e.status===404?"Профиль не найден":"Не удалось загрузить профиль"}</p>`}return}
   if(panel.dataset.pp!==pid||!sheet.classList.contains("open"))return;
   if(j.me){closeSheet();if(PG)backClick();goView(3);return}
   const s=j.stats||{},P={name:j.name||"Игрок",color:j.color,photo:j.photo||"",reg:j.reg,xp:j.xp|0,medals:j.medals||{},plays:s.plays|0,ids:Array(s.ids|0),best:s.best|0,reviews:s.reviews|0,favs:Array(s.favs|0),made:s.made|0,custom:s.custom|0,days:s.days|0,post:j.post},L=pfLevel(P);
-  panel.innerHTML=sbHead("Профиль игрока")+`<div class="pbody pfv" lang="ru">${pfCard(P,0)}${L.html}${pfTabs(P,0,"post")}</div>`+foot;
+  panel.innerHTML=sbHead("Профиль игрока")+`<div class="pbody pfv" lang="ru">${pfCard(P,0)}${L.html}${pfTabs(P,0,"post")}</div>`+foot;panel.classList.add("pw");
   animBar(panel,L.pct);bindPf(panel,P,0);fitSheet()}
 function openProfileEditor(){
   const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
@@ -2148,7 +2159,7 @@ function fitSheet(){
   panel.style.maxHeight=avail+"px";const pb=panel.querySelector(".pbody");if(!pb)return;
   pb.style.maxHeight="none";let others=0;for(const c of panel.children)if(c!==pb)others+=c.offsetHeight;
   pb.style.maxHeight=Math.max(120,avail-others-8)+"px"}
-function openSheet(html){lastFocus=document.activeElement;panel.innerHTML=html;sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+function openSheet(html){lastFocus=document.activeElement;panel.classList.remove("pw");panel.innerHTML=html;sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   fitSheet();setTimeout(fitSheet,120);setTimeout(fitSheet,400);addEventListener("resize",fitSheet);window.visualViewport&&visualViewport.addEventListener("resize",fitSheet);
   onKey=e=>{if(e.key==="Escape"){if(MENU){const bt=MENU.btn;closeMenu();bt.focus({preventScroll:true})}else closeSheet()}};addEventListener("keydown",onKey);setTimeout(()=>panel.querySelector("input,button,select")?.focus({preventScroll:true}),60)}
 function closeSheet(){closeMenu();removeEventListener("resize",fitSheet);window.visualViewport&&visualViewport.removeEventListener("resize",fitSheet);panel.style.maxHeight="";sheet.classList.remove("open");sheet.setAttribute("aria-hidden","true");document.body.style.overflow="";removeEventListener("keydown",onKey);
