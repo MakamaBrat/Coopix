@@ -16,7 +16,7 @@ export function memStore() {
     async create(n) {
       if (rows.filter((r) => r.author_id === n.author_id).length >= 5) return null;
       const t = new Date().toISOString();
-      const r = { ...n, id: crypto.randomUUID(), file_size: Buffer.byteLength(n.file_html), status: "new", comment: "", created_at: t, updated_at: t };
+      const r = { ...n, id: crypto.randomUUID(), file_size: n.file_html == null ? null : Buffer.byteLength(n.file_html), status: "new", comment: "", created_at: t, updated_at: t };
       rows.push(r); return strip(r);
     },
     async get(id) { const r = rows.find((x) => x.id === id); return r ? strip(r) : null; },

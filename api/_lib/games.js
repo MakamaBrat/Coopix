@@ -13,7 +13,8 @@ export const coverFor = (genre) => COVER_BY_GENRE[genre] ?? "b:retro";
 
 /** Поля страницы, которые автор может предложить изменить (меняются только после одобрения админа). */
 export const AUTHOR_FIELDS = ["desc", "changes", "ver", "link", "item", "bg", "tint", "cover", "bgimg"];
-const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off", "play_kind", "play_html"]; // dl_off, play_*: только главный админ
+const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off", "play_kind", "play_html", "file_html"]; // dl_off, play_*, file_html: только главный админ
+export const GAME_FILE_MAX = 1500000; // HTML игры, который админ прикрепляет из бота поддержки
 /** Плейабл на «телевизоре» страницы игры: свой маленький HTML или одна из стандартных мини-игр (auto = по жанру) */
 export const PLAY_KINDS = ["auto", "arcade", "music", "shooter", "puzzle", "catch"];
 export const PLAY_MAX = 300000;
@@ -86,6 +87,12 @@ export function cleanGame(b, only = ALL_FIELDS) {
     if (h === "" || h === null) f.play_html = null; // убрать свой плейабл: снова стандартная мини-игра
     else if (typeof h !== "string" || h.length > PLAY_MAX || !/<(html|body|script|canvas)/i.test(h)) return { error: "bad_play_html" };
     else f.play_html = h;
+  }
+  if (ok("file_html")) {
+    const h = b.file_html;
+    if (h === "" || h === null) f.file_html = null;
+    else if (typeof h !== "string" || h.length > GAME_FILE_MAX || !/<(html|body|script|canvas)/i.test(h)) return { error: "bad_file" };
+    else f.file_html = h;
   }
   if (ok("dl_off")) { if (typeof b.dl_off !== "boolean") return { error: "bad_dl" }; f.dl_off = b.dl_off; }
   if (ok("sort")) f.sort = Math.min(100000, Math.max(0, Math.trunc(Number(b.sort)) || 0));

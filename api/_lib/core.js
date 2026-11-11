@@ -38,7 +38,7 @@ export const toWire = (r) => ({
   desc: r.description,
   ver: r.version,
   contact: r.contact,
-  file: { name: r.file_name, size: r.file_size },
+  file: r.file_size ? { name: r.file_name, size: r.file_size } : null, // null = HTML прислан в бота поддержки
   at: Date.parse(r.created_at),
   status: r.status,
   comment: r.comment,
@@ -142,7 +142,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     if (req.file) {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
       const f = await store.getHtml(req.id);
-      if (!f || (!staff && f.author_id !== uid)) return json(404, { error: "not_found" });
+      if (!f || (!staff && f.author_id !== uid) || !f.file_html) return json(404, { error: "not_found" }); // файла нет: прислан в бота
       return json(200, { name: f.file_name, size: f.file_size, text: f.file_html });
     }
 
@@ -177,14 +177,16 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
 
     const title = clip(b.title, 40), description = clip(b.desc, 600);
     const genre = GENRES.includes(b.genre) ? b.genre : "Other";
+    // HTML-файл необязателен: игрок шлёт его боту поддержки (@Coopsupbot), а заявку оформляет здесь как раньше
     const html = typeof b.file?.text === "string" ? b.file.text : "";
     const size = Buffer.byteLength(html, "utf8");
     if (!title || !description) return json(400, { error: "title_and_desc_required" });
-    if (!size || size > FILE_MAX) return json(413, { error: "file_size" });
-    if (!/<(html|body|script|canvas)/i.test(html)) return json(400, { error: "not_html" });
-
-    let name = clip(b.file?.name, 100).replace(/[\\/\u0000-\u001f]/g, "_") || "game.html";
-    if (!/\.html?$/i.test(name)) name += ".html";
+    if (html) {
+      if (size > FILE_MAX) return json(413, { error: "file_size" });
+      if (!/<(html|body|script|canvas)/i.test(html)) return json(400, { error: "not_html" });
+    }
+    let name = "";
+    if (html) { name = clip(b.file?.name, 100).replace(/[\\/\u0000-\u001f]/g, "_") || "game.html"; if (!/\.html?$/i.test(name)) name += ".html"; }
 
     // Автор берётся из подписанного initData, а не из тела запроса.
     const row = await store.create({
@@ -195,14 +197,14 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       version: clip(b.ver, 12) || "0.1",
       contact: clip(b.contact, 60),
       file_name: name,
-      file_html: html,
+      file_html: html || null,
     });
     if (!row) return json(429, { error: "rate_limit" }); // 5 заявок в сутки, считается в БД атомарно
     await hub.log(uid, "submit", null, { k: 1 }, WEIGHTS.submit).catch((e) => console.error("[event]", e.message)); // журнал не должен ломать отправку
 
     const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
     for (const a of staffIds) {
-      notify(a, `Новая заявка в Coopix Market: «${row.title}» (${row.genre}) от ${row.author}${row.tg ? " @" + row.tg : ""}`);
+      notify(a, `Новая заявка в Coopix Market: «${row.title}» (${row.genre}) от ${row.author}${row.tg ? " @" + row.tg : ""}` + (html ? "" : "\nHTML-файл автор пришлёт в @Coopsupbot."));
     }
     return json(201, toWire(row));
   }

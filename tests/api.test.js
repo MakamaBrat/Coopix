@@ -77,3 +77,18 @@ test("неверный метод и невалидный id", async () => {
   assert.equal((await call("subs", "DELETE", init(42))).status, 405);
   assert.equal((await call("subs", "GET", init(42), { id: "not-a-uuid" })).status, 404);
 });
+
+test("заявка без HTML-файла (файл шлют в бот поддержки): все поля, статус и публикация как раньше", async () => {
+  const { setup, init, body } = await import("./mem.js");
+  const w = setup();
+  for (const id of [1, 42]) await w.call("me", "GET", init(id));
+  const r = await w.call("subs", "POST", init(42), { body: { ...body({ title: "Без файла", ver: "1.2", contact: "@ann" }), file: undefined } });
+  assert.equal(r.status, 201); assert.equal(r.body.file, null); assert.equal(r.body.title, "Без файла"); assert.equal(r.body.status, "new");
+  assert.ok(w.sent.some(([, t]) => /@Coopsupbot/.test(t)), "админу: HTML придёт в бота");
+  assert.equal((await w.call("subs", "GET", init(1), { id: r.body.id, file: true })).status, 404, "файла нет");
+  assert.equal((await w.call("subs", "POST", init(42), { body: body({ file: { name: "x.html", text: "просто текст" } }) })).status, 400, "если файл есть, он должен быть HTML");
+  const pub = await w.call("admin", "POST", init(1), { query: { r: "publish" }, body: { submission: r.body.id, access: "staff" } });
+  assert.equal(pub.status, 201); assert.equal(pub.body.file, false);
+  const g = await w.call("admin", "PATCH", init(1), { query: { r: "game", id: pub.body.id }, body: { file_html: "<html><canvas></canvas></html>" } });
+  assert.equal(g.body.file, true, "админ прикрепил HTML из бота");
+});

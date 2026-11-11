@@ -2058,8 +2058,7 @@ const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d"
    (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
 function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Как растёт Coopix</h3>
   <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность сообщества</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>рост сообщества</span><span><i class="lb"></i>события</span><span><i class="ls2"></i>спасибо авторам</span></div></div>${chBody(HA,"График: как растёт активность сообщества, события игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
-    <div class="chc-s" data-s></div>
-    <p class="chc-n">Считаем самое важное: новых игроков, отзывы, первые запуски и скачивания игр.</p></div></section>`}
+    <div class="chc-s" data-s></div></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
@@ -2147,6 +2146,7 @@ function renderClub(){
     <h2 class="cl-slogan"><span>Игру может</span><em>сделать каждый</em></h2>
   </div>
   <div class="cl-btns enter" style="--i:.08s">
+    <div class="lw"><button class="lbtn big" id="mkGame" type="button" style="--lc:#a56bff;width:100%">${IC.plus}Создать игру</button></div>
     <div class="lw bo"><button class="lbtn big" id="helpBtn" type="button" style="--lc:#ff8a3d;width:100%">${IC.heart}Помочь</button></div>
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
@@ -2162,6 +2162,7 @@ function renderClub(){
     clubEl.querySelector("#lgN").textContent=FEED.all?"Все действия игроков подряд.":"Только важное: регистрация, отзыв, первый запуск и загрузка игры, звёзды, заявка, мод.";
     FEED.items=[];FEED.next=null;clubEl.querySelector("#lgList").innerHTML='<p class="empty" style="border:0">Загрузка…</p>';loadFeed(clubEl,false)})}
   clubEl.querySelector("#helpBtn").addEventListener("click",()=>{sfx.tap();openHelp()});
+  clubEl.querySelector("#mkGame").addEventListener("click",()=>{sfx.tap();openSubmit()}); /* «Игру может сделать каждый» → заявка */
 }
 /* Help window: TRON (TRC20) USDT address + copy */
 function openHelp(){
@@ -3031,7 +3032,9 @@ function openBot(kind,m){
     <p class="sbk">Мы посмотрим и ответим в боте. После проверки ${kind==="mod"?"мод появится на странице игры":"игра появится в маркете"} с вашим именем.</p></div>
     <div class="pfoot"><div class="row"><button class="btn ghost" data-close type="button">Закрыть</button><button class="btn" id="botGo" type="button">Открыть @${SUPPORT_BOT}</button></div></div>`);
   $("#botGo").addEventListener("click",()=>{sfx.tap();try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openTelegramLink){Telegram.WebApp.openTelegramLink(url);return}}catch(e){}window.open(url,"_blank","noopener")})}
-function openSubmit(){return openBot("game")}
+const openBotLink=()=>{const url="https://t.me/"+SUPPORT_BOT;try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openTelegramLink){Telegram.WebApp.openTelegramLink(url);return}}catch(e){}window.open(url,"_blank","noopener")};
+/* заявка оформляется как раньше (все поля, статусы, «Мои заявки»), только HTML-файл автор шлёт в бот поддержки */
+function openSubmit(){return openSubmitOld()}
 function openSubmitOld(){
   const G=["Arcade","Music","Shooter","Puzzle","Other"];let file=null;
   openSheet(sbHead("Отправить игру")+`<div class="pbody" lang="ru">
@@ -3041,22 +3044,20 @@ function openSubmitOld(){
     <label class="fld"><span class="lbl">Описание *</span><textarea class="sbt" id="sbD" maxlength="600" placeholder="О чём игра, как играть, что внутри"></textarea></label>
     <label class="fld"><span class="lbl">Версия</span><input class="in" id="sbV" maxlength="12" value="0.1"></label>
     <label class="fld"><span class="lbl">Контакт (Telegram или почта)</span><input class="in" id="sbC" maxlength="60" placeholder="@username"></label>
-    <div class="fld"><span class="lbl">HTML-файл *</span><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer;width:100%"><span id="sbFN">Выбрать файл</span><input type="file" id="sbF" accept=".html,.htm,text/html" hidden></label></div>
+    <div class="fld"><span class="lbl">HTML-файл игры</span><p class="sbk" style="margin:0 0 8px">Сам файл пришлите нашему боту поддержки <b>@${SUPPORT_BOT}</b> и укажите название игры. Заявку оформляйте здесь: статус и комментарий админа появятся в «Мои заявки».</p>
+      <button class="btn ghost" id="sbBot" type="button" style="width:100%">Отправить HTML в @${SUPPORT_BOT}</button></div>
     <p class="sbk" id="sbErr" style="color:#ff9aa8;min-height:20px;margin-top:8px"></p></div>
   <div class="pfoot"><div class="row"><button class="btn ghost" id="sbMine" type="button">Мои заявки</button><button class="btn" id="sbSend" type="button">Отправить</button></div></div>`);
   const err=m=>{$("#sbErr").textContent=m};
-  $("#sbF").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
-    if(f.size>SUB_MAX){err("Файл больше 1,5 МБ");e.target.value="";return}
-    const r=new FileReader();r.onload=()=>{file={name:f.name,size:f.size,text:String(r.result)};$("#sbFN").textContent=f.name+" · "+Math.round(f.size/1024)+" КБ";err("")};r.readAsText(f)});
+  $("#sbBot").addEventListener("click",()=>{sfx.tap();openBotLink()});
   $("#sbMine").addEventListener("click",()=>{sfx.tap();openMine()});
   $("#sbSend").addEventListener("click",async()=>{
     const t=$("#sbT").value.trim(),d=$("#sbD").value.trim();
     if(!t||!d){err("Заполните название и описание");return}
-    if(!file||!/<(html|body|script|canvas)/i.test(file.text)){err("Загрузите корректный HTML-файл");return}
     const s={id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),authorId:meId(),author:PROF.name,tg:(tgU()&&tgU().username)||"",
       title:t,genre:$("#sbG").value,desc:d,ver:$("#sbV").value.trim()||"0.1",contact:$("#sbC").value.trim(),file,at:Date.now(),status:"new",comment:"",upd:Date.now()};
     try{await SUBS.add(s)}catch(e){err(e.message==="429"?"Слишком много заявок за сутки, попробуйте завтра":e.message==="401"?"Откройте приложение из Telegram, чтобы отправить заявку":"Не удалось отправить заявку (нет связи или файл слишком большой)");return}
-    sfx.tap();act("submit");toast("Заявка отправлена");openMine()})}
+    sfx.tap();act("submit");toast("Заявка отправлена. Не забудьте прислать HTML в @"+SUPPORT_BOT);openMine()})}
 async function openMine(){
   let all=[];try{all=(await SUBS.list()).filter(s=>s.authorId===meId())}catch(e){toast("Не удалось загрузить заявки")}
   openSheet(sbHead("Мои заявки")+`<div class="pbody" lang="ru">${all.length?all.map(s=>`<div class="sbi" style="--c:${SST[s.status].c}">${sbBadge(s.status)}<h4>${esc(s.title)}</h4><p>${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}</p>${s.comment?`<p class="cm">Комментарий: ${esc(s.comment)}</p>`:""}</div>`).join(""):`<p class="sbk">Заявок пока нет.</p>`}</div>
@@ -3067,7 +3068,7 @@ async function openAdmin(){
   const draw=()=>{
     if(cur){const s=all.find(x=>x.id===cur);let st=s.status;
       panel.innerHTML=sbHead("Заявка")+`<div class="pbody" lang="ru">${sbBadge(s.status)}<h3 style="margin:8px 0 2px;font-size:26px">${esc(s.title)}</h3>
-      <p class="sbk"><b>Автор:</b> ${esc(s.author)}${s.tg?" (@"+esc(s.tg)+")":""} · id ${esc(s.authorId)}<br><b>Контакт:</b> ${esc(s.contact||"—")}<br><b>Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}<br><b>Файл:</b> ${esc(s.file.name)} · ${Math.round(s.file.size/1024)} КБ</p>
+      <p class="sbk"><b>Автор:</b> ${esc(s.author)}${s.tg?" (@"+esc(s.tg)+")":""} · id ${esc(s.authorId)}<br><b>Контакт:</b> ${esc(s.contact||"—")}<br><b>Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmtDate(s.at)}<br><b>Файл:</b> ${s.file?esc(s.file.name)+" · "+Math.round(s.file.size/1024)+" КБ":"прислан в @"+SUPPORT_BOT}</p>
       <p style="font-size:19px;line-height:1.35;margin:10px 0;white-space:pre-wrap">${esc(s.desc)}</p>
       <div class="row" style="margin:6px 0"><button class="btn ghost" id="adOpen" type="button">Открыть HTML</button><button class="btn ghost" id="adDl" type="button">Скачать</button></div>
       <span class="lbl">Статус</span><div class="sbc" id="adSt">${Object.keys(SST).map(k=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${k===st}">${SST[k].t}</button>`).join("")}</div>

@@ -164,7 +164,7 @@ const ERR = {
   cannot_ban_staff: "Нельзя заблокировать админа или модератора", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
   already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
-  bad_text: "Слишком короткое сообщение",
+  bad_text: "Слишком короткое сообщение", bad_file: "Файл игры: нужен HTML не больше 1,5 МБ",
   bad_play: "Неизвестная мини-игра", bad_play_html: "Плейабл: нужен HTML не больше 300 КБ",
   bad_link: "Ссылка должна начинаться с https://", bad_dl: "Неверное значение скачивания", empty_patch: "Ничего не изменилось",
   payments_off: "Бот не настроен на сервере", telegram_error: "Telegram отклонил запрос: проверьте BOT_TOKEN", bad_url: "Нужен адрес https://…/api/bot",
@@ -353,7 +353,7 @@ async function viewSubs(root) {
     let st = s.status;
     root.innerHTML = `<button class="btn ghost sm" id="bk" type="button">← К списку</button>
       <div class="panel" style="margin-top:12px">${sBadge(s.status)}<h2 style="margin:8px 0 4px">${esc(s.title)}</h2>
-      <p class="muted small" style="margin:0"><b style="color:#fff">Автор:</b> ${esc(s.author)}${s.tg ? " (@" + esc(s.tg) + ")" : ""} · id ${esc(s.authorId)}<br><b style="color:#fff">Контакт:</b> ${esc(s.contact || "—")}<br><b style="color:#fff">Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmt(s.at)}<br><b style="color:#fff">Файл:</b> ${esc(s.file.name)} · ${Math.round(s.file.size / 1024)} КБ</p>
+      <p class="muted small" style="margin:0"><b style="color:#fff">Автор:</b> ${esc(s.author)}${s.tg ? " (@" + esc(s.tg) + ")" : ""} · id ${esc(s.authorId)}<br><b style="color:#fff">Контакт:</b> ${esc(s.contact || "—")}<br><b style="color:#fff">Жанр:</b> ${esc(s.genre)} · v${esc(s.ver)} · ${fmt(s.at)}<br><b style="color:#fff">Файл:</b> ${s.file ? esc(s.file.name) + " · " + Math.round(s.file.size / 1024) + " КБ" : "прислан в @Coopsupbot (после публикации прикрепите его во вкладке «Игры»)"}</p>
       <p style="white-space:pre-wrap;margin:12px 0">${esc(s.desc)}</p>
       <div class="row"><button class="btn ghost" id="o" type="button">Открыть HTML</button><button class="btn ghost" id="d" type="button">Скачать</button></div>
       <span class="lbl">Статус</span><div class="chips" id="st">${Object.keys(SST).map(k => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === st}">${SST[k].t}</button>`).join("")}</div>
@@ -367,7 +367,7 @@ async function viewSubs(root) {
       catch (e) { toast(errText(e), true); return false; } });
     if ($("#pubS")) { $("#pubS").onclick = () => pub("staff"); $("#pubP").onclick = () => pub("public"); }
     $("#o").onclick = async () => { try { preview(await text(s)); } catch (e) { toast("Не удалось загрузить файл", true); } };
-    $("#d").onclick = async () => { try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([await text(s)], { type: "text/html" })); a.download = s.file.name; a.click(); } catch (e) { toast("Не удалось загрузить файл", true); } };
+    $("#d").onclick = async () => { try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([await text(s)], { type: "text/html" })); a.download = s.file ? s.file.name : "game.html"; a.click(); } catch (e) { toast("Не удалось загрузить файл", true); } };
     $("#st").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; st = b.dataset.k; root.querySelectorAll("#st .chip").forEach(x => x.setAttribute("aria-pressed", x === b)); };
     $("#sv").onclick = async () => {
       const p = { status: st, comment: $("#cm").value.trim() };
@@ -480,7 +480,8 @@ async function viewGames(root) {
             ${g.playable ? `<span class="badge" style="--c:#4dd2ff">свой HTML</span>` : `<select class="in" data-play aria-label="Мини-игра" style="width:auto;min-height:34px;padding:4px 8px">${Object.entries(PLAYS).map(([k, l]) => `<option value="${k}"${k === g.play ? " selected" : ""}>${l}</option>`).join("")}</select>`}
             <label class="btn ghost sm" style="cursor:pointer">${g.playable ? "Заменить HTML" : "Загрузить свой HTML"}<input type="file" accept=".html,.htm,text/html" data-pf hidden></label>
             ${g.playable ? `<button class="btn ghost sm" type="button" data-prm style="color:var(--bad)">Убрать свой</button>` : ""}</div></div>
-        <div class="acts"><button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
+        <div class="acts"><button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button>
+          <label class="btn ghost sm" style="cursor:pointer" title="HTML игры, который автор прислал в @Coopsupbot">${g.file ? "Заменить HTML игры" : "Прикрепить HTML игры"}<input type="file" accept=".html,.htm,text/html" data-gf hidden></label></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
       <p class="hint">Плейабл — мини-игра на «телевизоре» на странице игры. Без своего HTML играет стандартная мини-игра, нарисованная картинкой этой игры. Свой HTML — один файл до 300 КБ, запускается в изолированном окне.</p>
       <p class="hint">«Скрыта» убирает игру из маркета у всех, но не удаляет: отзывы, моды и счётчики сохраняются, вернуть можно в один клик. Изменения видны игрокам сразу после обновления маркета.</p>`;
   };
@@ -501,6 +502,13 @@ async function viewGames(root) {
   root.onchange = async e => {
     const row = e.target.closest(".nw"); if (!row) return;
     if (e.target.matches("[data-play]")) return patch(row.dataset.id, { play_kind: e.target.value }, "Мини-игра: " + PLAYS[e.target.value]);
+    if (e.target.matches("[data-gf]")) { // HTML самой игры (прислан автором в бот поддержки)
+      const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+      if (f.size > 1500000) { toast("Файл игры должен быть не больше 1,5 МБ", true); return; }
+      const text = await f.text();
+      if (!/<(html|body|script|canvas)/i.test(text)) { toast("Это не похоже на HTML-игру", true); return; }
+      return patch(row.dataset.id, { file_html: text }, "HTML игры прикреплён: " + f.name);
+    }
     if (e.target.matches("[data-pf]")) {
       const f = e.target.files[0]; e.target.value = ""; if (!f) return;
       if (f.size > PLAY_MAX) { toast("Плейабл должен быть не больше 300 КБ", true); return; }

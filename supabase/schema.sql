@@ -20,6 +20,10 @@ create table if not exists public.submissions (
   updated_at  timestamptz not null default now()
 );
 
+-- HTML-файл в заявке необязателен: автор шлёт его боту поддержки (@Coopsupbot), заявку оформляет на сайте
+alter table public.submissions alter column file_html drop not null;
+alter table public.submissions alter column file_size drop not null;
+
 create index if not exists submissions_author_idx on public.submissions (author_id, created_at desc);
 create index if not exists submissions_status_idx on public.submissions (status, created_at desc);
 
