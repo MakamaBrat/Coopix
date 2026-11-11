@@ -42,7 +42,7 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
     const g = await store.getGame(p.game);
     const row = await store.addThanks({ charge_id: String(sp.telegram_payment_charge_id), game_id: p.game, from_id: uid, author_id: g?.author_id ?? null, stars: sp.total_amount });
     if (!row) return; // повтор того же платежа от Telegram: уже записан
-    await log(uid, "thank", p.game, { s: sp.total_amount }, weight);
+    await log(uid, "thank", p.game, { s: sp.total_amount, k: 1 }, weight);
     const title = g?.title ?? p.game;
     notify(uid, `Спасибо! ⭐ ${sp.total_amount} засчитаны игре «${title}».`);
     if (g?.author_id != null && Number(g.author_id) !== uid) notify(Number(g.author_id), `Вашу игру «${title}» поддержали: ⭐ ${sp.total_amount}. Так держать!`);

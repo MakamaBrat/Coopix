@@ -227,6 +227,7 @@ test("аватары пачкой: только валидные фото, му�
 
 test("журнал: пишет сервер (отзыв, пост, профиль, медаль, уровень), а не клиент", async () => {
   const { hub, store } = await world();
+  store.events.length = 0;                                                          // регистрации из world() здесь не нужны
   await hub("profile", "PUT", ANN, { body: { name: "A", xp: 10 } });              // первая синхронизация: событий нет
   assert.equal(store.events.length, 0);
   await hub("profile", "PUT", ANN, { body: { name: "Анна", color: "#4dd2ff", xp: 60, medals: { first: 1 } } });
@@ -244,19 +245,21 @@ test("журнал: пишет сервер (отзыв, пост, профил�
 
 test("журнал: заявка на игру тоже попадает в журнал", async () => {
   const { call, store } = await world();
+  store.events.length = 0;
   const r = await call("subs", "POST", init(ANN), { body: body() });
   assert.equal(r.status, 201);
   assert.deepEqual(store.events.map((e) => e.type), ["submit"]);
 });
 
 test("лента журнала: новые сверху, страницы по before, имена и без Telegram id", async () => {
-  const { hub, age } = await world();
+  const { hub, age, store } = await world();
+  store.events.length = 0;
   const t = (who, type, game) => hub("track", "POST", who, { body: { type, game } });
   await t(ANN, "open", "retro"); age(5000); await t(BOB, "play", "retro"); age(5000); await review(hub, ANN);
-  const f1 = (await hub("feed", "GET", MAIN, { query: { limit: 2 } })).body;
+  const f1 = (await hub("feed", "GET", MAIN, { query: { limit: 2, all: "1" } })).body;
   assert.deepEqual(f1.items.map((x) => x.type), ["review", "play"]);
   assert.ok(f1.next);
-  const f2 = (await hub("feed", "GET", MAIN, { query: { limit: 2, before: f1.next } })).body;
+  const f2 = (await hub("feed", "GET", MAIN, { query: { limit: 2, all: "1", before: f1.next } })).body;
   assert.deepEqual(f2.items.map((x) => x.type), ["open"]); assert.equal(f2.next, null);
   assert.equal(f1.items.every((x) => typeof x.t === "number" && x.pid.length === 22), true);
   assert.equal(f1.items[0].me, false);
@@ -355,4 +358,19 @@ test("график: только ключевые действия (регист
   assert.equal(sum(0), 3 + 2 + 1 + 1, "3 регистрации + 2 первых запуска + 1 первая загрузка + 1 отзыв");
   assert.equal(s.base + sum(1), 3 * 10 + 2 * WEIGHTS.play + WEIGHTS.download + WEIGHTS.review, "очки только за ключевые действия");
   assert.equal(sum(2), 50, "звёзды отдельной строкой");
+});
+
+test("журнал админа: по умолчанию только ключевые события, all=1 показывает всё", async () => {
+  const { hub, age, call } = await world();                                        // MAIN, ANN, BOB уже зарегистрированы
+  const t = (who, type, game = "retro") => hub("track", "POST", who, { body: { type, game } });
+  await t(ANN, "open"); await t(ANN, "play"); age(60_000); await t(ANN, "play");   // второй запуск той же игры не ключевой
+  await t(ANN, "fav"); await t(BOB, "download");
+  await review(hub, ANN); await review(hub, ANN, { text: "Правка" });               // правка отзыва не ключевая
+  await call("me", "GET", init(77));                                               // новый игрок = регистрация
+  const key = (await hub("feed", "GET", MAIN, { query: { limit: 50 } })).body.items.map((x) => x.type);
+  assert.deepEqual(key.filter((x) => x !== "register"), ["review", "download", "play"]);
+  assert.equal(key.filter((x) => x === "register").length, 4, "регистрации трёх игроков из world() и нового");
+  const all = (await hub("feed", "GET", MAIN, { query: { limit: 50, all: "1" } })).body.items.map((x) => x.type);
+  for (const x of ["open", "fav", "play", "review"]) assert.ok(all.includes(x));
+  assert.equal(all.filter((x) => x === "play").length, 2); assert.equal(all.filter((x) => x === "review").length, 2);
 });

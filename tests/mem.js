@@ -25,10 +25,11 @@ export function memStore() {
     users, mods, settings,
     async touchUser(u) {
       const t = new Date().toISOString();
+      const created = !users.has(u.id);
       const r = users.get(u.id) ?? { tg_id: u.id, registered_at: t, last_seen_at: t, banned: false, ban_reason: "", banned_at: null, banned_by: null };
       Object.assign(r, { first_name: u.first_name, username: u.username, last_seen_at: t });
       users.set(u.id, r);
-      return { banned: r.banned, ban_reason: r.ban_reason, moderator: mods.has(u.id) };
+      return { banned: r.banned, ban_reason: r.ban_reason, moderator: mods.has(u.id), created };
     },
     async listUsers({ q = "", filter = "all", sort = "seen", limit = 50, offset = 0 } = {}) {
       let a = [...users.values()].filter((u) => (!q || `${u.first_name} ${u.username} ${u.tg_id}`.toLowerCase().includes(q.toLowerCase())) && (filter !== "banned" || u.banned));
@@ -113,7 +114,7 @@ export function memStore() {
       const a = this.events.filter((e) => e.user_id === uid && e.type === type && (game ? e.game_id === game : e.game_id == null)).map((e) => Date.parse(e.ts));
       return a.length ? Math.max(...a) : null;
     },
-    async listEvents({ limit, before }) { return this.events.filter((e) => !before || e.id < before).sort((a, b) => b.id - a.id).slice(0, limit).map((e) => ({ ...e })); },
+    async listEvents({ limit, before, key }) { return this.events.filter((e) => (!before || e.id < before) && (!key || String(e.meta?.k) === "1")).sort((a, b) => b.id - a.id).slice(0, limit).map((e) => ({ ...e })); },
     async firstEventTs() { return this.events.length ? Math.min(...this.events.map((e) => Date.parse(e.ts))) : null; },
     async gameStats(ids) {
       return ids.map((g) => {

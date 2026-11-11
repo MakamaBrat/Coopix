@@ -216,8 +216,10 @@ export function supabaseStore(url, serviceKey) {
       const r = ok(await q.order("ts", { ascending: false }).limit(1));
       return r?.[0] ? Date.parse(r[0].ts) : null;
     },
-    async listEvents({ limit, before }) {
+    /** key: только ключевые события (meta.k = 1, индекс events_key_idx) */
+    async listEvents({ limit, before, key }) {
       let q = db.from("events").select("id,ts,user_id,type,game_id,meta").order("id", { ascending: false }).limit(limit);
+      if (key) q = q.eq("meta->>k", "1");
       if (before) q = q.lt("id", before);
       return ok(await q) ?? [];
     },

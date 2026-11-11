@@ -1043,6 +1043,13 @@ html.desk .cmx>#cmxMore{grid-column:2;grid-row:4}
 .cm-nm{font:inherit;font-size:19px;font-weight:600;color:#fff;background:none;border:0;padding:0;cursor:pointer;text-align:left;overflow-wrap:anywhere}
 .cm-nm:hover,.cm-avb:focus-visible+div .cm-nm{text-decoration:underline}
 .lg{border:3px solid var(--line);background:#120a2a}
+/* шапка журнала: заголовок и переключатель «Все действия» (выкл = только важное) */
+.lg-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.lg-h h3{margin:0}
+.lg-all{flex:none;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;font-size:14px;color:var(--dim);background:#120a2a;border:2px solid var(--line);cursor:pointer}
+.lg-all::before{content:"";width:26px;height:14px;border-radius:7px;background:radial-gradient(circle at 7px 50%,currentColor 4px,transparent 5px),#2a1d63;transition:background .2s}
+.lg-all[aria-checked=true]{color:#140a28;background:var(--acc);border-color:var(--acc)}
+.lg-all[aria-checked=true]::before{background:radial-gradient(circle at 19px 50%,#140a28 4px,transparent 5px),#e9ddff}
+.lg-n{margin:0 0 8px;font-size:13px;line-height:1.35;color:var(--dim)}
 .lg-r{display:grid;grid-template-columns:auto 10px 1fr;gap:10px;align-items:start;width:100%;padding:9px 12px;text-align:left;color:#e5d9ff;border-bottom:2px solid #2a1a66;font-size:16px;line-height:1.3;-webkit-tap-highlight-color:transparent}
 .lg-r:last-child{border-bottom:0}.lg-r:hover{background:#1b1141}
 .lg-r time{font-size:13px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:2px}
@@ -2126,12 +2133,16 @@ function renderClub(){
   </div>
   <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
     <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}
-  ${SUB_API&&!isAdmin()?"":`<section class="sec enter" style="--i:.36s"><h3>Журнал действий</h3><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`}`;
+  ${SUB_API&&!isAdmin()?"":`<section class="sec enter" style="--i:.36s"><div class="lg-h"><h3>Журнал действий</h3><button class="lg-all" id="lgAll" type="button" role="switch" aria-checked="${FEED.all}">Все действия</button></div><p class="lg-n" id="lgN">${FEED.all?"Все действия игроков подряд.":"Только важное: регистрация, отзыв, первый запуск и загрузка игры, звёзды, заявка, мод."}</p><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`}`;
   const chv=clubEl.querySelector("#chA [data-v]");if(chv)chv.textContent="…";
   loadActivity().then(a=>{CAP.series={act:a}}).catch(()=>{CAP.series={act:[[],[],[],[]]}}).then(()=>{if(view===2&&clubEl.isConnected)initCharts(clubEl)});
   if(clubEl.querySelector("#lgList")){loadFeed(clubEl,false);
   clubEl.querySelector("#lgList").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;sfx.tap();openPlayer(b.dataset.p)});
-  clubEl.querySelector("#lgMore").addEventListener("click",()=>{sfx.tap();loadFeed(clubEl,true)})}
+  clubEl.querySelector("#lgMore").addEventListener("click",()=>{sfx.tap();loadFeed(clubEl,true)});
+  /* переключатель: только важное (по умолчанию) / все действия; выбор запоминается на этом устройстве */
+  clubEl.querySelector("#lgAll").addEventListener("click",e=>{sfx.tap();FEED.all=!FEED.all;store.set("am.feedall",FEED.all);e.currentTarget.setAttribute("aria-checked",FEED.all);
+    clubEl.querySelector("#lgN").textContent=FEED.all?"Все действия игроков подряд.":"Только важное: регистрация, отзыв, первый запуск и загрузка игры, звёзды, заявка, мод.";
+    FEED.items=[];FEED.next=null;clubEl.querySelector("#lgList").innerHTML='<p class="empty" style="border:0">Загрузка…</p>';loadFeed(clubEl,false)})}
   clubEl.querySelector("#helpBtn").addEventListener("click",()=>{sfx.tap();openHelp()});
 }
 /* Help window: TRON (TRC20) USDT address + copy */
@@ -2920,23 +2931,25 @@ async function loadActivity(){
   if(!SUB_API)return localSeries();
   const j=await hub("activity",{q:{tz:new Date().getTimezoneOffset()}});Object.assign(WEIGHTS,j.weights||{});return j.series.map(toPts)}
 const gtl=id=>{const d=DATA.find(x=>x.id===id);return"«"+esc((d&&d.title)||id||"игра")+"»"};
-const ACTX={visit:()=>"заход в маркет",open:e=>"открыта страница игры "+gtl(e.game),play:e=>"запуск игры "+gtl(e.game),download:e=>"нажато «Скачать» · "+gtl(e.game),
+const ACTX={register:()=>"регистрация в маркете",visit:()=>"заход в маркет",open:e=>"открыта страница игры "+gtl(e.game),
+  play:e=>(e.meta.k?"первый запуск игры ":"запуск игры ")+gtl(e.game),download:e=>(e.meta.k?"первая загрузка · ":"нажато «Скачать» · ")+gtl(e.game),
   review:e=>(e.meta.e?"отзыв обновлён · ":"отзыв · ")+gtl(e.game)+(e.meta.r?" · ★"+(e.meta.r|0):""),review_del:e=>"отзыв удалён · "+gtl(e.game),
   fav:e=>"в избранное · "+gtl(e.game),unfav:e=>"убрано из избранного · "+gtl(e.game),post:e=>e.meta.e?"пост обновлён":"пост опубликован",post_del:()=>"пост удалён",
   profile:()=>"профиль изменён",medal:e=>"медаль «"+esc((MEDALS.find(m=>m.id===e.meta.m)||{n:"?"}).n)+"»",level:e=>"новый уровень · "+(e.meta.lv|0),card:()=>"добавлена своя карточка",submit:()=>"игра отправлена на проверку",thank:e=>"⭐ "+(e.meta.s|0)+" спасибо автору · "+gtl(e.game),mod:e=>"предложен мод · "+gtl(e.game),invoice:e=>"открыт счёт ⭐ "+(e.meta.s|0)+" · "+gtl(e.game)};
-const ACOL={play:"#5dff8a",download:"#4dd2ff",review:"#ffb23f",review_del:"#ff5e7a",post:"#ff5ec4",post_del:"#ff5e7a",medal:"#ffd23f",level:"#b98bff",fav:"#ff5e7a",unfav:"#9aa4c8",submit:"#7fb2ff",card:"#7fb2ff",visit:"#9aa4c8",open:"#9aa4c8",profile:"#ff5ec4"};
+const ACOL={register:"#ff8fd8",thank:"#ffd23f",mod:"#7fb2ff",play:"#5dff8a",download:"#4dd2ff",review:"#ffb23f",review_del:"#ff5e7a",post:"#ff5ec4",post_del:"#ff5e7a",medal:"#ffd23f",level:"#b98bff",fav:"#ff5e7a",unfav:"#9aa4c8",submit:"#7fb2ff",card:"#7fb2ff",visit:"#9aa4c8",open:"#9aa4c8",profile:"#ff5ec4"};
 const fmtT=t=>{const d=new Date(t);return pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes())+":"+pad2(d.getSeconds())};
-const FEED={items:[],next:null,au:{}};
+const FEED={items:[],next:null,au:{},all:!!store.get("am.feedall",false)}; /* all=false: только ключевые события */
 const lgRow=e=>{const a=e.me?{n:PROF.name}:(FEED.au[e.pid]||{n:"Игрок"}),f=ACTX[e.type];e.meta=e.meta||{};
   return `<button type="button" class="lg-r" data-p="${e.me?"me":esc(e.pid)}" style="--c:${ACOL[e.type]||"#a56bff"}"><time>${fmtT(e.t)}</time><i></i><span><b>${esc(a.n)}</b>${e.me?" <em>· вы</em>":""} — ${f?f(e):esc(e.type)}</span></button>`};
 async function loadFeed(root,more){
   const list=root.querySelector("#lgList"),btn=root.querySelector("#lgMore");if(!list)return;let items,next;
-  if(SUB_API){try{const j=await hub("feed",{q:{limit:30,...(more&&FEED.next?{before:FEED.next}:{})}});Object.assign(FEED.au,j.authors||{});items=j.items;next=j.next}
+  const want=FEED.all;
+  if(SUB_API){try{const j=await hub("feed",{q:{limit:30,...(want?{all:"1"}:{}),...(more&&FEED.next?{before:FEED.next}:{})}});if(want!==FEED.all)return;Object.assign(FEED.au,j.authors||{});items=j.items;next=j.next}
     catch(e){if(!more||!FEED.items.length)list.innerHTML=`<p class="empty" style="border:0">Не удалось загрузить журнал. Проверьте связь.</p>`;return}}
-  else{const all=ALOG().slice().reverse().map((e,i)=>({...e,id:i,me:true,pid:"me"})),off=more?FEED.items.length:0;items=all.slice(off,off+30);next=off+30<all.length?1:null}
+  else{const src=want?ALOG():keyActs().map(e=>({...e,meta:{...(e.meta||{}),k:1}})),all=src.slice().sort((a,b)=>b.t-a.t).map((e,i)=>({...e,id:i,me:true,pid:"me"})),off=more?FEED.items.length:0;items=all.slice(off,off+30);next=off+30<all.length?1:null}
   FEED.items=more?FEED.items.concat(items):items;FEED.next=next;
   if(!root.isConnected)return;
-  list.innerHTML=FEED.items.length?FEED.items.map(lgRow).join(""):`<p class="empty" style="border:0">Пока нет действий. Запустите игру или оставьте отзыв.</p>`;btn.hidden=!next}
+  list.innerHTML=FEED.items.length?FEED.items.map(lgRow).join(""):`<p class="empty" style="border:0">${want?"Пока нет действий. Запустите игру или оставьте отзыв.":"Пока нет важных событий. Включите «Все действия», чтобы увидеть всё."}</p>`;btn.hidden=!next}
 /* Чужой HTML открываем только в изолированном iframe (sandbox без allow-same-origin): у кода игры нет доступа к приложению, initData и cookies. */
 const adminProbe=async(n)=>{if(!SUB_API)return;try{const m=await sbReq("/me",{headers:sbH()});ROLE=(m&&m.role)||null;if(m&&m.admin&&!ADMIN_OK){ADMIN_OK=true;try{renderProfile()}catch(e){}}}catch(e){if(!n)setTimeout(()=>adminProbe(1),1500)}};
 /* Доступ и серверные настройки. Новости и адрес доната приходят с сервера (меняются в /admin.html).

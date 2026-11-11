@@ -66,6 +66,8 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     const c = seen.get(u.id), now = Date.now();
     if (!force && touchTtl > 0 && c && now - c.at < touchTtl) return c.t;
     const t = (await store.touchUser(u)) ?? {};
+    // первый заход = регистрация: ключевое событие для журнала админа (на график регистрации идут из users)
+    if (t.created) await hub.log(u.id, "register", null, { k: 1 }, 0).catch((e) => console.error("[event]", e.message));
     if (seen.size > 5000) seen.clear();
     if (touchTtl > 0) seen.set(u.id, { t, at: now });
     return t;
@@ -187,7 +189,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       file_html: html,
     });
     if (!row) return json(429, { error: "rate_limit" }); // 5 заявок в сутки, считается в БД атомарно
-    await hub.log(uid, "submit", null, {}, WEIGHTS.submit).catch((e) => console.error("[event]", e.message)); // журнал не должен ломать отправку
+    await hub.log(uid, "submit", null, { k: 1 }, WEIGHTS.submit).catch((e) => console.error("[event]", e.message)); // журнал не должен ломать отправку
 
     const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
     for (const a of staffIds) {

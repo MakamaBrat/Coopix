@@ -136,7 +136,9 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       const last = await store.lastEventTs(uid, type, game);
       const pend = rows.filter((r) => r.type === type && r.game_id === game).map((r) => r.ts.getTime());
       if (Math.max(last ?? 0, ...pend) + COOLDOWN[type] > at) continue; // слишком часто: пропускаем без ошибки
-      rows.push({ user_id: uid, type, game_id: game, weight: WEIGHTS[type] ?? 0, meta: {}, ts: new Date(at) });
+      // k = ключевое событие для журнала админа: первый запуск и первая загрузка этой игры этим игроком
+      const first = game && (type === "play" || type === "download") && last == null && !pend.length;
+      rows.push({ user_id: uid, type, game_id: game, weight: WEIGHTS[type] ?? 0, meta: first ? { k: 1 } : {}, ts: new Date(at) });
       if (game && (type === "play" || type === "download")) games.add(game);
     }
     if (rows.length) await store.addEvents(rows);
@@ -224,7 +226,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         if (mine.filter((x) => x.status === "new").length >= MODS_PENDING_MAX) return json(429, { error: "too_many_pending" });
         const u = await store.getUser(uid);
         const row = await store.createGameMod({ ...f, game_id: g.id, author_id: uid, author_name: String(u?.first_name || "Игрок").slice(0, 40) });
-        await log(uid, "mod", g.id, {}, WEIGHTS.mod).catch(() => {});
+        await log(uid, "mod", g.id, { k: 1 }, WEIGHTS.mod).catch(() => {});
         const staffIds = new Set([...adminIds, ...(await store.staffIds().catch(() => []))]);
         for (const a of staffIds) notify(a, `Новый мод «${row.title}» для игры «${g.title}». Админ-панель → Моды.`);
         return json(201, modWire(row, { uid, pid: (a) => pid.encode(Number(a)) }));
@@ -307,7 +309,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
           const prev = await store.getUserReview(game, uid);
           const row = await store.saveReview({ id: prev?.id, game, uid, rating, body });
           // за первый отзыв на игру начисляем ресурс, правки бесплатные: отзыв нельзя «накручивать» перезаписью
-          await log(uid, "review", game, prev ? { r: rating, e: 1 } : { r: rating }, prev ? 0 : WEIGHTS.review);
+          await log(uid, "review", game, prev ? { r: rating, e: 1 } : { r: rating, k: 1 }, prev ? 0 : WEIGHTS.review);
           return json(prev ? 200 : 201, { created: !prev, item: reviewWire(row, uid), stats: (await statsFor([game]))[game] });
         }
         if (m === "DELETE") {
@@ -427,7 +429,8 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         if (!staff) return json(403, { error: "forbidden" }); // журнал действий видят только админы и модераторы
         const limit = int(q.limit ?? 30, 1, FEED_MAX);
         const before = q.before ? int(q.before, 0, Number.MAX_SAFE_INTEGER) : undefined;
-        const rows = await store.listEvents({ limit, before });
+        // по умолчанию только ключевые: регистрация, новый отзыв, первый запуск и загрузка игры, звёзды, заявка, мод; all=1 — всё подряд
+        const rows = await store.listEvents({ limit, before, key: q.all !== "1" });
         const au = await authors([...new Set(rows.map((x) => Number(x.user_id)))]);
         return json(200, {
           items: rows.map((x) => ({

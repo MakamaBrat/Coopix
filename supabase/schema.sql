@@ -131,7 +131,9 @@ as $$
 declare
   r public.users;
   is_mod boolean;
+  existed boolean;
 begin
+  select exists (select 1 from public.users where tg_id = p_id) into existed; -- created = первый заход (регистрация)
   insert into public.users as u (tg_id, first_name, username)
   values (p_id, left(coalesce(p_first_name, ''), 40), left(coalesce(p_username, ''), 40))
   on conflict (tg_id) do update set
@@ -141,7 +143,7 @@ begin
   returning * into r;
 
   select exists (select 1 from public.moderators where tg_id = p_id) into is_mod;
-  return jsonb_build_object('banned', r.banned, 'ban_reason', r.ban_reason, 'moderator', is_mod);
+  return jsonb_build_object('banned', r.banned, 'ban_reason', r.ban_reason, 'moderator', is_mod, 'created', not existed);
 end;
 $$;
 
@@ -197,6 +199,21 @@ create table if not exists public.events (
 create index if not exists events_ts_idx   on public.events (ts desc);
 create index if not exists events_user_idx on public.events (user_id, type, ts desc);
 create index if not exists events_game_idx on public.events (game_id, type, user_id) where game_id is not null;
+
+-- Журнал админа по умолчанию показывает только ключевые события: meta.k = 1 ставит сервер при записи
+-- (регистрация, новый отзыв, первый запуск и первая загрузка игры игроком, звёзды, заявка на игру, мод).
+create index if not exists events_key_idx on public.events (id desc) where (meta->>'k') = '1';
+-- Пометка старых записей, сделанных до появления k (повторный запуск ничего не меняет)
+update public.events set meta = meta || '{"k":1}'::jsonb
+ where (meta->>'k') is null and (type in ('thank', 'submit', 'mod', 'register') or (type = 'review' and not (meta ? 'e')));
+update public.events e set meta = e.meta || '{"k":1}'::jsonb
+  from (select distinct on (user_id, game_id, type) id from public.events
+         where type in ('play', 'download') and game_id is not null order by user_id, game_id, type, ts) f
+ where e.id = f.id and (e.meta->>'k') is null;
+-- регистрации игроков, зашедших до появления события register
+insert into public.events (ts, user_id, type, weight, meta)
+select u.registered_at, u.tg_id, 'register', 0, '{"k":1}'::jsonb from public.users u
+ where not exists (select 1 from public.events e where e.user_id = u.tg_id and e.type = 'register');
 
 alter table public.profiles enable row level security;
 alter table public.reviews  enable row level security;
