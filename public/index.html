@@ -133,6 +133,9 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .notch{position:absolute;left:50%;bottom:-9px;width:18px;height:11px;margin-left:-9px;background:#8d57f7;
   clip-path:polygon(0 0,100% 0,50% 100%);transform:scaleY(0);transform-origin:top;transition:transform .2s}
 .tab[aria-selected=true]+.notch{transform:scaleY(1)}
+/* кнопка звука: включён = обычная вкладка с волнами, выключен = приглушённая с крестиком */
+.tab.snd svg{fill:currentColor}
+.tab.snd[aria-checked=false]{color:#5a4a8c;background:linear-gradient(160deg,#3a2a70,#1d1440)}
 /* переключатель «лайт» в ряду вкладок: серый = обычная версия, зелёный = лёгкая */
 .tab.qsw{grid-template-rows:auto auto;align-content:center;gap:3px}
 .tab.qsw svg{width:62%;max-width:40px}
@@ -1177,7 +1180,7 @@ const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait=ms=>new Promise(r=>setTimeout(r,RM?0:ms));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
-const SET=Object.assign({shader:true,stars:true,sound:false,scan:true,quality:"auto",bg:"mix"},store.get("am.settings",{}));
+const SET=Object.assign({shader:true,stars:true,sound:true,scan:true,quality:"auto",bg:"mix"},store.get("am.settings",{}));
 /* Качество не переживает перезапуск: каждый запуск начинается в полном режиме.
    Выбор в настройках и кнопка «Лёгкая версия» живут в sessionStorage (до закрытия приложения), в localStorage всегда "auto". */
 const ses={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}};
@@ -1732,7 +1735,23 @@ function persist(){if(SUB_API&&CAT_OK){store.set(CATK,DATA.map(d=>({...d,cover:/
   if(!store.set("am.cards.v1",DATA))toast("Память браузера заполнена: новые обложки не сохранятся")}
 
 /* ============ list / tabs / dock ============ */
-const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>SUB_API?!!c.mine:!c.built],["qsw","Лёгкая версия",null]];
+const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["snd","Звук","sound"],["qsw","Лёгкая версия",null]];
+/* звук: одна кнопка включает и выключает всё сразу (фоновая музыка магазина и звуки нажатий), выбор запоминается */
+const SNDI=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z"/>${on?'<path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>':'<path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'}</svg>`;
+function syncSnd(){const b=document.querySelector(".tab.snd");if(!b)return;b.setAttribute("aria-checked",!!SET.sound);b.innerHTML=SNDI(SET.sound);b.title=SET.sound?"Звук включён · нажмите, чтобы выключить":"Звук выключен · нажмите, чтобы включить"}
+function toggleSound(){SET.sound=!SET.sound;saveSet();syncSnd();musicSync();if(SET.sound)sfx.tap();toast(SET.sound?"Звук включён":"Звук выключен")}
+/* фоновая музыка магазина: 15 с с плавным началом и затуханием, по кругу. Файл грузится только при первом заходе в магазин
+   (на старт сайта не влияет), играет только в магазине, с открытой страницей игры и в фоне молчит. Браузер разрешает звук после первого касания. */
+const MUS={el:null,vol:0,t:0,unlocked:false};
+function musicSync(){
+  const want=!!SET.sound&&MUS.unlocked&&view===1&&!PGO&&!document.hidden;
+  if(want&&!MUS.el){MUS.el=new Audio("assets/music/store.mp3");MUS.el.loop=true;MUS.el.volume=0}
+  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.35:0;
+  if(want&&MUS.el.paused)MUS.el.play().catch(()=>{});
+  MUS.t=setInterval(()=>{MUS.vol+=Math.sign(target-MUS.vol)*.035;if(Math.abs(target-MUS.vol)<.04)MUS.vol=target;MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
+    if(MUS.vol===target){clearInterval(MUS.t);if(!want)MUS.el.pause()}},40)}
+addEventListener("pointerdown",()=>{if(!MUS.unlocked){MUS.unlocked=true;setTimeout(musicSync,0)}},{passive:true});
+document.addEventListener("visibilitychange",()=>musicSync());
 /* последняя кнопка в ряду: переключатель «лёгкая версия / обычная» в один клик (настройки остались в профиле).
    Действует до закрытия приложения, как и всё про качество: новый запуск снова в обычной версии. */
 const QSW='<svg viewBox="0 0 36 22" aria-hidden="true"><rect class="tr" x="1.5" y="3.5" width="33" height="15" rx="7.5"/><circle class="kn" cx="10" cy="11" r="5.5"/></svg><span class="ql">лайт</span>';
@@ -1744,14 +1763,15 @@ const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Communi
 let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club"),profEl=$("#prof");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>t[2]===null
   ?`<div class="tabcell"><button class="tab qsw" type="button" role="switch" aria-checked="${Q===0}" aria-label="${t[1]}" data-i="${i}">${QSW}</button></div>`
+  :t[2]==="sound"?`<div class="tabcell"><button class="tab snd" type="button" role="switch" aria-checked="${!!SET.sound}" aria-label="${t[1]}" data-i="${i}">${SNDI(SET.sound)}</button></div>`
   :`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");syncQsw();
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
-  if(TABS[i][2]===null){toggleLite();return}tab=i;view=1;sync();render()});
+  if(TABS[i][2]===null){toggleLite();return}if(TABS[i][2]==="sound"){toggleSound();return}tab=i;view=1;sync();render()});
 $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;sfx.tap();
   goView(i)});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
-function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw"))b.setAttribute("aria-selected",i===tab&&view===1)});
+function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
 /* search: hides cards instead of rebuilding them, so typing never restarts the card animations */
@@ -1769,6 +1789,7 @@ qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";f
 qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
 function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Нажмите сердечко на карточке, чтобы добавить игру.":""}
 async function render(intro){
+  musicSync(); /* музыка только в магазине */
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
   document.body.classList.toggle("onclub",view===2);
@@ -2239,7 +2260,7 @@ function openSettings(){
    </div>
    <div class="pfoot"><div class="row">${SUB_API?"":`<button class="btn ghost" id="reset">Сбросить карточки</button>`}<button class="btn" data-close>Готово</button></div></div>`);
   panel.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;SET[k]=!SET[k];b.setAttribute("aria-checked",SET[k]);saveSet();
-    document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound")sfx.tap();if(k==="shader"){closeSheet();render()}}));
+    document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound"){sfx.tap();syncSnd();musicSync()}if(k==="shader"){closeSheet();render()}}));
   $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Фон: "+l)}));
   $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;ses.set("am.lite",null);ses.set("am.q",v==="auto"?null:v); /* до закрытия приложения */
     Q=v==="auto"?2:+v;applyQ();closeSheet();bgResize();render();toast("Качество: "+b.textContent)});
@@ -2515,7 +2536,7 @@ async function openPage(id,opt){
   {const x=$("#pgCov").getContext("2d");x.imageSmoothingEnabled=!!cov.hi;x.drawImage(cov.hi||cov.canvas,0,0,512,512)}
   pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
-  PGO=true;pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+  PGO=true;musicSync();pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
@@ -2525,7 +2546,7 @@ async function openPage(id,opt){
   pageEl.querySelector(".back").focus({preventScroll:true})}
 function closePage(){
   if(!PG)return;stopGame();pageEl.classList.remove("open");pageEl.setAttribute("aria-hidden","true");
-  PGO=false;PG=null;document.body.classList.remove("pgopen");document.body.style.overflow="";removeEventListener("keydown",pgKey);removeEventListener("keyup",pgKeyUp);
+  PGO=false;PG=null;musicSync();document.body.classList.remove("pgopen");document.body.style.overflow="";removeEventListener("keydown",pgKey);removeEventListener("keyup",pgKeyUp);
   pgFocus&&pgFocus.focus&&pgFocus.focus({preventScroll:true});sfx.out()}
 function backClick(){history.state&&history.state.pg?history.back():closePage()}
 addEventListener("popstate",()=>{if(PG){if(sheet.classList.contains("open"))closeSheet();closePage()}});
