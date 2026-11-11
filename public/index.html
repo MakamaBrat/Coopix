@@ -517,6 +517,7 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .pbar{display:flex;gap:10px}.pbar .bigplay{flex:1 1 0;width:auto;min-width:0;height:54px;font-size:21px;gap:8px;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
 .pbar .bigplay svg{width:22px;height:22px}
 .pbar .dlbtn,.pbar .dlbtn:hover{background:#2a1a66;color:#e5d6ff}.pbar .dlbtn svg{fill:#e5d6ff}
+.pbar .dlbtn.off{opacity:.45;filter:grayscale(1)} /* скачивание выключено админом */
 .bigplay svg{width:26px;height:26px;fill:#140a28}.bigplay:hover{filter:brightness(1.1)}.bigplay:active{transform:translateY(4px)}
 
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
@@ -809,11 +810,6 @@ body:not(.onhome) .top{display:none}
 .chc .gh{opacity:.55}
 .chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
 .chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:10px;border-top:1px solid #2a2160;text-align:center}
-.chc-tb{margin-top:10px;font-size:13px;color:var(--dim)}.chc-tb summary{cursor:pointer;color:#cdbfff;width:max-content}
-.chc-tb [data-tb]{max-height:260px;overflow:auto;margin-top:6px}
-.chc-tb table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.chc-tb th,.chc-tb td{padding:5px 6px;text-align:right;border-bottom:1px solid #231a50;white-space:nowrap}.chc-tb th{position:sticky;top:0;background:#130b31;color:#a99be0;font-weight:500}
-.chc-tb th:first-child,.chc-tb td:first-child{text-align:left}.chc-tb td{color:#e9ddff}
 .chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .chc-n{margin-top:8px;font-size:13px;line-height:1.3;color:var(--dim)}
 .chc-lg{display:flex;gap:12px;font-size:12px;color:var(--dim);white-space:nowrap}.chc-lg span{display:inline-flex;align-items:center;gap:5px}
@@ -1746,7 +1742,7 @@ const MUS={el:null,vol:0,t:0,unlocked:false};
 function musicSync(){
   const want=!!SET.sound&&MUS.unlocked&&!PGO&&!document.hidden; /* на всех экранах сайта; на странице игры молчит, чтобы не мешать её звукам */
   if(want&&!MUS.el){MUS.el=new Audio("assets/music/store.mp3");MUS.el.loop=true;MUS.el.volume=0}
-  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.14:0; /* тихий фон: на 60% тише прежних 0.35 */
+  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.084:0; /* тихий фон (было 0.35 → 0.14 → ещё −40%) */
   if(want&&MUS.el.paused)MUS.el.play().catch(()=>{});
   MUS.t=setInterval(()=>{MUS.vol+=Math.sign(target-MUS.vol)*.035;if(Math.abs(target-MUS.vol)<.04)MUS.vol=target;MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
     if(MUS.vol===target){clearInterval(MUS.t);if(!want)MUS.el.pause()}},40)}
@@ -1834,7 +1830,7 @@ const NEWS=[
 ];
 /* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
 const SPONSORS=[{name:"Sponsor One",c:"#ffb23f",msg:"Спасибо за классные игры! Так держать."},{name:"Sponsor Two",c:"#4dd2ff",msg:"Играем с друзьями каждый вечер."}];
-const LINKS={channel:"https://t.me/coopix_market",chat:"https://t.me/coopix_chat",pchannel:"https://t.me/+PRIVATE_CHANNEL",pchat:"https://t.me/+PRIVATE_CHAT",boosty:"https://boosty.to/coopix"}; /* pchannel / pchat = closed channel and chat (invite links), boosty = Boosty page */
+const LINKS={channel:"https://t.me/coopixmarket",chat:"https://t.me/coopixchat",pchannel:"https://t.me/+PRIVATE_CHANNEL",pchat:"https://t.me/+PRIVATE_CHAT",boosty:"https://boosty.to/coopix"}; /* pchannel / pchat = closed channel and chat (invite links), boosty = Boosty page */
 /* donation wallet: put your real TRON (TRC20) address here. Until it looks like a valid T... address the Help window shows a "not added yet" note */
 const WALLET={net:"TRON (TRC20)",coin:"USDT",addr:"ВСТАВЬТЕ_АДРЕС_TRON"};
 function openLink(u){try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&/^https:\/\/t\.me\//.test(u)&&w.openTelegramLink){w.openTelegramLink(u);return true}}catch(e){}return false}
@@ -2053,11 +2049,10 @@ const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d"
 /* «Пульс маркета»: три полосы на общей оси времени. Сверху линия «очки активности» (накопленный итог действий),
    ниже столбцы «действия» за отрезок, внизу строка «звёзды» (поддержка авторов). Цвета проверены валидатором палитры
    (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
-function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Пульс маркета</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Очки активности</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>всего очков</span><span><i class="lb"></i>ключевые действия</span><span><i class="ls2"></i>звёзды</span></div></div>${chBody(HA,"График: очки активности, действия игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
+function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Как растёт Coopix</h3>
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность сообщества</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>рост сообщества</span><span><i class="lb"></i>события</span><span><i class="ls2"></i>спасибо авторам</span></div></div>${chBody(HA,"График: как растёт активность сообщества, события игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
     <div class="chc-s" data-s></div>
-    <p class="chc-n">Считаются только ключевые действия: регистрация, отзыв, первый запуск и первая загрузка игры.</p>
-    <details class="chc-tb"><summary>Таблица</summary><div data-tb></div></details></div></section>`}
+    <p class="chc-n">Считаем самое важное: новых игроков, отзывы, первые запуски и скачивания игр.</p></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
   const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
@@ -2082,11 +2077,10 @@ function initCharts(root){
       if(m){e.preventDefault();go(clamp((cur<0?n-1:cur)+m,0,n-1))}else if(k==="Home"){e.preventDefault();go(0)}else if(k==="End"){e.preventDefault();go(n-1)}else if(k==="Escape")off()}};
   const ticks=n=>[...new Set([0,.25,.5,.75,1].map(k=>Math.round(k*(n-1))))];
   const empty=(box,svg,h)=>{svg.innerHTML=`<text class="hs" x="${W/2}" y="${h/2}" text-anchor="middle">Нет данных за период</text>`;box.querySelector("[data-v]").textContent="—";box.querySelector("[data-d]").textContent="";box.querySelector("[data-s]").innerHTML="";const t=box.querySelector("[data-tb]");t&&(t.innerHTML="");box._off=null};
-  /* изменение за период: от нуля процент не считаем (деление на 0), показываем прирост в очках */
-  const delta=(el,a,b,tail,unit)=>{
-    if(a>0){const ch=(b/a-1)*100,up=ch>=0,big=Math.abs(ch)>=1000;el.className="chc-d "+(up?"up":"dn");el.textContent=big?"▲ ×"+(b/a).toFixed(0)+" "+tail:(up?"▲ +":"▼ ")+Math.abs(ch).toFixed(1).replace(".",",")+"% "+tail}
-    else if(b>0){el.className="chc-d up";el.textContent="▲ +"+fx(b-a)+" "+unit+" "+tail}
-    else{el.className="chc-d nu";el.textContent="● Старт положен · ждём первых игроков"}};
+  /* подпись под числом: по-человечески, без процентов */
+  const delta=(el,n,tail)=>{
+    if(n>0){el.className="chc-d up";el.textContent="▲ сообщество растёт · "+tail}
+    else{el.className="chc-d nu";el.textContent="● Пока тихо · позовите друзей поиграть"}};
   /* Пульс маркета: три полосы на общей оси времени (у каждой своя шкала, поэтому они не смешиваются в один график).
      1) линия «очки активности»: накопленный итог, 2px, лёгкая заливка ~10%, точка в конце с кольцом цвета фона;
      2) столбцы «действия» за отрезок: до 24px, скруглён только верх, 2px зазор между соседями, справа максимум шкалы;
@@ -2096,11 +2090,7 @@ function initCharts(root){
     return `M${f(x)} ${f(y+h)}V${f(y+r)}Q${f(x)} ${f(y)} ${f(x+r)} ${f(y)}H${f(x+w-r)}Q${f(x+w)} ${f(y)} ${f(x+w)} ${f(y+r)}V${f(y+h)}Z`};
   const coin=(x,y,s)=>{const h=s/2,p=Math.max(1.5,s/5),f=v=>v.toFixed(1);
     return `<rect class="cn" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(s)}"/><rect class="cnh" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(p)}"/>`};
-  /* таблица: те же цифры без наведения (строится только когда её открыли) */
-  const table=(box,dt)=>{const el=box.querySelector("[data-tb]"),dd=box.querySelector("details");if(!el||!dd)return;
-    const fill=()=>{el.innerHTML=`<table><thead><tr><th>Время</th><th>Ключевые действия</th><th>Звёзды</th><th>Очки, всего</th></tr></thead><tbody>${dt.slice().reverse().map(o=>`<tr><td>${o.tf||o.t}</td><td>${nf(o.a)}</td><td>${nf(o.s||0)}</td><td>${nf(o.res)}</td></tr>`).join("")}</tbody></table>`};
-    dd.ontoggle=()=>{if(dd.open)fill()};if(dd.open)fill();else el.innerHTML=""};
-  const PLA=["действие","действия","действий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
+  const PLA=["событие","события","событий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
     const narrow=W<420,pl=2,pr=narrow?40:50,lT=12,lB=Math.round(H*.48),aT=lB+30,sY=H-30,aB=sY-15,xB=H-4,
@@ -2115,7 +2105,7 @@ function initCharts(root){
     let g="";
     keep.forEach(v=>{const y=Y(v).toFixed(1);g+=`<line class="${v===lo?"gb":"gl"}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="ax" x="${ax}" y="${(+y+4).toFixed(1)}">${fv(v)}</text>`});
     /* полоса действий: подпись, верх шкалы и базовая линия */
-    g+=`<text class="lab" x="${x0}" y="${aT-9}">Ключевые действия</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
+    g+=`<text class="lab" x="${x0}" y="${aT-9}">Что делали игроки</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
     /* строка звёзд: тонкая дорожка и сумма за период справа */
     g+=`<line class="gl" x1="${x0}" x2="${x1}" y1="${sY}" y2="${sY}"/><text class="ax" x="${ax}" y="${sY+4}">★${fv(totS)}</text>`;
     const bars=acts.map((a,i)=>a>0?`<path class="bar" data-i="${i}" d="${colPath(xs[i]-bw/2,aB-Math.max(2,(aB-aT)*a/sa.hi),bw,Math.max(2,(aB-aT)*a/sa.hi))}"/>`:"").join("");
@@ -2130,14 +2120,14 @@ function initCharts(root){
       ${quiet?`<text class="hd" x="${cx}" y="${(lT+lB)/2}" text-anchor="middle">Пока тихо</text><text class="hs" x="${cx}" y="${(lT+lB)/2+18}" text-anchor="middle">каждое действие игроков добавит очки</text>`:""}
       <g data-x style="display:none"><line class="xh" y1="${lT-4}" y2="${sY+8}"/><circle class="xd" r="4"/></g>`;
     const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");let hb=null;
-    box.querySelector("[data-v]").innerHTML=`${nf(last.res)}<small>${plr(Math.round(last.res),PLO)}</small>`;
-    delta(box.querySelector("[data-d]"),dt[0].res,last.res,"за "+PER[pi][0],"очков");
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,PLA)}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)}</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
+    const perT={"24ч":"за сутки","7д":"за неделю","30д":"за месяц","Всё":"за всё время"}[PER[pi][0]]||"";
+    box.querySelector("[data-v]").innerHTML=`${nf(tot)}<small>${plr(tot,PLA)} ${perT}</small>`;
+    delta(box.querySelector("[data-d]"),tot,"спасибо, что вы с нами!");
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,PLA)}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)} авторам</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
     attach(box,svg,n,pl+slot/2,pr+slot/2,i=>{const o=dt[i],x=xs[i].toFixed(1);G.style.display="";gl.setAttribute("x1",x);gl.setAttribute("x2",x);gc.setAttribute("cx",x);gc.setAttribute("cy",ys[i].toFixed(1));
       hb&&hb.classList.remove("hl");hb=svg.querySelector(`.bar[data-i="${i}"]`);hb&&hb.classList.add("hl");
-      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kl"></i><b>${nf(o.res)}</b>${plr(Math.round(o.res),PLO)} всего</div><div><i class="k kb"></i><b>${nf(o.a)}</b>${plr(o.a,PLA)}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)}</div>`}},
-      ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null});
-    table(box,dt)})}
+      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(o.a)}</b>${plr(o.a,PLA)}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)} авторам</div><div><i class="k kl"></i>рост сообщества: <b>${nf(o.res)}</b></div>`}},
+      ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null})})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
 function renderClub(){
@@ -2462,6 +2452,9 @@ const DESC={
  blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
 const DL_LINKS={retro:"",space:"",toxic:"",blocks:""};
+let DL_OFF=false; /* скачивание выключено у всех (админка → «Игры»); у одной игры — m.dl===false */
+const dlBlocked=m=>DL_OFF||(m&&m.dl===false);
+const dlPaint=m=>{const b=$("#dlbtn");if(b){b.classList.toggle("off",dlBlocked(m));b.setAttribute("aria-disabled",dlBlocked(m))}};
 const nfmt=n=>(+n||0).toLocaleString("ru-RU");
 const plr=(n,a)=>{n=Math.abs(n)%100;const k=n%10;return n>10&&n<20?a[2]:k>1&&k<5?a[1]:k===1?a[0]:a[2]};
 const VERSIONS={retro:"0.3",space:"0.3",toxic:"0.3",blocks:"0.3"};
@@ -2536,7 +2529,7 @@ async function openPage(id,opt){
   {const x=$("#pgCov").getContext("2d");x.imageSmoothingEnabled=!!cov.hi;x.drawImage(cov.hi||cov.canvas,0,0,512,512)}
   pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
-  PGO=true;musicSync();pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+  PGO=true;musicSync();dlPaint(m);pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
@@ -2662,7 +2655,7 @@ async function playBeta(){
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
 $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
-$("#dlbtn").addEventListener("click",()=>{if(!PG)return;const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
+$("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(dlBlocked(PG.m)){sfx.tap();toast("Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
   /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
   if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
   if((!u)&&d&&d.file&&SUB_API){const me=PG;hub("gamefile",{q:{id:d.id}}).then(j=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));
@@ -2731,7 +2724,7 @@ const saveCov=()=>{let ks=Object.keys(COV),sz=ks.reduce((t,k)=>t+COV[k].length,0
 const covOf=ref=>/^img:/.test(ref||"")?COV[ref]||"b:retro":ref||"b:retro";
 function fromWire(g,old){const t=Array.isArray(g.tags)&&g.tags.length?g.tags:["Arcade"];old=old||{};
   return{id:g.id,title:g.title,tags:t,genre:t[0],item:g.item,cref:g.cover,bref:g.bgimg||"",bgimg:g.bgimg?(old.bref===g.bgimg&&/^data:/.test(old.bgimg||"")?old.bgimg:COV[g.bgimg]||""):"",cover:/^img:/.test(g.cover)&&old.cref===g.cover&&/^data:/.test(old.cover||"")?old.cover:covOf(g.cover),tint:g.tint||null,bg:g.bg==="auto"?undefined:g.bg,
-    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,built:1,
+    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,built:1,
     fav:old.fav||0,played:old.played||0,downloads:old.downloads||0}}
 async function admReq(r,q,method,body){
   const x=await fetch(SUB_API+"/admin?"+new URLSearchParams({r,...q}),{method,headers:sbH(body!=null),body:body!=null?JSON.stringify(body):undefined});
@@ -2833,7 +2826,8 @@ function renderMods(){
       <span class="mod-b"><button class="btn ghost" type="button" data-mplay="${esc(x.id)}">Играть</button><button class="btn ghost" type="button" data-mdl="${esc(x.id)}">Скачать</button></span></div></article>`).join("")
     :'<p class="empty">Модов пока нет. Возьмите игру за основу и предложите свою версию.</p>')}
 async function modFile(id){const j=await hub("modfile",{q:{id}});return j}
-function openModForm(m){
+function openModForm(m){return openBot("mod",m)}
+function openModFormOld(m){
   if(!SUB_API){toast("Моды доступны в Telegram-версии маркета");return}
   let file=null;
   openSheet(sbHead("Мод для «"+esc(m.title||"игры")+"»")+`<div class="pbody">
@@ -2991,6 +2985,8 @@ async function accessInit(){
     if(!r.ok)return true;
     const c=await r.json();
     if("role" in c){CFG_ROLE=true;ROLE=c.role||null;if(c.admin)ADMIN_OK=true} /* роль приходит вместе с настройками: /me на старте не нужен */
+    if(c.site){/* ссылки «Канал»/«Чатик» и общий выключатель скачивания задаются в админке (вкладки «Сайт» и «Игры») */
+      if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.channel||""))LINKS.channel=c.site.channel;if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.chat||""))LINKS.chat=c.site.chat;DL_OFF=c.site.dlOff===true}
     if(Array.isArray(c.news))NEWS.splice(0,NEWS.length,...c.news);
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
   }catch(e){}
@@ -3006,7 +3002,20 @@ const sbView=(t,lbl)=>{const o=document.createElement("div");o.style.cssText="po
 .sbk{font-size:17px;line-height:1.4;color:var(--dim)}.sbk b{color:#fff}`;document.head.append(st)}
 const sbBadge=k=>`<span class="sb" style="--c:${SST[k].c}">${SST[k].t}</span>`;
 const sbHead=(t,back)=>`<div class="ph"><h2 id="sheetTitle">${t}</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>`;
-function openSubmit(){
+/* Игры и моды больше не загружаются на сайт (HTML не хранится в Supabase): автор отправляет файл боту поддержки,
+   админ сам добавляет игру в каталог. Старые формы загрузки ниже не вызываются. */
+const SUPPORT_BOT="Coopsupbot";
+function openBot(kind,m){
+  const url="https://t.me/"+SUPPORT_BOT,what=kind==="mod"?"мод для «"+esc((m&&m.title)||"игры")+"»":"свою игру";
+  openSheet(sbHead(kind==="mod"?"Предложить мод":"Отправить игру")+`<div class="pbody" lang="ru">
+    <p class="sbk" style="font-size:18px;line-height:1.4;color:#fff;margin-bottom:10px">Чтобы добавить ${what}, напишите нашему боту поддержки <b>@${SUPPORT_BOT}</b>.</p>
+    <p class="sbk" style="margin-bottom:6px">Пришлите в бот:</p>
+    <p class="sbk" style="margin:0 0 6px">• HTML-файл ${kind==="mod"?"мода":"игры"} (или ссылку на него)<br>• название и короткое описание${kind==="mod"?"<br>• что изменено по сравнению с оригиналом":"<br>• жанр и версию"}<br>• как с вами связаться</p>
+    <p class="sbk">Мы посмотрим и ответим в боте. После проверки ${kind==="mod"?"мод появится на странице игры":"игра появится в маркете"} с вашим именем.</p></div>
+    <div class="pfoot"><div class="row"><button class="btn ghost" data-close type="button">Закрыть</button><button class="btn" id="botGo" type="button">Открыть @${SUPPORT_BOT}</button></div></div>`);
+  $("#botGo").addEventListener("click",()=>{sfx.tap();try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openTelegramLink){Telegram.WebApp.openTelegramLink(url);return}}catch(e){}window.open(url,"_blank","noopener")})}
+function openSubmit(){return openBot("game")}
+function openSubmitOld(){
   const G=["Arcade","Music","Shooter","Puzzle","Other"];let file=null;
   openSheet(sbHead("Отправить игру")+`<div class="pbody" lang="ru">
     <p class="sbk" style="margin-bottom:8px">Расскажите про игру и загрузите один HTML-файл (до 1,5 МБ). Мы посмотрим и ответим статусом и комментарием.</p>

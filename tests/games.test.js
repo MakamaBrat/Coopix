@@ -185,3 +185,13 @@ test("фон-картинка: админ ставит и убирает, авт
   await w.adm("edit", "PATCH", MAIN, { query: { id: e.id }, body: { status: "approved" } });
   assert.match((await w.hub("games", "GET", BOB)).body.games[0].bgimg, /^img:/);
 });
+
+test("каталог: скачивание у одной игры выключает главный админ; игроку уходит dl:false", async () => {
+  const { adm, hub } = await world();
+  const g = (await mk(adm, { title: "D", access: "public" })).body;
+  assert.equal(g.dl, true);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { dl_off: "да" } })).status, 400);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { dl_off: true } })).body.dl, false);
+  assert.equal((await hub("games", "GET", ANN)).body.games.find((x) => x.id === g.id).dl, false);
+  assert.equal((await adm("game", "PATCH", MOD, { query: { id: g.id }, body: { dl_off: false } })).status, 403);
+});

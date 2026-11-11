@@ -164,6 +164,7 @@ const ERR = {
   cannot_ban_staff: "Нельзя заблокировать админа или модератора", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
   already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
+  bad_link: "Ссылка должна начинаться с https://", bad_dl: "Неверное значение скачивания", empty_patch: "Ничего не изменилось",
   payments_off: "Бот не настроен на сервере", telegram_error: "Telegram отклонил запрос: проверьте BOT_TOKEN", bad_url: "Нужен адрес https://…/api/bot",
 };
 const errText = e => ERR[e.message] || (e.status === 401 ? ERR.unauthorized : "Ошибка сети или сервера, попробуйте ещё раз");
@@ -212,6 +213,8 @@ const TABS = [
   { id: "subs", label: "Заявки", render: viewSubs },
   { id: "edits", label: "Правки страниц", render: viewEdits },
   { id: "mods", label: "Моды", render: viewMods },
+  { id: "games", label: "Игры", main: true, render: viewGames },
+  { id: "site", label: "Сайт", main: true, render: viewSite },
   { id: "news", label: "Новости", main: true, render: viewNews },
   { id: "wallet", label: "Помощь · донат", main: true, render: viewWallet },
   { id: "stars", label: "Звёзды", main: true, render: viewStars },
@@ -454,6 +457,54 @@ async function viewStars(root) {
   $("#wh").onclick = async () => { try { await api("/admin?r=webhook", { method: "POST", body: { url } }); toast("Готово: бот принимает оплату звёздами"); } catch (e) { toast(errText(e), true); } };
 }
 
+/* ===================== ИГРЫ: показывать / скрыть без удаления, скачивание ===================== */
+const GACC = { public: { t: "Все игроки", c: "#5dff8a" }, staff: { t: "Только админы", c: "#ffb23f" }, off: { t: "Скрыта", c: "#ff5e7a" } };
+async function viewGames(root) {
+  let games = await api("/admin?r=games"), site = await api("/admin?r=site");
+  const draw = () => {
+    root.innerHTML = `<div class="sec-h"><h2>Игры</h2><span class="muted small">${games.length}</span></div>
+      <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px"><b>Скачивание игр</b><div class="hint" style="margin:2px 0 0">${site.dlOff ? "Выключено у всех игр: кнопка «Скачать» не работает." : "Включено. Ниже можно выключить у отдельной игры."}</div></div>
+        <button class="btn ${site.dlOff ? "ok" : "bad"}" id="dlAll" type="button">${site.dlOff ? "Включить всем" : "Выключить всем"}</button></div>
+      <div class="nws" id="gl">${games.map(g => `<div class="nw" data-id="${esc(g.id)}" style="--c:${GACC[g.access].c}">
+        <div><span class="badge" style="--c:${GACC[g.access].c}">${GACC[g.access].t}</span> <span class="muted small">${esc(g.id)}${g.file ? " · свой HTML" : " · встроенная"}${g.dl ? "" : " · скачивание выключено"}</span>
+          <h4>${esc(g.title)}</h4><p>${esc((g.tags || []).join(" · "))}${g.author ? " · " + esc(g.author) : ""}</p>
+          <div class="chips" style="margin-top:8px">${Object.keys(GACC).map(k => `<button class="chip" type="button" data-acc="${k}" aria-pressed="${k === g.access}">${GACC[k].t}</button>`).join("")}</div></div>
+        <div class="acts"><button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
+      <p class="hint">«Скрыта» убирает игру из маркета у всех, но не удаляет: отзывы, моды и счётчики сохраняются, вернуть можно в один клик. Изменения видны игрокам сразу после обновления маркета.</p>`;
+  };
+  const patch = async (id, body, msg) => {
+    try { const n = await api("/admin?r=game&id=" + encodeURIComponent(id), { method: "PATCH", body }); Object.assign(games.find(g => g.id === id), n); toast(msg); draw(); }
+    catch (e) { toast(errText(e), true); }
+  };
+  root.onclick = async e => {
+    if (e.target.id === "dlAll") {
+      try { site = await api("/admin?r=site", { method: "PUT", body: { dlOff: !site.dlOff } }); toast(site.dlOff ? "Скачивание выключено у всех игр" : "Скачивание снова включено"); draw(); } catch (x) { toast(errText(x), true); }
+      return;
+    }
+    const row = e.target.closest(".nw"); if (!row) return;
+    const a = e.target.closest("[data-acc]"); if (a && a.getAttribute("aria-pressed") !== "true") return patch(row.dataset.id, { access: a.dataset.acc }, "Доступ: " + GACC[a.dataset.acc].t);
+    const d = e.target.closest("[data-dl]"); if (d) return patch(row.dataset.id, { dl_off: d.dataset.dl === "off" }, d.dataset.dl === "off" ? "Скачивание у игры выключено" : "Скачивание у игры включено");
+  };
+  draw();
+}
+
+/* ===================== САЙТ: ссылки «Канал» и «Чатик» на главной ===================== */
+async function viewSite(root) {
+  let s = await api("/admin?r=site");
+  root.innerHTML = `<div class="sec-h"><h2>Ссылки на главной</h2></div>
+    <div class="panel"><span class="lbl" style="margin-top:0">Кнопка «Канал»</span><input class="in" id="sc" type="url" maxlength="190" value="${esc(s.channel)}" placeholder="https://t.me/…">
+      <span class="lbl">Кнопка «Чатик»</span><input class="in" id="st" type="url" maxlength="190" value="${esc(s.chat)}" placeholder="https://t.me/…">
+      <div class="err" id="se"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="ss" type="button">Сохранить</button></div></div>
+    <p class="hint">Только ссылки https:// (например https://t.me/ваш_канал). Игроки увидят новые ссылки после обновления маркета.</p>`;
+  $("#ss").onclick = async () => {
+    const channel = $("#sc").value.trim(), chat = $("#st").value.trim(); $("#se").textContent = "";
+    if (!LINK.test(channel) || !LINK.test(chat)) { $("#se").textContent = ERR.bad_link; return; }
+    try { s = await api("/admin?r=site", { method: "PUT", body: { channel, chat } }); toast("Сохранено"); } catch (e) { $("#se").textContent = errText(e); }
+  };
+}
+
 /* ===================== НОВОСТИ ===================== */
 async function viewNews(root) {
   let items = (await api("/admin?r=news")).items;
@@ -491,7 +542,7 @@ async function viewNews(root) {
       <span class="lbl">Цвет тега</span><div class="sw" id="nc">${COLORS.map(c => `<button type="button" style="--c:${c}" data-c="${c}" aria-pressed="${c === n.c}" aria-label="${c}"></button>`).join("")}<input type="color" id="ncc" value="${esc(n.c)}" aria-label="Свой цвет"></div>
       <span class="lbl">Заголовок *</span><input class="in" id="nh" maxlength="60" value="${esc(n.title)}" placeholder="Коротко и ясно">
       <span class="lbl">Текст</span><textarea class="in" id="nx" maxlength="200" placeholder="До 200 символов">${esc(n.text)}</textarea>
-      <span class="lbl">Ссылка при нажатии (необязательно)</span><input class="in" id="nl2" type="url" maxlength="300" value="${esc(n.link)}" placeholder="https://t.me/coopix_market">
+      <span class="lbl">Ссылка при нажатии (необязательно)</span><input class="in" id="nl2" type="url" maxlength="300" value="${esc(n.link)}" placeholder="https://t.me/coopixmarket">
       <div class="hint">Оставьте пустым: новость не будет нажиматься. Принимаются только ссылки https://</div><div class="err" id="ne"></div>
       <div class="pv" id="pv"></div>`,
       [{ t: "Отмена", cls: "ghost" }, { t: "Сохранить", fn: async c => {

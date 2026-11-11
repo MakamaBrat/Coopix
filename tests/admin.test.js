@@ -87,11 +87,11 @@ test("новости: сохранение, чистка полей, ссылк�
   const { adm, call } = await world();
   const put = (items) => adm("news", "PUT", MAIN, { body: { items } });
   const ok = await put([
-    { tag: "Акция", c: "#ff0000", date: "10.11", title: "Привет", text: "Текст", link: "https://t.me/coopix_market" },
+    { tag: "Акция", c: "#ff0000", date: "10.11", title: "Привет", text: "Текст", link: "https://t.me/coopixmarket" },
     { title: "Без ссылки", c: "javascript:1", link: "" },
   ]);
   assert.equal(ok.status, 200);
-  assert.equal(ok.body.items[0].link, "https://t.me/coopix_market");
+  assert.equal(ok.body.items[0].link, "https://t.me/coopixmarket");
   assert.equal(ok.body.items[1].c, "#a56bff"); // чужой цвет заменён
   assert.equal(ok.body.items[1].link, "");
   assert.equal((await put([{ title: "x", link: "javascript:alert(1)" }])).status, 400);
@@ -148,4 +148,16 @@ test("скорость: /hub?r=config = /config; «кто это» не пише
   assert.equal(touches, 1, "старт маркета всегда идёт в базу");
   await w.call("admin", "PATCH", init(MAIN), { query: { r: "user", id: String(USER) }, body: { banned: true } });
   assert.equal((await w.call("hub", "GET", init(USER), { query: { r: "stats", ids: "retro" } })).status, 403, "бан сразу");
+});
+
+test("сайт: ссылки канала и чата и общий выключатель скачивания меняет только главный админ; маркет получает их в config", async () => {
+  const { call, adm } = await world();
+  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/coopixmarket", chat: "https://t.me/coopixchat", dlOff: false });
+  assert.equal((await adm("site", "PUT", MOD, { body: { chat: "https://t.me/x" } })).status, 403);
+  assert.equal((await adm("site", "PUT", MAIN, { body: { chat: "http://t.me/x" } })).status, 400, "только https");
+  assert.equal((await adm("site", "PUT", MAIN, { body: { channel: "javascript:alert(1)" } })).status, 400);
+  assert.equal((await adm("site", "PUT", MAIN, { body: { dlOff: "yes" } })).status, 400);
+  const ok = await adm("site", "PUT", MAIN, { body: { channel: "https://t.me/new_ch", dlOff: true } });
+  assert.equal(ok.status, 200);
+  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/new_ch", chat: "https://t.me/coopixchat", dlOff: true });
 });

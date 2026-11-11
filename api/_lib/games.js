@@ -13,7 +13,7 @@ export const coverFor = (genre) => COVER_BY_GENRE[genre] ?? "b:retro";
 
 /** Поля страницы, которые автор может предложить изменить (меняются только после одобрения админа). */
 export const AUTHOR_FIELDS = ["desc", "changes", "ver", "link", "item", "bg", "tint", "cover", "bgimg"];
-const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort"];
+const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off"]; // dl_off: скачивание выключено (только главный админ)
 
 /** Своя обложка: JPEG до 512×512 (клиент сам готовит), не больше ~280 КБ в base64. В базе: cover = "img:<хэш>", cover_img = data URL.
  *  Фон страницы и карточки: JPEG до 1280×720, не больше ~420 КБ. В базе: bg_ref = "img:<хэш>", bg_img = data URL. */
@@ -77,6 +77,7 @@ export function cleanGame(b, only = ALL_FIELDS) {
     }
   }
   if (ok("access")) { if (!ACCESS.includes(b.access)) return { error: "bad_access" }; f.access = b.access; }
+  if (ok("dl_off")) { if (typeof b.dl_off !== "boolean") return { error: "bad_dl" }; f.dl_off = b.dl_off; }
   if (ok("sort")) f.sort = Math.min(100000, Math.max(0, Math.trunc(Number(b.sort)) || 0));
   return { f };
 }
@@ -85,7 +86,7 @@ export function cleanGame(b, only = ALL_FIELDS) {
 export const gameWire = (g, uid) => ({
   id: g.id, title: g.title, tags: g.tags, desc: g.description, changes: g.changes, ver: g.version,
   author: g.author_name, item: g.item, cover: g.cover, tint: g.tint ?? null, bg: g.bg, link: g.link,
-  access: g.access, sort: g.sort, file: !!g.has_file, bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
+  access: g.access, sort: g.sort, file: !!g.has_file, dl: !g.dl_off, bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
 });
 
 /** Очищенные поля -> патч автора в формате фронта (так он хранится в game_edits и показывается админу) */

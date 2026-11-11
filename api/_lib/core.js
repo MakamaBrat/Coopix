@@ -14,6 +14,14 @@ const STATUS_RU = { new: "Не просмотрено", seen: "Просмотр�
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const NEWS_MAX = 10;
 const TRON = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+/* настройки сайта (settings.site): ссылки на канал и чат на главной + общий выключатель скачивания */
+const SITE_LINK = /^https:\/\/[^\s"'<>]{3,190}$/i;
+const SITE_DEF = { channel: "https://t.me/coopixmarket", chat: "https://t.me/coopixchat", dlOff: false };
+const siteOf = (v) => ({
+  channel: SITE_LINK.test(v?.channel || "") ? v.channel : SITE_DEF.channel,
+  chat: SITE_LINK.test(v?.chat || "") ? v.chat : SITE_DEF.chat,
+  dlOff: v?.dlOff === true,
+});
 const COLOR = /^#[0-9a-f]{6}$/i;
 const TG_ID = /^\d{1,15}$/;
 const clip = (v, n) => String(v ?? "").trim().slice(0, n);
@@ -106,9 +114,9 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     // ---- /api/config: новости и адрес доната для сайта ----
     if (route === "config") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
-      const [news, wallet] = await Promise.all([store.getSetting("news"), store.getSetting("wallet")]);
+      const [news, wallet, site] = await Promise.all([store.getSetting("news"), store.getSetting("wallet"), store.getSetting("site")]);
       // role/admin здесь же: маркету на старте не нужен отдельный запрос /me (минус один круг до сервера)
-      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, role, admin: staff });
+      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, site: siteOf(site?.value), role, admin: staff });
     }
 
     // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----
@@ -360,6 +368,25 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       forget(tid); // бан действует сразу (в этом экземпляре функции)
       if (!row) return json(404, { error: "not_found" });
       return json(200, toUser(row, null));
+    }
+
+    // --- сайт: ссылки «Канал» и «Чатик» на главной, общий выключатель скачивания ---
+    if (r === "site") {
+      if (m === "GET") return json(200, siteOf((await store.getSetting("site"))?.value));
+      if (m === "PUT") {
+        const b = parseBody(req.body);
+        if (!b) return json(400, { error: "bad_json" });
+        const cur = siteOf((await store.getSetting("site"))?.value), next = { ...cur };
+        for (const k of ["channel", "chat"]) if (b[k] !== undefined) {
+          const v = clip(b[k], 200);
+          if (!SITE_LINK.test(v)) return json(400, { error: "bad_link" });
+          next[k] = v;
+        }
+        if (b.dlOff !== undefined) { if (typeof b.dlOff !== "boolean") return json(400, { error: "bad_json" }); next.dlOff = b.dlOff; }
+        await store.setSetting("site", next, uid);
+        return json(200, next);
+      }
+      return json(405, { error: "method_not_allowed" });
     }
 
     // --- новости ---

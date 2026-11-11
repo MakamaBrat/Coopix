@@ -340,6 +340,9 @@ alter table public.games add column if not exists bg_img text check (bg_img is n
 alter table public.games drop constraint if exists games_cover_check;
 alter table public.games add constraint games_cover_check check (cover in ('b:retro','b:space','b:toxic','b:blocks') or cover ~ '^img:[0-9a-f]{12}$');
 
+-- Скачивание выключено у этой игры (кнопку «Скачать» видно, но она не работает). Общий выключатель — settings.site.dlOff.
+alter table public.games add column if not exists dl_off boolean not null default false;
+
 create table if not exists public.game_edits (
   id         uuid primary key default gen_random_uuid(),
   game_id    text   not null references public.games(id) on delete cascade,
