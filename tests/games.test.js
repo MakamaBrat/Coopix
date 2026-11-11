@@ -195,3 +195,22 @@ test("каталог: скачивание у одной игры выключа
   assert.equal((await hub("games", "GET", ANN)).body.games.find((x) => x.id === g.id).dl, false);
   assert.equal((await adm("game", "PATCH", MOD, { query: { id: g.id }, body: { dl_off: false } })).status, 403);
 });
+
+test("плейабл: главный админ выбирает мини-игру или загружает свой HTML; игроку отдаётся только видимый", async () => {
+  const { adm, hub } = await world();
+  const g = (await mk(adm, { title: "P", access: "public" })).body;
+  assert.equal(g.play, "auto"); assert.equal(g.playable, false);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { play_kind: "tetris" } })).status, 400);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { play_kind: "shooter" } })).body.play, "shooter");
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { play_html: "просто текст" } })).status, 400);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { play_html: "<html>" + "x".repeat(300001) } })).status, 400);
+  assert.equal((await adm("game", "PATCH", MOD, { query: { id: g.id }, body: { play_html: "<canvas></canvas>" } })).status, 403);
+  assert.equal((await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { play_html: "<canvas id=c></canvas><script>1</script>" } })).body.playable, true);
+  const list = (await hub("games", "GET", ANN)).body.games.find((x) => x.id === g.id);
+  assert.equal(list.playable, true); assert.ok(!JSON.stringify(list).includes("<canvas"), "HTML плейабла не уходит в список");
+  assert.match((await hub("playable", "GET", ANN, { query: { id: g.id } })).body.text, /<canvas/);
+  await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { access: "off" } });
+  assert.equal((await hub("playable", "GET", ANN, { query: { id: g.id } })).status, 404, "скрытая игра: плейабл не отдаётся");
+  await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { access: "public", play_html: "" } });
+  assert.equal((await hub("playable", "GET", ANN, { query: { id: g.id } })).status, 404, "свой убран: снова стандартная мини-игра");
+});

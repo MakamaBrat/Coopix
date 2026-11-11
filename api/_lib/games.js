@@ -13,7 +13,10 @@ export const coverFor = (genre) => COVER_BY_GENRE[genre] ?? "b:retro";
 
 /** Поля страницы, которые автор может предложить изменить (меняются только после одобрения админа). */
 export const AUTHOR_FIELDS = ["desc", "changes", "ver", "link", "item", "bg", "tint", "cover", "bgimg"];
-const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off"]; // dl_off: скачивание выключено (только главный админ)
+const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off", "play_kind", "play_html"]; // dl_off, play_*: только главный админ
+/** Плейабл на «телевизоре» страницы игры: свой маленький HTML или одна из стандартных мини-игр (auto = по жанру) */
+export const PLAY_KINDS = ["auto", "arcade", "music", "shooter", "puzzle", "catch"];
+export const PLAY_MAX = 300000;
 
 /** Своя обложка: JPEG до 512×512 (клиент сам готовит), не больше ~280 КБ в base64. В базе: cover = "img:<хэш>", cover_img = data URL.
  *  Фон страницы и карточки: JPEG до 1280×720, не больше ~420 КБ. В базе: bg_ref = "img:<хэш>", bg_img = data URL. */
@@ -77,6 +80,13 @@ export function cleanGame(b, only = ALL_FIELDS) {
     }
   }
   if (ok("access")) { if (!ACCESS.includes(b.access)) return { error: "bad_access" }; f.access = b.access; }
+  if (ok("play_kind")) { if (!PLAY_KINDS.includes(b.play_kind)) return { error: "bad_play" }; f.play_kind = b.play_kind; }
+  if (ok("play_html")) {
+    const h = b.play_html;
+    if (h === "" || h === null) f.play_html = null; // убрать свой плейабл: снова стандартная мини-игра
+    else if (typeof h !== "string" || h.length > PLAY_MAX || !/<(html|body|script|canvas)/i.test(h)) return { error: "bad_play_html" };
+    else f.play_html = h;
+  }
   if (ok("dl_off")) { if (typeof b.dl_off !== "boolean") return { error: "bad_dl" }; f.dl_off = b.dl_off; }
   if (ok("sort")) f.sort = Math.min(100000, Math.max(0, Math.trunc(Number(b.sort)) || 0));
   return { f };
@@ -86,7 +96,8 @@ export function cleanGame(b, only = ALL_FIELDS) {
 export const gameWire = (g, uid) => ({
   id: g.id, title: g.title, tags: g.tags, desc: g.description, changes: g.changes, ver: g.version,
   author: g.author_name, item: g.item, cover: g.cover, tint: g.tint ?? null, bg: g.bg, link: g.link,
-  access: g.access, sort: g.sort, file: !!g.has_file, dl: !g.dl_off, bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
+  access: g.access, sort: g.sort, file: !!g.has_file, dl: !g.dl_off,
+  play: PLAY_KINDS.includes(g.play_kind) ? g.play_kind : "auto", playable: !!(g.has_play ?? g.play_html), bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
 });
 
 /** Очищенные поля -> патч автора в формате фронта (так он хранится в game_edits и показывается админу) */

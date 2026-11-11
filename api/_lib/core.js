@@ -14,6 +14,7 @@ const STATUS_RU = { new: "Не просмотрено", seen: "Просмотр�
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const NEWS_MAX = 10;
 const TRON = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+const BROADCAST_BATCH = 25, BROADCAST_GAP = 40; // рассылка: пачка на один вызов (успевает за лимит функции Vercel) и пауза между сообщениями, мс
 /* настройки сайта (settings.site): ссылки на канал и чат на главной + общий выключатель скачивания */
 const SITE_LINK = /^https:\/\/[^\s"'<>]{3,190}$/i;
 const SITE_DEF = { channel: "https://t.me/coopixmarket", chat: "https://t.me/coopixchat", dlOff: false };
@@ -368,6 +369,24 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       forget(tid); // бан действует сразу (в этом экземпляре функции)
       if (!row) return json(404, { error: "not_found" });
       return json(200, toUser(row, null));
+    }
+
+    // --- рассылка от бота всем игрокам (кроме забаненных): пачками, админка вызывает повторно с курсором after ---
+    if (r === "broadcast") {
+      if (m !== "POST") return json(405, { error: "method_not_allowed" });
+      if (!tgApi) return json(503, { error: "payments_off" });
+      const b = parseBody(req.body);
+      const text = String(b?.text ?? "").trim().slice(0, 2000);
+      if (text.length < 2) return json(400, { error: "bad_text" });
+      const after = Number.isSafeInteger(Number(b.after)) ? Number(b.after) : 0;
+      const ids = await store.userIdsAfter(after, BROADCAST_BATCH);
+      let sent = 0, failed = 0;
+      for (const id of ids) {
+        try { await tgApi("sendMessage", { chat_id: id, text }); sent++; } catch { failed++; } // не открывал бота / заблокировал его
+        await new Promise((res) => setTimeout(res, BROADCAST_GAP));                          // ~25 сообщений в секунду: лимит Telegram 30
+      }
+      const s = after === 0 ? await store.userStats() : null;
+      return json(200, { sent, failed, next: ids.length === BROADCAST_BATCH ? ids[ids.length - 1] : null, total: s ? s.total - s.banned : undefined });
     }
 
     // --- сайт: ссылки «Канал» и «Чатик» на главной, общий выключатель скачивания ---

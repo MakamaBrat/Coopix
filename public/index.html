@@ -518,6 +518,8 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .pbar .bigplay svg{width:22px;height:22px}
 .pbar .dlbtn,.pbar .dlbtn:hover{background:#2a1a66;color:#e5d6ff}.pbar .dlbtn svg{fill:#e5d6ff}
 .pbar .dlbtn.off{opacity:.45;filter:grayscale(1)} /* скачивание выключено админом */
+.scr iframe.pl{position:absolute;inset:0;z-index:6;width:100%;height:100%;border:0;background:#000} /* свой плейабл в «телевизоре» */
+.scr.emb .ov,.scr.emb canvas.g{visibility:hidden}
 .bigplay svg{width:26px;height:26px;fill:#140a28}.bigplay:hover{filter:brightness(1.1)}.bigplay:active{transform:translateY(4px)}
 
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
@@ -1725,7 +1727,8 @@ const MAXT=3;
 const capT=t=>{t=String(t).replace(/[,;<>"&]/g," ").replace(/\s+/g," ").trim().slice(0,14);return t?t[0].toUpperCase()+t.slice(1):""};
 const tagsOf=m=>{const t=Array.isArray(m.tags)?m.tags.filter(Boolean):[];return t.length?t.slice(0,MAXT):[m.genre||"Arcade"]};
 const hasTag=(m,g)=>tagsOf(m).some(t=>t.toLowerCase()===g.toLowerCase());
-const kindOf=m=>{for(const t of tagsOf(m)){const k=Object.keys(KIND).find(k=>k.toLowerCase()===t.toLowerCase());if(k)return KIND[k]}return"catch"};
+const kindOf=m=>{if(m&&m.playKind&&m.playKind!=="auto"&&["arcade","music","shooter","puzzle","catch"].includes(m.playKind))return m.playKind; /* выбрано в админке */
+  for(const t of tagsOf(m)){const k=Object.keys(KIND).find(k=>k.toLowerCase()===t.toLowerCase());if(k)return KIND[k]}return"catch"};
 let DATA=store.get("am.cards.v1",null)||DEFAULTS.map(d=>({...d}));
 function persist(){if(SUB_API&&CAT_OK){store.set(CATK,DATA.map(d=>({...d,cover:/^img:/.test(d.cref||"")?d.cref:d.cover,bgimg:d.bref||""})));return}
   if(!store.set("am.cards.v1",DATA))toast("Память браузера заполнена: новые обложки не сохранятся")}
@@ -1742,7 +1745,7 @@ const MUS={el:null,vol:0,t:0,unlocked:false};
 function musicSync(){
   const want=!!SET.sound&&MUS.unlocked&&!PGO&&!document.hidden; /* на всех экранах сайта; на странице игры молчит, чтобы не мешать её звукам */
   if(want&&!MUS.el){MUS.el=new Audio("assets/music/store.mp3");MUS.el.loop=true;MUS.el.volume=0}
-  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.084:0; /* тихий фон (было 0.35 → 0.14 → ещё −40%) */
+  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.105:0; /* тихий фон (0.35 → 0.14 → 0.084 → +25%) */
   if(want&&MUS.el.paused)MUS.el.play().catch(()=>{});
   MUS.t=setInterval(()=>{MUS.vol+=Math.sign(target-MUS.vol)*.035;if(Math.abs(target-MUS.vol)<.04)MUS.vol=target;MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
     if(MUS.vol===target){clearInterval(MUS.t);if(!want)MUS.el.pause()}},40)}
@@ -2003,7 +2006,9 @@ function openProfileEditor(){
   <div class="pbody" lang="ru">
     <div class="av-row"><div class="pf-av" id="pfAv" style="--pc:${d.color}"><i></i></div>
       <div class="btns"><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer">Загрузить фото<input type="file" accept="image/*" hidden id="pfFile"></label><button class="btn ghost" id="pfNoPh" type="button">Голубь</button></div></div>
-    <div class="fld"><span class="lbl">Ник</span><div class="in" id="pfName" aria-readonly="true" style="opacity:.75">${esc(d.name)}</div><p class="hint2" style="text-align:left;margin-top:6px">Ник берётся из Telegram. Поменяйте имя в Telegram, и оно обновится здесь.</p></div>
+    ${SUB_API&&ROLE==="main"
+      ?`<label class="fld"><span class="lbl">Ник <small>главный админ может поставить свой</small></span><input class="in" id="pfNick" maxlength="16" value="${esc(d.name)}" placeholder="Пусто = имя из Telegram"></label>`
+      :`<div class="fld"><span class="lbl">Ник</span><div class="in" id="pfName" aria-readonly="true" style="opacity:.75">${esc(d.name)}</div><p class="hint2" style="text-align:left;margin-top:6px">Ник берётся из Telegram. Поменяйте имя в Telegram, и оно обновится здесь.</p></div>`}
     <div class="fld"><span class="lbl">Цвет рамки</span><div class="sw" id="pfSw" role="radiogroup" aria-label="Цвет рамки">${AVC.map(c=>`<button type="button" role="radio" aria-checked="${c===d.color}" data-c="${c}" style="--sc:${c}" aria-label="${c}"></button>`).join("")}</div></div>
   </div>
   <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="pfSave">Сохранить</button></div></div>`);
@@ -2014,6 +2019,8 @@ function openProfileEditor(){
     im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);d.photo=c.toDataURL("image/jpeg",.82);URL.revokeObjectURL(u);draw()};
     im.onerror=()=>{URL.revokeObjectURL(u);toast("Не удалось открыть картинку")};im.src=u});
   $("#pfSave").addEventListener("click",()=>{
+    /* свой ник: только главный админ; сервер всё равно проверяет роль, пустой = снова из Telegram */
+    const nk=$("#pfNick");if(nk){const v=nk.value.trim().slice(0,16);PROF.name=v||tgName()||PROF.name;hub("profile",{method:"PUT",body:{...snap(),name:v}}).then(j=>{if(j&&j.name){PROF.name=j.name;store.set("am.profile",PROF);if(view===3)renderProfile()}}).catch(()=>{})}
     const ch=d.color!==PROF.color||d.photo!==PROF.photo;
     /* свой аватар или «Голубь» = больше не подменяем фото из Telegram */
     if(d.photo!==PROF.photo)PROF.tgph=0;
@@ -2372,7 +2379,8 @@ const tone=(f,d=.07,force)=>beep(f,d,"square",.04,0,force);
 const KP=p=>({D:rgb(p.D),M:rgb(p.M),L:rgb(p.L),A:rgb(p.A),B:rgb(p.B)});
 /*GAMES*/
 const GAMES={
- arcade(inp,p){const C=KP(p),W=160,H=120;let px=80,bx=80,by=88,vx=46,vy=-62,bk=[],g;
+ /* A = картинка игры {big, mini}: кирпичи, ноты, враги, фигуры и звёзды рисуются из неё */
+ arcade(inp,p,A){const C=KP(p),W=160,H=120;let px=80,bx=80,by=88,vx=46,vy=-62,bk=[],g;
   const fill=()=>{bk=[];for(let r=0;r<4;r++)for(let c=0;c<8;c++)bk.push({x:6+c*18,y:14+r*8,r})};fill();
   return g={score:0,over:false,
    step(dt){px=clamp(inp.x*W,14,W-14);bx+=vx*dt;by+=vy*dt;
@@ -2382,9 +2390,9 @@ const GAMES={
     for(let i=0;i<bk.length;i++){const b=bk[i];if(bx>b.x&&bx<b.x+16&&by>b.y&&by<b.y+6){bk.splice(i,1);vy=-vy;g.score+=10;tone(600+b.r*80);break}}
     if(!bk.length){fill();vy=-Math.min(130,Math.abs(vy)*1.12);vx*=1.1;by=88}
     if(by>H+4)g.over=true},
-   draw(x){R(x,C.D,0,0,W,H);bk.forEach(b=>{R(x,[C.A,C.L,C.M,C.A][b.r],b.x,b.y,16,6);R(x,C.D,b.x,b.y+5,16,1)});
+   draw(x){R(x,C.D,0,0,W,H);bk.forEach(b=>{if(A){const w=A.big.width,h=A.big.height;x.drawImage(A.big,(b.x-6)/144*w,(b.y-14)/32*h,16/144*w,6/32*h,b.x,b.y,16,6)}else R(x,[C.A,C.L,C.M,C.A][b.r],b.x,b.y,16,6);R(x,C.D,b.x,b.y+5,16,1)});
     R(x,C.L,px-14,H-8,28,4);R(x,C.A,px-14,H-8,28,1);R(x,C.L,bx-1,by-1,3,3)}}},
- music(inp,p){const C=KP(p),W=160,H=120,LY=H-20,NT=[262,330,392,523],KM={L:0,D:1,U:2,R:3};let ns=[],sp=.5,fl=[0,0,0,0],ms=0,g;
+ music(inp,p,A){const C=KP(p),W=160,H=120,LY=H-20,NT=[262,330,392,523],KM={L:0,D:1,U:2,R:3};let ns=[],sp=.5,fl=[0,0,0,0],ms=0,g;
   return g={score:0,over:false,
    step(dt){sp-=dt;if(sp<=0){ns.push({l:Math.random()*4|0,y:-6});sp=Math.max(.28,.7-g.score*.0008)+Math.random()*.25}
     const v=46+Math.min(50,g.score*.12);
@@ -2393,10 +2401,10 @@ const GAMES={
      const i=ns.findIndex(n=>n.l===l&&Math.abs(n.y-LY)<12);if(i>=0){ns.splice(i,1);g.score+=10;tone(NT[l]*2,.14,1)}else tone(NT[l],.1,1)}
     for(let i=0;i<4;i++)fl[i]=Math.max(0,fl[i]-dt)},
    draw(x){R(x,C.D,0,0,W,H);for(let i=0;i<4;i++)R(x,i%2?C.B:C.D,i*40,0,40,H);R(x,C.M,0,LY,W,1);
-    ns.forEach(n=>{R(x,C.L,n.l*40+6,n.y-3,28,6);R(x,C.A,n.l*40+6,n.y-3,28,2)});
+    ns.forEach(n=>{R(x,C.L,n.l*40+6,n.y-3,28,6);R(x,C.A,n.l*40+6,n.y-3,28,2);if(A)x.drawImage(A.mini,n.l*40+15,n.y-5,10,10)});
     for(let i=0;i<4;i++){R(x,fl[i]>0?C.L:C.M,i*40+3,H-14,34,10);R(x,C.A,i*40+3,H-14,34,2)}
     for(let i=0;i<5;i++)R(x,i<5-ms?C.L:C.B,W-8-i*6,4,4,4)}}},
- shooter(inp,p){const C=KP(p),W=160,H=120;let bl=[],en=[],fi=0,sp=.6,px=80,g;
+ shooter(inp,p,A){const C=KP(p),W=160,H=120;let bl=[],en=[],fi=0,sp=.6,px=80,g;
   return g={score:0,over:false,
    step(dt){px=clamp(inp.x*W,6,W-6);fi-=dt;if(fi<=0){bl.push({x:px,y:H-14});fi=.2;tone(700,.03)}
     sp-=dt;if(sp<=0){en.push({x:8+Math.random()*(W-16),y:-6,ph:Math.random()*6});sp=Math.max(.28,.85-g.score*.0035)}
@@ -2406,9 +2414,9 @@ const GAMES={
      if(j>=0){bl.splice(j,1);en.splice(i,1);g.score+=10;tone(200,.06);continue}
      if(e.y>H-4||(e.y>H-20&&Math.abs(e.x-px)<8))g.over=true}},
    draw(x){R(x,C.D,0,0,W,H);bl.forEach(b=>R(x,C.L,b.x-1,b.y,2,5));
-    en.forEach(e=>{const a=e.x-4|0,b=e.y-4|0;R(x,C.A,a,b,8,6);R(x,C.D,a+1,b+2,2,2);R(x,C.D,a+5,b+2,2,2);R(x,C.A,a+1,b+6,2,2);R(x,C.A,a+5,b+6,2,2)});
+    en.forEach(e=>{const a=e.x-4|0,b=e.y-4|0;if(A){x.drawImage(A.mini,a-1,b-1,10,10);return}R(x,C.A,a,b,8,6);R(x,C.D,a+1,b+2,2,2);R(x,C.D,a+5,b+2,2,2);R(x,C.A,a+1,b+6,2,2);R(x,C.A,a+5,b+6,2,2)});
     R(x,C.L,px-1,H-16,3,4);R(x,C.A,px-4,H-12,9,4);R(x,C.L,px-6,H-8,13,3)}}},
- puzzle(inp,p){const C=KP(p),W=160,H=120,CW=10,CH=16,S=7,OX=45,OY=4,
+ puzzle(inp,p,A){const C=KP(p),W=160,H=120,CW=10,CH=16,S=7,OX=45,OY=4,
   SH=[[[0,0],[1,0],[2,0],[3,0]],[[0,0],[1,0],[0,1],[1,1]],[[1,0],[0,1],[1,1],[2,1]],[[0,0],[1,0],[1,1],[2,1]],[[1,0],[2,0],[0,1],[1,1]],[[0,0],[0,1],[1,1],[2,1]],[[2,0],[0,1],[1,1],[2,1]]],
   CL=[C.A,C.L,C.M,C.A,C.L,C.M,C.A];
   let gr=Array.from({length:CH},()=>Array(CW).fill(0)),pc,px,py,ci,nx=Math.random()*7|0,ac=0,g;
@@ -2425,11 +2433,11 @@ const GAMES={
      else if(k==="D"){if(fits(pc,px,py+1)){py++;ac=0}}else if(k==="S"){while(fits(pc,px,py+1))py++;ac=9}}
     ac+=dt;if(!g.over&&ac>Math.max(.12,.6-g.score*.0003)){ac=0;if(fits(pc,px,py+1))py++;else lock()}},
    draw(x){R(x,C.D,0,0,W,H);R(x,C.B,OX-2,OY-2,CW*S+4,CH*S+4);R(x,C.D,OX,OY,CW*S,CH*S);
-    const cell=(a,b,c)=>{R(x,c,OX+a*S,OY+b*S,S-1,S-1);R(x,C.L,OX+a*S,OY+b*S,S-1,1)};
+    const cell=(a,b,c)=>{R(x,c,OX+a*S,OY+b*S,S-1,S-1);if(A){x.globalAlpha=.6;x.drawImage(A.mini,OX+a*S,OY+b*S,S-1,S-1);x.globalAlpha=1}R(x,C.L,OX+a*S,OY+b*S,S-1,1)};
     gr.forEach((r,y)=>r.forEach((v,a)=>{if(v)cell(a,y,CL[v-1])}));pc.forEach(([a,b])=>cell(px+a,py+b,CL[ci]));
     R(x,C.B,114,14,36,30);SH[nx].forEach(([a,b])=>R(x,CL[nx],119+a*6,20+b*6,5,5))}};
   spawn();return g},
- catch(inp,p){const C=KP(p),W=160,H=120;let it=[],sp=.4,px=80,lv=3,g;
+ catch(inp,p,A){const C=KP(p),W=160,H=120;let it=[],sp=.4,px=80,lv=3,g;
   return g={score:0,over:false,
    step(dt){px=clamp(inp.x*W,12,W-12);sp-=dt;if(sp<=0){it.push({x:8+Math.random()*(W-16),y:-4,b:Math.random()<.22});sp=Math.max(.25,.7-g.score*.002)}
     const v=40+Math.min(50,g.score*.15);
@@ -2437,7 +2445,7 @@ const GAMES={
      if(t.y>H-14&&t.y<H-6&&Math.abs(t.x-px)<13){it.splice(i,1);if(t.b){tone(120,.2);g.over=true}else{g.score+=10;tone(800,.05)}}
      else if(t.y>H+4){it.splice(i,1);if(!t.b&&--lv<=0)g.over=true}}},
    draw(x){R(x,C.D,0,0,W,H);
-    it.forEach(t=>{if(t.b){R(x,C.A,t.x-3,t.y-3,7,7);R(x,C.D,t.x-2,t.y-2,5,5);R(x,C.A,t.x,t.y-5,1,2)}else{R(x,C.L,t.x-1,t.y-3,3,7);R(x,C.L,t.x-3,t.y-1,7,3)}});
+    it.forEach(t=>{if(t.b){R(x,C.A,t.x-3,t.y-3,7,7);R(x,C.D,t.x-2,t.y-2,5,5);R(x,C.A,t.x,t.y-5,1,2)}else if(A)x.drawImage(A.mini,t.x-4,t.y-4,9,9);else{R(x,C.L,t.x-1,t.y-3,3,7);R(x,C.L,t.x-3,t.y-1,7,3)}});
     R(x,C.M,px-12,H-10,24,3);R(x,C.A,px-12,H-14,3,7);R(x,C.A,px+9,H-14,3,7);
     for(let i=0;i<3;i++)R(x,i<lv?C.L:C.B,W-8-i*6,4,4,4)}}}
 };
@@ -2504,7 +2512,7 @@ function pageHTML(m,kind){
       <span class="rec">● BETA</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" aria-pressed="true" aria-label="Noise filter"></button><span class="lab">noise</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
-  <p class="hint2">${m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":HINT[kind]}</p>
+  <p class="hint2">${m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":m.playable&&SUB_API?"Мини-игра этой игры · нажмите на экран, чтобы начать":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
@@ -2523,7 +2531,9 @@ function pageHTML(m,kind){
 async function openPage(id,opt){
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
   const cov=await resolveCover(m.cover);if(PG!==me)return;const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s),kind=kindOf(m);
-  Object.assign(PG,{pal,art:cov.canvas,kind,run:false,score:0,best:store.get("am.best",{})[m.id]||0});
+  /* картинка игры для стандартных мини-игр: большая (кирпичи арканоида режутся из неё) и маленькая 16×16 (ноты, враги, фигуры, звёзды) */
+  const mini=document.createElement("canvas");mini.width=mini.height=16;{const mx=mini.getContext("2d");mx.imageSmoothingEnabled=true;mx.drawImage(cov.canvas,0,0,16,16)}
+  Object.assign(PG,{pal,art:cov.canvas,sprite:{big:cov.canvas,mini},kind,run:false,score:0,best:store.get("am.best",{})[m.id]||0});
   const s=pageEl.style;s.setProperty("--c1",rgb(pal.A));s.setProperty("--c2",rgb(pal.B));s.setProperty("--c3",rgb(pal.L));
   pgBody.innerHTML=pageHTML(m,kind);pageEl.scrollTop=0;
   {const x=$("#pgCov").getContext("2d");x.imageSmoothingEnabled=!!cov.hi;x.drawImage(cov.hi||cov.canvas,0,0,512,512)}
@@ -2633,8 +2643,8 @@ async function tvBoot(me){
 function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void s.offsetWidth;s.classList.add("pon")}
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
-  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file){playFile();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
-  Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal);PG.score=0;PG.run=true;
+  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file){playFile();return}if(PG.m.playable&&SUB_API){playEmbed();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
+  Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal,PG.sprite);PG.score=0;PG.run=true;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
   const loop=now=>{if(!PG||!PG.run)return;if(Q<2&&now-last<(Q?30:45)){PG.raf=requestAnimationFrame(loop);return}const dt=Math.min(.05,(now-last)/1e3);last=now;
@@ -2644,7 +2654,14 @@ function startGame(){
   PG.raf=requestAnimationFrame(loop)}
 /* каждый запуск игры = одно действие «play»: растёт счётчик игры, опыт игрока и журнал */
 function countPlay(){const d=DATA.find(x=>x.id===PG.m.id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id)}act("play",PG.m.id);paintPage()}
-function stopGame(){if(!PG)return;PG.run=false;cancelAnimationFrame(PG.raf);const s=$("#scr"),l=$("#led");s&&s.classList.remove("playing");l&&l.classList.remove("on")}
+/* свой плейабл (загружен в админке): маленький HTML прямо в «телевизоре», в изолированном iframe без доступа к маркету */
+const PLAYC={};
+async function playEmbed(){const me=PG;if(!me)return;stopGame();
+  let t=PLAYC[me.m.id];if(t==null){setOv("load");try{t=PLAYC[me.m.id]=(await hub("playable",{q:{id:me.m.id}})).text}catch(e){if(PG===me){setOv("idle");toast("Не удалось загрузить мини-игру")}return}}
+  if(PG!==me)return;const s=$("#scr");if(!s)return;countPlay();
+  const f=document.createElement("iframe");f.className="pl";f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("title","Мини-игра "+(me.m.title||""));f.srcdoc=t;
+  s.append(f);s.classList.add("playing","emb");$("#led").classList.add("on");burst();sfx.in();PG.run=true;setTimeout(()=>{try{f.focus()}catch(e){}},50)}
+function stopGame(){if(!PG)return;const sf=document.querySelector("#scr iframe.pl");if(sf){sf.remove();$("#scr").classList.remove("emb")}PG.run=false;cancelAnimationFrame(PG.raf);const s=$("#scr"),l=$("#led");s&&s.classList.remove("playing");l&&l.classList.remove("on")}
 function endGame(){
   const s=PG.score,b=store.get("am.best",{}),nb=s>(b[PG.m.id]||0);
   if(nb){b[PG.m.id]=s;store.set("am.best",b);PG.best=s}
@@ -2724,7 +2741,7 @@ const saveCov=()=>{let ks=Object.keys(COV),sz=ks.reduce((t,k)=>t+COV[k].length,0
 const covOf=ref=>/^img:/.test(ref||"")?COV[ref]||"b:retro":ref||"b:retro";
 function fromWire(g,old){const t=Array.isArray(g.tags)&&g.tags.length?g.tags:["Arcade"];old=old||{};
   return{id:g.id,title:g.title,tags:t,genre:t[0],item:g.item,cref:g.cover,bref:g.bgimg||"",bgimg:g.bgimg?(old.bref===g.bgimg&&/^data:/.test(old.bgimg||"")?old.bgimg:COV[g.bgimg]||""):"",cover:/^img:/.test(g.cover)&&old.cref===g.cover&&/^data:/.test(old.cover||"")?old.cover:covOf(g.cover),tint:g.tint||null,bg:g.bg==="auto"?undefined:g.bg,
-    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,built:1,
+    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,playKind:g.play||"auto",playable:!!g.playable,built:1,
     fav:old.fav||0,played:old.played||0,downloads:old.downloads||0}}
 async function admReq(r,q,method,body){
   const x=await fetch(SUB_API+"/admin?"+new URLSearchParams({r,...q}),{method,headers:sbH(body!=null),body:body!=null?JSON.stringify(body):undefined});
@@ -2891,7 +2908,7 @@ const tgName=()=>{const u=tgU();return u?String(u.first_name||u.username||"").tr
 const jpeg128=src=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d"),s=Math.min(im.width,im.height);
   x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,128,128);ok(c.toDataURL("image/jpeg",.82))};im.onerror=no;im.src=src});
 async function tgIdentity(){
-  if(!tgU())return;const n=tgName();let ch=0;if(n&&n!==PROF.name){PROF.name=n;ch=1}
+  if(!tgU())return;const n=ROLE==="main"?"":tgName();let ch=0;if(n&&n!==PROF.name){PROF.name=n;ch=1} /* у главного админа ник может быть свой: его не трогаем */
   if(SUB_API&&!PROF.custom&&(!PROF.photo||PROF.tgph)&&Date.now()-(+store.get("am.tgph",0)||0)>864e5){store.set("am.tgph",Date.now());
     try{const j=await hub("tgphoto");if(!PROF.custom){const p=j.photo&&PHOTO_RE.test(j.photo)?await jpeg128(j.photo):"";
       if(p!==PROF.photo&&(p||PROF.tgph)){PROF.photo=p;PROF.tgph=p?1:0;ch=1}}}catch(e){store.set("am.tgph",0)}}
@@ -3083,7 +3100,7 @@ async function openAdmin(){
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0,
     Promise.all([document.fonts.load('500 20px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Tektur"','Аб Ab'),document.fonts.load('700 36px "Pixelify Sans"')]).catch(()=>{})]);
   if(!(await cfgP)){const b=$("#boot");b&&b.remove();return}
-  {const n=tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера */
+  {const n=ROLE==="main"?"":tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера (свой ник главного админа придёт с сервера) */
   profVisit();sync();if(!SUB_API)tgIdentity();
   if(SUB_API){
     if(!CFG_ROLE)await Promise.race([adminProbe(),wait(1500)]); /* старый сервер без роли в /config */

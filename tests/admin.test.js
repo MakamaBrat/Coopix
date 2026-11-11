@@ -161,3 +161,26 @@ test("сайт: ссылки канала и чата и общий выключ
   assert.equal(ok.status, 200);
   assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/new_ch", chat: "https://t.me/coopixchat", dlOff: true });
 });
+
+test("рассылка: только главный админ, пачками по курсору, без забаненных; ошибки Telegram считаются", async () => {
+  const { call, adm, store, tg } = await world();
+  for (let i = 100; i < 130; i++) await call("me", "GET", init(i));              // 30 новых игроков, вместе с MAIN/MOD/USER = 33
+  store.users.get(105).banned = true;
+  assert.equal((await adm("broadcast", "POST", MOD, { body: { text: "Привет" } })).status, 403);
+  assert.equal((await adm("broadcast", "POST", MAIN, { body: { text: " " } })).status, 400);
+  const r1 = (await adm("broadcast", "POST", MAIN, { body: { text: "Новая игра в маркете!" } })).body;
+  assert.equal(r1.sent, 25); assert.equal(r1.total, 32); assert.ok(r1.next);
+  const r2 = (await adm("broadcast", "POST", MAIN, { body: { text: "Новая игра в маркете!", after: r1.next } })).body;
+  assert.equal(r2.sent + r2.failed, 7); assert.equal(r2.next, null);
+  const to = tg.filter(([mth]) => mth === "sendMessage").map(([, p]) => p.chat_id);
+  assert.equal(to.length, 32); assert.ok(!to.includes(105), "забаненному не шлём"); assert.equal(new Set(to).size, 32, "никому дважды");
+});
+
+test("ник: свой может поставить только главный админ, остальным всегда из Telegram", async () => {
+  const { call } = await world();
+  const hub = (who, b) => call("hub", "PUT", init(who), { query: { r: "profile" }, body: b });
+  assert.equal((await hub(MAIN, { name: "  Босс  " })).body.name, "Босс");
+  assert.equal((await hub(MAIN, { xp: 5 })).body.name, "Босс", "без name ник сохраняется");
+  assert.equal((await hub(USER, { name: "Босс" })).body.name, "U42");
+  assert.equal((await hub(MAIN, { name: "" })).body.name, "U1", "пустой = снова из Telegram");
+});

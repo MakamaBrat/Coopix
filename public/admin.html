@@ -164,6 +164,8 @@ const ERR = {
   cannot_ban_staff: "Нельзя заблокировать админа или модератора", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
   already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
+  bad_text: "Слишком короткое сообщение",
+  bad_play: "Неизвестная мини-игра", bad_play_html: "Плейабл: нужен HTML не больше 300 КБ",
   bad_link: "Ссылка должна начинаться с https://", bad_dl: "Неверное значение скачивания", empty_patch: "Ничего не изменилось",
   payments_off: "Бот не настроен на сервере", telegram_error: "Telegram отклонил запрос: проверьте BOT_TOKEN", bad_url: "Нужен адрес https://…/api/bot",
 };
@@ -215,6 +217,7 @@ const TABS = [
   { id: "mods", label: "Моды", render: viewMods },
   { id: "games", label: "Игры", main: true, render: viewGames },
   { id: "site", label: "Сайт", main: true, render: viewSite },
+  { id: "cast", label: "Рассылка", main: true, render: viewCast },
   { id: "news", label: "Новости", main: true, render: viewNews },
   { id: "wallet", label: "Помощь · донат", main: true, render: viewWallet },
   { id: "stars", label: "Звёзды", main: true, render: viewStars },
@@ -459,6 +462,9 @@ async function viewStars(root) {
 
 /* ===================== ИГРЫ: показывать / скрыть без удаления, скачивание ===================== */
 const GACC = { public: { t: "Все игроки", c: "#5dff8a" }, staff: { t: "Только админы", c: "#ffb23f" }, off: { t: "Скрыта", c: "#ff5e7a" } };
+/* плейабл на «телевизоре» страницы игры: стандартная мини-игра (с картинкой игры) или свой маленький HTML */
+const PLAYS = { auto: "Авто (по жанру)", arcade: "Арканоид", music: "Ритм (ноты)", shooter: "Шутер", puzzle: "Блоки", catch: "Ловилка" };
+const PLAY_MAX = 300000;
 async function viewGames(root) {
   let games = await api("/admin?r=games"), site = await api("/admin?r=site");
   const draw = () => {
@@ -469,8 +475,13 @@ async function viewGames(root) {
       <div class="nws" id="gl">${games.map(g => `<div class="nw" data-id="${esc(g.id)}" style="--c:${GACC[g.access].c}">
         <div><span class="badge" style="--c:${GACC[g.access].c}">${GACC[g.access].t}</span> <span class="muted small">${esc(g.id)}${g.file ? " · свой HTML" : " · встроенная"}${g.dl ? "" : " · скачивание выключено"}</span>
           <h4>${esc(g.title)}</h4><p>${esc((g.tags || []).join(" · "))}${g.author ? " · " + esc(g.author) : ""}</p>
-          <div class="chips" style="margin-top:8px">${Object.keys(GACC).map(k => `<button class="chip" type="button" data-acc="${k}" aria-pressed="${k === g.access}">${GACC[k].t}</button>`).join("")}</div></div>
+          <div class="chips" style="margin-top:8px">${Object.keys(GACC).map(k => `<button class="chip" type="button" data-acc="${k}" aria-pressed="${k === g.access}">${GACC[k].t}</button>`).join("")}</div>
+          <div class="row" style="margin-top:10px;gap:8px"><span class="muted small">Плейабл:</span>
+            ${g.playable ? `<span class="badge" style="--c:#4dd2ff">свой HTML</span>` : `<select class="in" data-play aria-label="Мини-игра" style="width:auto;min-height:34px;padding:4px 8px">${Object.entries(PLAYS).map(([k, l]) => `<option value="${k}"${k === g.play ? " selected" : ""}>${l}</option>`).join("")}</select>`}
+            <label class="btn ghost sm" style="cursor:pointer">${g.playable ? "Заменить HTML" : "Загрузить свой HTML"}<input type="file" accept=".html,.htm,text/html" data-pf hidden></label>
+            ${g.playable ? `<button class="btn ghost sm" type="button" data-prm style="color:var(--bad)">Убрать свой</button>` : ""}</div></div>
         <div class="acts"><button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
+      <p class="hint">Плейабл — мини-игра на «телевизоре» на странице игры. Без своего HTML играет стандартная мини-игра, нарисованная картинкой этой игры. Свой HTML — один файл до 300 КБ, запускается в изолированном окне.</p>
       <p class="hint">«Скрыта» убирает игру из маркета у всех, но не удаляет: отзывы, моды и счётчики сохраняются, вернуть можно в один клик. Изменения видны игрокам сразу после обновления маркета.</p>`;
   };
   const patch = async (id, body, msg) => {
@@ -485,8 +496,55 @@ async function viewGames(root) {
     const row = e.target.closest(".nw"); if (!row) return;
     const a = e.target.closest("[data-acc]"); if (a && a.getAttribute("aria-pressed") !== "true") return patch(row.dataset.id, { access: a.dataset.acc }, "Доступ: " + GACC[a.dataset.acc].t);
     const d = e.target.closest("[data-dl]"); if (d) return patch(row.dataset.id, { dl_off: d.dataset.dl === "off" }, d.dataset.dl === "off" ? "Скачивание у игры выключено" : "Скачивание у игры включено");
+    if (e.target.closest("[data-prm]")) return confirmBox("Убрать свой плейабл?", "На странице игры снова будет стандартная мини-игра с картинкой игры.", "Убрать", "bad", () => patch(row.dataset.id, { play_html: "" }, "Свой плейабл убран"));
+  };
+  root.onchange = async e => {
+    const row = e.target.closest(".nw"); if (!row) return;
+    if (e.target.matches("[data-play]")) return patch(row.dataset.id, { play_kind: e.target.value }, "Мини-игра: " + PLAYS[e.target.value]);
+    if (e.target.matches("[data-pf]")) {
+      const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+      if (f.size > PLAY_MAX) { toast("Плейабл должен быть не больше 300 КБ", true); return; }
+      const text = await f.text();
+      if (!/<(html|body|script|canvas)/i.test(text)) { toast("Это не похоже на HTML-игру", true); return; }
+      return patch(row.dataset.id, { play_html: text }, "Плейабл загружен: " + f.name);
+    }
   };
   draw();
+}
+
+/* ===================== РАССЫЛКА: сообщение от бота всем игрокам (только главный админ) ===================== */
+async function viewCast(root) {
+  root.innerHTML = `<div class="sec-h"><h2>Рассылка</h2></div>
+    <div class="panel"><span class="lbl" style="margin-top:0">Текст сообщения (придёт от бота каждому игроку)</span>
+      <textarea class="in" id="ct" maxlength="2000" style="min-height:140px" placeholder="Например: В маркете новая игра! Заходите поиграть 🎮"></textarea>
+      <div class="hint" id="cn">0 / 2000</div><div class="err" id="ce"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="cs" type="button">Отправить всем</button></div>
+      <div id="cp" class="hint" style="margin-top:10px"></div></div>
+    <p class="hint">Сообщение получат все, кто заходил в маркет, кроме забаненных. Telegram доставит его только тем, кто хоть раз нажимал «Старт» у бота и не заблокировал его, остальные попадут в «не доставлено». Отправка идёт пачками (около 25 в секунду), не закрывайте вкладку до конца.</p>`;
+  const ta = $("#ct"); ta.oninput = () => { $("#cn").textContent = ta.value.length + " / 2000"; };
+  let busy = false;
+  $("#cs").onclick = () => {
+    const text = ta.value.trim(); $("#ce").textContent = "";
+    if (text.length < 2) { $("#ce").textContent = "Напишите текст сообщения"; return; }
+    if (busy) return;
+    modal("Отправить рассылку?", `<p style="margin:12px 0 6px">Это сообщение получат все игроки. Отменить отправку нельзя.</p><div class="addr" style="font-size:16px;white-space:pre-wrap">${esc(text)}</div>`,
+      [{ t: "Отмена", cls: "ghost" }, { t: "Да, отправить", fn: () => { run(text); } }]);
+  };
+  async function run(text) {
+    busy = true; $("#cs").disabled = true; ta.disabled = true;
+    let after = 0, sent = 0, failed = 0, total = null;
+    const show = (done) => { $("#cp").innerHTML = `${done ? "<b style='color:var(--ok)'>Готово.</b> " : "Отправляем… "}доставлено: <b>${sent}</b> · не доставлено: <b>${failed}</b>${total != null ? ` · всего игроков: <b>${total}</b>` : ""}`; };
+    show(false);
+    try {
+      for (;;) {
+        const r = await api("/admin?r=broadcast", { method: "POST", body: { text, after } });
+        sent += r.sent; failed += r.failed; if (r.total != null) total = r.total; show(false);
+        if (!r.next) break; after = r.next;
+      }
+      show(true); toast("Рассылка отправлена");
+    } catch (e) { $("#ce").textContent = errText(e) + (sent ? ` (успели отправить ${sent})` : ""); }
+    busy = false; $("#cs").disabled = false; ta.disabled = false;
+  }
 }
 
 /* ===================== САЙТ: ссылки «Канал» и «Чатик» на главной ===================== */

@@ -342,6 +342,11 @@ alter table public.games add constraint games_cover_check check (cover in ('b:re
 
 -- Скачивание выключено у этой игры (кнопку «Скачать» видно, но она не работает). Общий выключатель — settings.site.dlOff.
 alter table public.games add column if not exists dl_off boolean not null default false;
+-- Плейабл на «телевизоре» страницы игры: свой маленький HTML (до 300 КБ) или стандартная мини-игра (auto = по жанру).
+alter table public.games add column if not exists play_kind text not null default 'auto'
+  check (play_kind in ('auto','arcade','music','shooter','puzzle','catch'));
+alter table public.games add column if not exists play_html text check (play_html is null or char_length(play_html) <= 300000);
+alter table public.games add column if not exists has_play boolean generated always as (play_html is not null) stored;
 
 create table if not exists public.game_edits (
   id         uuid primary key default gen_random_uuid(),

@@ -37,6 +37,7 @@ export function memStore() {
       return { rows: a.slice(offset, offset + limit), total: a.length };
     },
     async userStats() { const a = [...users.values()]; return { total: a.length, banned: a.filter((u) => u.banned).length, active24h: a.length, new7d: a.length }; },
+    async userIdsAfter(after, limit) { return [...users.values()].filter((u) => !u.banned && u.tg_id > after).map((u) => u.tg_id).sort((a, b) => a - b).slice(0, limit); },
     async usersByIds(ids) { return ids.map((i) => users.get(i)).filter(Boolean); },
     async setBan(id, banned, reason, by) {
       const u = users.get(id); if (!u) return null;
@@ -53,7 +54,9 @@ export function memStore() {
 
     // ---- каталог игр и правки ----
     games: new Map(), edits: [],
-    async listGames() { return [...this.games.values()].map(({ cover_img, bg_img, ...g }) => ({ ...g, has_file: g.file_html != null })).sort((a, b) => a.sort - b.sort); },
+    // как GAME_COLS: без cover_img/bg_img/play_html, с признаками has_file/has_play
+    async listGames() { return [...this.games.values()].map(({ cover_img, bg_img, play_html, ...g }) => ({ ...g, has_file: g.file_html != null, has_play: play_html != null })).sort((a, b) => a.sort - b.sort); },
+    async gamePlay(id) { const g = this.games.get(id); return g ? { play_html: g.play_html ?? null } : null; },
     async getGame(id) { const g = this.games.get(id); return g ? { ...g, has_file: g.file_html != null } : null; },
     modList: [],
     async listGameMods({ gameId, authorId, status } = {}) { return this.modList.filter((x) => (!gameId || x.game_id === gameId) && (authorId === undefined || Number(x.author_id) === Number(authorId)) && (!status || x.status === status)).map(({ file_html, ...x }) => ({ ...x })).reverse(); },

@@ -95,7 +95,9 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
   const gameIds = (v) => [...new Set(String(v ?? "").split(",").map((s) => s.trim()).filter((s) => GAME_ID.test(s)))].slice(0, 50);
 
   /** Имя и цвет автора. Фото отдельно (/avatars), чтобы список отзывов не тянул десятки килобайт. */
-  const authorWire = (p) => ({ n: tgName(p), c: COLOR.test(p?.color || "") ? p.color : "#a56bff", hp: !!p?.photo });
+  /* ник: у всех из Telegram; только главный админ (ADMIN_IDS) может поставить свой */
+  const nameOf = (u, p) => (adminIds.includes(Number(u?.tg_id)) && p?.name ? clip(p.name, 16) : tgName(u));
+  const authorWire = (p) => ({ n: nameOf(p, p), c: COLOR.test(p?.color || "") ? p.color : "#a56bff", hp: !!p?.photo });
   async function authors(ids) {
     const rows = ids.length ? await store.profilesByIds(ids) : [];
     const by = new Map(rows.map((r) => [Number(r.tg_id), r]));
@@ -110,7 +112,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
   const postWire = (p, hide) => (p && p.post_text && !hide ? { title: p.post_title, text: p.post_text, at: ts(p.post_at) } : null);
   const profileWire = (u, p, me) => ({
     id: pid.encode(u.tg_id), me, has: !!p, synced: !!p?.synced,
-    name: tgName(u),
+    name: nameOf(u, p),
     color: COLOR.test(p?.color || "") ? p.color : "#a56bff",
     photo: p?.photo || "",
     xp: p?.xp || 0, medals: p?.medals || {}, stats: p?.stats || {},
@@ -169,7 +171,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
     pid,
     log,
 
-    async handle(req, { uid, staff }) {
+    async handle(req, { uid, staff, isMain = false }) {
       const q = req.query ?? {}, r = String(q.r ?? ""), m = req.method;
       const bad = () => json(405, { error: "method_not_allowed" });
 
@@ -184,6 +186,14 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
         return json(200, { text: (await store.gameHtml(id))?.file_html ?? "" });
+      }
+      // плейабл (маленький HTML для «телевизора» на странице игры): только если игра видна этому игроку
+      if (r === "playable") {
+        if (m !== "GET") return bad();
+        const id = String(q.id ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !(g.has_play ?? g.play_html) || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        return json(200, { text: (await store.gamePlay(id))?.play_html ?? "" });
       }
       // обложка-картинка отдельно от списка (список лёгкий, картинки клиент кэширует по хэшу)
       if (r === "cover") {
@@ -353,7 +363,9 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
           if (!b) return json(400, { error: "bad_json" });
           const prev = await store.getProfile(uid);
           const f = {};
-          f.name = tgName(await store.getUser(uid)); // ник только из Telegram: присланный клиентом игнорируем
+          // ник из Telegram; свой ник может поставить только главный админ (пустой = снова из Telegram)
+          const me = await store.getUser(uid);
+          f.name = !isMain ? tgName(me) : b.name !== undefined ? clip(b.name, 16) || tgName(me) : prev?.name || tgName(me);
           if (b.color !== undefined) { if (!COLOR.test(b.color)) return json(400, { error: "bad_color" }); f.color = b.color.toLowerCase(); }
           if (b.photo !== undefined) {
             if (b.photo !== "" && !(typeof b.photo === "string" && b.photo.length <= PHOTO_MAX && PHOTO.test(b.photo))) return json(400, { error: "bad_photo" });
