@@ -1740,13 +1740,13 @@ const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase(
 const SNDI=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z"/>${on?'<path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>':'<path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'}</svg>`;
 function syncSnd(){const b=document.querySelector(".tab.snd");if(!b)return;b.setAttribute("aria-checked",!!SET.sound);b.innerHTML=SNDI(SET.sound);b.title=SET.sound?"Звук включён · нажмите, чтобы выключить":"Звук выключен · нажмите, чтобы включить"}
 function toggleSound(){SET.sound=!SET.sound;saveSet();syncSnd();musicSync();if(SET.sound)sfx.tap();toast(SET.sound?"Звук включён":"Звук выключен")}
-/* фоновая музыка магазина: 15 с с плавным началом и затуханием, по кругу. Файл грузится только при первом заходе в магазин
-   (на старт сайта не влияет), играет только в магазине, с открытой страницей игры и в фоне молчит. Браузер разрешает звук после первого касания. */
+/* фоновая музыка сайта: 15 с с плавным началом и затуханием, по кругу. Начинает играть с первым касанием (раньше браузер не даёт звук),
+   файл грузится тогда же (на старт сайта не влияет); на странице игры и когда приложение свёрнуто — молчит. */
 const MUS={el:null,vol:0,t:0,unlocked:false};
 function musicSync(){
-  const want=!!SET.sound&&MUS.unlocked&&view===1&&!PGO&&!document.hidden;
+  const want=!!SET.sound&&MUS.unlocked&&!PGO&&!document.hidden; /* на всех экранах сайта; на странице игры молчит, чтобы не мешать её звукам */
   if(want&&!MUS.el){MUS.el=new Audio("assets/music/store.mp3");MUS.el.loop=true;MUS.el.volume=0}
-  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.35:0;
+  if(!MUS.el)return;clearInterval(MUS.t);const target=want?.14:0; /* тихий фон: на 60% тише прежних 0.35 */
   if(want&&MUS.el.paused)MUS.el.play().catch(()=>{});
   MUS.t=setInterval(()=>{MUS.vol+=Math.sign(target-MUS.vol)*.035;if(Math.abs(target-MUS.vol)<.04)MUS.vol=target;MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
     if(MUS.vol===target){clearInterval(MUS.t);if(!want)MUS.el.pause()}},40)}
@@ -1789,7 +1789,7 @@ qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";f
 qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
 function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Нажмите сердечко на карточке, чтобы добавить игру.":""}
 async function render(intro){
-  musicSync(); /* музыка только в магазине */
+  musicSync();
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
   document.body.classList.toggle("onclub",view===2);
