@@ -472,6 +472,12 @@ async function viewGames(root) {
       <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px"><b>Скачивание игр</b><div class="hint" style="margin:2px 0 0">${site.dlOff ? "Выключено у всех игр: кнопка «Скачать» не работает." : "Включено. Ниже можно выключить у отдельной игры."}</div></div>
         <button class="btn ${site.dlOff ? "ok" : "bad"}" id="dlAll" type="button">${site.dlOff ? "Включить всем" : "Выключить всем"}</button></div>
+      <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px"><b>Скачивание через ${site.dlWaitH || 12} ч после регистрации</b><div class="hint" style="margin:2px 0 0">${site.dlWait ? "Включено: новые игроки смогут скачивать игры только через 12 часов после первого входа. Админов и модераторов не касается." : "Выключено: скачивать можно сразу после регистрации."}</div></div>
+        <button class="btn ${site.dlWait ? "bad" : "ok"}" id="dlWait" type="button">${site.dlWait ? "Выключить" : "Включить"}</button></div>
+      <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px"><b>Играть через ${site.playWaitM || 30} мин после регистрации</b><div class="hint" style="margin:2px 0 0">${site.playWait ? "Включено: новые игроки смогут запускать игры только через 30 минут после первого входа. Админов и модераторов не касается." : "Выключено: играть можно сразу после регистрации."}</div></div>
+        <button class="btn ${site.playWait ? "bad" : "ok"}" id="playWait" type="button">${site.playWait ? "Выключить" : "Включить"}</button></div>
       <div class="nws" id="gl">${games.map(g => `<div class="nw" data-id="${esc(g.id)}" style="--c:${GACC[g.access].c}">
         <div><span class="badge" style="--c:${GACC[g.access].c}">${GACC[g.access].t}</span> <span class="muted small">${esc(g.id)}${g.file ? " · свой HTML" : " · встроенная"}${g.dl ? "" : " · скачивание выключено"}</span>
           <h4>${esc(g.title)}</h4><p>${esc((g.tags || []).join(" · "))}${g.author ? " · " + esc(g.author) : ""}</p>
@@ -490,6 +496,14 @@ async function viewGames(root) {
     catch (e) { toast(errText(e), true); }
   };
   root.onclick = async e => {
+    if (e.target.id === "playWait") {
+      try { site = { ...site, ...(await api("/admin?r=site", { method: "PUT", body: { playWait: !site.playWait } })) }; toast(site.playWait ? "Новичкам игры откроются через 30 мин после регистрации" : "Играть можно сразу после регистрации"); draw(); } catch (x) { toast(errText(x), true); }
+      return;
+    }
+    if (e.target.id === "dlWait") {
+      try { site = { ...site, ...(await api("/admin?r=site", { method: "PUT", body: { dlWait: !site.dlWait } })) }; toast(site.dlWait ? "Новичкам скачивание откроется через 12 ч после регистрации" : "Скачивание доступно сразу после регистрации"); draw(); } catch (x) { toast(errText(x), true); }
+      return;
+    }
     if (e.target.id === "dlAll") {
       try { site = await api("/admin?r=site", { method: "PUT", body: { dlOff: !site.dlOff } }); toast(site.dlOff ? "Скачивание выключено у всех игр" : "Скачивание снова включено"); draw(); } catch (x) { toast(errText(x), true); }
       return;

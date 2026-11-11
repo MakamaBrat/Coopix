@@ -178,7 +178,8 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       // ---------- каталог игр: что видит игрок ----------
       if (r === "games") {
         if (m !== "GET") return bad();
-        return json(200, { games: (await store.listGames()).filter((g) => isVisible(g, staff)).map((g) => gameWire(g, uid)) });
+        // apid: непрозрачный id автора-игрока (как в отзывах): по нажатию на автора открывается его профиль со списком игр
+        return json(200, { games: (await store.listGames()).filter((g) => isVisible(g, staff)).map((g) => ({ ...gameWire(g, uid), apid: g.author_id != null ? pid.encode(Number(g.author_id)) : "" })) });
       }
       if (r === "gamefile") {
         if (m !== "GET") return bad();
@@ -356,7 +357,10 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
           if (!target) return json(404, { error: "not_found" });
           const u = await store.getUser(target);
           if (!u) return json(404, { error: "not_found" });
-          return json(200, profileWire(u, await store.getProfile(target), target === uid));
+          // опубликованные игры игрока (только те, что видны смотрящему): внизу профиля
+          const games = (await store.listGames()).filter((g) => g.author_id != null && Number(g.author_id) === target && isVisible(g, staff))
+            .map((g) => ({ id: g.id, title: g.title, tags: g.tags, ver: g.version }));
+          return json(200, { ...profileWire(u, await store.getProfile(target), target === uid), games });
         }
         if (m === "PUT") {
           const b = parseBody(req.body);

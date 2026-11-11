@@ -22,7 +22,10 @@ const siteOf = (v) => ({
   channel: SITE_LINK.test(v?.channel || "") ? v.channel : SITE_DEF.channel,
   chat: SITE_LINK.test(v?.chat || "") ? v.chat : SITE_DEF.chat,
   dlOff: v?.dlOff === true,
+  dlWait: v?.dlWait === true,     // скачивание только через DL_WAIT_H часов после регистрации игрока
+  playWait: v?.playWait === true, // играть только через PLAY_WAIT_M минут после регистрации
 });
+const DL_WAIT_H = 12, PLAY_WAIT_M = 30;
 const COLOR = /^#[0-9a-f]{6}$/i;
 const TG_ID = /^\d{1,15}$/;
 const clip = (v, n) => String(v ?? "").trim().slice(0, n);
@@ -115,9 +118,10 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     // ---- /api/config: новости и адрес доната для сайта ----
     if (route === "config") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
-      const [news, wallet, site] = await Promise.all([store.getSetting("news"), store.getSetting("wallet"), store.getSetting("site")]);
+      const [news, wallet, site, me] = await Promise.all([store.getSetting("news"), store.getSetting("wallet"), store.getSetting("site"), store.getUser(uid)]);
       // role/admin здесь же: маркету на старте не нужен отдельный запрос /me (минус один круг до сервера)
-      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, site: siteOf(site?.value), role, admin: staff });
+      // reg + dlWaitH: маркет сам скрывает скачивание у новичков, пока не прошло dlWaitH часов с регистрации (команде не ограничиваем)
+      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, site: { ...siteOf(site?.value), dlWaitH: DL_WAIT_H, playWaitM: PLAY_WAIT_M }, reg: me?.registered_at ? Date.parse(me.registered_at) : null, role, admin: staff });
     }
 
     // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----
@@ -404,6 +408,8 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
           next[k] = v;
         }
         if (b.dlOff !== undefined) { if (typeof b.dlOff !== "boolean") return json(400, { error: "bad_json" }); next.dlOff = b.dlOff; }
+        if (b.dlWait !== undefined) { if (typeof b.dlWait !== "boolean") return json(400, { error: "bad_json" }); next.dlWait = b.dlWait; }
+        if (b.playWait !== undefined) { if (typeof b.playWait !== "boolean") return json(400, { error: "bad_json" }); next.playWait = b.playWait; }
         await store.setSetting("site", next, uid);
         return json(200, next);
       }

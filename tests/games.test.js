@@ -214,3 +214,24 @@ test("плейабл: главный админ выбирает мини-игр
   await adm("game", "PATCH", MAIN, { query: { id: g.id }, body: { access: "public", play_html: "" } });
   assert.equal((await hub("playable", "GET", ANN, { query: { id: g.id } })).status, 404, "свой убран: снова стандартная мини-игра");
 });
+
+test("профиль игрока: внизу его опубликованные игры, только видимые смотрящему", async () => {
+  const w = await world();
+  const { game } = await published(w, "public");
+  const pid = (await w.hub("profile", "GET", ANN)).body.id;
+  const p = (await w.hub("profile", "GET", BOB, { query: { id: pid } })).body;
+  assert.deepEqual(p.games.map((g) => g.title), ["Игра Анны"]);
+  await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { access: "staff" } });
+  assert.equal((await w.hub("profile", "GET", BOB, { query: { id: pid } })).body.games.length, 0, "скрытая от игроков не видна");
+  assert.equal((await w.hub("profile", "GET", MOD, { query: { id: pid } })).body.games.length, 1, "команда видит");
+});
+
+test("автор игры: в списке игр есть apid (без Telegram id), по нему открывается профиль автора с его играми", async () => {
+  const w = await world();
+  const { game } = await published(w, "public");
+  const g = (await w.hub("games", "GET", BOB)).body.games.find((x) => x.id === game.id);
+  assert.match(g.apid, /^[A-Za-z0-9_-]{22}$/); assert.ok(!JSON.stringify(g).includes('"42"'));
+  const p = (await w.hub("profile", "GET", BOB, { query: { id: g.apid } })).body;
+  assert.equal(p.games[0].id, game.id);
+  assert.equal((await w.hub("games", "GET", BOB)).body.games.find((x) => x.id === "retro")?.apid ?? "", "", "у встроенных игр автора-игрока нет");
+});

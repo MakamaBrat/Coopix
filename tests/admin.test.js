@@ -152,14 +152,19 @@ test("скорость: /hub?r=config = /config; «кто это» не пише
 
 test("сайт: ссылки канала и чата и общий выключатель скачивания меняет только главный админ; маркет получает их в config", async () => {
   const { call, adm } = await world();
-  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/coopixmarket", chat: "https://t.me/coopixchat", dlOff: false });
+  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/coopixmarket", chat: "https://t.me/coopixchat", dlOff: false, dlWait: false, playWait: false, dlWaitH: 12, playWaitM: 30 });
   assert.equal((await adm("site", "PUT", MOD, { body: { chat: "https://t.me/x" } })).status, 403);
   assert.equal((await adm("site", "PUT", MAIN, { body: { chat: "http://t.me/x" } })).status, 400, "только https");
   assert.equal((await adm("site", "PUT", MAIN, { body: { channel: "javascript:alert(1)" } })).status, 400);
   assert.equal((await adm("site", "PUT", MAIN, { body: { dlOff: "yes" } })).status, 400);
   const ok = await adm("site", "PUT", MAIN, { body: { channel: "https://t.me/new_ch", dlOff: true } });
   assert.equal(ok.status, 200);
-  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/new_ch", chat: "https://t.me/coopixchat", dlOff: true });
+  assert.deepEqual((await call("config", "GET", init(USER))).body.site, { channel: "https://t.me/new_ch", chat: "https://t.me/coopixchat", dlOff: true, dlWait: false, playWait: false, dlWaitH: 12, playWaitM: 30 });
+  assert.equal((await adm("site", "PUT", MAIN, { body: { dlWait: true } })).body.dlWait, true);
+  const cfg = (await call("config", "GET", init(USER))).body;
+  assert.equal(cfg.site.dlWait, true); assert.ok(cfg.reg > 0, "маркету уходит время регистрации игрока");
+  assert.equal((await adm("site", "PUT", MAIN, { body: { playWait: true } })).body.playWait, true);
+  assert.equal((await call("config", "GET", init(USER))).body.site.playWait, true);
 });
 
 test("рассылка: только главный админ, пачками по курсору, без забаненных; ошибки Telegram считаются", async () => {

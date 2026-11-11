@@ -444,3 +444,44 @@ create index if not exists game_mods_game_idx   on public.game_mods (game_id, st
 create index if not exists game_mods_author_idx on public.game_mods (author_id, created_at desc);
 alter table public.game_mods enable row level security;
 revoke all on public.game_mods from anon, authenticated;
+
+
+-- =====================================================================================
+-- ЗАГОТОВКА (пока нигде не используется ни сервером, ни сайтом): покупки игроков и подписка Pro.
+-- Таблицы создаются заранее, чтобы потом подключить оплату без миграций. Повторный запуск безопасен.
+-- =====================================================================================
+
+-- Покупки: одна строка = один платёж (звёзды Telegram XTR или другая валюта).
+create table if not exists public.purchases (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     bigint not null references public.users(tg_id) on delete cascade,
+  kind        text   not null check (kind in ('game','item','pro','other')),  -- что купили
+  item_id     text   check (item_id is null or char_length(item_id) <= 64),  -- id игры/предмета (для pro не нужен)
+  currency    text   not null default 'XTR' check (char_length(currency) between 2 and 8),
+  amount      integer not null check (amount >= 0),                           -- сумма в единицах валюты (для XTR = звёзды)
+  charge_id   text   unique,                                                  -- telegram_payment_charge_id: защита от двойной записи
+  status      text   not null default 'paid' check (status in ('pending','paid','refunded','failed')),
+  meta        jsonb  not null default '{}'::jsonb,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists purchases_user_idx on public.purchases (user_id, created_at desc);
+create index if not exists purchases_item_idx on public.purchases (kind, item_id) where item_id is not null;
+
+-- Подписка Pro: одна строка на игрока, продлевается сдвигом expires_at.
+create table if not exists public.subscriptions (
+  user_id     bigint primary key references public.users(tg_id) on delete cascade,
+  plan        text   not null default 'pro' check (plan in ('pro')),
+  status      text   not null default 'active' check (status in ('active','canceled','expired')),
+  started_at  timestamptz not null default now(),
+  expires_at  timestamptz not null,
+  last_charge text,                                                           -- charge_id последнего платежа (см. purchases)
+  auto_renew  boolean not null default false,
+  updated_at  timestamptz not null default now()
+);
+create index if not exists subscriptions_exp_idx on public.subscriptions (expires_at) where status = 'active';
+
+-- Как и всё остальное: доступ только у сервера (service_role), из браузера таблиц не видно.
+alter table public.purchases     enable row level security;
+alter table public.subscriptions enable row level security;
+revoke all on public.purchases, public.subscriptions from anon, authenticated;

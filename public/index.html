@@ -983,6 +983,9 @@ html.desk .pfv>.pf-sec{grid-column:2;grid-row:1/span 2;margin-top:0!important}
 html.desk .pfv .mdl{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
 html.desk .pfv .md b{font-size:10.5px;letter-spacing:-.03em}
 html.desk .pfv .md-info{min-height:64px}
+html.desk .pfv>.pf-games{grid-column:1/-1;grid-row:3}
+.pg-aub{padding:0;background:none;border:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pg-aub:hover b{color:#fff}
+.pfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 10px}.pfg-i h4{margin-top:0}
 /* card editor */
 html.desk .pfix .pv{max-width:640px;margin:0 auto}
 html.desk .pbody:has(#name){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-content:start}
@@ -1953,6 +1956,11 @@ function bindPf(root,P,own){
   tabs.addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;sfx.tap();const k=b.dataset.t;if(own)PFTAB=k;
     tabs.querySelectorAll("[data-t]").forEach(x=>x.setAttribute("aria-selected",x===b));root.querySelectorAll(".pf-pane").forEach(p=>{p.hidden=p.dataset.pane!==k})});
   root.querySelector(".mdl").addEventListener("click",e=>{const b=e.target.closest(".md");if(!b)return;sfx.tap();pick(b.dataset.m)})}
+/* опубликованные игры игрока внизу профиля: нажатие открывает страницу игры */
+function pfGames(list,own){if(!list||!list.length)return"";
+  return `<section class="sec pf-games enter" style="--i:.16s"><h3>${own?"Ваши игры в маркете":"Игры игрока"}<small>${list.length}</small></h3>
+    <div class="pfg">${list.map(g=>`<button type="button" class="sbi pfg-i" data-game="${esc(g.id)}" style="--c:var(--acc)"><h4>${esc(g.title)}</h4><p>${esc(((g.tags||[])[0])||"")}${g.ver?" · v"+esc(g.ver):""}</p></button>`).join("")}</div></section>`}
+function bindPfGames(root){root.querySelectorAll("[data-game]").forEach(b=>b.addEventListener("click",()=>{sfx.tap();const id=b.dataset.game;if(!DATA.some(d=>d.id===id)){toast("Игра пока недоступна");return}closeSheet();if(PG)closePage();setTimeout(()=>openPage(id),60)}))}
 function renderProfile(){
   profVisit();
   const L=pfLevel(PROF);
@@ -1961,8 +1969,9 @@ function renderProfile(){
     <button class="btn pf-subb" id="pfSub" type="button">${IC.plus}&nbsp;Отправить игру</button>
     <div class="pf-subr"><button class="btn ghost" id="pfMine" type="button">Мои заявки</button>${isAdmin()?'<button class="btn ghost" id="pfAdm" type="button">Админ-панель</button>':""}</div></div>
   ${pfTabs(PROF,1,PFTAB)}
+  ${pfGames(DATA.filter(d=>d.mine).map(d=>({id:d.id,title:d.title,tags:tagsOf(d),ver:d.version})),1)}
   <div class="pf-set enter" style="--i:.18s"><button class="btn ghost" id="pfSet" type="button" style="flex:none;width:100%">Настройки</button></div>`;
-  animBar(profEl,L.pct);bindPf(profEl,PROF,1);
+  animBar(profEl,L.pct);bindPf(profEl,PROF,1);bindPfGames(profEl);
   $("#pfEdit").addEventListener("click",()=>{sfx.tap();openProfileEditor()});
   $("#pfSub").addEventListener("click",()=>{sfx.tap();openSubmit()});$("#pfMine").addEventListener("click",()=>{sfx.tap();openMine()});const ad=$("#pfAdm");ad&&ad.addEventListener("click",()=>{sfx.tap();location.href="/admin.html"});
   const pn=$("#postNew"),pe=$("#postEdit"),pd=$("#postDel");pn&&pn.addEventListener("click",()=>{sfx.tap();openPostEditor()});pe&&pe.addEventListener("click",()=>{sfx.tap();openPostEditor()});
@@ -1998,8 +2007,8 @@ async function openPlayer(pid){
   if(panel.dataset.pp!==pid||!sheet.classList.contains("open"))return;
   if(j.me){closeSheet();if(PG)backClick();goView(3);return}
   const s=j.stats||{},P={name:j.name||"Игрок",color:j.color,photo:j.photo||"",reg:j.reg,xp:j.xp|0,medals:j.medals||{},plays:s.plays|0,ids:Array(s.ids|0),best:s.best|0,reviews:s.reviews|0,favs:Array(s.favs|0),made:s.made|0,custom:s.custom|0,days:s.days|0,post:j.post},L=pfLevel(P);
-  panel.innerHTML=sbHead("Профиль игрока")+`<div class="pbody pfv" lang="ru">${pfCard(P,0)}${L.html}${pfTabs(P,0,"post")}</div>`+foot;panel.classList.add("pw");
-  animBar(panel,L.pct);bindPf(panel,P,0);fitSheet()}
+  panel.innerHTML=sbHead("Профиль игрока")+`<div class="pbody pfv" lang="ru">${pfCard(P,0)}${L.html}${pfTabs(P,0,"post")}${pfGames(j.games,0)}</div>`+foot;panel.classList.add("pw");
+  animBar(panel,L.pct);bindPf(panel,P,0);bindPfGames(panel);fitSheet()}
 function openProfileEditor(){
   const d={name:PROF.name,color:PROF.color,photo:PROF.photo};
   openSheet(`<div class="ph"><h2 id="sheetTitle">Профиль</h2><button class="x" data-close aria-label="Закрыть">${IC.x}</button></div>
@@ -2462,7 +2471,10 @@ const DESC={
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
 const DL_LINKS={retro:"",space:"",toxic:"",blocks:""};
 let DL_OFF=false; /* скачивание выключено у всех (админка → «Игры»); у одной игры — m.dl===false */
-const dlBlocked=m=>DL_OFF||(m&&m.dl===false);
+let DL_WAIT=false,DL_WAIT_H=12,MY_REG=0,PLAY_WAIT=false,PLAY_WAIT_M=30;
+const playWaitLeft=()=>PLAY_WAIT&&MY_REG?Math.max(0,MY_REG+PLAY_WAIT_M*60e3-Date.now()):0; /* сколько мс до открытия игр новичку */
+const dlWaitLeft=()=>DL_WAIT&&MY_REG?Math.max(0,MY_REG+DL_WAIT_H*3600e3-Date.now()):0; /* сколько мс до открытия скачивания новичку */
+const dlBlocked=m=>DL_OFF||(m&&m.dl===false)||dlWaitLeft()>0;
 const dlPaint=m=>{const b=$("#dlbtn");if(b){b.classList.toggle("off",dlBlocked(m));b.setAttribute("aria-disabled",dlBlocked(m))}};
 const nfmt=n=>(+n||0).toLocaleString("ru-RU");
 const plr=(n,a)=>{n=Math.abs(n)%100;const k=n%10;return n>10&&n<20?a[2]:k>1&&k<5?a[1]:k===1?a[0]:a[2]};
@@ -2505,7 +2517,7 @@ function pageHTML(m,kind){
     <div class="pg-m"><span class="pg-stars" id="pgStars" role="img"></span><span id="pgRate"></span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div>
     <div class="pg-m"><span id="pgDl"></span></div>
-    <div class="pg-au">Автор: <b>${esc(author)}</b></div>
+    <div class="pg-au">Автор: ${m.apid&&SUB_API?`<button type="button" class="pg-aub" data-p="${esc(m.apid)}" title="Все игры автора"><b>${esc(author)}</b> ›</button>`:`<b>${esc(author)}</b>`}</div>
     <div class="pg-sup" id="pgSup"></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
     <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
@@ -2516,7 +2528,7 @@ function pageHTML(m,kind){
   <p class="hint2">${m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":m.playable&&SUB_API?"Мини-игра этой игры · нажмите на экран, чтобы начать":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
-    <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}<span class="tag">HTML5 микро-сборка</span><span class="tag">Работает офлайн</span>${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
     ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
   <section class="sec thx"><div class="thx-in"><div class="thx-t"><b>Понравилась игра?</b><p>Если правда зашло, скажите автору спасибо звёздами Telegram. Поддержка видна на карточке игры.</p></div>
     <div class="thx-ch" id="thxCh" role="radiogroup" aria-label="Сколько звёзд">${THX.map(v=>`<button type="button" role="radio" data-v="${v}" aria-checked="${v===THX_DEF}">⭐ ${v}</button>`).join("")}</div>
@@ -2644,7 +2656,9 @@ async function tvBoot(me){
 function tvPower(){const s=$("#scr");if(RM)return;s.classList.remove("pon");void s.offsetWidth;s.classList.add("pon")}
 function burst(){const s=$("#scr");s.classList.add("burst");setTimeout(()=>s.classList.remove("burst"),380)}
 function startGame(){
-  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}if(PG.m.file){playFile();return}if(PG.m.playable&&SUB_API){playEmbed();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
+  if(!PG||!PG.pal)return;if(!PG.ready){PG.want=true;return}
+  {const w=playWaitLeft();if(w>0){sfx.tap();toast("Играть можно будет через "+Math.ceil(w/60e3)+" мин после регистрации");return}}
+  if(PG.m.file){playFile();return}if(PG.m.playable&&SUB_API){playEmbed();return}stopGame();countPlay();const c=$("#tvc"),x=c.getContext("2d"),inp=PG.inp;x.imageSmoothingEnabled=false;
   Object.assign(inp,{x:.5,l:0,r:0,q:[]});PG.game=GAMES[PG.kind](inp,PG.pal,PG.sprite);PG.score=0;PG.run=true;
   $("#scr").classList.add("playing");$("#led").classList.add("on");burst();sfx.in();
   let last=performance.now();
@@ -2673,7 +2687,7 @@ async function playBeta(){
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
 $("#bigplay").addEventListener("click",()=>{if(PG&&PG.pal)playBeta()});
-$("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(dlBlocked(PG.m)){sfx.tap();toast("Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
+$("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(dlBlocked(PG.m)){sfx.tap();const w=dlWaitLeft();toast(!DL_OFF&&PG.m.dl!==false&&w>0?"Скачивание откроется через "+Math.ceil(w/3600e3)+" ч после регистрации":"Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
   /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
   if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
   if((!u)&&d&&d.file&&SUB_API){const me=PG;hub("gamefile",{q:{id:d.id}}).then(j=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));
@@ -2742,7 +2756,7 @@ const saveCov=()=>{let ks=Object.keys(COV),sz=ks.reduce((t,k)=>t+COV[k].length,0
 const covOf=ref=>/^img:/.test(ref||"")?COV[ref]||"b:retro":ref||"b:retro";
 function fromWire(g,old){const t=Array.isArray(g.tags)&&g.tags.length?g.tags:["Arcade"];old=old||{};
   return{id:g.id,title:g.title,tags:t,genre:t[0],item:g.item,cref:g.cover,bref:g.bgimg||"",bgimg:g.bgimg?(old.bref===g.bgimg&&/^data:/.test(old.bgimg||"")?old.bgimg:COV[g.bgimg]||""):"",cover:/^img:/.test(g.cover)&&old.cref===g.cover&&/^data:/.test(old.cover||"")?old.cover:covOf(g.cover),tint:g.tint||null,bg:g.bg==="auto"?undefined:g.bg,
-    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,playKind:g.play||"auto",playable:!!g.playable,built:1,
+    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,playKind:g.play||"auto",playable:!!g.playable,apid:g.apid||"",built:1,
     fav:old.fav||0,played:old.played||0,downloads:old.downloads||0}}
 async function admReq(r,q,method,body){
   const x=await fetch(SUB_API+"/admin?"+new URLSearchParams({r,...q}),{method,headers:sbH(body!=null),body:body!=null?JSON.stringify(body):undefined});
@@ -2804,8 +2818,8 @@ function paintPage(){
   st.innerHTML=starRow(Math.round(g.rating));st.setAttribute("aria-label",g.rated?"Рейтинг "+fmtRate(g.rating)+" из 5":"Оценок пока нет");
   $("#pgRate").textContent=g.rated?fmtRate(g.rating)+" · "+g.rated+" "+plr(g.rated,["оценка","оценки","оценок"]):"нет оценок";
   /* только разные игроки: один игрок не считается дважды */
-  $("#pgPlays").textContent="Играли: "+nfmt(g.pp)+" "+plr(g.pp,PLW);
-  $("#pgDl").textContent="Скачали: "+nfmt(g.dp)+" "+plr(g.dp,PLW);
+  $("#pgPlays").textContent="Играли: "+nfmt(g.pp);
+  $("#pgDl").textContent="Скачано: "+nfmt(g.dp)+" "+plr(g.dp,["раз","раза","раз"]);
   const sp=$("#pgSup");if(sp)sp.innerHTML=g.stars?`${ingots(g.stars)}<b>${nfmt(g.stars)}</b><span>поддержка · ${nfmt(g.backers)} ${plr(g.backers,PLW)}</span>`:""}
 
 /* ---- «Спасибо автору»: звёзды Telegram. Звёзды приходят на бот проекта и засчитываются автору игры ---- */
@@ -2861,6 +2875,7 @@ function openModFormOld(m){
       sfx.play();closeSheet();toast("Мод отправлен админу на проверку");loadMods(m)}
     catch(err){b.disabled=false;toast(MOD_ERR[err.code]||"Не удалось отправить мод")}}}
 function bindExtras(m){
+  const au=pageEl.querySelector(".pg-aub");au&&au.addEventListener("click",()=>{sfx.tap();openPlayer(au.dataset.p)}); /* профиль автора: внизу все его игры */
   /* спасибо */
   let amt=THX_DEF;const ch=$("#thxCh"),go=$("#thxGo");
   ch.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;amt=+b.dataset.v;ch.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-checked",x===b));go.textContent="Спасибо автору · ⭐ "+amt;sfx.tap()});
@@ -3004,7 +3019,9 @@ async function accessInit(){
     const c=await r.json();
     if("role" in c){CFG_ROLE=true;ROLE=c.role||null;if(c.admin)ADMIN_OK=true} /* роль приходит вместе с настройками: /me на старте не нужен */
     if(c.site){/* ссылки «Канал»/«Чатик» и общий выключатель скачивания задаются в админке (вкладки «Сайт» и «Игры») */
-      if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.channel||""))LINKS.channel=c.site.channel;if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.chat||""))LINKS.chat=c.site.chat;DL_OFF=c.site.dlOff===true}
+      if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.channel||""))LINKS.channel=c.site.channel;if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.chat||""))LINKS.chat=c.site.chat;DL_OFF=c.site.dlOff===true;
+      DL_WAIT=c.site.dlWait===true&&!c.admin;DL_WAIT_H=+c.site.dlWaitH||12;MY_REG=+c.reg||0;
+      PLAY_WAIT=c.site.playWait===true&&!c.admin;PLAY_WAIT_M=+c.site.playWaitM||30} /* скачивание только через N часов после регистрации */
     if(Array.isArray(c.news))NEWS.splice(0,NEWS.length,...c.news);
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
   }catch(e){}
