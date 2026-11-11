@@ -130,15 +130,17 @@ export function memStore() {
     // как SQL activity_series: регистрация (10), новый отзыв, первый запуск и первая загрузка игры игроком; звёзды отдельно
     async activitySeries({ startMs, stepSec, n }) {
       const first = new Set(), k = [];
-      for (const u of users.values()) k.push({ t: Date.parse(u.registered_at), w: 10, s: 0, act: true });
+      for (const u of users.values()) k.push({ t: Date.parse(u.registered_at), w: 10, s: 0, act: true, kd: "reg" });
       for (const e of [...this.events].sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts))) {
         const t = Date.parse(e.ts);
-        if (e.type === "review" && !e.meta?.e) k.push({ t, w: e.weight, s: 0, act: true });
-        else if ((e.type === "play" || e.type === "download") && e.game_id) { const key = `${e.user_id}|${e.game_id}|${e.type}`; if (!first.has(key)) { first.add(key); k.push({ t, w: e.weight, s: 0, act: true }); } }
-        else if (e.type === "thank") k.push({ t, w: 0, s: +e.meta?.s || 0, act: false });
+        if (e.type === "review" && !e.meta?.e) k.push({ t, w: e.weight, s: 0, act: true, kd: "rev" });
+        else if ((e.type === "play" || e.type === "download") && e.game_id) { const key = `${e.user_id}|${e.game_id}|${e.type}`; if (!first.has(key)) { first.add(key); k.push({ t, w: e.weight, s: 0, act: true, kd: e.type === "play" ? "play" : "dl" }); } }
+        else if (e.type === "thank") k.push({ t, w: 0, s: +e.meta?.s || 0, act: false, kd: "star" });
       }
-      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = k.filter((e) => e.t >= a && e.t < b); return [x.filter((e) => e.act).length, x.reduce((t, e) => t + e.w, 0), x.reduce((t, e) => t + e.s, 0)]; });
-      return { base: k.filter((e) => e.t < startMs).reduce((t, e) => t + e.w, 0), rows };
+      const cnt = (x, kd) => x.filter((e) => e.kd === kd).length, KD = ["reg", "rev", "play", "dl"];
+      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = k.filter((e) => e.t >= a && e.t < b); return [x.filter((e) => e.act).length, x.reduce((t, e) => t + e.w, 0), x.reduce((t, e) => t + e.s, 0), ...KD.map((d) => cnt(x, d))]; });
+      const before = k.filter((e) => e.t < startMs);
+      return { base: before.reduce((t, e) => t + e.w, 0), bases: KD.map((d) => cnt(before, d)), rows };
     },
   };
 }

@@ -374,3 +374,16 @@ test("журнал админа: по умолчанию только ключе
   for (const x of ["open", "fav", "play", "review"]) assert.ok(all.includes(x));
   assert.equal(all.filter((x) => x === "play").length, 2); assert.equal(all.filter((x) => x === "review").length, 2);
 });
+
+test("график: по видам событий (регистрации, отзывы, первые запуски, первые скачивания) и итог до окна", async () => {
+  const { hub, age } = await world();                                              // 3 регистрации сейчас
+  const t = (who, type, game = "retro") => hub("track", "POST", who, { body: { type, game } });
+  await t(ANN, "play"); await t(BOB, "download"); await review(hub, ANN);
+  age(3 * 86400e3);                                                                 // всё выше «3 дня назад»
+  await t(ANN, "play", "space");
+  const [h24, , , all] = (await hub("activity", "GET", ANN, { query: { tz: 0 } })).body.series;
+  const col = (s, i) => s.rows.reduce((x, r) => x + r[i], 0);
+  assert.deepEqual([3, 4, 5, 6].map((i) => col(all, i)), [3, 1, 2, 1], "регистрации, отзывы, первые запуски, первые скачивания");
+  assert.deepEqual(h24.bases, [0, 1, 1, 1], "до последних суток: отзыв, запуск, скачивание (регистрации сейчас)");
+  assert.deepEqual([3, 4, 5, 6].map((i) => col(h24, i)), [3, 0, 1, 0]);
+});

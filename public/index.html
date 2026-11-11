@@ -811,7 +811,8 @@ body:not(.onhome) .top{display:none}
 .chc svg text.hd{fill:#fff;font-size:14px;font-weight:700}.chc svg text.hs{fill:#a99be0;font-size:12px}
 .chc .gh{opacity:.55}
 .chc-hint{margin-top:8px;font-size:13px;text-align:center;color:var(--dim);transition:opacity .3s}.chc.used .chc-hint{opacity:0}
-.chc-s{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:10px;border-top:1px solid #2a2160;text-align:center}
+.chc-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chc-f .chip{height:30px;padding:0 10px;font-size:13px}.chc-f .chip[aria-checked=true]{background:var(--acc);border-color:var(--acc);color:#140a28;font-weight:700}
+.chc-s{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px;padding-top:10px;border-top:1px solid #2a2160;text-align:center}
 .chc-s b{display:block;font-size:17px;color:#fff;line-height:1.05}.chc-s span{display:block;margin-top:2px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
 .chc-n{margin-top:8px;font-size:13px;line-height:1.3;color:var(--dim)}
 .chc-lg{display:flex;gap:12px;font-size:12px;color:var(--dim);white-space:nowrap}.chc-lg span{display:inline-flex;align-items:center;gap:5px}
@@ -1118,11 +1119,11 @@ html.desk .chc svg text{font-size:13px}html.desk .chc svg text.pt{font-size:12px
 <div class="rot" id="rot" role="alert" aria-live="assertive"><i aria-hidden="true"></i><b>Поверните телефон вертикально</b><small>Coopix Market работает в портретном режиме</small></div>
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="boot" id="boot"><div>загрузка…<button class="lite" id="lite" type="button">Лёгкая версия</button><div class="lite-h">без эффектов, до закрытия приложения</div></div></div>
-<script>/* лёгкий режим с экрана загрузки действует только до закрытия приложения (sessionStorage): следующий запуск снова полный */
+<script>/* лёгкий режим запоминается на устройстве (localStorage): если игрок включил лайт, следующий запуск тоже лайт */
 (function(){var b=document.getElementById("lite");if(!b)return;
-function on(){try{return sessionStorage.getItem("am.lite")==="1"}catch(e){return false}}
+function on(){try{return localStorage.getItem("am.lite")==="1"}catch(e){return false}}
 if(on()){b.textContent="Лёгкий режим включён";b.disabled=true;return}
-b.onclick=function(){try{sessionStorage.setItem("am.lite","1")}catch(e){}b.textContent="Переключаем…";b.disabled=true;location.reload()}})();</script>
+b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textContent="Переключаем…";b.disabled=true;location.reload()}})();</script>
 
 <main class="app">
   <header class="top">
@@ -1183,8 +1184,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,RM?0:ms));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const SET=Object.assign({shader:true,stars:true,sound:true,scan:true,quality:"auto",bg:"mix"},store.get("am.settings",{}));
 /* Качество не переживает перезапуск: каждый запуск начинается в полном режиме.
-   Выбор в настройках и кнопка «Лёгкая версия» живут в sessionStorage (до закрытия приложения), в localStorage всегда "auto". */
-const ses={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,v)}catch(e){}}};
+   Выбор в настройках и кнопка «Лёгкая версия» запоминаются на устройстве (am.lite / am.q в localStorage). */
+const ses={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
 SET.quality=ses.get("am.lite")==="1"?"0":ses.get("am.q")||"auto";
 const saveSet=()=>store.set("am.settings",{...SET,quality:"auto"});
 if(String(store.get("am.settings",{}).quality||"auto")!=="auto")saveSet(); /* у кого лёгкий режим застрял с прошлых версий */
@@ -2061,7 +2062,13 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
   for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
 const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
-const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" tabindex="0" aria-label="${label}"></svg><div class="chc-tip" data-tip role="status" aria-live="polite"></div></div>`;
+/* фильтр событий: от главных к менее главным; по умолчанию регистрации (выбор запоминается на устройстве) */
+const CHF_L=[["reg","Регистрации",["регистрация","регистрации","регистраций"]],["rev","Отзывы",["отзыв","отзыва","отзывов"]],
+  ["play","Первые запуски",["первый запуск","первых запуска","первых запусков"]],["dl","Первые скачивания",["первое скачивание","первых скачивания","первых скачиваний"]],
+  ["all","Все",["событие","события","событий"]]];
+let CHF=store.get("am.chf","reg");if(!CHF_L.some(x=>x[0]===CHF))CHF="reg";
+const chFil=()=>`<div class="chc-f" data-f role="radiogroup" aria-label="Какие события показать">${CHF_L.map(([k,l])=>`<button type="button" class="chip" role="radio" data-f="${k}" aria-checked="${k===CHF}">${l}</button>`).join("")}</div>`;
+const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}${chFil()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" tabindex="0" aria-label="${label}"></svg><div class="chc-tip" data-tip role="status" aria-live="polite"></div></div>`;
 /* «Пульс маркета»: три полосы на общей оси времени. Сверху линия «очки активности» (накопленный итог действий),
    ниже столбцы «действия» за отрезок, внизу строка «звёзды» (поддержка авторов). Цвета проверены валидатором палитры
    (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
@@ -2075,6 +2082,8 @@ function initCharts(root){
       box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
     if(window.ResizeObserver){let lw=0;const ro=new ResizeObserver(()=>{if(!box.isConnected){ro.disconnect();return}const w=Math.round(svg.parentElement.clientWidth);if(lw&&Math.abs(w-lw)>8)run();lw=w});ro.observe(svg.parentElement)}
     box.querySelector("[data-p]").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sfx.tap();pi=+b.dataset.i;run()});
+    const fb=box.querySelector("div[data-f]");fb&&fb.addEventListener("click",e=>{const b=e.target.closest("button[data-f]");if(!b)return;sfx.tap();CHF=b.dataset.f;store.set("am.chf",CHF);
+      fb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-checked",x===b));run()});
     const out=e=>{if(!box.isConnected){document.removeEventListener("pointerdown",out);return}if(!e.target.closest||e.target.closest("svg")!==svg)box._off&&box._off()};document.addEventListener("pointerdown",out);run()};
   /* ведение пальцем: плашка с цифрами остаётся после отрыва пальца, скрывается касанием вне графика; мышь: наведение показывает, клик закрепляет */
   /* Плашка встаёт сбоку от перекрестья (у правого края — слева от него), чтобы не закрывать точку, на которую смотрят.
@@ -2108,8 +2117,9 @@ function initCharts(root){
   const PLA=["событие","события","событий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
+    const F=CHF_L.find(x=>x[0]===CHF)||CHF_L[0],fv_=o=>F[0]==="all"?o.a:(o.k?o.k[F[0]]:0),fl_=o=>F[0]==="all"?o.res:(o.cum?o.cum[F[0]]:0);
     const narrow=W<420,pl=2,pr=narrow?40:50,lT=12,lB=Math.round(H*.48),aT=lB+30,sY=H-30,aB=sY-15,xB=H-4,
-      acts=dt.map(o=>o.a),stars=dt.map(o=>o.s||0),rv=dt.map(o=>o.res),mxA=Math.max(...acts),mxS=Math.max(...stars),
+      acts=dt.map(fv_),stars=dt.map(o=>o.s||0),rv=dt.map(fl_),mxA=Math.max(...acts),mxS=Math.max(...stars),
       sa=nscale(0,Math.max(mxA,4),1),sc=scaleOf(rv),lo=sc.lo,hi=sc.hi,
       slot=(W-pl-pr)/n,bw=Math.max(2,Math.min(24,slot-2)), /* 2px зазор между соседними столбцами */
       X=i=>pl+slot*(i+.5),Y=v=>lT+(lB-lT)*(1-(v-lo)/((hi-lo)||1)),xs=rv.map((_,i)=>X(i)),ys=rv.map(Y),d=curve(xs,ys),
@@ -2120,7 +2130,7 @@ function initCharts(root){
     let g="";
     keep.forEach(v=>{const y=Y(v).toFixed(1);g+=`<line class="${v===lo?"gb":"gl"}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="ax" x="${ax}" y="${(+y+4).toFixed(1)}">${fv(v)}</text>`});
     /* полоса действий: подпись, верх шкалы и базовая линия */
-    g+=`<text class="lab" x="${x0}" y="${aT-9}">Что делали игроки</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
+    g+=`<text class="lab" x="${x0}" y="${aT-9}">${F[1]}</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
     /* строка звёзд: тонкая дорожка и сумма за период справа */
     g+=`<line class="gl" x1="${x0}" x2="${x1}" y1="${sY}" y2="${sY}"/><text class="ax" x="${ax}" y="${sY+4}">★${fv(totS)}</text>`;
     const bars=acts.map((a,i)=>a>0?`<path class="bar" data-i="${i}" d="${colPath(xs[i]-bw/2,aB-Math.max(2,(aB-aT)*a/sa.hi),bw,Math.max(2,(aB-aT)*a/sa.hi))}"/>`:"").join("");
@@ -2136,12 +2146,12 @@ function initCharts(root){
       <g data-x style="display:none"><line class="xh" y1="${lT-4}" y2="${sY+8}"/><circle class="xd" r="4"/></g>`;
     const G=svg.querySelector("[data-x]"),gl=G.querySelector("line"),gc=G.querySelector("circle");let hb=null;
     const perT={"24ч":"за сутки","7д":"за неделю","30д":"за месяц","Всё":"за всё время"}[PER[pi][0]]||"";
-    box.querySelector("[data-v]").innerHTML=`${nf(tot)}<small>${plr(tot,PLA)} ${perT}</small>`;
+    box.querySelector("[data-v]").innerHTML=`${nf(tot)}<small>${plr(tot,F[2])} ${perT}</small>`;
     delta(box.querySelector("[data-d]"),tot,"спасибо, что вы с нами!");
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(tot)}</b><span>${plr(tot,PLA)}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)} авторам</span></div><div><b>${nf(PROF.xp)}</b><span>ваш вклад</span></div>`;
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(fl_(last))}</b><span>${F[0]==="reg"?"игроков всего":F[0]==="all"?"рост сообщества":"всего за всё время"}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)} авторам</span></div>`;
     attach(box,svg,n,pl+slot/2,pr+slot/2,i=>{const o=dt[i],x=xs[i].toFixed(1);G.style.display="";gl.setAttribute("x1",x);gl.setAttribute("x2",x);gc.setAttribute("cx",x);gc.setAttribute("cy",ys[i].toFixed(1));
       hb&&hb.classList.remove("hl");hb=svg.querySelector(`.bar[data-i="${i}"]`);hb&&hb.classList.add("hl");
-      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(o.a)}</b>${plr(o.a,PLA)}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)} авторам</div><div><i class="k kl"></i>рост сообщества: <b>${nf(o.res)}</b></div>`}},
+      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(fv_(o))}</b>${plr(fv_(o),F[2])}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)} авторам</div><div><i class="k kl"></i>${F[0]==="reg"?"игроков всего":"всего"}: <b>${nf(fl_(o))}</b></div>`}},
       ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null})})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
@@ -2269,7 +2279,7 @@ function openSettings(){
   panel.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;SET[k]=!SET[k];b.setAttribute("aria-checked",SET[k]);saveSet();
     document.body.classList.toggle("scan",SET.scan);if(k==="stars")bgPainted=false;if(k==="sound"){sfx.tap();syncSnd();musicSync()}if(k==="shader"){closeSheet();render()}}));
   $("#bgSel").addEventListener("click",e=>openMenu(e.currentTarget,BGS,SET.bg,(v,l)=>{SET.bg=v;saveSet();closeSheet();render();toast("Фон: "+l)}));
-  $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;ses.set("am.lite",null);ses.set("am.q",v==="auto"?null:v); /* до закрытия приложения */
+  $("#qchips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;SET.quality=v;ses.set("am.lite",null);ses.set("am.q",v==="auto"?null:v); /* запоминается на устройстве */
     Q=v==="auto"?2:+v;applyQ();closeSheet();bgResize();render();toast("Качество: "+b.textContent)});
   $("#reset")&&$("#reset").addEventListener("click",()=>{DATA=DEFAULTS.map(d=>({...d}));persist();closeSheet();tab=0;view=1;sync();render();toast("Карточки сброшены")})}
 
@@ -2961,7 +2971,11 @@ const WEIGHTS={visit:2,play:5,download:5,fav:2,review:20,post:10,card:25,submit:
 const pad2=x=>String(x).padStart(2,"0");
 const tl=(t,step)=>{const d=new Date(t),hm=pad2(d.getHours())+":"+pad2(d.getMinutes()),dm=pad2(d.getDate())+"."+pad2(d.getMonth()+1);return step<10800?hm:dm};
 const tlf=(t,step)=>{const d=new Date(t);return step<86400?pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):tl(t,step)};
-const toPts=s=>{let res=s.base;return s.rows.map(([a,w,st],i)=>{res+=w;const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
+/* ряд графика: a ключевые действия, w очки, s звёзды, дальше по видам (регистрации, отзывы, первые запуски, первые скачивания);
+   k = сколько за отрезок, cum = сколько всего к концу отрезка (для линии по выбранному фильтру) */
+const toPts=s=>{let res=s.base;const c=(s.bases||[0,0,0,0]).slice();
+  return s.rows.map(([a,w,st,r1,r2,r3,r4],i)=>{res+=w;const k={reg:+r1||0,rev:+r2||0,play:+r3||0,dl:+r4||0};c[0]+=k.reg;c[1]+=k.rev;c[2]+=k.play;c[3]+=k.dl;
+    const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,k,cum:{reg:c[0],rev:c[1],play:c[2],dl:c[3]},cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
 const rateText=()=>"игра = "+WEIGHTS.play+" · скачивание = "+WEIGHTS.download+" · отзыв = "+WEIGHTS.review+" · пост = "+WEIGHTS.post+" · своя карточка = "+WEIGHTS.card+" "+CAP.res;
 /* демо без сервера: те же ключевые действия, что и на сервере (регистрация, новый отзыв, первый запуск и первая загрузка игры) */
 function keyActs(){const seen=new Set(),out=[{t:PROF.reg||Date.now(),type:"register"}];
@@ -2973,8 +2987,10 @@ function localSeries(){
   const ev=keyActs(),now=Date.now(),off=-new Date().getTimezoneOffset()*60000,first=ev.length?Math.min(...ev.map(e=>e.t)):now,
     allStep=Math.max(3600,Math.ceil(Math.max((now-first)/1000,1)/40/3600)*3600),w=e=>e.type==="register"?10:WEIGHTS[e.type]||0;
   return[[24,3600],[28,21600],[30,86400],[40,allStep]].map(([n,step])=>{const ms=step*1000,end=Math.ceil((now+off)/ms)*ms-off,start=end-n*ms;
-    const rows=Array.from({length:n},(_,i)=>{const a=start+i*ms,b=a+ms,x=ev.filter(e=>e.t>=a&&e.t<b);return[x.length,x.reduce((t,e)=>t+w(e),0)]});
-    return toPts({base:ev.filter(e=>e.t<start).reduce((t,e)=>t+w(e),0),rows,t0:start,step})})}
+    const KT=["register","review","play","download"],kn=x=>KT.map(t=>x.filter(e=>e.type===t).length);
+    const rows=Array.from({length:n},(_,i)=>{const a=start+i*ms,b=a+ms,x=ev.filter(e=>e.t>=a&&e.t<b);return[x.length,x.reduce((t,e)=>t+w(e),0),0,...kn(x)]});
+    const before=ev.filter(e=>e.t<start);
+    return toPts({base:before.reduce((t,e)=>t+w(e),0),bases:kn(before),rows,t0:start,step})})}
 async function loadActivity(){
   if(!SUB_API)return localSeries();
   const j=await hub("activity",{q:{tz:new Date().getTimezoneOffset()}});Object.assign(WEIGHTS,j.weights||{});return j.series.map(toPts)}

@@ -158,7 +158,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       const end = Math.ceil((nowS + off) / step) * step - off; // правая граница последнего ведра: на «круглом» местном времени
       const start = end - n * step;
       const s = await store.activitySeries({ startMs: start * 1000, stepSec: step, n });
-      return { step, t0: start * 1000, base: s.base, rows: s.rows };
+      return { step, t0: start * 1000, base: s.base, bases: s.bases ?? [0, 0, 0, 0], rows: s.rows };
     }));
     return json(200, { weights: WEIGHTS, series });
   }

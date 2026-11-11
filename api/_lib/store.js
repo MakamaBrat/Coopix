@@ -242,7 +242,7 @@ export function supabaseStore(url, serviceKey) {
     async activitySeries({ startMs, stepSec, n }) {
       const r = ok(await db.rpc("activity_series", { p_start: new Date(startMs).toISOString(), p_step_sec: stepSec, p_n: n }));
       // [действия, очки, звёзды]: раньше третье число терялось, и строка звёзд на сайте всегда была пустой
-      return { base: Number(r?.base ?? 0), rows: (r?.rows ?? []).map(([a, w, s]) => [Number(a), Number(w), Number(s) || 0]) };
+      return { base: Number(r?.base ?? 0), bases: (r?.bases ?? [0, 0, 0, 0]).map(Number), rows: (r?.rows ?? []).map((x) => x.map((v) => Number(v) || 0)) };
     },
   };
 }

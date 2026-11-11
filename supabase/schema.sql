@@ -268,26 +268,30 @@ language sql stable
 set search_path = public
 as $$
   with k as (
-    select u.registered_at as ts, 10 as w, 0 as s, true as act from public.users u
+    select u.registered_at as ts, 10 as w, 0 as s, true as act, 'reg' as kd from public.users u
     union all
-    select e.ts, e.weight, 0, true from public.events e where e.type = 'review' and not (e.meta ? 'e')
+    select e.ts, e.weight, 0, true, 'rev' from public.events e where e.type = 'review' and not (e.meta ? 'e')
     union all
-    select f.ts, f.weight, 0, true from (
-      select distinct on (e.user_id, e.game_id, e.type) e.ts, e.weight
+    select f.ts, f.weight, 0, true, case when f.type = 'play' then 'play' else 'dl' end from (
+      select distinct on (e.user_id, e.game_id, e.type) e.ts, e.weight, e.type
         from public.events e
        where e.type in ('play', 'download') and e.game_id is not null
        order by e.user_id, e.game_id, e.type, e.ts
     ) f
     union all
-    select e.ts, 0, coalesce((e.meta->>'s')::int, 0), false from public.events e where e.type = 'thank'
+    select e.ts, 0, coalesce((e.meta->>'s')::int, 0), false, 'star' from public.events e where e.type = 'thank'
   )
   select jsonb_build_object(
     'base', (select coalesce(sum(w), 0) from k where ts < p_start),
+    -- сколько каждого вида было до начала окна (для линии «всего» по выбранному фильтру): регистрации, отзывы, первые запуски, первые скачивания
+    'bases', (select jsonb_build_array(count(*) filter (where kd = 'reg'), count(*) filter (where kd = 'rev'), count(*) filter (where kd = 'play'), count(*) filter (where kd = 'dl')) from k where ts < p_start),
     'rows', (
-      select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w, b.s) order by b.i), '[]'::jsonb)
+      select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w, b.s, b.reg, b.rev, b.pl, b.dl) order by b.i), '[]'::jsonb)
         from (
-          -- a = ключевые действия, w = очки, s = звёзды «спасибо автору»
-          select g.i, count(k.ts) filter (where k.act) as a, coalesce(sum(k.w), 0) as w, coalesce(sum(k.s), 0) as s
+          -- a = ключевые действия, w = очки, s = звёзды «спасибо автору», дальше по видам: регистрации, отзывы, первые запуски, первые скачивания
+          select g.i, count(k.ts) filter (where k.act) as a, coalesce(sum(k.w), 0) as w, coalesce(sum(k.s), 0) as s,
+                 count(k.ts) filter (where k.kd = 'reg') as reg, count(k.ts) filter (where k.kd = 'rev') as rev,
+                 count(k.ts) filter (where k.kd = 'play') as pl, count(k.ts) filter (where k.kd = 'dl') as dl
             from generate_series(0, least(greatest(p_n, 1), 100) - 1) as g(i)
             left join k
               on k.ts >= p_start + (g.i * p_step_sec) * interval '1 second'
