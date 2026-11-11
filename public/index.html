@@ -2073,7 +2073,7 @@ const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d"
    ниже столбцы «действия» за отрезок, внизу строка «звёзды» (поддержка авторов). Цвета проверены валидатором палитры
    (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
 function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Как растёт Coopix</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность сообщества</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>рост сообщества</span><span><i class="lb"></i>события</span><span><i class="ls2"></i>спасибо авторам</span></div></div>${chBody(HA,"График: как растёт активность сообщества, события игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Активность сообщества</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>рост сообщества</span><span><i class="lb"></i>события</span><span><i class="ls2"></i>звёзды</span></div></div>${chBody(HA,"График: как растёт активность сообщества, события игроков и звёзды. Стрелки влево и вправо листают отрезки времени")}
     <div class="chc-s" data-s></div></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
@@ -2148,10 +2148,10 @@ function initCharts(root){
     const perT={"24ч":"за сутки","7д":"за неделю","30д":"за месяц","Всё":"за всё время"}[PER[pi][0]]||"";
     box.querySelector("[data-v]").innerHTML=`${nf(tot)}<small>${plr(tot,F[2])} ${perT}</small>`;
     delta(box.querySelector("[data-d]"),tot,"спасибо, что вы с нами!");
-    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(fl_(last))}</b><span>${F[0]==="reg"?"игроков всего":F[0]==="all"?"рост сообщества":"всего за всё время"}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)} авторам</span></div>`;
+    box.querySelector("[data-s]").innerHTML=`<div><b>${nf(fl_(last))}</b><span>${F[0]==="reg"?"игроков всего":F[0]==="all"?"рост сообщества":"всего за всё время"}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)}</span></div>`;
     attach(box,svg,n,pl+slot/2,pr+slot/2,i=>{const o=dt[i],x=xs[i].toFixed(1);G.style.display="";gl.setAttribute("x1",x);gl.setAttribute("x2",x);gc.setAttribute("cx",x);gc.setAttribute("cy",ys[i].toFixed(1));
       hb&&hb.classList.remove("hl");hb=svg.querySelector(`.bar[data-i="${i}"]`);hb&&hb.classList.add("hl");
-      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(fv_(o))}</b>${plr(fv_(o),F[2])}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)} авторам</div><div><i class="k kl"></i>${F[0]==="reg"?"игроков всего":"всего"}: <b>${nf(fl_(o))}</b></div>`}},
+      return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(fv_(o))}</b>${plr(fv_(o),F[2])}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)}</div><div><i class="k kl"></i>${F[0]==="reg"?"игроков всего":"всего"}: <b>${nf(fl_(o))}</b></div>`}},
       ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null})})}
 
 /* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
