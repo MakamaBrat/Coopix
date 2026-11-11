@@ -54,8 +54,23 @@ const toUser = (u, role) => ({
  * verify: (initData, botToken, maxAge) -> { ok, userId, user }
  * notify: (chatId, text) -> void
  */
-export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null }) {
+export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null, touchTtl = 30_000 }) {
   const json = (status, body) => ({ status, body });
+
+  /* «Кто это»: touch_user пишет в базу (регистрация, последняя активность) и отдаёт бан и роль.
+     Чтобы не делать эту запись на каждый запрос (счётчики, журнал, отзывы), результат держим touchTtl в памяти экземпляра функции.
+     Старт маркета (/config), /me и админка всегда идут в базу. Бан и модератор, выданные здесь же, сбрасывают кэш сразу,
+     выданные в другом экземпляре функции начинают действовать не позже чем через touchTtl. */
+  const seen = new Map();
+  async function touch(u, force) {
+    const c = seen.get(u.id), now = Date.now();
+    if (!force && touchTtl > 0 && c && now - c.at < touchTtl) return c.t;
+    const t = (await store.touchUser(u)) ?? {};
+    if (seen.size > 5000) seen.clear();
+    if (touchTtl > 0) seen.set(u.id, { t, at: now });
+    return t;
+  }
+  const forget = (id) => seen.delete(Number(id));
   const hub = createHub({ store, botToken, notify, adminIds, tgApi, tgFile });
   const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), notify, log: hub.log, weight: WEIGHTS.thank });
 
@@ -68,9 +83,11 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     const uid = Number(v.userId);
     const isMain = adminIds.includes(uid);
     const m = req.method;
+    // /api/hub?r=config = то же, что /api/config: маркет на старте будит одну функцию Vercel вместо двух
+    const route = req.route === "hub" && req.query?.r === "config" ? "config" : req.route;
 
     // Заход: создаём/обновляем игрока (регистрация, «последняя активность»), узнаём бан и роль.
-    const t = (await store.touchUser({ id: uid, first_name: clip(v.user.first_name, 40), username: clip(v.user.username, 40) })) ?? {};
+    const t = await touch({ id: uid, first_name: clip(v.user.first_name, 40), username: clip(v.user.username, 40) }, route === "config" || route === "me" || route === "admin");
     const role = isMain ? "main" : t.moderator ? "moderator" : null;
     const staff = !!role;
     const banned = !!t.banned && !isMain; // главного админа заблокировать нельзя
@@ -85,7 +102,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     if (banned) return json(403, { error: "banned", reason: t.ban_reason || "" });
 
     // ---- /api/config: новости и адрес доната для сайта ----
-    if (req.route === "config") {
+    if (route === "config") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
       const [news, wallet] = await Promise.all([store.getSetting("news"), store.getSetting("wallet")]);
       // role/admin здесь же: маркету на старте не нужен отдельный запрос /me (минус один круг до сервера)
@@ -338,6 +355,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
         if (adminIds.includes(tid) || mods.includes(tid)) return json(400, { error: "cannot_ban_staff" });
       }
       const row = await store.setBan(tid, b.banned, b.banned ? clip(b.reason, 200) : "", uid);
+      forget(tid); // бан действует сразу (в этом экземпляре функции)
       if (!row) return json(404, { error: "not_found" });
       return json(200, toUser(row, null));
     }
@@ -392,12 +410,14 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
         if (!TG_ID.test(id) || !Number(id)) return json(400, { error: "bad_id" });
         if (adminIds.includes(Number(id))) return json(400, { error: "already_main" });
         await store.addMod(Number(id), clip(b.note, 60), uid);
+        forget(id);
         return json(201, { ok: true });
       }
       if (m === "DELETE") {
         const id = String(q.id ?? "");
         if (!TG_ID.test(id)) return json(400, { error: "bad_id" });
         await store.removeMod(Number(id));
+        forget(id);
         return json(200, { ok: true });
       }
       return json(405, { error: "method_not_allowed" });

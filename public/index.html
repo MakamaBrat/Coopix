@@ -28,6 +28,9 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
 <link rel="preload" href="assets/fonts/tektur-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/tektur-cyrillic-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/pixelify-sans-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<!-- спрайты предметов: обычные PNG (раньше 700 КБ base64 в блокирующем скрипте), качаются параллельно и кэшируются на год -->
+<link rel="preload" href="assets/spr/cassette.png" as="image"><link rel="preload" href="assets/spr/cd.png" as="image"><link rel="preload" href="assets/spr/floppy.png" as="image"><link rel="preload" href="assets/spr/handheld.png" as="image">
+<link rel="preload" href="assets/spr/case_a.png" as="image"><link rel="preload" href="assets/spr/case_b.png" as="image"><link rel="preload" href="assets/spr/case_c.png" as="image"><link rel="preload" href="assets/spr/case_d.png" as="image"><link rel="preload" href="assets/spr/case_e.png" as="image"><link rel="preload" href="assets/spr/case_f.png" as="image">
 <style>
 @font-face{font-family:"Pixelify Sans";font-weight:400;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"Pixelify Sans";font-weight:600;font-display:swap;src:url(assets/fonts/pixelify-sans-latin-600-normal.woff2) format("woff2")}
@@ -130,6 +133,15 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .notch{position:absolute;left:50%;bottom:-9px;width:18px;height:11px;margin-left:-9px;background:#8d57f7;
   clip-path:polygon(0 0,100% 0,50% 100%);transform:scaleY(0);transform-origin:top;transition:transform .2s}
 .tab[aria-selected=true]+.notch{transform:scaleY(1)}
+/* переключатель «лайт» в ряду вкладок: серый = обычная версия, зелёный = лёгкая */
+.tab.qsw{grid-template-rows:auto auto;align-content:center;gap:3px}
+.tab.qsw svg{width:62%;max-width:40px}
+.qsw .tr{fill:#1a1046;stroke:currentColor;stroke-width:2;transition:fill .2s}
+.qsw .kn{fill:currentColor;transition:transform .2s cubic-bezier(.3,.9,.3,1)}
+.qsw .ql{position:relative;font-size:10px;font-weight:700;line-height:1;letter-spacing:.08em;text-transform:uppercase}
+.tab.qsw[aria-checked=true]{color:#5dff8a;background:linear-gradient(160deg,#3fd47a,#1c6b43)}
+.qsw[aria-checked=true] .tr{fill:#0f3a26}.qsw[aria-checked=true] .kn{transform:translateX(15px)}
+@media (prefers-reduced-motion:reduce){.qsw .kn{transition:none}}
 
 /* ---------- cards ---------- */
 .sbar{--cut:#150d33;position:relative;display:flex;align-items:center;height:clamp(48px,12.4vw,58px);margin:0 0 16px;color:#8366d6;transition:filter .2s,color .2s;
@@ -1068,13 +1080,14 @@ html.desk .fbar{grid-column:1/-1;margin:-8px 0 18px}
 .pgtabs{display:flex;gap:0;margin-bottom:14px;border:3px solid var(--line);background:#0c0720}
 .pgtabs button{flex:1;height:46px;font-size:18px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
 .pgtabs button[aria-selected="true"]{color:#140a28;background:linear-gradient(90deg,var(--c3),var(--c1))}.pgtabs small{font-size:.8em;opacity:.8}
-.md{padding:12px 14px;margin-bottom:10px;background:#120a2a;border:2px solid var(--line);border-left:6px solid var(--c1)}
-.md-h{display:flex;justify-content:space-between;align-items:center;gap:8px}.md-h b{font-size:19px;color:#fff}.md-v{font-size:14px;color:var(--c3)}
-.md p{margin:6px 0 0;font-size:16px;line-height:1.35;color:#ddd2ff;white-space:pre-line}
-.md-f{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}.md-f time{font-size:13px;color:var(--dim)}.md-f .cm-av{width:30px;height:30px}
-.md-b{display:flex;gap:8px;margin-left:auto}.md-b .btn{flex:none;height:38px;padding:0 14px;font-size:15px}
-.md-own{margin-bottom:10px;padding:8px 12px;font-size:15px;background:#1c1146;border-left:6px solid #ffd23f;color:#e9ddff}.md-own.st-rejected{border-left-color:#ff7a8a}
-.md-new{width:100%;flex:none}
+/* моды: свои классы mod-*, потому что .md уже занят медалями профиля (их стили ломали карточку мода) */
+.mod{display:block;text-align:left;padding:12px 14px;margin-bottom:10px;background:#120a2a;border:2px solid var(--line);border-left:6px solid var(--c1)}
+.mod-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mod-h b{font-size:19px;font-weight:700;color:#fff;overflow-wrap:anywhere}.mod-v{flex:none;font-size:14px;color:var(--c3)}
+.mod p{margin:6px 0 0;font-size:16px;line-height:1.35;color:#ddd2ff;white-space:pre-line}
+.mod-f{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}.mod-f time{font-size:13px;color:var(--dim)}.mod-f .cm-av{width:30px;height:30px}
+.mod-b{display:flex;gap:8px;margin-left:auto}.mod-b .btn{flex:none;height:38px;padding:0 14px;font-size:15px}
+.mod-own{margin-bottom:10px;padding:8px 12px;font-size:15px;background:#1c1146;border-left:6px solid #ffd23f;color:#e9ddff}.mod-own.st-rejected{border-left-color:#ff7a8a}
+.mod-new{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;flex:none}.mod-new svg{flex:none;width:20px;height:20px;fill:currentColor}
 /* своя фоновая картинка: под эффектом, эффект поверх слабый */
 .bgi{position:absolute;inset:0;background:var(--bgi,none) center/cover no-repeat;display:none}
 .card.hasbg .bgi{display:block}.card.hasbg .fx{opacity:.32;mix-blend-mode:screen}
@@ -1141,7 +1154,11 @@ b.onclick=function(){try{sessionStorage.setItem("am.lite","1")}catch(e){}b.textC
 <div class="toast" id="toast" role="status"></div>
 
 <script src="assets/config.js"></script>
-<script src="assets/sprites.js"></script>
+<script>/* Спрайты лежат файлами в assets/spr/ (кэш на год, см. vercel.json). Меняете картинку — переименуйте файл или папку, иначе у игроков останется старая. */
+window.SPRITES=Object.fromEntries(["cassette","cd","floppy","handheld","case_a","case_b","case_c","case_d","case_e","case_f"].map(k=>[k,"assets/spr/"+k+".png"]));
+/* геометрия: лицевая грань коробки (куда ложится обложка) и детали предметов. Раньше лежала в том же sprites.js */
+window.FACES={"case_a":{"w":203,"h":203,"q":[[0.1527,0.1823],[0.729,0.0838],[0.8966,0.7783],[0.33,0.8966]]},"case_b":{"w":206,"h":196,"q":[[0.1262,0.1582],[0.8447,0.0408],[0.9466,0.7806],[0.2184,0.9286]]},"case_c":{"w":219,"h":190,"q":[[0.2237,0.2],[0.7534,0.0737],[0.9178,0.7474],[0.3881,0.9211]]},"case_d":{"w":170,"h":198,"q":[[0.1214,0.1],[0.9357,0.0421],[0.9357,0.8789],[0.1214,0.9526]]},"case_e":{"w":204,"h":178,"q":[[0.0784,0.2471],[0.7206,0.0786],[0.9461,0.7022],[0.2941,0.9382]]},"case_f":{"w":189,"h":178,"q":[[0.0529,0.236],[0.7037,0.0618],[0.9418,0.7472],[0.2858,0.9382]]}};
+window.DECOR={"cassette":{"polys":[[[33,63],[184,15],[189,35],[38,83]],[[124,146],[176,128],[182,146],[130,164]]],"fy":[0.45,0.85]},"cd":{"c":[107,96],"rx":104,"ry":92,"hub":[107,96,29,28,13]},"floppy":{"polys":[[[60,100],[137,82],[152,146],[72,159]]],"fy":[0.5]},"handheld":{"polys":[[[43,40],[119,25],[124,77],[52,90]]],"fy":[0.5]}};</script>
 <script>
 (()=>{
 "use strict";
@@ -1171,7 +1188,7 @@ function gpuWeak(){if(GPUW>=0)return GPUW;GPUW=1;try{const c=document.createElem
   GPUW=/swiftshader|llvmpipe|softpipe|software|mali-?4\d\d|mali-t[0-7]\d\d|adreno.{0,6}[2-3]\d\d\b|powervr.{0,4}(sgx|ge)|vivante|videocore/i.test(r)?1:0;
   const l=g.getExtension("WEBGL_lose_context");l&&l.loseContext()}}catch(e){}return GPUW}
 const autoQ=()=>SAVE||OLD||MEM<=2||CORES<=2||gpuWeak()?0:navigator.deviceMemory&&MEM<=4?1:2;
-function applyQ(){document.documentElement.dataset.q=Q;FI=[100,50,40][Q];BI=[250,100,50][Q];bgPainted=false}
+function applyQ(){document.documentElement.dataset.q=Q;FI=[100,50,40][Q];BI=[250,100,50][Q];bgPainted=false;if(typeof syncQsw==="function")syncQsw()}
 var bgPainted=false;
 /* старт всегда полный (2); «Авто» может понизить качество позже, по реальной плавности, и только до закрытия приложения */
 Q=String(SET.quality)==="auto"?2:+SET.quality;applyQ();
@@ -1215,7 +1232,7 @@ async function loadSprites(){
       const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0);const d=x.getImageData(0,0,w,h).data;
       const lum=new Float32Array(w*h),al=new Uint8Array(w*h);
       for(let i=0;i<w*h;i++){lum[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;al[i]=d[i*4+3]}
-      SPR[k]={w,h,lum,al,src};res()};im.src=src}))); }
+      SPR[k]={w,h,lum,al,src};res()};im.onerror=()=>res();im.src=src}))); } /* без связи картинка не загрузится: не вешаем старт */
 const ITEMS={
   cassette:{label:"Кассета",side:"left",case:"case_a",ov:.21},
   cd:{label:"CD",side:"left",case:"case_b",ov:.2},
@@ -1708,17 +1725,26 @@ function persist(){if(SUB_API&&CAT_OK){store.set(CATK,DATA.map(d=>({...d,cover:/
   if(!store.set("am.cards.v1",DATA))toast("Память браузера заполнена: новые обложки не сохранятся")}
 
 /* ============ list / tabs / dock ============ */
-const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>SUB_API?!!c.mine:!c.built],["gear","Settings",null]];
+const TABS=[["pad","Home",()=>true],["grid","Games",c=>tagsOf(c)[0].toLowerCase()!=="music"],["favt","Favorites",c=>!!c.fav],["image","Mine",c=>SUB_API?!!c.mine:!c.built],["qsw","Лёгкая версия",null]];
+/* последняя кнопка в ряду: переключатель «лёгкая версия / обычная» в один клик (настройки остались в профиле).
+   Действует до закрытия приложения, как и всё про качество: новый запуск снова в обычной версии. */
+const QSW='<svg viewBox="0 0 36 22" aria-hidden="true"><rect class="tr" x="1.5" y="3.5" width="33" height="15" rx="7.5"/><circle class="kn" cx="10" cy="11" r="5.5"/></svg><span class="ql">лайт</span>';
+function syncQsw(){const b=document.querySelector(".tab.qsw");if(!b)return;const on=Q===0;b.setAttribute("aria-checked",on);b.title=on?"Лёгкая версия включена · нажмите для обычной":"Обычная версия · нажмите для лёгкой"}
+function toggleLite(){const lite=Q!==0;
+  SET.quality=lite?"0":"auto";ses.set("am.lite",null);ses.set("am.q",lite?"0":null);
+  Q=lite?0:2;applyQ();bgResize();render();toast(lite?"Лёгкая версия: без эффектов, быстрее":"Обычная версия")}
 const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Community",()=>true],["user","Profile",()=>true]];
 let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club"),profEl=$("#prof");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
-$("#tabs").innerHTML=TABS.map((t,i)=>`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");
+$("#tabs").innerHTML=TABS.map((t,i)=>t[2]===null
+  ?`<div class="tabcell"><button class="tab qsw" type="button" role="switch" aria-checked="${Q===0}" aria-label="${t[1]}" data-i="${i}">${QSW}</button></div>`
+  :`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");syncQsw();
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
-  if(TABS[i][2]===null){openSettings();return}tab=i;view=1;sync();render()});
+  if(TABS[i][2]===null){toggleLite();return}tab=i;view=1;sync();render()});
 $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;sfx.tap();
   goView(i)});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
-function sync(){document.querySelectorAll(".tab").forEach((b,i)=>b.setAttribute("aria-selected",i===tab&&view===1));
+function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
 /* search: hides cards instead of rebuilding them, so typing never restarts the card animations */
@@ -2000,8 +2026,9 @@ const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d"
    ниже столбцы «действия» за отрезок, внизу строка «звёзды» (поддержка авторов). Цвета проверены валидатором палитры
    (тёмный фон #150d34: светлота, насыщенность, различимость при дальтонизме, контраст). */
 function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>Пульс маркета</h3>
-  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Очки активности</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>всего очков</span><span><i class="lb"></i>действия</span><span><i class="ls2"></i>звёзды</span></div></div>${chBody(HA,"График: очки активности, действия игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
+  <div class="chc" id="chA"><div class="chc-h"><div class="chc-t">Очки активности</div><div class="chc-lg" aria-hidden="true"><span><i class="ll"></i>всего очков</span><span><i class="lb"></i>ключевые действия</span><span><i class="ls2"></i>звёзды</span></div></div>${chBody(HA,"График: очки активности, действия игроков и звёзды авторам. Стрелки влево и вправо листают отрезки времени")}
     <div class="chc-s" data-s></div>
+    <p class="chc-n">Считаются только ключевые действия: регистрация, отзыв, первый запуск и первая загрузка игры.</p>
     <details class="chc-tb"><summary>Таблица</summary><div data-tb></div></details></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
@@ -2043,7 +2070,7 @@ function initCharts(root){
     return `<rect class="cn" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(s)}"/><rect class="cnh" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(p)}"/>`};
   /* таблица: те же цифры без наведения (строится только когда её открыли) */
   const table=(box,dt)=>{const el=box.querySelector("[data-tb]"),dd=box.querySelector("details");if(!el||!dd)return;
-    const fill=()=>{el.innerHTML=`<table><thead><tr><th>Время</th><th>Действия</th><th>Звёзды</th><th>Очки, всего</th></tr></thead><tbody>${dt.slice().reverse().map(o=>`<tr><td>${o.tf||o.t}</td><td>${nf(o.a)}</td><td>${nf(o.s||0)}</td><td>${nf(o.res)}</td></tr>`).join("")}</tbody></table>`};
+    const fill=()=>{el.innerHTML=`<table><thead><tr><th>Время</th><th>Ключевые действия</th><th>Звёзды</th><th>Очки, всего</th></tr></thead><tbody>${dt.slice().reverse().map(o=>`<tr><td>${o.tf||o.t}</td><td>${nf(o.a)}</td><td>${nf(o.s||0)}</td><td>${nf(o.res)}</td></tr>`).join("")}</tbody></table>`};
     dd.ontoggle=()=>{if(dd.open)fill()};if(dd.open)fill();else el.innerHTML=""};
   const PLA=["действие","действия","действий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
@@ -2060,7 +2087,7 @@ function initCharts(root){
     let g="";
     keep.forEach(v=>{const y=Y(v).toFixed(1);g+=`<line class="${v===lo?"gb":"gl"}" x1="${x0}" x2="${x1}" y1="${y}" y2="${y}"/><text class="ax" x="${ax}" y="${(+y+4).toFixed(1)}">${fv(v)}</text>`});
     /* полоса действий: подпись, верх шкалы и базовая линия */
-    g+=`<text class="lab" x="${x0}" y="${aT-9}">Действия</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
+    g+=`<text class="lab" x="${x0}" y="${aT-9}">Ключевые действия</text><line class="gl" x1="${x0}" x2="${x1}" y1="${aT}" y2="${aT}"/><text class="ax" x="${ax}" y="${aT+4}">${fv(sa.hi)}</text><line class="gb" x1="${x0}" x2="${x1}" y1="${aB}" y2="${aB}"/>`;
     /* строка звёзд: тонкая дорожка и сумма за период справа */
     g+=`<line class="gl" x1="${x0}" x2="${x1}" y1="${sY}" y2="${sY}"/><text class="ax" x="${ax}" y="${sY+4}">★${fv(totS)}</text>`;
     const bars=acts.map((a,i)=>a>0?`<path class="bar" data-i="${i}" d="${colPath(xs[i]-bw/2,aB-Math.max(2,(aB-aT)*a/sa.hi),bw,Math.max(2,(aB-aT)*a/sa.hi))}"/>`:"").join("");
@@ -2465,7 +2492,7 @@ function pageHTML(m,kind){
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></div>
-  <div class="pgpane" id="tabMd" hidden><div id="mdList"></div><button class="btn ghost md-new" id="mdNew" type="button">${IC.plus}&nbsp;Предложить мод</button>
+  <div class="pgpane" id="tabMd" hidden><div id="mdList"></div><button class="btn ghost mod-new" id="mdNew" type="button">${IC.plus}Предложить мод</button>
     <p class="hint2" style="text-align:left">Мод — ваша версия этой игры. Его проверит админ, потом он появится здесь с вашим именем.</p></div></section></div></div>`}
 
 async function openPage(id,opt){
@@ -2767,11 +2794,11 @@ function renderMods(){
   const el=$("#mdList");if(!el||!PG)return;const M=MODS[PG.m.id],n=M?M.items.length:0;$("#mdN").textContent=n?"· "+n:"";
   if(!SUB_API){el.innerHTML='<p class="empty">Моды появятся в Telegram-версии маркета.</p>';return}
   if(!M){el.innerHTML='<p class="empty">Загрузка модов…</p>';return}
-  const own=M.mine.map(x=>`<div class="md-own st-${x.status}"><b>${esc(x.title)}</b> · ${x.status==="new"?"на проверке у админа":"отклонён"+(x.comment?": "+esc(x.comment):"")}</div>`).join("");
-  el.innerHTML=own+(M.err?'<p class="empty">Не удалось загрузить моды. Проверьте связь.</p>':n?M.items.map(x=>`<article class="md">
-    <div class="md-h"><b>${esc(x.title)}</b><span class="md-v">v${esc(x.ver)}</span></div>${x.desc?`<p>${esc(x.desc)}</p>`:""}
-    <div class="md-f">${cmAv({pid:x.mine?null:x.pid,me:x.mine?1:0,n:x.author})}<button type="button" class="cm-nm" data-p="${x.mine?"me":esc(x.pid)}">${esc(x.mine?(PROF.name||x.author):x.author)}</button><time>${ago(x.at)}</time>
-      <span class="md-b"><button class="btn ghost" type="button" data-mplay="${esc(x.id)}">Играть</button><button class="btn ghost" type="button" data-mdl="${esc(x.id)}">Скачать</button></span></div></article>`).join("")
+  const own=M.mine.map(x=>`<div class="mod-own st-${x.status}"><b>${esc(x.title)}</b> · ${x.status==="new"?"на проверке у админа":"отклонён"+(x.comment?": "+esc(x.comment):"")}</div>`).join("");
+  el.innerHTML=own+(M.err?'<p class="empty">Не удалось загрузить моды. Проверьте связь.</p>':n?M.items.map(x=>`<article class="mod">
+    <div class="mod-h"><b>${esc(x.title)}</b><span class="mod-v">v${esc(x.ver)}</span></div>${x.desc?`<p>${esc(x.desc)}</p>`:""}
+    <div class="mod-f">${cmAv({pid:x.mine?null:x.pid,me:x.mine?1:0,n:x.author})}<button type="button" class="cm-nm" data-p="${x.mine?"me":esc(x.pid)}">${esc(x.mine?(PROF.name||x.author):x.author)}</button><time>${ago(x.at)}</time>
+      <span class="mod-b"><button class="btn ghost" type="button" data-mplay="${esc(x.id)}">Играть</button><button class="btn ghost" type="button" data-mdl="${esc(x.id)}">Скачать</button></span></div></article>`).join("")
     :'<p class="empty">Модов пока нет. Возьмите игру за основу и предложите свою версию.</p>')}
 async function modFile(id){const j=await hub("modfile",{q:{id}});return j}
 function openModForm(m){
@@ -2877,9 +2904,15 @@ const tl=(t,step)=>{const d=new Date(t),hm=pad2(d.getHours())+":"+pad2(d.getMinu
 const tlf=(t,step)=>{const d=new Date(t);return step<86400?pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):tl(t,step)};
 const toPts=s=>{let res=s.base;return s.rows.map(([a,w,st],i)=>{res+=w;const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
 const rateText=()=>"игра = "+WEIGHTS.play+" · скачивание = "+WEIGHTS.download+" · отзыв = "+WEIGHTS.review+" · пост = "+WEIGHTS.post+" · своя карточка = "+WEIGHTS.card+" "+CAP.res;
+/* демо без сервера: те же ключевые действия, что и на сервере (регистрация, новый отзыв, первый запуск и первая загрузка игры) */
+function keyActs(){const seen=new Set(),out=[{t:PROF.reg||Date.now(),type:"register"}];
+  for(const e of ALOG().slice().sort((a,b)=>a.t-b.t)){
+    if(e.type==="review"&&!(e.meta&&e.meta.e))out.push(e);
+    else if((e.type==="play"||e.type==="download")&&e.game){const k=e.type+"|"+e.game;if(!seen.has(k)){seen.add(k);out.push(e)}}}
+  return out}
 function localSeries(){
-  const ev=ALOG(),now=Date.now(),off=-new Date().getTimezoneOffset()*60000,first=ev.length?Math.min(...ev.map(e=>e.t)):now,
-    allStep=Math.max(3600,Math.ceil(Math.max((now-first)/1000,1)/40/3600)*3600),w=e=>WEIGHTS[e.type]||0;
+  const ev=keyActs(),now=Date.now(),off=-new Date().getTimezoneOffset()*60000,first=ev.length?Math.min(...ev.map(e=>e.t)):now,
+    allStep=Math.max(3600,Math.ceil(Math.max((now-first)/1000,1)/40/3600)*3600),w=e=>e.type==="register"?10:WEIGHTS[e.type]||0;
   return[[24,3600],[28,21600],[30,86400],[40,allStep]].map(([n,step])=>{const ms=step*1000,end=Math.ceil((now+off)/ms)*ms-off,start=end-n*ms;
     const rows=Array.from({length:n},(_,i)=>{const a=start+i*ms,b=a+ms,x=ev.filter(e=>e.t>=a&&e.t<b);return[x.length,x.reduce((t,e)=>t+w(e),0)]});
     return toPts({base:ev.filter(e=>e.t<start).reduce((t,e)=>t+w(e),0),rows,t0:start,step})})}
@@ -2919,7 +2952,7 @@ async function accessInit(){
   if(!SUB_API)return true;
   for(let i=0;i<10&&!(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData);i++)await new Promise(r=>setTimeout(r,100));
   try{
-    const r=await fetch(SUB_API+"/config",{headers:sbH()});
+    const r=await fetch(SUB_API+"/hub?r=config",{headers:sbH()}); /* та же функция Vercel, что и остальные запросы маркета: одна холодная загрузка вместо двух */
     if(r.status===403){let j={};try{j=await r.json()}catch(e){}if(j.error==="banned"){banScreen(j.reason);return false}}
     if(!r.ok)return true;
     const c=await r.json();

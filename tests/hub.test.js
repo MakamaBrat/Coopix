@@ -266,35 +266,40 @@ test("лента журнала: новые сверху, страницы по 
   assert.equal((await hub("feed", "GET", ANN)).status, 403, "журнал действий видят только админы");
 });
 
-test("график: 4 периода, сумма весов и базовый ресурс сходятся с журналом", async () => {
-  const { hub, store, age } = await world();
+test("график: 4 периода, очки ключевых действий и базовый ресурс сходятся", async () => {
+  const { hub, age } = await world();                // 3 регистрации «сейчас»
   const t = (who, type, game) => hub("track", "POST", who, { body: { type, game } });
   await t(ANN, "play", "retro"); await t(BOB, "download", "retro"); await review(hub, ANN);
   age(3 * 86400e3);               // всё это «3 дня назад»
-  await t(ANN, "play", "retro");  // и одно действие сейчас
+  await t(ANN, "play", "space");  // и первый запуск другой игры сейчас
+  await t(ANN, "play", "retro");  // повторный запуск: на графике его нет
   const r = await hub("activity", "GET", ANN, { query: { tz: -180 } });
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.weights, WEIGHTS);
   assert.equal(r.body.series.length, 4);
   const [h24, d7, d30, all] = r.body.series;
   assert.equal(h24.rows.length, 24); assert.equal(d7.rows.length, 28); assert.equal(d30.rows.length, 30); assert.equal(all.rows.length, 40);
-  const total = store.events.reduce((s, e) => s + e.weight, 0);
+  const old = WEIGHTS.play + WEIGHTS.download + WEIGHTS.review, total = 3 * WEIGHTS.register + old + WEIGHTS.play;
   const sum = (s) => s.base + s.rows.reduce((t, [, w]) => t + w, 0);
-  assert.equal(sum(all), total);                       // «Всё» покрывает весь журнал
+  assert.equal(sum(all), total);                       // «Всё» покрывает все ключевые действия
   assert.equal(sum(d30), total);
-  assert.equal(h24.base, total - WEIGHTS.play);        // за 24 ч только сегодняшнее действие, остальное в базе
-  assert.equal(h24.rows.reduce((t, [a]) => t + a, 0), 1);
+  assert.equal(h24.base, old);                         // за 24 ч: регистрации и сегодняшний первый запуск, остальное в базе
+  assert.equal(h24.rows.reduce((t, [a]) => t + a, 0), 3 + 1);
   assert.equal(d7.base, 0);                            // 3 дня назад ещё внутри 7 дней
-  assert.equal(all.rows.reduce((t, [a]) => t + a, 0), store.events.length);
+  assert.equal(all.rows.reduce((t, [a]) => t + a, 0), 3 + 3 + 1);
   assert.ok(all.step >= 3600 && all.step % 3600 === 0);
   assert.ok(Math.abs(h24.t0 + 24 * 3600e3 - Date.now()) < 3600e3 + 5);
 });
 
-test("график при пустом журнале: ровные нули, без ошибок", async () => {
-  const { hub } = await world();
+test("график при пустом журнале: только регистрации, без ошибок", async () => {
+  const { hub } = await world();                     // 3 игрока зашли и больше ничего не делали
   const r = await hub("activity", "GET", ANN);
   assert.equal(r.status, 200);
-  for (const s of r.body.series) { assert.equal(s.base, 0); assert.ok(s.rows.every(([a, w]) => a === 0 && w === 0)); }
+  for (const s of r.body.series) {
+    assert.equal(s.base, 0);
+    assert.equal(s.rows.reduce((t, [a]) => t + a, 0), 3);
+    assert.equal(s.rows.reduce((t, [, w]) => t + w, 0), 3 * WEIGHTS.register);
+  }
 });
 
 test("график: границы ведёр выровнены по местному времени игрока", async () => {
@@ -335,4 +340,19 @@ test("фото из Telegram: через бота, наименьшее от 128
   assert.equal((await get(setup({ photos: [{ file_id: "s", width: 160 }], file: Buffer.from([0x89, 0x50, 0x4e]) }))).body.photo, "", "не JPEG");
   const down = await get(setup({ photos: [{ file_id: "s", width: 160 }], file: () => { throw new Error("https://api.telegram.org/file/bot" + TOK); } }));
   assert.equal(down.status, 502); assert.ok(!JSON.stringify(down.body).includes(TOK));
+});
+
+test("график: только ключевые действия (регистрация, новый отзыв, первый запуск, первая загрузка), звёзды отдельно", async () => {
+  const { hub, store, age } = await world();                                       // 3 регистрации: MAIN, ANN, BOB
+  const t = (who, type, game = "retro") => hub("track", "POST", who, { body: { type, game } });
+  await t(ANN, "play"); age(60_000); await t(ANN, "play");                          // повторный запуск той же игры не считается
+  await t(ANN, "play", "space"); await t(BOB, "download"); age(60_000); await t(BOB, "download");
+  await t(ANN, "fav"); await hub("track", "POST", ANN, { body: { type: "visit" } });  // избранное и заход не считаются
+  await review(hub, ANN, { rating: 4 }); await review(hub, ANN, { rating: 5, text: "Правка" }); // правка отзыва не считается
+  store.events.push({ id: 999, ts: new Date().toISOString(), user_id: BOB, type: "thank", game_id: "retro", weight: 40, meta: { s: 50 } });
+  const s = (await hub("activity", "GET", ANN, { query: { tz: 0 } })).body.series[0];
+  const sum = (k) => s.rows.reduce((x, r) => x + r[k], 0);
+  assert.equal(sum(0), 3 + 2 + 1 + 1, "3 регистрации + 2 первых запуска + 1 первая загрузка + 1 отзыв");
+  assert.equal(s.base + sum(1), 3 * 10 + 2 * WEIGHTS.play + WEIGHTS.download + WEIGHTS.review, "очки только за ключевые действия");
+  assert.equal(sum(2), 50, "звёзды отдельной строкой");
 });

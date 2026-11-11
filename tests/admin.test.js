@@ -134,3 +134,18 @@ test("поиск и фильтр списка пользователей", async
   assert.equal((await adm("users", "GET", MAIN, { query: { filter: "banned" } })).body.total, 1);
   assert.equal((await adm("users", "GET", MAIN, { query: { q: "U42" } })).body.rows[0].id, "42");
 });
+
+test("скорость: /hub?r=config = /config; «кто это» не пишется в базу на каждый запрос, бан из админки действует сразу", async () => {
+  const w = setup({ touchTtl: 30_000 });
+  let touches = 0; const orig = w.store.touchUser.bind(w.store); w.store.touchUser = (u) => { touches++; return orig(u); };
+  for (const id of [MAIN, USER]) await w.call("me", "GET", init(id));
+  const viaHub = await w.call("hub", "GET", init(USER), { query: { r: "config" } });
+  assert.equal(viaHub.status, 200); assert.equal(viaHub.body.role, null); assert.ok("news" in viaHub.body);
+  touches = 0;
+  for (let i = 0; i < 5; i++) await w.call("hub", "GET", init(USER), { query: { r: "stats", ids: "retro" } });
+  assert.equal(touches, 0, "счётчики не трогают базу ради «кто это»");
+  await w.call("hub", "GET", init(USER), { query: { r: "config" } });
+  assert.equal(touches, 1, "старт маркета всегда идёт в базу");
+  await w.call("admin", "PATCH", init(MAIN), { query: { r: "user", id: String(USER) }, body: { banned: true } });
+  assert.equal((await w.call("hub", "GET", init(USER), { query: { r: "stats", ids: "retro" } })).status, 403, "бан сразу");
+});

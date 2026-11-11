@@ -234,7 +234,8 @@ export function supabaseStore(url, serviceKey) {
     /** -> { base, rows: [[действий, вес], …] }: base = вес всех событий до startMs */
     async activitySeries({ startMs, stepSec, n }) {
       const r = ok(await db.rpc("activity_series", { p_start: new Date(startMs).toISOString(), p_step_sec: stepSec, p_n: n }));
-      return { base: Number(r?.base ?? 0), rows: (r?.rows ?? []).map(([a, w]) => [Number(a), Number(w)]) };
+      // [действия, очки, звёзды]: раньше третье число терялось, и строка звёзд на сайте всегда была пустой
+      return { base: Number(r?.base ?? 0), rows: (r?.rows ?? []).map(([a, w, s]) => [Number(a), Number(w), Number(s) || 0]) };
     },
   };
 }

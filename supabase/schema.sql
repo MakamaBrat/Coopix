@@ -235,24 +235,42 @@ as $$
     from e full join r on e.game_id = r.game_id;
 $$;
 
--- График активности: p_n корзин по p_step_sec секунд от p_start. base = вес всех событий до начала окна.
+-- График «Пульс маркета»: только ключевые действия.
+--   регистрация (первый заход игрока, вес 10), новый отзыв (не правка), первый запуск и первая загрузка игры игроком;
+--   заходы, избранное, повторные запуски и прочее на график не попадают (они остаются в журнале действий).
+-- Звёзды «спасибо автору» идут отдельной строкой (s) и в действия/очки не входят.
+-- p_n корзин по p_step_sec секунд от p_start; base = очки ключевых действий до начала окна.
+create index if not exists events_first_idx on public.events (user_id, game_id, type, ts) where type in ('play', 'download');
 create or replace function public.activity_series(p_start timestamptz, p_step_sec int, p_n int)
 returns jsonb
 language sql stable
 set search_path = public
 as $$
+  with k as (
+    select u.registered_at as ts, 10 as w, 0 as s, true as act from public.users u
+    union all
+    select e.ts, e.weight, 0, true from public.events e where e.type = 'review' and not (e.meta ? 'e')
+    union all
+    select f.ts, f.weight, 0, true from (
+      select distinct on (e.user_id, e.game_id, e.type) e.ts, e.weight
+        from public.events e
+       where e.type in ('play', 'download') and e.game_id is not null
+       order by e.user_id, e.game_id, e.type, e.ts
+    ) f
+    union all
+    select e.ts, 0, coalesce((e.meta->>'s')::int, 0), false from public.events e where e.type = 'thank'
+  )
   select jsonb_build_object(
-    'base', (select coalesce(sum(weight), 0) from public.events where ts < p_start),
+    'base', (select coalesce(sum(w), 0) from k where ts < p_start),
     'rows', (
       select coalesce(jsonb_agg(jsonb_build_array(b.a, b.w, b.s) order by b.i), '[]'::jsonb)
         from (
-          -- a = действия (без служебных invoice), w = ресурс, s = звёзды «спасибо автору»
-          select g.i, count(e.id) filter (where e.type <> 'invoice') as a, coalesce(sum(e.weight), 0) as w,
-                 coalesce(sum((e.meta->>'s')::int) filter (where e.type = 'thank'), 0) as s
+          -- a = ключевые действия, w = очки, s = звёзды «спасибо автору»
+          select g.i, count(k.ts) filter (where k.act) as a, coalesce(sum(k.w), 0) as w, coalesce(sum(k.s), 0) as s
             from generate_series(0, least(greatest(p_n, 1), 100) - 1) as g(i)
-            left join public.events e
-              on e.ts >= p_start + (g.i * p_step_sec) * interval '1 second'
-             and e.ts <  p_start + ((g.i + 1) * p_step_sec) * interval '1 second'
+            left join k
+              on k.ts >= p_start + (g.i * p_step_sec) * interval '1 second'
+             and k.ts <  p_start + ((g.i + 1) * p_step_sec) * interval '1 second'
            group by g.i
         ) b
     )

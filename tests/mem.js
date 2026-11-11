@@ -123,10 +123,18 @@ export function memStore() {
           reviews: rv.length, rated: rated.length, rating: rated.length ? Math.round((rated.reduce((t, r) => t + r.rating, 0) / rated.length) * 100) / 100 : 0 };
       }).filter((r) => r.plays || r.downloads || r.reviews);
     },
+    // как SQL activity_series: регистрация (10), новый отзыв, первый запуск и первая загрузка игры игроком; звёзды отдельно
     async activitySeries({ startMs, stepSec, n }) {
-      const ev = this.events.map((e) => ({ t: Date.parse(e.ts), w: e.weight, k: e.type, s: e.type === "thank" ? +e.meta?.s || 0 : 0 }));
-      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = ev.filter((e) => e.t >= a && e.t < b); return [x.filter((e) => e.k !== "invoice").length, x.reduce((t, e) => t + e.w, 0), x.reduce((t, e) => t + e.s, 0)]; });
-      return { base: ev.filter((e) => e.t < startMs).reduce((t, e) => t + e.w, 0), rows };
+      const first = new Set(), k = [];
+      for (const u of users.values()) k.push({ t: Date.parse(u.registered_at), w: 10, s: 0, act: true });
+      for (const e of [...this.events].sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts))) {
+        const t = Date.parse(e.ts);
+        if (e.type === "review" && !e.meta?.e) k.push({ t, w: e.weight, s: 0, act: true });
+        else if ((e.type === "play" || e.type === "download") && e.game_id) { const key = `${e.user_id}|${e.game_id}|${e.type}`; if (!first.has(key)) { first.add(key); k.push({ t, w: e.weight, s: 0, act: true }); } }
+        else if (e.type === "thank") k.push({ t, w: 0, s: +e.meta?.s || 0, act: false });
+      }
+      const rows = Array.from({ length: n }, (_, i) => { const a = startMs + i * stepSec * 1e3, b = a + stepSec * 1e3, x = k.filter((e) => e.t >= a && e.t < b); return [x.filter((e) => e.act).length, x.reduce((t, e) => t + e.w, 0), x.reduce((t, e) => t + e.s, 0)]; });
+      return { base: k.filter((e) => e.t < startMs).reduce((t, e) => t + e.w, 0), rows };
     },
   };
 }
@@ -142,7 +150,8 @@ export function setup(o = {}) {
     return true;
   };
   const tgFile = async (path) => { tg.push(["file", path]); return typeof o.file === "function" ? o.file(path) : o.file ?? Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]); };
-  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile });
+  // touchTtl: 0 = без кэша «кто это» (тесты меняют бан прямо в store и сразу проверяют); кэш проверяется отдельным тестом
+  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, touchTtl: o.touchTtl ?? 0 });
   const call = (route, method, hdr, o = {}) => core.handle({ route, method, headers: hdr ? { "x-tg-init": hdr } : {}, ...o });
   return { store, sent, call, tg };
 }

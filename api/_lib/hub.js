@@ -10,6 +10,7 @@ import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
 
 /** Вес действия в «ресурсе COOP» (график активности). Типы, которых здесь нет, весят 0. */
 export const WEIGHTS = {
+  register: 10, // только для графика (в SQL activity_series то же число): регистрация = первый заход
   visit: 2, play: 5, download: 5, fav: 2,
   review: 20, post: 10, card: 25, submit: 25, thank: 40, mod: 25,
 };
