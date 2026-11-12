@@ -4,7 +4,7 @@ const COLS = "id,author_id,author,tg,title,genre,description,version,contact,fil
 const UCOLS = "tg_id,first_name,username,registered_at,last_seen_at,banned,ban_reason,banned_at,banned_by";
 const PROF_COLS = "tg_id,name,color,photo,xp,medals,stats,synced,post_title,post_text,post_at,updated_at";
 const REV_COLS = "id,game_id,author_id,rating,body,created_at,updated_at";
-const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,bg_ref,link,access,sort,dl_off,play_kind,has_play,has_file,submission,created_at,updated_at";
+const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,bg_ref,link,access,sort,dl_off,play_kind,has_play,has_shot,has_file,submission,created_at,updated_at";
 const MOD_COLS = "id,game_id,author_id,author_name,title,description,version,file_name,file_size,status,comment,created_at,updated_at";
 const EDIT_COLS = "id,game_id,author_id,patch,status,comment,created_at,updated_at";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -125,7 +125,7 @@ export function supabaseStore(url, serviceKey) {
       return data;
     },
     async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
-    async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img").eq("id", id).maybeSingle()); },
+    async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img,shot_img").eq("id", id).maybeSingle()); },
     async gamePlay(id) { return ok(await db.from("games").select("play_html").eq("id", id).maybeSingle()); },
     async gameHtml(id) { return ok(await db.from("games").select("file_html").eq("id", id).maybeSingle()); },
     /**

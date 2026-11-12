@@ -1,0 +1,85 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Stick Fight — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#0b0618;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
+<script>
+/* Stick Fight — микро-тест для «телевизора» Coopix: стикмен против волн ботов.
+   ПК: ←/→ или A/D — бег, ↑/W/пробел — прыжок, X/J/клик — выстрел. Телефон: кнопки на экране. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1;
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);S=Math.min(W/320,H/200)};
+addEventListener("resize",fit);fit();
+/* мир 320×200, масштабируется под экран */
+const G=.32,PL=[[0,184,320],[40,132,90],[190,132,90],[110,88,100]];
+const K={};let st="menu",P,E,B,FX,score,best=0,wave,spawnT,shake=0,t0=0,flash=0;
+try{best=+localStorage.getItem("sf.tv")||0}catch(e){}
+const man=(px,col,ai)=>({x:px,y:150,vx:0,vy:0,f:1,hp:ai?1:5,col,ai,cd:0,on:0,run:0,hit:0,jt:0});
+function reset(){P=man(150,"#4df3ff",0);E=[];B=[];FX=[];score=0;wave=0;spawnT=40;st="play";nextWave()}
+function nextWave(){wave++;const n=Math.min(2+wave,8);for(let i=0;i<n;i++)setTimeout(()=>{if(st!=="play")return;const s=Math.random()<.5;const e=man(s?-10:330,"#ff4fa3",1);e.y=40+Math.random()*80;e.f=s?1:-1;e.sp=.55+Math.random()*.35+wave*.04;e.cd=40+Math.random()*60;E.push(e)},i*500)}
+function ground(m){m.on=0;for(const p of PL){if(m.x>p[0]-3&&m.x<p[0]+p[2]+3&&m.vy>=0&&m.y<=p[1]&&m.y+m.vy>=p[1]-.1){m.y=p[1];m.vy=0;m.on=1}}}
+function shoot(m){if(m.cd>0)return;m.cd=m.ai?70+Math.random()*50:11;B.push({x:m.x+m.f*9,y:m.y-15,vx:m.f*(m.ai?3.2:5.5),own:m.ai?1:0,l:90});
+  FX.push({x:m.x+m.f*11,y:m.y-15,r:5,l:5,c:"#fff6a8"});if(!m.ai)beep(880,.03,"square",.05)}
+function burst(px,py,col,n){for(let i=0;i<n;i++)FX.push({x:px,y:py,vx:(Math.random()-.5)*4,vy:-Math.random()*3.5,l:22+Math.random()*14,c:col,p:1})}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function step(){
+  if(st!=="play")return;const L=K.l||K.a,R=K.r||K.d;
+  P.vx=(R?1.9:0)-(L?1.9:0);if(P.vx)P.f=Math.sign(P.vx);
+  if(K.j&&P.on&&!P.jt){P.vy=-6.6;P.jt=1;beep(420,.08,"triangle",.05)}if(!K.j)P.jt=0;
+  if(K.s)shoot(P);
+  for(const m of [P,...E]){m.vy+=G;m.x+=m.vx;ground(m);if(!m.on)m.y+=m.vy;else if(m.vy<0)m.y+=m.vy;m.cd--;m.hit&&m.hit--;if(m.vx)m.run+=.25}
+  P.x=Math.max(6,Math.min(314,P.x));if(P.y>230){P.y=60;P.x=160;P.vy=0;hurt()}
+  for(const e of E){const dx=P.x-e.x;e.f=Math.sign(dx)||1;const far=Math.abs(dx)>70;e.vx=far?e.f*e.sp:(Math.abs(dx)<40?-e.f*e.sp*.6:0);
+    if(e.on&&P.y<e.y-30&&Math.random()<.02)e.vy=-6.2;if(Math.abs(P.y-e.y)<30&&Math.abs(dx)<170)shoot(e);if(e.y>230)e.dead=1}
+  for(const b of B){b.x+=b.vx;b.l--;if(b.x<-10||b.x>330)b.l=0;
+    if(b.own){if(Math.abs(b.x-P.x)<5&&b.y>P.y-26&&b.y<P.y){b.l=0;hurt()}}
+    else for(const e of E){if(!e.dead&&Math.abs(b.x-e.x)<5&&b.y>e.y-26&&b.y<e.y){b.l=0;e.dead=1;score++;shake=5;burst(e.x,e.y-14,"#ff4fa3",14);beep(160,.12,"sawtooth",.06)}}}
+  B=B.filter(b=>b.l>0);E=E.filter(e=>!e.dead);
+  if(!E.length){spawnT--;if(spawnT<=0){spawnT=50;nextWave()}}
+  for(const f of FX){f.l--;if(f.p){f.x+=f.vx;f.y+=f.vy;f.vy+=.18}}FX=FX.filter(f=>f.l>0);
+  shake*=.85;flash&&flash--}
+function hurt(){if(P.hit)return;P.hp--;P.hit=50;shake=8;flash=8;burst(P.x,P.y-14,"#4df3ff",10);beep(110,.2,"square",.07);
+  if(P.hp<=0){st="over";if(score>best){best=score;try{localStorage.setItem("sf.tv",best)}catch(e){}}}}
+/* ---------- рисование ---------- */
+function stick(m,t){const run=m.vx?Math.sin(m.run):0,air=!m.on;x.save();x.translate(m.x,m.y);
+  if(m.hit&&(m.hit>>2)%2){x.globalAlpha=.35}
+  x.strokeStyle=m.col;x.lineWidth=2.4;x.lineCap="round";x.shadowColor=m.col;x.shadowBlur=8;
+  x.beginPath();x.arc(0,-23,4.2,0,7);x.stroke();
+  x.beginPath();x.moveTo(0,-18.5);x.lineTo(0,-8);
+  const a=air?.6:run*.8;x.moveTo(0,-8);x.lineTo(Math.sin(a)*7,0);x.moveTo(0,-8);x.lineTo(-Math.sin(a)*7,0);
+  x.moveTo(0,-15);x.lineTo(m.f*8,-15);x.moveTo(0,-15);x.lineTo(-m.f*4+run*2,-9);x.stroke();
+  x.shadowBlur=0;x.fillStyle="#cfd6ff";x.fillRect(m.f>0?6:-12,-17,6,3);x.restore()}
+function draw(){x.save();x.fillStyle="#0b0618";x.fillRect(0,0,W,H);
+  const ox=(W-320*S)/2+(Math.random()-.5)*shake,oy=(H-200*S)/2+(Math.random()-.5)*shake;x.translate(ox,oy);x.scale(S,S);
+  const g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,"#1c0d3d");g.addColorStop(1,"#0a0518");x.fillStyle=g;x.fillRect(0,0,320,200);
+  x.strokeStyle="rgba(140,90,255,.12)";x.lineWidth=1;for(let i=0;i<=320;i+=20){x.beginPath();x.moveTo(i,0);x.lineTo(i,200);x.stroke()}for(let j=0;j<=200;j+=20){x.beginPath();x.moveTo(0,j);x.lineTo(320,j);x.stroke()}
+  for(const p of PL){x.fillStyle="#2a1a66";x.fillRect(p[0],p[1],p[2],p[0]?6:16);x.fillStyle="#a56bff";x.shadowColor="#a56bff";x.shadowBlur=6;x.fillRect(p[0],p[1],p[2],2);x.shadowBlur=0}
+  if(st!=="menu"){for(const b of B){x.fillStyle=b.own?"#ff8fc6":"#fff6a8";x.shadowColor=x.fillStyle;x.shadowBlur=6;x.fillRect(b.x-3,b.y-1,6,2)}x.shadowBlur=0;
+    for(const e of E)stick(e);stick(P);
+    for(const f of FX){x.globalAlpha=Math.min(1,f.l/10);x.fillStyle=f.c;if(f.p)x.fillRect(f.x,f.y,2,2);else{x.beginPath();x.arc(f.x,f.y,f.r,0,7);x.fill()}}x.globalAlpha=1;
+    x.font="bold 11px monospace";x.fillStyle="#fff";x.textAlign="left";x.fillText("СЧЁТ "+score,8,14);x.textAlign="right";x.fillText("ВОЛНА "+wave,312,14);
+    for(let i=0;i<5;i++){x.fillStyle=i<P.hp?"#4df3ff":"#33236a";x.fillRect(8+i*9,19,7,4)}}
+  if(flash){x.fillStyle="rgba(255,60,120,"+flash/30+")";x.fillRect(0,0,320,200)}
+  if(st!=="play"){x.fillStyle="rgba(8,4,20,.72)";x.fillRect(0,0,320,200);x.textAlign="center";
+    x.font="bold 30px monospace";x.fillStyle="#4df3ff";x.shadowColor="#4df3ff";x.shadowBlur=12;x.fillText("STICK FIGHT",160,70);x.shadowBlur=0;
+    x.font="bold 11px monospace";x.fillStyle="#ff4fa3";x.fillText(st==="over"?"ВЫ ПАЛИ · СЧЁТ "+score+" · РЕКОРД "+best:"МИНИ-ТЕСТ · ВОЛНЫ БОТОВ",160,92);
+    x.fillStyle="#fff";x.fillText((Date.now()/500|0)%2?"":"НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,122);
+    x.fillStyle="#9a8cd0";x.font="9px monospace";x.fillText(TOUCH?"кнопки внизу: бег · прыжок · огонь":"←→ бег · ↑ прыжок · X или клик — огонь",160,146);
+    x.fillText("Полная версия: PvP до 7 игроков — «Скачать» или «Играть»",160,160)}
+  x.restore();if(TOUCH&&st==="play")pads()}
+/* ---------- управление ---------- */
+let TOUCH=matchMedia("(pointer:coarse)").matches;const PADS=[["l","◀",.09],["r","▶",.24],["j","▲",.76],["s","✦",.91]];
+function pads(){const r=Math.max(22,Math.min(W,H)*.09);x.font="bold "+(r*.8|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";
+  for(const [k,t,px] of PADS){const cx=W*px,cy=H-r*1.3;x.globalAlpha=K[k]?.55:.28;x.fillStyle="#a56bff";x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=.9;x.fillStyle="#fff";x.fillText(t,cx,cy+1)}x.globalAlpha=1;x.textBaseline="alphabetic"}
+const touches=new Map();
+function padAt(px,py){const r=Math.max(22,Math.min(W,H)*.09);for(const [k,,f] of PADS){if(Math.hypot(px-W*f,py-(H-r*1.3))<r*1.5)return k}return null}
+function syncPads(){for(const [k] of PADS)K[k]=false;for(const k of touches.values())if(k)K[k]=true}
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(e.pointerType==="touch")TOUCH=true;if(st!=="play"){reset();return}
+  if(e.pointerType==="touch"){touches.set(e.pointerId,padAt(e.offsetX,e.offsetY));syncPads()}else{K.s=true}});
+c.addEventListener("pointermove",e=>{if(touches.has(e.pointerId)){touches.set(e.pointerId,padAt(e.offsetX,e.offsetY));syncPads()}});
+const up=e=>{if(touches.delete(e.pointerId))syncPads();else K.s=false};c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+const KM={ArrowLeft:"l",KeyA:"a",ArrowRight:"r",KeyD:"d",ArrowUp:"j",KeyW:"j",Space:"j",KeyX:"s",KeyJ:"s",Enter:"s"};
+addEventListener("keydown",e=>{const k=KM[e.code];if(!k)return;e.preventDefault();if(st!=="play"&&(k==="s"||k==="j")){reset();return}K[k]=true});
+addEventListener("keyup",e=>{const k=KM[e.code];if(k)K[k]=false});
+/* фиксированный шаг 60 Гц, кадры — по экрану */
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+})();
+</script></body></html>

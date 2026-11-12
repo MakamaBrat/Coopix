@@ -201,10 +201,11 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         if (m !== "GET") return bad();
         const id = String(q.id ?? "");
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
-        const bg = q.kind === "bg", ref = g && (bg ? g.bg_ref : g.cover);
-        if (!g || !IMG_REF.test(ref ?? "") || !isVisible(g, staff) && !(g.author_id != null && Number(g.author_id) === uid)) return json(404, { error: "not_found" });
+        // kind=shot: скриншот игры, который «телевизор» на странице игры показывает, пока игра не запущена
+        const shot = q.kind === "shot", bg = q.kind === "bg", ref = g && (shot ? ((g.has_shot ?? g.shot_img) ? "shot" : "") : bg ? g.bg_ref : g.cover);
+        if (!g || !(shot ? ref : IMG_REF.test(ref ?? "")) || !isVisible(g, staff) && !(g.author_id != null && Number(g.author_id) === uid)) return json(404, { error: "not_found" });
         const row = await store.gameCover(id);
-        const img = bg ? row?.bg_img : row?.cover_img;
+        const img = shot ? row?.shot_img : bg ? row?.bg_img : row?.cover_img;
         return img ? json(200, { ref, img }) : json(404, { error: "not_found" });
       }
       // ---------- моды: список одобренных, файл, предложить свой ----------

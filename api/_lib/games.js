@@ -104,7 +104,7 @@ export const gameWire = (g, uid) => ({
   id: g.id, title: g.title, tags: g.tags, desc: g.description, changes: g.changes, ver: g.version,
   author: g.author_name, item: g.item, cover: g.cover, tint: g.tint ?? null, bg: g.bg, link: g.link,
   access: g.access, sort: g.sort, file: !!g.has_file, dl: !g.dl_off,
-  play: PLAY_KINDS.includes(g.play_kind) ? g.play_kind : "auto", playable: !!(g.has_play ?? g.play_html), bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
+  play: PLAY_KINDS.includes(g.play_kind) ? g.play_kind : "auto", playable: !!(g.has_play ?? g.play_html), shot: !!(g.has_shot ?? g.shot_img), bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
 });
 
 /** Очищенные поля -> патч автора в формате фронта (так он хранится в game_edits и показывается админу) */
