@@ -219,7 +219,7 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
   box-shadow:inset 0 0 0 3px rgba(0,0,0,.4)}
 
 .info{position:absolute;left:478px;top:0;width:236px;height:100%}
-.title{position:absolute;left:0;top:40px;width:100%;font-weight:600;font-size:42px;line-height:48px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.title{position:absolute;left:0;top:32px;width:352px;font-weight:600;font-size:42px;line-height:48px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-transform:uppercase;color:#fff4ee;text-shadow:0 3px 0 rgba(0,0,0,.45)}
 .stars{position:absolute;left:0;top:102px;display:flex;gap:4px}
 .stars button{width:38px;height:38px;display:grid;place-items:center;transition:transform .12s}
@@ -235,6 +235,11 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
   background:linear-gradient(180deg,color-mix(in srgb,var(--c1) 82%,#fff),var(--c1) 70%)}
 .play svg{position:relative;width:58px;height:58px;fill:#140a28;margin-left:6px}
 .play:hover{filter:brightness(1.12)}
+/* избранная карточка (свайп влево): ▶ залитая, иначе тёмная кнопка с цветным ▶; при добавлении заливка «наливается» снизу */
+.card .play[aria-pressed=false]::before{background:#140a28}.card .play[aria-pressed=false] svg{fill:var(--c1)}
+.card .play[aria-pressed=true]::before{animation:pfill .38s cubic-bezier(.2,.9,.3,1)}@keyframes pfill{from{transform:scaleY(0);transform-origin:50% 100%}to{transform:scaleY(1);transform-origin:50% 100%}}
+.card.isfav .shell-in{box-shadow:inset 0 0 60px color-mix(in srgb,var(--c1) 38%,transparent);background:color-mix(in srgb,var(--c1) 14%,#0b0716)}
+.card{touch-action:pan-y}
 .play:active{transform:translateY(5px) scale(.97)}
 .edit{position:absolute;left:12px;top:8px;z-index:6;width:46px;height:46px;display:grid;place-items:center;border-radius:50%;
   background:rgba(8,4,18,.8);color:var(--c3);border:2px solid var(--c1);opacity:0;transform:scale(.8);transition:.2s}
@@ -1268,6 +1273,9 @@ async function loadSprites(){
       const lum=new Float32Array(w*h),al=new Uint8Array(w*h);
       for(let i=0;i<w*h;i++){lum[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;al[i]=d[i*4+3]}
       SPR[k]={w,h,lum,al,src};res()};im.onerror=()=>res();im.src=src}))); } /* без связи картинка не загрузится: не вешаем старт */
+/* название на карточке: крупно (42), а длинное плавно уменьшается до 30, чтобы помещалось целиком без «…» */
+function fitTitle(el){const go=()=>{if(!el.isConnected||!el.clientWidth)return;el.style.fontSize="";let fs=42;while(el.scrollWidth>el.clientWidth+1&&fs>30){fs-=1;el.style.fontSize=fs+"px"}};
+  go();requestAnimationFrame(go);document.fonts&&document.fonts.ready.then(go)}
 const ITEMS={
   cassette:{label:"Кассета",side:"left",case:"case_a",ov:.21},
   cd:{label:"CD",side:"left",case:"case_b",ov:.2},
@@ -1528,7 +1536,6 @@ class Card{
       <canvas class="pt" width="453" height="110"></canvas>
       <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
       <button class="play" aria-label="Launch">${IC.play}</button>
-      ${o.preview?"":`<button class="fav" type="button" aria-label="Favorite" aria-pressed="false">${IC.favo}</button>`}
       ${o.preview?"":`<button class="edit" aria-label="Edit">${IC.edit}</button>`}
     </div>`;
     host.append(el);
@@ -1540,6 +1547,15 @@ class Card{
     if(!o.preview){this.io=new IntersectionObserver(e=>{this.vis=e[0].isIntersecting;this.el.classList.toggle("off",!this.vis);this.syncFx();this.cdRun()},{rootMargin:"160px"});
       this.io2=new IntersectionObserver(e=>{if(!e[0].isIntersecting&&this.fx)this.fxOff()},{rootMargin:"800px"});this.io2.observe(el);this.io.observe(el)}
     this.r.play.addEventListener("click",e=>{e.stopPropagation();this.cdKick();o.onPlay&&o.onPlay(this)});
+    /* свайп карточки влево — в избранное / из избранного (карточка чуть уезжает и возвращается); после свайпа клик не открывает игру */
+    if(o.onFav){let sx=0,sy=0,dx=0,on=false,swiped=false;
+      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;sx=e.clientX;sy=e.clientY;dx=0},{passive:true});
+      el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;el.style.transform="";return}
+        if(dx<0)el.style.transform=`translateX(${Math.max(dx,-90)*.6}px)`},{passive:true});
+      const end=()=>{if(!on)return;on=false;el.style.transition="transform .25s";el.style.transform="";setTimeout(()=>el.style.transition="",260);
+        if(dx<-60){swiped=true;o.onFav(this);this.favLook(!this.m.fav)}};
+      el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{on=false;el.style.transform=""});el.addEventListener("pointerleave",end);
+      el.addEventListener("click",e=>{if(swiped){swiped=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
     el.addEventListener("pointerenter",()=>this.cdRate(4));el.addEventListener("pointerleave",()=>this.cdRate(1));el.addEventListener("click",()=>this.cdKick());
     this.r.edit&&this.r.edit.addEventListener("click",e=>{e.stopPropagation();o.onEdit&&o.onEdit(this)});
     this.r.fav&&this.r.fav.addEventListener("click",e=>{e.stopPropagation();o.onFav&&o.onFav(this)});
@@ -1667,6 +1683,8 @@ class Card{
       {duration:inside?380:640,easing:inside?"cubic-bezier(.6,0,.9,.5)":"cubic-bezier(.2,1.25,.35,1)",fill:"forwards"});
     inside?sfx.in():sfx.out();
     return an.finished.then(()=>{el.style.transform=`translateX(${to}px)`;an.cancel()})}
+  /* вид избранной карточки: кнопка ▶ залита, фон карточки слегка в цвет игры */
+  favLook(on){this.r.play.setAttribute("aria-pressed",!!on);this.el.classList.toggle("isfav",!!on)}
   tintTo(pal,instant){
     if(instant||RM){this.pal=pal;this.pt=null;this.paint();return}
     this.pt={from:this.pal,to:pal,t0:performance.now(),d:800}}
@@ -1679,8 +1697,9 @@ class Card{
     this.iart=null;if(m.item==="cards"&&m.iart&&SUB_API){const me=this,id=m.id;itemArt(id).then(im=>{if(im&&me.m&&me.m.id===id&&me.m.item==="cards"){me.iart=im;me.paint()}})}
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
-    this.r.title.textContent=m.title||"Без названия";this.r.pill.textContent=m.genre;this.setStars();
+    this.r.title.textContent=m.title||"Без названия";fitTitle(this.r.title);this.r.pill.textContent=m.genre;this.setStars();
     if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
+    if(this.o&&this.o.onFav)this.favLook(!!m.fav);
     if(first){
       this.layout();this.pal=pal;this.paint();await this.drawCover(null,false);
       this.r.item.style.transform=`translateX(${this.dx}px)`;this.pulse=0;
@@ -1841,7 +1860,7 @@ function filterList(){
 qIn.addEventListener("input",()=>{SQ=qIn.value;filterList()});
 qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";filterList()}else if(e.key==="Enter")qIn.blur()});
 qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
-function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Нажмите сердечко на карточке, чтобы добавить игру.":""}
+function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Смахните карточку игры влево, чтобы добавить её сюда.":""}
 async function render(intro){
   musicSync();
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);

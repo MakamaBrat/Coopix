@@ -69,7 +69,7 @@ function draw(){const d=c.width/W;x.setTransform(d,0,0,d,0,0);x.fillStyle="#f7f4
   if(st==="play"){pt((tm/1000).toFixed(1)+" С",8,14,11,"#222","left");if(best)pt("РЕКОРД "+best.toFixed(1),312,14,11,"#222","right")}
   if(st!=="play"){x.save();x.translate(OX,OY);x.scale(S,S);x.fillStyle="rgba(247,244,236,"+(st==="menu"?.55:.75)+")";x.fillRect(0,0,320,200);x.restore();
     pt("GRAVITY",160,62,30,"#fff","center","#222");pt("FIGHT",160,92,30,"#e33","center","#222");
-    pt(st==="over"?(crash?"ПАДЕНИЕ! ДЕРЖИТЕ БАЛАНС":"ФИНИШ · "+(tm/1000).toFixed(1)+" С"+(best?" · РЕКОРД "+best.toFixed(1):")):"МИНИ-ТЕСТ · ОДНА ТРАССА",160,112,11,"#2457c5");
+    pt(st==="over"?(crash?"ПАДЕНИЕ! ДЕРЖИТЕ БАЛАНС":"ФИНИШ · "+(tm/1000).toFixed(1)+" С"+(best?" · РЕКОРД "+best.toFixed(1):"")):"МИНИ-ТЕСТ · ОДНА ТРАССА",160,112,11,"#2457c5");
     if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ЕХАТЬ",160,138,11,"#222");
     pt(TOUCH?"КНОПКИ: ◀▶ НАКЛОН · ГАЗ · ТОРМОЗ":"↑ ГАЗ · ↓ ТОРМОЗ · ←→ НАКЛОН",160,160,9,"#555");
     pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,174,9,"#555")}
