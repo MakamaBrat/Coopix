@@ -577,7 +577,14 @@ async function viewSite(root) {
       <span class="lbl">Кнопка «Чатик»</span><input class="in" id="st" type="url" maxlength="190" value="${esc(s.chat)}" placeholder="https://t.me/…">
       <div class="err" id="se"></div>
       <div class="row" style="margin-top:12px"><button class="btn" id="ss" type="button">Сохранить</button></div></div>
-    <p class="hint">Только ссылки https:// (например https://t.me/ваш_канал). Игроки увидят новые ссылки после обновления маркета.</p>`;
+    <p class="hint">Только ссылки https:// (например https://t.me/ваш_канал). Игроки увидят новые ссылки после обновления маркета.</p>
+    <div class="sec-h" style="margin-top:22px"><h2>Оформление</h2></div>
+    <div class="panel" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px"><b>❄️ Зимняя версия сайта</b><div class="hint" style="margin:2px 0 0" id="wh"></div></div>
+      <button class="btn" id="wt" type="button"></button></div>`;
+  const wdraw = () => { $("#wh").textContent = s.winter ? "Включено: падает снег, на окнах снежные шапки и гирлянда. В лёгкой версии снег не идёт." : "Выключено: обычное оформление."; const b = $("#wt"); b.textContent = s.winter ? "Выключить" : "Включить"; b.className = "btn " + (s.winter ? "bad" : "ok"); };
+  wdraw();
+  $("#wt").onclick = async () => { try { s = await api("/admin?r=site", { method: "PUT", body: { winter: !s.winter } }); toast(s.winter ? "Зимняя версия включена" : "Зимняя версия выключена"); wdraw(); } catch (e) { toast(errText(e), true); } };
   $("#ss").onclick = async () => {
     const channel = $("#sc").value.trim(), chat = $("#st").value.trim(); $("#se").textContent = "";
     if (!LINK.test(channel) || !LINK.test(chat)) { $("#se").textContent = ERR.bad_link; return; }

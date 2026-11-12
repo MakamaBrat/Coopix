@@ -24,6 +24,7 @@ const siteOf = (v) => ({
   dlOff: v?.dlOff === true,
   dlWait: v?.dlWait === true,     // скачивание только через DL_WAIT_H часов после регистрации игрока
   playWait: v?.playWait === true, // играть только через PLAY_WAIT_M минут после регистрации
+  winter: v?.winter === true,     // зимняя версия сайта: снег и новогодний декор
 });
 const DL_WAIT_H = 12, PLAY_WAIT_M = 30;
 const COLOR = /^#[0-9a-f]{6}$/i;
@@ -410,6 +411,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
         if (b.dlOff !== undefined) { if (typeof b.dlOff !== "boolean") return json(400, { error: "bad_json" }); next.dlOff = b.dlOff; }
         if (b.dlWait !== undefined) { if (typeof b.dlWait !== "boolean") return json(400, { error: "bad_json" }); next.dlWait = b.dlWait; }
         if (b.playWait !== undefined) { if (typeof b.playWait !== "boolean") return json(400, { error: "bad_json" }); next.playWait = b.playWait; }
+        if (b.winter !== undefined) { if (typeof b.winter !== "boolean") return json(400, { error: "bad_json" }); next.winter = b.winter; }
         await store.setSetting("site", next, uid);
         return json(200, next);
       }
