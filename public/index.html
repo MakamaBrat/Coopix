@@ -179,9 +179,10 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .fx{position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated}
 .shell-in::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(90deg,transparent 52%,rgba(7,4,15,.78) 100%),linear-gradient(180deg,rgba(255,255,255,.08),transparent 22%,transparent 80%,rgba(0,0,0,.35))}
-.stripes{position:absolute;right:20px;top:14px;display:flex;gap:11px;transform:skewX(-34deg);pointer-events:none}
-.stripes b{width:14px;height:26px;background:var(--c1);opacity:.9}
-.stripes b:nth-child(2){opacity:.65}.stripes b:nth-child(3){opacity:.4}
+/* полоски = уровень поддержки игры звёздами (0–5, как золотые блоки); внутри карточки, в правом нижнем углу под кнопкой ▶ */
+.stripes{position:absolute;right:34px;bottom:12px;display:flex;gap:7px;transform:skewX(-34deg);pointer-events:none}
+.stripes b{width:10px;height:18px;background:var(--c1);opacity:.95;box-shadow:0 0 8px var(--glow)}
+.stripes b:nth-child(2){opacity:.82}.stripes b:nth-child(3){opacity:.68}.stripes b:nth-child(4){opacity:.55}.stripes b:nth-child(5){opacity:.42}
 
 .slot{position:absolute}
 .slot>canvas,.slot .bob>canvas{filter:drop-shadow(0 0 1px color-mix(in srgb,var(--c3) 80%,transparent)) drop-shadow(0 0 9px color-mix(in srgb,var(--c1) 60%,transparent)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
@@ -240,6 +241,14 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .card .play[aria-pressed=true]::before{animation:pfill .38s cubic-bezier(.2,.9,.3,1)}@keyframes pfill{from{transform:scaleY(0);transform-origin:50% 100%}to{transform:scaleY(1);transform-origin:50% 100%}}
 .card.isfav .shell-in{box-shadow:inset 0 0 60px color-mix(in srgb,var(--c1) 38%,transparent);background:color-mix(in srgb,var(--c1) 14%,#0b0716)}
 .card{touch-action:pan-y}
+/* подсказка свайпа: ♥ справа из-под карточки */
+.swh{position:absolute;right:6px;top:50%;z-index:0;display:flex;flex-direction:column;align-items:center;gap:4px;transform:translateY(-50%) scale(calc(.7 + var(--t,0)*.3));opacity:0;pointer-events:none;color:#ff4f8b;transition:transform .12s}
+.swh i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:3px solid currentColor;background:color-mix(in srgb,currentColor calc(var(--t,0)*35%),transparent)}
+.swh i svg{width:24px;height:24px;fill:currentColor}
+.swh b{font:700 11px/1 "Tektur",ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.swh.on i{background:currentColor;box-shadow:0 0 18px currentColor;animation:swb .3s cubic-bezier(.2,1.8,.4,1)}.swh.on i svg{fill:#140a28}
+@keyframes swb{40%{transform:scale(1.3)}}
+.cardbox>.card{position:relative;z-index:1}
 /* эффект добавления в избранное */
 .fvfx{position:absolute;inset:0;z-index:7;pointer-events:none;overflow:visible}
 .fv-wave{position:absolute;left:805px;top:134px;width:40px;height:40px;margin:-20px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--c1) 70%,#fff) 0,color-mix(in srgb,var(--c1) 45%,transparent) 40%,transparent 70%);animation:fvw .8s ease-out forwards}
@@ -383,6 +392,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
   background:#1a1040;border:3px solid var(--acc);color:#fff;transition:transform .35s cubic-bezier(.2,1.2,.3,1);
   clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
 .toast.on{transform:translate(-50%,0);visibility:visible}
+.toast.act{pointer-events:auto;cursor:pointer}.toast .tact{margin-left:10px;color:#ffd84d;text-decoration:underline;text-underline-offset:3px;font-weight:700}
 .toast .bar{display:block;margin-top:8px;height:8px;background:#2a1a66;position:relative;overflow:hidden}
 .toast .bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,var(--acc) 0 8px,transparent 8px 10px);transform:translateX(-100%)}
 .toast.load .bar::after{animation:load 1.1s steps(12) forwards}
@@ -1541,7 +1551,7 @@ class Card{
     const el=this.el=document.createElement("article");el.className="card";
     el.innerHTML=`<div class="stage">
       <div class="shell"><div class="shell-in"><i class="bgi"></i><canvas class="fx"></canvas><i class="beam"></i></div></div>
-      <i class="stripes"><b></b><b></b><b></b></i>
+      <i class="stripes"></i>
       <i class="halo"></i><i class="floor"></i>
       <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="cdw"><canvas></canvas></div><div class="cdw"><canvas></canvas></div><div class="shine"></div><div class="gl"></div><div class="noise"></div></div></div></div>
       <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="512" height="512"></canvas><canvas class="b" width="512" height="512"></canvas></div><div class="gl"></div></div>
@@ -1560,13 +1570,21 @@ class Card{
       this.io2=new IntersectionObserver(e=>{if(!e[0].isIntersecting&&this.fx)this.fxOff()},{rootMargin:"800px"});this.io2.observe(el);this.io.observe(el)}
     this.r.play.addEventListener("click",e=>{e.stopPropagation();this.cdKick();o.onPlay&&o.onPlay(this)});
     /* свайп карточки влево — в избранное / из избранного (карточка чуть уезжает и возвращается); после свайпа клик не открывает игру */
-    if(o.onFav){let sx=0,sy=0,dx=0,on=false,swiped=false;
-      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;sx=e.clientX;sy=e.clientY;dx=0},{passive:true});
-      el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;el.style.transform="";return}
-        if(dx<0)el.style.transform=`translateX(${Math.max(dx,-90)*.6}px)`},{passive:true});
-      const end=()=>{if(!on)return;on=false;el.style.transition="transform .25s";el.style.transform="";setTimeout(()=>el.style.transition="",260);
-        if(dx<-60){swiped=true;const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)this.favFx()}};
-      el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{on=false;el.style.transform=""});el.addEventListener("pointerleave",end);
+    /* свайп влево — в избранное: карточка тянется с «резиной» и лёгким наклоном, справа проявляется ♥ «В избранное»,
+       у порога значок наливается цветом и подпрыгивает; после отпускания карточка возвращается пружиной */
+    if(o.onFav){let sx=0,sy=0,dx=0,on=false,swiped=false,armed=false,hint=null,raf=0;const TH=70;
+      const mkHint=()=>{if(hint)return hint;hint=document.createElement("div");hint.className="swh";hint.innerHTML=`<i>${IC.favt}</i><b></b>`;host.append(hint);return hint};
+      const paint=()=>{raf=0;const pull=dx<0?-dx:0,r=pull<TH?pull:TH+(pull-TH)*.35,t=Math.min(1,pull/TH);
+        el.style.transform=`translateX(${-r}px) rotate(${-r*.025}deg)`;const hn=mkHint();hn.style.opacity=Math.min(1,t*1.4);hn.style.setProperty("--t",t);
+        hn.querySelector("b").textContent=this.m.fav?"Убрать":"В избранное";const now=pull>=TH;if(now!==armed){armed=now;hn.classList.toggle("on",now);if(now)sfx.tap()}};
+      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none"},{passive:true});
+      el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;
+        if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;back();return}if(!raf)raf=requestAnimationFrame(paint)},{passive:true});
+      const back=()=>{cancelAnimationFrame(raf);raf=0;el.style.transition="transform .45s cubic-bezier(.2,1.5,.4,1)";el.style.transform="";
+        if(hint){const hn=hint;hint=null;hn.style.transition="opacity .25s";hn.style.opacity=0;setTimeout(()=>hn.remove(),280)}setTimeout(()=>el.style.transition="",460)};
+      const end=()=>{if(!on)return;on=false;const go=dx<-TH;back();
+        if(go){swiped=true;const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)setTimeout(()=>this.favFx(),120)}};
+      el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{on=false;back()});el.addEventListener("pointerleave",end);
       el.addEventListener("click",e=>{if(swiped){swiped=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
     el.addEventListener("pointerenter",()=>this.cdRate(4));el.addEventListener("pointerleave",()=>this.cdRate(1));el.addEventListener("click",()=>this.cdKick());
     this.r.edit&&this.r.edit.addEventListener("click",e=>{e.stopPropagation();o.onEdit&&o.onEdit(this)});
@@ -1678,6 +1696,7 @@ class Card{
     box.setAttribute("role","img");box.setAttribute("aria-label",t);box.title=t;
     for(let i=1;i<=5;i++){const b=document.createElement("span");b.innerHTML=starSvg(i<=n);box.append(b)}
     /* поддержка: абстрактная «цена» игры — 1–5 золотых блоков в строке жанра; точная сумма в подсказке и на странице игры */
+    {const sp=this.el.querySelector(".stripes"),k=g.stars?goldLv(g.stars):0;if(sp&&sp.childElementCount!==k)sp.innerHTML="<b></b>".repeat(k)}
     const info=this.r.pill.parentElement;let su=info.querySelector(".sup");
     if(g.stars){if(!su){su=document.createElement("span");su.className="sup";info.append(su)}su.title="Поддержка авторов: "+g.stars+" звёзд Telegram";su.setAttribute("aria-label",su.title);su.innerHTML=ingots(g.stars);info.classList.add("hsup")}
     else if(su){su.remove();info.classList.remove("hsup")}}
@@ -1797,7 +1816,15 @@ function planetTick(now){if(Q===0&&lastPl)return;if(!PGO&&now-lastPl>(Q===2?260:
 
 /* ============ toast ============ */
 const toastEl=$("#toast");let toastT;
-function toast(msg,load){clearTimeout(toastT);toastEl.className="toast";void toastEl.offsetWidth;toastEl.innerHTML=`${msg}${load?'<span class="bar"></span>':""}`;toastEl.classList.add("on");if(load)toastEl.classList.add("load");toastT=setTimeout(()=>toastEl.classList.remove("on"),load?1900:2200)}
+/* сообщение с кнопкой действия (например «Отменить»): нажатие на сообщение выполняет действие */
+function undoToast(msg,label,fn){clearTimeout(toastT);toastEl.className="toast";void toastEl.offsetWidth;toastEl.innerHTML=`${msg} <u class="tact">${label}</u>`;toastEl.classList.add("on","act");
+  toastEl.onclick=()=>{toastEl.onclick=null;toastEl.classList.remove("on","act");clearTimeout(toastT);fn()};toastT=setTimeout(()=>{toastEl.classList.remove("on","act");toastEl.onclick=null},3800)}
+/* избранное: одно место для карточки и страницы игры; при удалении — «Отменить» в сообщении */
+function setFav(id,on,card){const d=DATA.find(x=>x.id===id);if(!d||!!d.fav===!!on)return;d.fav=!!on;persist();profFav(d.id,d.fav);sfx.tap();
+  const redraw=()=>{if(view===1&&TABS[tab][0]==="favt")render();else{const c=card&&card.m&&card.m.id===id?card:LIVE.find(x=>x.m&&x.m.id===id);c&&c.set({...d})}
+    const pf=PG&&PG.m.id===id&&pageEl.querySelector("[data-fav]");pf&&pf.setAttribute("aria-pressed",!!d.fav)};
+  redraw();if(on)toast("Добавлено в избранное");else undoToast("Убрано из избранного","Отменить",()=>{setFav(id,true,card);const c=LIVE.find(x=>x.m&&x.m.id===id);c&&c.favLook(true)})}
+function toast(msg,load){toastEl.onclick=null;toastEl.classList.remove("act");clearTimeout(toastT);toastEl.className="toast";void toastEl.offsetWidth;toastEl.innerHTML=`${msg}${load?'<span class="bar"></span>':""}`;toastEl.classList.add("on");if(load)toastEl.classList.add("load");toastT=setTimeout(()=>toastEl.classList.remove("on"),load?1900:2200)}
 
 /* ============ data ============ */
 const DEFAULTS=[
@@ -1858,7 +1885,8 @@ $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   goView(i)});
 /* поиск из страницы игры: закрываем страницу, открываем маркет со всеми играми и подставляем запрос */
 function searchFor(q){backClick();setTimeout(()=>{SQ=q;qIn.value=q;if(view!==1||TABS[tab][0]==="favt"){view=1;tab=0;sync();render()}else filterList();scrollTo({top:0,behavior:RM?"auto":"smooth"})},60)}
-function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
+/* раздел игр открывается сразу на «Избранном», если там что-то есть */
+function goView(i){view=i;tab=i===1&&DATA.some(d=>d.fav)?Math.max(0,TABS.findIndex(t=>t[0]==="favt")):0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
@@ -1879,8 +1907,12 @@ qIn.addEventListener("input",()=>{SQ=qIn.value;filterList()});
 qIn.addEventListener("keydown",e=>{if(e.key==="Escape"&&SQ){SQ="";qIn.value="";filterList()}else if(e.key==="Enter")qIn.blur()});
 qX.addEventListener("click",()=>{sfx.tap();SQ="";qIn.value="";filterList();qIn.focus()});
 function emptyMsg(){return view===1&&TABS[tab][0]==="favt"?"В избранном пусто. Смахните карточку игры влево, чтобы добавить её сюда.":""}
+let LAST_RK="";
 async function render(intro){
   musicSync();
+  /* перерисовка того же списка (свежие цифры с сервера, избранное и т. п.) не прыгает наверх: держим высоту и возвращаем прокрутку */
+  const rk=view+":"+tab,keepY=rk===LAST_RK?scrollY:null;LAST_RK=rk;
+  if(keepY!=null){listEl.style.minHeight=listEl.offsetHeight+"px";requestAnimationFrame(()=>requestAnimationFrame(()=>{scrollTo(0,keepY);setTimeout(()=>listEl.style.minHeight="",600)}))}
   LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML="";clearInterval(homeT);
   document.body.classList.toggle("onhome",view===0);
   document.body.classList.toggle("onclub",view===2);
@@ -1896,7 +1928,7 @@ async function render(intro){
   if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(TABS[tab][0]==="favt")render();else c.set({...d})},
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>setFav(c.m.id,!DATA.find(x=>x.id===c.m.id).fav,c),
       onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
     if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
@@ -2673,7 +2705,7 @@ async function openPage(id,opt){
   pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
   PGO=true;musicSync();dlPaint(m);pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",e=>{const b=e.currentTarget,d=DATA.find(x=>x.id===m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);b.setAttribute("aria-pressed",!!d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(view===1)render()});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",()=>{const d=DATA.find(x=>x.id===m.id);setFav(m.id,!d.fav)});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
