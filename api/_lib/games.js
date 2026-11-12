@@ -4,7 +4,7 @@
  */
 import { createHash } from "node:crypto";
 
-export const ITEMS = ["cassette", "cd", "floppy", "handheld"];
+export const ITEMS = ["cassette", "cd", "floppy", "handheld", "cards"];
 export const COVERS = ["b:retro", "b:space", "b:toxic", "b:blocks"];
 export const BGS = ["auto", "0", "1", "2", "3"];
 export const ACCESS = ["public", "staff", "off"];
