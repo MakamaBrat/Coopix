@@ -11,9 +11,9 @@
 function mq(q){try{return matchMedia(q).matches}catch(e){return false}}
 var P=mq("(pointer:coarse)")&&Math.min(screen.width||9999,screen.height||9999)<600;
 function land(){var o=screen.orientation;if(o&&typeof o.type==="string")return o.type.indexOf("landscape")===0;if(typeof window.orientation==="number")return Math.abs(window.orientation)===90;return innerWidth>innerHeight*1.2}
-function lock(){if(!P)return;try{var o=screen.orientation;if(o&&o.lock)o.lock("portrait").catch(function(){})}catch(e){}
+function lock(){if(!P||window.__gm)return;try{var o=screen.orientation;if(o&&o.lock)o.lock("portrait").catch(function(){})}catch(e){}
   try{var w=window.Telegram&&Telegram.WebApp;if(w&&w.lockOrientation&&!land())w.lockOrientation()}catch(e){}}
-function upd(){de.classList.toggle("phone",P);de.classList.toggle("desk",!P&&innerWidth>=900);de.classList.toggle("rotate",P&&land())}
+function upd(){de.classList.toggle("phone",P);de.classList.toggle("desk",!P&&innerWidth>=900);de.classList.toggle("rotate",P&&land()&&!window.__gm)}
 upd();addEventListener("resize",upd);addEventListener("orientationchange",upd);
 if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener("change",upd);
 lock();document.addEventListener("DOMContentLoaded",lock);addEventListener("pointerdown",lock,{once:true,passive:true});
@@ -243,8 +243,12 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .card .play[aria-pressed=true]::before{animation:pfill .38s cubic-bezier(.2,.9,.3,1)}@keyframes pfill{from{transform:scaleY(0);transform-origin:50% 100%}to{transform:scaleY(1);transform-origin:50% 100%}}
 .card.isfav .shell-in{box-shadow:inset 0 0 60px color-mix(in srgb,var(--c1) 38%,transparent);background:color-mix(in srgb,var(--c1) 14%,#0b0716)}
 .card{touch-action:pan-y}
+/* режим игры: от магазина остаётся только окно игры на весь экран */
+body.gamemode>*:not(.gmv){display:none!important}
+.gmv{position:fixed;inset:0;z-index:100000;background:#000}.gmv iframe{display:block;width:100%;height:100%;border:0;background:#000}
 /* платные игры: золотая рамка, ценник «⭐ N» справа сверху; купленные — «✓ КУПЛЕНО» */
 .card.paid .shell{background:linear-gradient(120deg,#ffe27a,#c8871a 35%,#fff1a8 55%,#b5780f 80%,#ffd84d)}
+.card.paid .shell-in{top:6px;left:6px;right:6px;bottom:6px} /* у платной рамка видна: золотой край 6px */
 .card.paid::before{box-shadow:0 0 calc(28px*var(--k) + 10px) calc(3px*var(--k)) rgba(255,190,40,.45)}
 .ptag{position:absolute;right:30px;top:12px;z-index:6;padding:4px 12px;font:700 22px/1 "Tektur",ui-monospace,monospace;letter-spacing:.04em;color:#2a1800;background:linear-gradient(#ffe27a,#ffb51f);border:3px solid #2a1800;box-shadow:3px 3px 0 #2a1800;transform:rotate(3deg);pointer-events:none}
 .card.owned .ptag{background:linear-gradient(#a6ffc9,#3fd27f);color:#062a15;border-color:#062a15;box-shadow:3px 3px 0 #062a15;font-size:18px}
@@ -1583,14 +1587,16 @@ class Card{
       const paint=()=>{raf=0;const pull=dx<0?-dx:0,r=pull<TH?pull:TH+(pull-TH)*.35,t=Math.min(1,pull/TH);
         el.style.transform=`translateX(${-r}px) rotate(${-r*.025}deg)`;const hn=mkHint();hn.style.opacity=Math.min(1,t*1.4);hn.style.setProperty("--t",t);
         hn.querySelector("b").textContent=isLocked(this.m)?"Купить ⭐"+this.m.price:this.m.fav?"Убрать":"В избранное";hn.classList.toggle("buy",isLocked(this.m));const now=pull>=TH;if(now!==armed){armed=now;hn.classList.toggle("on",now);if(now)sfx.tap()}};
-      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none"},{passive:true});
+      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none";
+        /* палец «держится» за карточку до отпускания (иначе свайп обрывался, когда палец выходил за край), а сама карточка на время свайпа — отдельный слой */
+        try{el.setPointerCapture(e.pointerId)}catch(_){}el.style.willChange="transform"},{passive:true});
       el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;
         if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;back();return}if(!raf)raf=requestAnimationFrame(paint)},{passive:true});
-      const back=()=>{cancelAnimationFrame(raf);raf=0;el.style.transition="transform .45s cubic-bezier(.2,1.5,.4,1)";el.style.transform="";
+      const back=()=>{cancelAnimationFrame(raf);raf=0;el.style.transition="transform .45s cubic-bezier(.2,1.5,.4,1)";el.style.transform="";setTimeout(()=>{if(!on)el.style.willChange=""},480);
         if(hint){const hn=hint;hint=null;hn.style.transition="opacity .25s";hn.style.opacity=0;setTimeout(()=>hn.remove(),280)}setTimeout(()=>el.style.transition="",460)};
       const end=()=>{if(!on)return;on=false;const go=dx<-TH;back();
         if(go){swiped=true;if(isLocked(this.m)){buyGame(this.m.id,this);return}const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)setTimeout(()=>this.favFx(),120)}};
-      el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{on=false;back()});el.addEventListener("pointerleave",end);
+      el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{if(on){on=false;back()}});el.addEventListener("lostpointercapture",end);
       el.addEventListener("click",e=>{if(swiped){swiped=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
     el.addEventListener("pointerenter",()=>this.cdRate(4));el.addEventListener("pointerleave",()=>this.cdRate(1));el.addEventListener("click",()=>this.cdKick());
     this.r.edit&&this.r.edit.addEventListener("click",e=>{e.stopPropagation();o.onEdit&&o.onEdit(this)});
@@ -1785,6 +1791,7 @@ function gov(now){
   if(++GN<=45)return;GT+=d;
   if(GN>=105){const avg=GT/60;GT=0;GN=0;if(avg>38){Q=avg>65?0:Q-1;applyQ();bgResize();for(const c of CARDS)c.applyQ();if(Q===0)toast("Включён облегчённый режим: эффекты выключены ради плавности")}}}
 function frame(now){
+  if(window.__gm)return; /* идёт игра: магазин полностью остановлен */
   const t=(now-T0)/1000;gov(now);
   if(!PGO&&now-LC>=FI-3){LC=now;for(const c of CARDS)if(c.m)c.tick(now,t)}
   drawBg(now);planetTick(now);requestAnimationFrame(frame)}
@@ -1962,8 +1969,9 @@ async function render(intro){
 }
 /* ============ сортировка и фильтры магазина ============
    Два разных рейтинга: оценки в отзывах (звёзды 1–5) и поддержка авторов (звёзды Telegram, золотые блоки). */
-const SORTS=[["def","Как в каталоге"],["rate","Оценки отзывов"],["sup","Поддержка авторов"],["pop","Больше всего играли"],["rev","Больше отзывов"]];
-let FL=Object.assign({sort:"def",r4:0,sup:0},store.get("am.fl.v1",{}));const saveFL=()=>store.set("am.fl.v1",FL);
+const SORTS=[["def","Как в каталоге"],["rate","По рейтингу"],["sup","Поддержка авторов"],["pop","Больше всего играли"],["rev","Больше отзывов"]];
+/* сортировка по умолчанию — по рейтингу (новый ключ v2: старый сохранённый «как в каталоге» не мешает) */
+let FL=Object.assign({sort:"rate",r4:0,sup:0},store.get("am.fl.v2",{}));const saveFL=()=>store.set("am.fl.v2",FL);
 const passF=m=>{const g=gstat(m);return(!FL.r4||(g.rated||g.favs)&&g.rating>=4)&&(!FL.sup||g.stars>0)};
 function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat(m);
     return FL.sort==="rate"?[g.rated||g.favs?g.rating:-1,g.rated+(g.favs||0)]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.pp,g.dp]:[g.reviews,g.rating]};
@@ -2730,7 +2738,7 @@ async function openPage(id,opt){
   pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
   PGO=true;musicSync();dlPaint(m);payPaint(m);pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
-  try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",()=>{const d=DATA.find(x=>x.id===m.id);setFav(m.id,!d.fav)});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
+  try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",()=>{const d=DATA.find(x=>x.id===m.id);if(isLocked(d)){buyGame(m.id);return}setFav(m.id,!d.fav)}); /* некупленная платная: сердечко = покупка */$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
     if(e.repeat&&(k==="U"||k==="S"))return;if(k==="L")PG.inp.l=1;if(k==="R")PG.inp.r=1;PG.inp.q.push({t:"k",k})};
@@ -2993,8 +3001,23 @@ async function edStatus(id){const el=$("#edst");if(!el)return;
     el.textContent=" "+(e.status==="new"?"Прошлая правка ещё на проверке: новая её заменит.":e.status==="approved"?"Последняя правка одобрена.":"Последняя правка отклонена"+(e.comment?": "+e.comment:"."));
     el.className="st-"+e.status}catch(e){}}
 /* игра игрока (HTML-файл): открываем в изолированном iframe, запуск считается как «Играли» */
+/* запуск игры: магазин закрывается целиком (карточки, фоны, музыка, цикл отрисовки), на экране только игра — все ресурсы ей.
+   Кнопки «Закрыть» нет: выход — «Назад» в Telegram или в браузере, магазин загружается заново. Во время игры можно повернуть экран. */
+function gameMode(html,title){window.__gm=1;
+  try{MUS.el&&MUS.el.pause();MUS.unlocked=false}catch(e){}
+  try{LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML=""}catch(e){}
+  const de=document.documentElement;de.classList.remove("rotate");
+  try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}
+  const TGW=window.Telegram&&Telegram.WebApp;try{TGW&&TGW.unlockOrientation&&TGW.unlockOrientation()}catch(e){}
+  const o=document.createElement("div");o.className="gmv";const f=document.createElement("iframe");
+  f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=title||"Игра";f.srcdoc=html;o.append(f);
+  document.body.append(o);document.body.classList.add("gamemode");document.body.style.overflow="hidden";
+  const out=()=>location.reload();
+  try{if(TGW&&TGW.BackButton){TGW.BackButton.show();TGW.BackButton.onClick(out)}}catch(e){}
+  try{history.pushState({gm:1},"")}catch(e){}addEventListener("popstate",out);
+  setTimeout(()=>{try{f.focus()}catch(e){}},50)}
 async function playFile(){const me=PG;if(!me)return;if(isLocked(me.m)){buyGame(me.m.id);return}countPlay();toast("Загружаем игру…",true);
-  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;sbView(j.text,"Закрыть игру");toast("Приятной игры")}catch(e){toast("Не удалось загрузить игру")}}
+  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;gameMode(j.text,me.m.title)}catch(e){toast("Не удалось загрузить игру")}}
 const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
 const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */
 const AUTH={};             /* pid -> { n, c, hp, p, f }: имя, цвет, фото авторов (фото подгружается лениво) */
