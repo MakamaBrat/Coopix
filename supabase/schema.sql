@@ -361,6 +361,9 @@ alter table public.games add constraint games_item_check check (item in ('casset
 -- Скриншот игры (JPEG data URL до ~150 КБ): «телевизор» на странице игры показывает его, пока игра не запущена.
 alter table public.games add column if not exists shot_img text check (shot_img is null or char_length(shot_img) <= 150000);
 alter table public.games add column if not exists has_shot boolean generated always as (shot_img is not null) stored;
+-- Своя картинка для предмета «Карты» (JPEG: две карты игры рядом, левая — задняя, правая — передняя). Без неё карты берут середину обложки.
+alter table public.games add column if not exists item_img text check (item_img is null or char_length(item_img) <= 150000);
+alter table public.games add column if not exists has_iart boolean generated always as (item_img is not null) stored;
 
 create table if not exists public.game_edits (
   id         uuid primary key default gen_random_uuid(),

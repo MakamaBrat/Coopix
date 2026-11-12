@@ -234,10 +234,11 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const id = String(q.id ?? "");
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
         // kind=shot: скриншот игры, который «телевизор» на странице игры показывает, пока игра не запущена
-        const shot = q.kind === "shot", bg = q.kind === "bg", ref = g && (shot ? ((g.has_shot ?? g.shot_img) ? "shot" : "") : bg ? g.bg_ref : g.cover);
+        // kind=item: своя картинка для предмета «Карты» (две настоящие карты игры рядом: левая — задняя карта, правая — передняя)
+        const shot = q.kind === "shot" || q.kind === "item", bg = q.kind === "bg", ref = g && (q.kind === "item" ? ((g.has_iart ?? g.item_img) ? "item" : "") : shot ? ((g.has_shot ?? g.shot_img) ? "shot" : "") : bg ? g.bg_ref : g.cover);
         if (!g || !(shot ? ref : IMG_REF.test(ref ?? "")) || !isVisible(g, staff) && !(g.author_id != null && Number(g.author_id) === uid)) return json(404, { error: "not_found" });
         const row = await store.gameCover(id);
-        const img = shot ? row?.shot_img : bg ? row?.bg_img : row?.cover_img;
+        const img = q.kind === "item" ? row?.item_img : shot ? row?.shot_img : bg ? row?.bg_img : row?.cover_img;
         return img ? json(200, { ref, img }) : json(404, { error: "not_found" });
       }
       // ---------- моды: список одобренных, файл, предложить свой ----------
