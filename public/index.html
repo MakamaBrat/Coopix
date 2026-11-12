@@ -186,24 +186,24 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 
 .slot{position:absolute}
 .slot>canvas,.slot .bob>canvas{filter:drop-shadow(0 0 1px color-mix(in srgb,var(--c3) 80%,transparent)) drop-shadow(0 0 9px color-mix(in srgb,var(--c1) 60%,transparent)) drop-shadow(0 7px 7px rgba(0,0,0,.55))}
-@property --sw{syntax:"<length>";inherits:true;initial-value:-300px}
-@keyframes sweep{0%{--sw:-300px}55%,100%{--sw:1250px}}
-.stage{animation:sweep 6.5s linear infinite}
-.halo{position:absolute;top:0;width:560px;height:220px;pointer-events:none;mix-blend-mode:screen;opacity:.55;
+/* блик по карточке двигается сдвигом слоя (transform на видеокарте), а не анимацией переменной на всей карточке: так в разы легче */
+.halo{position:absolute;top:0;width:560px;height:220px;pointer-events:none;opacity:.42;will-change:transform,opacity;
   background:radial-gradient(closest-side,color-mix(in srgb,var(--c1) 60%,transparent),transparent);animation:breathe 4s ease-in-out infinite}
-@keyframes breathe{50%{opacity:.95;transform:scale(1.06)}}
+@keyframes breathe{50%{opacity:.7;transform:scale(1.06)}}
 .floor{position:absolute;height:30px;pointer-events:none;border-radius:50%;filter:blur(3px);opacity:.8;
   background:radial-gradient(closest-side,color-mix(in srgb,var(--c1) 55%,#000),transparent)}
-.beam{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.2;
-  background:linear-gradient(90deg,transparent calc(var(--sw) - 160px),var(--c3) var(--sw),transparent calc(var(--sw) + 160px))}
-.gl{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat;
-  background:linear-gradient(90deg,transparent calc(var(--sw) - var(--gx,0px) - 60px),rgba(255,255,255,.7) calc(var(--sw) - var(--gx,0px)),transparent calc(var(--sw) - var(--gx,0px) + 60px)) 0 0/905px 100% no-repeat}
+.beam{position:absolute;left:0;top:0;bottom:0;width:320px;pointer-events:none;opacity:.16;will-change:transform;
+  background:linear-gradient(90deg,transparent,var(--c3),transparent);animation:bsw 6.5s linear infinite}
+@keyframes bsw{0%{transform:translateX(-460px)}55%,100%{transform:translateX(1090px)}}
+.gl{position:absolute;inset:0;pointer-events:none;overflow:hidden;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+.gl::before{content:"";position:absolute;top:0;bottom:0;left:0;width:120px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);will-change:transform;animation:gsw 6.5s linear infinite}
+@keyframes gsw{0%{transform:translateX(calc(-360px - var(--gx,0px)))}55%,100%{transform:translateX(calc(1190px - var(--gx,0px)))}}
 .pt{position:absolute;left:0;top:0;width:905px;height:220px;z-index:3;pointer-events:none;image-rendering:pixelated}
 .slot canvas{display:block;width:100%;height:100%}
 .slot.item{z-index:1}.slot.case{z-index:2}
 .hv{width:100%;height:100%;transition:transform .45s cubic-bezier(.2,.9,.2,1)}
 .card:hover .hv,.cardbox:focus-within .hv{transform:translateX(var(--hx,0px))}
-.bob{width:100%;height:100%;position:relative;animation:bob 5s ease-in-out infinite;animation-delay:var(--bd,0s)}
+.bob{width:100%;height:100%;position:relative;will-change:translate;animation:bob 5s ease-in-out infinite;animation-delay:var(--bd,0s)}
 @keyframes bob{50%{translate:0 -4px}}
 .shine{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:0;pointer-events:none;
   -webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat;
@@ -572,7 +572,7 @@ html[data-q="0"].winter .panel::after,html[data-q="0"].winter .chc::after,html[d
 #snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 @media (prefers-reduced-motion:reduce){html.winter .panel::after,html.winter .chc::after,html.winter .top::after{animation:none}}
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
-.card.off .stage,.card.off .bob,.card.off .halo,.card.off .shine,.card.off .noise,.card.off .noise::after{animation-play-state:paused}
+.card.off .stage,.card.off .bob,.card.off .halo,.card.off .shine,.card.off .noise,.card.off .noise::after,.card.off .beam,.card.off .gl::before{animation-play-state:paused}
 body.pgopen .app,body.pgopen .dock{visibility:hidden}
 body.pgopen .mascot,body.pgopen .mascot *{animation-play-state:paused}
 [data-q="1"] .stage,[data-q="0"] .stage{animation:none}
@@ -1250,7 +1250,7 @@ function gpuWeak(){if(GPUW>=0)return GPUW;GPUW=1;try{const c=document.createElem
   GPUW=/swiftshader|llvmpipe|softpipe|software|mali-?4\d\d|mali-t[0-7]\d\d|adreno.{0,6}[2-3]\d\d\b|powervr.{0,4}(sgx|ge)|vivante|videocore/i.test(r)?1:0;
   const l=g.getExtension("WEBGL_lose_context");l&&l.loseContext()}}catch(e){}return GPUW}
 const autoQ=()=>SAVE||OLD||MEM<=2||CORES<=2||gpuWeak()?0:navigator.deviceMemory&&MEM<=4?1:2;
-function applyQ(){document.documentElement.dataset.q=Q;FI=[100,50,40][Q];BI=[250,100,50][Q];bgPainted=false;if(typeof syncQsw==="function")syncQsw()}
+function applyQ(){document.documentElement.dataset.q=Q;FI=[100,66,50][Q];BI=[250,100,50][Q];bgPainted=false;if(typeof syncQsw==="function")syncQsw()}
 var bgPainted=false;
 /* старт всегда полный (2); «Авто» может понизить качество позже, по реальной плавности, и только до закрытия приложения */
 Q=String(SET.quality)==="auto"?2:+SET.quality;applyQ();
@@ -1442,61 +1442,50 @@ void main(){
   vec3 c;
 `;
 const FBODY=[`
-  vec2 grid=vec2(46.,46./asp);
+  vec2 grid=vec2(40.,40./asp);
   vec2 cell=floor(uv*grid);
   vec2 q=(cell+.5)/grid;
   vec2 pq=vec2(q.x*asp,q.y);
-  float d=pq.x*.9+pq.y*1.25;
-  float n=fbm(pq*3.4+vec2(uT*.07,-uT*.045));
-  float bands=.5+.5*sin(d*9.-uT*.55+n*4.);
-  float lum=mix(n,bands,.5);
-  float ql=floor(lum*4.)/4.;
-  float chk=mod(cell.x+cell.y,2.);
-  float m=smoothstep(.95,.04,q.x+(n-.5)*.4);
-  vec3 col=mix(uB*.4,uA,ql);
-  col=mix(col,uC,chk*.14*m);
-  c=mix(vec3(.035,.02,.08),col,m*.9+.07);
-  float sw=smoothstep(.0,.06,.5-abs(fract(d*.8-uT*.05)-.5)*2.-.4);
-  c+=uC*sw*.10*m;
-  float tw=h21(cell+floor(uT*1.6));
-  c+=uC*step(.995,tw)*m*.5;
-`,`
-  vec2 g2=vec2(34.,34./asp);
+  float w1=sin(pq.x*3.1+pq.y*2.2-uT*.35);
+  float w2=sin(pq.x*1.7-pq.y*3.4+uT*.27+w1*.8);
+  float lum=.5+.25*w1+.25*w2;
+  float ql=floor(lum*6.)/6.;
+  float m=smoothstep(1.,.12,q.x);
+  vec3 col=mix(uB*.45,uA*.95,ql);
+  col=mix(col,uC,smoothstep(.78,1.,ql)*.35);
+  c=mix(vec3(.035,.02,.08),col,m*.85+.06);
+  c+=uC*.06*m*step(.5,fract((cell.x+cell.y)*.5));
+`,`  vec2 g2=vec2(30.,30./asp);
   vec2 cl=floor(uv*g2);
   vec2 qq=(cl+.5)/g2;
-  float dir=mod(cl.y,2.)*2.-1.;
-  float sc=floor(uT*2.2*(.55+.45*h21(vec2(cl.y,3.))))*dir;
-  vec3 t=cov(vec2(cl.x+sc,cl.y));
-  float mk=smoothstep(1.08,.2,qq.x);
-  float wv=.5+.5*sin((qq.x*asp+qq.y)*7.-uT*.9);
-  vec3 base=mix(uB*.5,t,.8);
-  c=mix(vec3(.035,.02,.08),base*(.58+.42*wv),mk*.95+.05);
-  c+=uC*step(.992,h21(cl+floor(uT*1.3)))*mk*.4;
-`,`
-  vec2 g2=vec2(72.,72./asp);
+  vec3 t=cov(cl);
+  float mk=smoothstep(1.1,.18,qq.x);
+  float wv=.5+.5*sin((qq.x*asp*.9+qq.y*.6)*4.-uT*.6);
+  float gap=step(.08,fract(uv.x*g2.x))*step(.08,fract(uv.y*g2.y));
+  vec3 base=mix(uB*.5,t,.82)*(.62+.38*wv)+uC*smoothstep(.93,1.,wv)*.18;
+  c=mix(vec3(.035,.02,.08),base*(.86+.14*gap),mk*.95+.05);
+`,`  vec2 g2=vec2(72.,72./asp);
   vec2 cl=floor(uv*g2);
   vec2 qq=(cl+.5)/g2;
-  float hz=.74;
-  vec3 sky=mix(uB*.22,uA*.85,smoothstep(.0,hz,qq.y));
-  c=floor(sky*7.)/7.;
-  float sr=.36;
-  vec2 sp=vec2(qq.x*asp-asp*.40,qq.y-.38);
+  float hz=.72;
+  vec3 sky=mix(uB*.25,uA*.9,smoothstep(.0,hz,qq.y));
+  c=floor(sky*10.)/10.;
+  float sr=.34;
+  vec2 sp=vec2(qq.x*asp-asp*.40,qq.y-.40);
   float sd=length(sp);
-  float sl=step(.0,sp.y)*step(fract(sp.y*17.-uT*.04),sp.y/sr*.85);
-  float sm=step(sd,sr)*(1.-sl);
-  vec3 face=cov(floor((sp/(2.*sr)+.5)*@T@));
-  vec3 sun=mix(mix(uC,uA,sp.y/sr*.5+.5),face*1.15,.5)*.72;
-  c+=uA*exp(-max(sd-sr,0.)*6.)*.3;
+  float band=step(.0,sp.y)*step(fract(sp.y*14.-uT*.03),sp.y/sr*.7);
+  float sm=step(sd,sr)*(1.-band);
+  vec3 sun=mix(uC,uA*1.1,smoothstep(-sr,sr,sp.y));
+  c+=uA*exp(-max(sd-sr,0.)*7.)*.25;
   c=mix(c,sun,sm);
   float dy=max(qq.y-hz,.001);
-  float zz=.35/dy;
-  float hl=step(.75,fract(zz-uT*.6));
-  float vl=step(.86,fract((qq.x-.40)*asp*zz*1.2));
-  float gl2=max(hl,vl)*smoothstep(.02,.07,dy);
-  vec3 gr=mix(uB*.2,uB*.55,min(dy*3.,1.))+uC*gl2*.9;
+  float zz=.3/dy;
+  float hl=step(.82,fract(zz-uT*.35));
+  float vl=step(.9,fract((qq.x-.40)*asp*zz*1.1));
+  float gl2=max(hl,vl)*smoothstep(.02,.08,dy);
+  vec3 gr=mix(uB*.18,uB*.45,min(dy*3.,1.))+uC*gl2*.7;
   c=mix(c,gr,step(hz,qq.y));
-  c*=1.-.4*smoothstep(.55,1.,qq.x);
-`,`
+  c*=1.-.35*smoothstep(.6,1.,qq.x);`,`
   vec2 g2=vec2(70.,70./asp);
   vec2 cl=floor(uv*g2);
   vec2 qq=(cl+.5)/g2;
@@ -1604,9 +1593,9 @@ class Card{
   applyQ(){this.syncFx();this.cdRun();this.resize();if(Q===0&&this.px&&this.pb)this.px.clearRect(0,0,453,110)}
   fxOff(){this.fx.lose();this.fx=null;const n=this.r.fx.cloneNode(false);this.r.fx.replaceWith(n);this.r.fx=n}
   resize(){
-    const w=Math.max(1,this.host.clientWidth),dpr=Q===2?Math.min(devicePixelRatio||1,1.5):Q===1?.6:.4,k=w/905;
+    const w=Math.max(1,this.host.clientWidth),dpr=Q===2?Math.min(devicePixelRatio||1,1)*.8:Q===1?.6:.4,k=w/905; /* фон карточки пиксельный: высокое разрешение ему не нужно */
     this.host.style.setProperty("--k",k);
-    const fw=Math.round(Math.min(w*dpr,640));this.r.fx.width=fw;this.r.fx.height=Math.round(fw*220/905);
+    const fw=Math.round(Math.min(w*dpr,480));this.r.fx.width=fw;this.r.fx.height=Math.round(fw*220/905);
     this.dirty=true}
   layout(){
     const it=ITEMS[this.m.item],I=SPR[this.m.item],C=SPR[it.case],ov=Math.round(I.w*it.ov),total=I.w+C.w-ov,x0=24+(448-total)/2,cy=114;
