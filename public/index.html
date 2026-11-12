@@ -527,17 +527,17 @@ html.winter .panel::before,html.winter .chc::before{content:"";position:absolute
   background:radial-gradient(circle at 10px 0,#fff 7px,transparent 7.5px) 0 0/34px 14px repeat-x,radial-gradient(circle at 26px 2px,#e9f3ff 5px,transparent 5.5px) 0 0/34px 14px repeat-x,linear-gradient(#fff,#fff) 0 0/100% 4px no-repeat;
   filter:drop-shadow(0 2px 2px rgba(120,170,255,.35))}
 html.winter .chc{position:relative}
-/* гирлянда висит под снежной шапкой окон и диаграммы (не в шапке сайта — там голубь); заголовкам добавлен отступ под неё */
-html.winter .panel::after,html.winter .chc::after{content:"";position:absolute;left:12px;right:12px;top:9px;height:16px;pointer-events:none;z-index:2;
+/* гирлянда висит вдоль верха нижней панели с кнопками и под снежной шапкой окон и диаграммы (не в шапке сайта — там голубь); заголовкам добавлен отступ под неё */
+html.winter .panel::after,html.winter .chc::after,html.winter .dock-in::before{content:"";position:absolute;left:12px;right:12px;top:9px;height:16px;pointer-events:none;z-index:2;
   background:radial-gradient(circle at 9px 11px,#ff4d6d 3.5px,transparent 4px) 0 0/72px 16px repeat-x,radial-gradient(circle at 27px 13px,#ffd84d 3.5px,transparent 4px) 0 0/72px 16px repeat-x,
     radial-gradient(circle at 45px 11px,#4dff9a 3.5px,transparent 4px) 0 0/72px 16px repeat-x,radial-gradient(circle at 63px 13px,#4dc8ff 3.5px,transparent 4px) 0 0/72px 16px repeat-x,
-    radial-gradient(ellipse 50% 8px at 50% 0,transparent 6px,rgba(220,235,255,.55) 6.5px,transparent 7.5px) 0 0/36px 16px repeat-x;
+    radial-gradient(9px 7px at 50% 0,transparent 86%,rgba(220,235,255,.6) 90%,rgba(220,235,255,.6) 100%,transparent 101%) 0 0/18px 16px repeat-x;
   animation:wglow 2.4s steps(2) infinite}
-html.winter .panel>.ph{padding-top:30px}html.winter .chc{padding-top:30px}
+html.winter .dock-in::before{top:4px;left:22px;right:22px;z-index:auto}html.winter .dock button+button::before{top:22px}html.winter .panel>.ph{padding-top:30px}html.winter .chc{padding-top:30px}
 @keyframes wglow{50%{filter:hue-rotate(140deg) brightness(1.25)}}
-html[data-q="0"].winter .panel::after,html[data-q="0"].winter .chc::after{animation:none}
+html[data-q="0"].winter .panel::after,html[data-q="0"].winter .chc::after,html[data-q="0"].winter .dock-in::before{animation:none}
 #snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
-@media (prefers-reduced-motion:reduce){html.winter .panel::after,html.winter .chc::after{animation:none}}
+@media (prefers-reduced-motion:reduce){html.winter .panel::after,html.winter .chc::after,html.winter .dock-in::before{animation:none}}
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
 .card.off .stage,.card.off .bob,.card.off .halo,.card.off .shine,.card.off .noise,.card.off .noise::after{animation-play-state:paused}
 body.pgopen .app,body.pgopen .dock{visibility:hidden}
@@ -1134,7 +1134,7 @@ html.desk .chc svg text{font-size:13px}html.desk .chc svg text.pt{font-size:12px
 <body class="scan">
 <div class="rot" id="rot" role="alert" aria-live="assertive"><i aria-hidden="true"></i><b>Поверните телефон вертикально</b><small>Coopix Market работает в портретном режиме</small></div>
 <canvas id="bg" aria-hidden="true"></canvas>
-<div class="boot" id="boot"><div>загрузка…<button class="lite" id="lite" type="button">Лёгкая версия</button><div class="lite-h">без эффектов, до закрытия приложения</div></div></div>
+<div class="boot" id="boot"><div>загрузка…<button class="lite" id="lite" type="button">Лёгкая версия</button><div class="lite-h">без эффектов, запомнится на устройстве</div></div></div>
 <script>/* лёгкий режим запоминается на устройстве (localStorage): если игрок включил лайт, следующий запуск тоже лайт */
 (function(){var b=document.getElementById("lite");if(!b)return;
 function on(){try{return localStorage.getItem("am.lite")==="1"}catch(e){return false}}
@@ -1186,7 +1186,7 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
 window.SPRITES=Object.fromEntries(["cassette","cd","floppy","handheld","case_a","case_b","case_c","case_d","case_e","case_f"].map(k=>[k,"assets/spr/"+k+".png"]));
 /* геометрия: лицевая грань коробки (куда ложится обложка) и детали предметов. Раньше лежала в том же sprites.js */
 window.FACES={"case_a":{"w":203,"h":203,"q":[[0.1527,0.1823],[0.729,0.0838],[0.8966,0.7783],[0.33,0.8966]]},"case_b":{"w":206,"h":196,"q":[[0.1262,0.1582],[0.8447,0.0408],[0.9466,0.7806],[0.2184,0.9286]]},"case_c":{"w":219,"h":190,"q":[[0.2237,0.2],[0.7534,0.0737],[0.9178,0.7474],[0.3881,0.9211]]},"case_d":{"w":170,"h":198,"q":[[0.1214,0.1],[0.9357,0.0421],[0.9357,0.8789],[0.1214,0.9526]]},"case_e":{"w":204,"h":178,"q":[[0.0784,0.2471],[0.7206,0.0786],[0.9461,0.7022],[0.2941,0.9382]]},"case_f":{"w":189,"h":178,"q":[[0.0529,0.236],[0.7037,0.0618],[0.9418,0.7472],[0.2858,0.9382]]}};
-window.DECOR={"cassette":{"polys":[[[33,63],[184,15],[189,35],[38,83]],[[124,146],[176,128],[182,146],[130,164]]],"fy":[0.45,0.85]},"cd":{"c":[107,96],"rx":104,"ry":92,"hub":[107,96,29,28,13]},"floppy":{"polys":[[[60,100],[137,82],[152,146],[72,159]]],"fy":[0.5]},"handheld":{"polys":[[[43,40],[119,25],[124,77],[52,90]]],"fy":[0.5]}};</script>
+window.DECOR={"cassette":{"polys":[[[30,60],[188,12],[204,92],[48,140]],[[124,146],[176,128],[182,146],[130,164]]],"holes":[[[56,82],[188,43],[196,75],[64,115]],null],"fy":[0.5,0.85]},"cd":{"c":[107,96],"rx":104,"ry":92,"hub":[107,96,29,28,13]},"floppy":{"polys":[[[60,100],[137,82],[152,146],[72,159]]],"fy":[0.5]},"handheld":{"polys":[[[43,40],[119,25],[124,77],[52,90]]],"fy":[0.5]}};</script>
 <script>
 (()=>{
 "use strict";
@@ -1593,12 +1593,15 @@ class Card{
     if(D.rx){
       const [rc,hc]=this.r.item.querySelectorAll(".cdw canvas"),T=6.2832,R=D.rx,hR=D.hub[2],hr=D.hub[4];
       rc.width=rc.height=R*2;hc.width=hc.height=hR*2;
-      const c=rc.getContext("2d");c.beginPath();c.arc(R,R,R*.975,0,T);c.moveTo(R+R*.83,R);c.arc(R,R,R*.83,0,T);c.clip("evenodd");
-      for(let i=0;i<6;i++){c.save();c.beginPath();const a0=i*Math.PI/3,a1=a0+Math.PI/3;c.moveTo(R,R);c.lineTo(R+300*Math.cos(a0),R+300*Math.sin(a0));c.lineTo(R+300*Math.cos(a1),R+300*Math.sin(a1));c.closePath();c.clip();
-        c.translate(R,R);c.rotate(i*1.05);c.scale(R*2.3/256,R*2.3/256);c.drawImage(art,-128,-128);c.restore()}
+      /* диск: картинка игры целиком на всей поверхности (от втулки до края), а не узкое кольцо из повёрнутых кусочков — её хорошо видно */
+      const c=rc.getContext("2d");c.beginPath();c.arc(R,R,R*.975,0,T);c.moveTo(R+hR*1.02,R);c.arc(R,R,hR*1.02,0,T);c.clip("evenodd");
+      c.translate(R,R);c.scale(R*1.96/256,R*1.96/256);c.drawImage(art,-128,-128);c.setTransform(1,0,0,1,0,0);
       const h=hc.getContext("2d");h.beginPath();h.arc(hR,hR,hR,0,T);h.moveTo(hR+hr*1.04,hR);h.arc(hR,hR,hr*1.04,0,T);h.clip("evenodd");h.translate(hR,hR);h.scale(hR*2/256,hR*2/256);h.drawImage(art,-128,-128);
     }else D.polys.forEach((P,n)=>{
-      x.save();x.beginPath();P.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.clip();
+      /* holes: окошко с катушками вырезается из наклейки, чтобы картинка игры занимала всю лицевую сторону кассеты вокруг него */
+      const HO=D.holes&&D.holes[n];
+      x.save();x.beginPath();P.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();
+      if(HO){HO.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.clip("evenodd")}else x.clip();
       const [a,bb,,d]=P,ux=bb[0]-a[0],uy=bb[1]-a[1],vx=d[0]-a[0],vy=d[1]-a[1],S=256,sh=Math.min(S,S*Math.hypot(vx,vy)/Math.hypot(ux,uy)),sy=(S-sh)*D.fy[n],m=[ux/S,uy/S,vx/sh,vy/sh];
       x.globalCompositeOperation="multiply";x.globalAlpha=.93;x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[2]*sy,a[1]-m[3]*sy);x.drawImage(art,0,0);x.setTransform(1,0,0,1,0,0);fin();x.restore()})}
   cdKill(){if(this.cda){this.cda.forEach(a=>a.cancel());this.cda=null}}
@@ -1772,7 +1775,7 @@ function musicSync(){
 addEventListener("pointerdown",()=>{if(!MUS.unlocked){MUS.unlocked=true;setTimeout(musicSync,0)}},{passive:true});
 document.addEventListener("visibilitychange",()=>musicSync());
 /* последняя кнопка в ряду: переключатель «лёгкая версия / обычная» в один клик (настройки остались в профиле).
-   Действует до закрытия приложения, как и всё про качество: новый запуск снова в обычной версии. */
+   Запоминается на устройстве, как и всё про качество: следующий запуск в той же версии. */
 const QSW='<svg viewBox="0 0 36 22" aria-hidden="true"><rect class="tr" x="1.5" y="3.5" width="33" height="15" rx="7.5"/><circle class="kn" cx="10" cy="11" r="5.5"/></svg><span class="ql">лайт</span>';
 function syncQsw(){const b=document.querySelector(".tab.qsw");if(!b)return;const on=Q===0;b.setAttribute("aria-checked",on);b.title=on?"Лёгкая версия включена · нажмите для обычной":"Обычная версия · нажмите для лёгкой"}
 function toggleLite(){const lite=Q!==0;
