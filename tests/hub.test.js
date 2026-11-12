@@ -102,7 +102,7 @@ test("track: играть/скачать считаются только по и
   const s = (await hub("stats", "GET", ANN, { query: { ids: "retro,space" } })).body.games;
   assert.equal(s.retro.plays, 2, "Анна запускала дважды, но считается один раз"); assert.equal(s.retro.playPlayers, 2);
   assert.equal(s.retro.downloads, 1); assert.equal(s.retro.dlPlayers, 1);
-  assert.deepEqual(s.space, { plays: 0, playPlayers: 0, downloads: 0, dlPlayers: 0, reviews: 0, rated: 0, rating: 0, stars: 0, backers: 0 });
+  assert.deepEqual(s.space, { plays: 0, playPlayers: 0, downloads: 0, dlPlayers: 0, reviews: 0, rated: 0, avg: 0, favs: 0, rating: 0, stars: 0, backers: 0 });
   const r = await t(BOB, "play", "space");
   assert.equal(r.body.stats.space.plays, 1); // ответ сразу содержит свежие цифры
 });
@@ -386,4 +386,16 @@ test("график: по видам событий (регистрации, от
   assert.deepEqual([3, 4, 5, 6].map((i) => col(all, i)), [3, 1, 2, 1], "регистрации, отзывы, первые запуски, первые скачивания");
   assert.deepEqual(h24.bases, [0, 1, 1, 1], "до последних суток: отзыв, запуск, скачивание (регистрации сейчас)");
   assert.deepEqual([3, 4, 5, 6].map((i) => col(h24, i)), [3, 0, 1, 0]);
+});
+
+test("рейтинг: отзывы + избранное (каждое избранное — половина оценки «5»), снятое избранное не считается", async () => {
+  const { hub, age } = await world();
+  await review(hub, ANN, { rating: 3 });
+  await hub("track", "POST", BOB, { body: { type: "fav", game: "retro" } });
+  await hub("track", "POST", MAIN, { body: { type: "fav", game: "retro" } });
+  let g = (await hub("stats", "GET", ANN, { query: { ids: "retro" } })).body.games.retro;
+  assert.equal(g.favs, 2); assert.equal(g.avg, 3); assert.equal(g.rating, 4); // (3 + 2·2,5) / (1 + 2·0,5)
+  age(10e3); await hub("track", "POST", MAIN, { body: { type: "unfav", game: "retro" } });
+  g = (await hub("stats", "GET", ANN, { query: { ids: "retro" } })).body.games.retro;
+  assert.equal(g.favs, 1); assert.equal(g.rating, 3.67);
 });

@@ -124,8 +124,9 @@ export function memStore() {
         const pl = this.events.filter((e) => e.game_id === g && e.type === "play"), dl = this.events.filter((e) => e.game_id === g && e.type === "download");
         const rv = this.reviews.filter((r) => r.game_id === g), rated = rv.filter((r) => r.rating > 0);
         return { game_id: g, plays: pl.length, play_players: new Set(pl.map((e) => e.user_id)).size, downloads: dl.length, dl_players: new Set(dl.map((e) => e.user_id)).size,
-          reviews: rv.length, rated: rated.length, rating: rated.length ? Math.round((rated.reduce((t, r) => t + r.rating, 0) / rated.length) * 100) / 100 : 0 };
-      }).filter((r) => r.plays || r.downloads || r.reviews);
+          reviews: rv.length, rated: rated.length, rating: rated.length ? Math.round((rated.reduce((t, r) => t + r.rating, 0) / rated.length) * 100) / 100 : 0,
+          favs: (() => { const last = new Map(); for (const e of this.events.filter((e) => e.game_id === g && (e.type === "fav" || e.type === "unfav")).sort((a, b) => a.id - b.id)) last.set(e.user_id, e.type); return [...last.values()].filter((t) => t === "fav").length; })() };
+      }).filter((r) => r.plays || r.downloads || r.reviews || r.favs);
     },
     // как SQL activity_series: регистрация (10), новый отзыв, первый запуск и первая загрузка игры игроком; звёзды отдельно
     async activitySeries({ startMs, stepSec, n }) {

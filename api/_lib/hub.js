@@ -87,7 +87,9 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
   const statWire = (s = {}) => ({
     plays: +s.play_players || 0, playPlayers: +s.play_players || 0,
     downloads: +s.dl_players || 0, dlPlayers: +s.dl_players || 0,
-    reviews: +s.reviews || 0, rated: +s.rated || 0, rating: +s.rating || 0,
+    reviews: +s.reviews || 0, rated: +s.rated || 0, avg: +s.rating || 0, favs: +s.favs || 0,
+    // рейтинг = отзывы + избранное: каждый, кто держит игру в избранном, считается половиной оценки «5»
+    rating: (+s.rated || 0) + (+s.favs || 0) ? Math.round((((+s.rating || 0) * (+s.rated || 0) + 2.5 * (+s.favs || 0)) / ((+s.rated || 0) + 0.5 * (+s.favs || 0))) * 100) / 100 : 0,
     stars: +s.stars || 0, backers: +s.backers || 0,
   });
   async function statsFor(ids) {

@@ -225,9 +225,11 @@ alter table public.events   enable row level security;
 revoke all on public.profiles, public.reviews, public.events from anon, authenticated;
 
 -- Счётчики и рейтинг игр. «Игроков» = разных людей, «запусков/загрузок» = всех нажатий.
+-- favs = сколько игроков сейчас держат игру в избранном (последнее их действие fav, а не unfav); влияет на рейтинг (см. hub.js).
+drop function if exists public.game_stats(text[]);
 create or replace function public.game_stats(p_ids text[])
 returns table (game_id text, plays bigint, play_players bigint, downloads bigint, dl_players bigint,
-               reviews bigint, rated bigint, rating numeric)
+               reviews bigint, rated bigint, rating numeric, favs bigint)
 language sql stable
 set search_path = public
 as $$
@@ -248,12 +250,19 @@ as $$
       from public.reviews rv
      where rv.game_id = any(p_ids)
      group by rv.game_id
+  ), f as (
+    select l.game_id, count(*) filter (where l.type = 'fav') as favs
+      from (select distinct on (ev.game_id, ev.user_id) ev.game_id, ev.type
+              from public.events ev
+             where ev.game_id = any(p_ids) and ev.type in ('fav', 'unfav')
+             order by ev.game_id, ev.user_id, ev.id desc) l
+     group by l.game_id
   )
-  select coalesce(e.game_id, r.game_id),
+  select coalesce(e.game_id, r.game_id, f.game_id),
          coalesce(e.plays, 0), coalesce(e.play_players, 0),
          coalesce(e.downloads, 0), coalesce(e.dl_players, 0),
-         coalesce(r.reviews, 0), coalesce(r.rated, 0), coalesce(r.rating, 0)
-    from e full join r on e.game_id = r.game_id;
+         coalesce(r.reviews, 0), coalesce(r.rated, 0), coalesce(r.rating, 0), coalesce(f.favs, 0)
+    from e full join r on e.game_id = r.game_id full join f on f.game_id = coalesce(e.game_id, r.game_id);
 $$;
 
 -- График «Пульс маркета»: только ключевые действия.
