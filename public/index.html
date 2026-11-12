@@ -204,6 +204,8 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .hv{width:100%;height:100%;transition:transform .45s cubic-bezier(.2,.9,.2,1)}
 .card:hover .hv,.cardbox:focus-within .hv{transform:translateX(var(--hx,0px))}
 .bob{width:100%;height:100%;position:relative;animation:bob 5s ease-in-out infinite;animation-delay:var(--bd,0s)}
+/* качание предмета — отдельным слоем: тени-фильтры картинки рисуются один раз, двигает видеокарта (кроме диска: ему слой ломает смешивание) */
+.item:not(.cd) .bob{will-change:translate}
 @keyframes bob{50%{translate:0 -4px}}
 .shine{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:0;pointer-events:none;
   -webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat;
@@ -1851,8 +1853,8 @@ function toast(msg,load){toastEl.onclick=null;toastEl.classList.remove("act");cl
 
 /* ============ data ============ */
 const DEFAULTS=[
- {id:"retro",price:50,title:"Retro Mix",genre:"Arcade",item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
- {id:"space",price:30,owned:true,title:"Space Vibes",genre:"Music",item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
+ {id:"retro",title:"Retro Mix",genre:"Arcade",item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
+ {id:"space",title:"Space Vibes",genre:"Music",item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
  {id:"toxic",title:"Toxic Run",genre:"Shooter",item:"floppy",cover:"b:toxic",tint:{h:112,s:.62},built:1},
  {id:"blocks",title:"Block Drop",genre:"Puzzle",item:"handheld",cover:"b:blocks",tint:{h:38,s:.95},built:1}
 ];
