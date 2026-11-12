@@ -37,6 +37,18 @@ export function getCore() {
     return Buffer.from(await r.arrayBuffer());
   };
 
+  // отправить файл в личку от бота (кнопка «Скачать» в Telegram: файл игры приходит сообщением)
+  const tgDoc = async (chatId, name, text, caption) => {
+    const fd = new FormData();
+    fd.append("chat_id", String(chatId));
+    if (caption) fd.append("caption", caption);
+    fd.append("document", new Blob([text], { type: "text/html" }), name);
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, { method: "POST", body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) { const e = new Error(j.description || "telegram " + r.status); e.code = j.error_code; throw e; }
+    return j.result;
+  };
+
   core = createCore({
     store: supabaseStore(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY),
     verify: verifyTelegramInitData,
@@ -46,6 +58,7 @@ export function getCore() {
     notify,
     tgApi,
     tgFile,
+    tgDoc,
   });
   return core;
 }

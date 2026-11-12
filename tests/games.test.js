@@ -65,6 +65,21 @@ test("публикация заявки: игра с файлом и автор�
   assert.equal((await w.adm("publish", "POST", MOD, { body: { submission: sub.id } })).status, 403);
 });
 
+test("«Скачать» в Telegram: бот присылает файл в личку с ссылками на канал, чат и бота; не чаще раза в 15 с", async () => {
+  const w = await world();
+  const { game } = await published(w, "staff");
+  assert.equal((await w.hub("sendgame", "POST", BOB, { query: { id: game.id } })).status, 404); // скрыта от игроков
+  await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { access: "public" } });
+  assert.equal((await w.hub("sendgame", "GET", BOB, { query: { id: game.id } })).status, 405);
+  assert.equal((await w.hub("sendgame", "POST", BOB, { query: { id: game.id } })).status, 200);
+  const doc = w.tg.find((x) => x[0] === "doc");
+  assert.equal(doc[1], BOB); assert.match(doc[2], /\.html$/); assert.ok(doc[3] > 0);
+  assert.match(doc[4], /t\.me\/coopixmarket/); assert.match(doc[4], /t\.me\/coopixchat/); assert.match(doc[4], /t\.me\/coopix_bot/);
+  assert.equal((await w.hub("sendgame", "POST", BOB, { query: { id: game.id } })).status, 429);
+  await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { dl_off: true } });
+  assert.equal((await w.hub("sendgame", "POST", ANN, { query: { id: game.id } })).body.error, "dl_off");
+});
+
 test("файл игры отдаётся только если игра видна; mine ставится автору", async () => {
   const w = await world();
   const { game } = await published(w, "staff");

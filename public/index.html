@@ -518,8 +518,11 @@ html[data-q="0"] .scr.hiss .tvn{animation:nz .2s steps(1) infinite}
 .pbar .bigplay svg{width:22px;height:22px}
 .pbar .dlbtn,.pbar .dlbtn:hover{background:#2a1a66;color:#e5d6ff}.pbar .dlbtn svg{fill:#e5d6ff}
 .pbar .dlbtn.off{opacity:.45;filter:grayscale(1)} /* скачивание выключено админом */
-.scr img.shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;filter:saturate(1.1) contrast(1.05)}
-.scr.hasshot .ov{place-items:end center;padding-bottom:6%}.scr.hasshot .ov b,.scr.hasshot .ov small{display:none}.scr.hasshot .ov span{padding:2px 10px;background:rgba(5,3,10,.7)}
+/* скрин целиком (contain), по краям — тот же скрин размытый, чтобы не было пустых полос */
+.scr img.shot{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
+.scr .shotbg{position:absolute;inset:-12px;z-index:1;background:center/cover no-repeat;filter:blur(10px) brightness(.55);display:none}.scr.hasshot .shotbg{display:block}
+.scr.playing .shotbg,.scr.hiss .shotbg{display:none !important}
+.scr.hasshot:not(.hiss) .ov{display:none} /* на скрине никаких надписей поверх: подсказка под телевизором */
 .scr.playing img.shot,.scr.hiss img.shot{display:none}
 .scr.hasshot:not(.hiss):not(.burst) .tvn{opacity:.18}.scr.hasshot:not(.hiss):not(.burst)::before{opacity:.03}
 .scr iframe.pl{position:absolute;inset:0;z-index:6;width:100%;height:100%;border:0;background:#000} /* свой плейабл в «телевизоре» */
@@ -1767,10 +1770,12 @@ function syncSnd(){const b=document.querySelector(".tab.snd");if(!b)return;b.set
 function toggleSound(){SET.sound=!SET.sound;saveSet();syncSnd();musicSync();if(SET.sound)sfx.tap();toast(SET.sound?"Звук включён":"Звук выключен")}
 /* фоновая музыка сайта: 15 с с плавным началом и затуханием, по кругу. Начинает играть с первым касанием (раньше браузер не даёт звук),
    файл грузится тогда же (на старт сайта не влияет); на странице игры и когда приложение свёрнуто — молчит. */
-const MUS={el:null,vol:0,t:0,unlocked:false};
+const MUS={el:null,vol:0,t:0,unlocked:false,i:0},MUSIC=["assets/music/store.mp3","assets/music/store2.mp3"];
 function musicSync(){
   const want=!!SET.sound&&MUS.unlocked&&!PGO&&!document.hidden; /* на всех экранах сайта; на странице игры молчит, чтобы не мешать её звукам */
-  if(want&&!MUS.el){MUS.el=new Audio("assets/music/store.mp3");MUS.el.loop=true;MUS.el.volume=0}
+  if(want&&!MUS.el){ /* две мелодии по 15 с: первая выбирается случайно, дальше играют по очереди */
+    MUS.i=Math.random()<.5?0:1;MUS.el=new Audio(MUSIC[MUS.i]);MUS.el.volume=0;
+    MUS.el.addEventListener("ended",()=>{MUS.i=(MUS.i+1)%MUSIC.length;MUS.el.src=MUSIC[MUS.i];if(MUS.el.volume>0)MUS.el.play().catch(()=>{})})}
   if(!MUS.el)return;clearInterval(MUS.t);const target=want?.105:0; /* тихий фон (0.35 → 0.14 → 0.084 → +25%) */
   if(want&&MUS.el.paused)MUS.el.play().catch(()=>{});
   MUS.t=setInterval(()=>{MUS.vol+=Math.sign(target-MUS.vol)*.035;if(Math.abs(target-MUS.vol)<.04)MUS.vol=target;MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
@@ -2698,7 +2703,8 @@ function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=fal
 const SHOTC={};
 async function tvShot(){const me=PG,s=$("#scr");if(!me||!s||!me.m.shot||!SUB_API)return;
   let u=SHOTC[me.m.id];if(u==null){try{u=SHOTC[me.m.id]=(await hub("cover",{q:{id:me.m.id,kind:"shot"}})).img||""}catch(e){u=SHOTC[me.m.id]=""}}
-  if(PG!==me||!u)return;let im=s.querySelector("img.shot");if(!im){im=document.createElement("img");im.className="shot";im.alt="";im.decoding="async";s.prepend(im)}im.src=u;s.classList.add("hasshot")}
+  if(PG!==me||!u)return;let im=s.querySelector("img.shot");if(!im){im=document.createElement("img");im.className="shot";im.alt="";im.decoding="async";const bg=document.createElement("i");bg.className="shotbg";s.prepend(bg,im)}
+  im.src=u;s.querySelector(".shotbg").style.backgroundImage="url("+u+")";s.classList.add("hasshot")}
 async function tvBoot(me){
   /* real prep first (cover is ready, one painted frame), then a short minimum of snow so the hiss reads as a TV */
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -2742,6 +2748,12 @@ $("#bigplay").addEventListener("click",()=>{if(!PG)return;if(PG.m.file&&SUB_API)
 $("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(dlBlocked(PG.m)){sfx.tap();const w=dlWaitLeft();toast(!DL_OFF&&PG.m.dl!==false&&w>0?"Скачивание откроется через "+Math.ceil(w/3600e3)+" ч после регистрации":"Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
   /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
   if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
+  /* в Telegram скачивание из мини-приложения не работает: файл игры присылает бот в личку (с ссылками на канал, чат и бота) */
+  const TGW=window.Telegram&&Telegram.WebApp;
+  if((!u)&&d&&d.file&&SUB_API&&TGW&&TGW.initData){toast("Бот отправляет игру…",true);
+    hub("sendgame",{method:"POST",q:{id:d.id},body:{}}).then(()=>{sfx.play();toast("Игра у вас в личке от бота 📩")})
+      .catch(e=>{if(e.code==="open_bot"){toast("Сначала откройте бота и нажмите «Старт», потом снова «Скачать»")}
+        else toast(e.code==="too_fast"?"Подождите несколько секунд и попробуйте снова":e.code==="dl_off"?"Скачивание этой игры сейчас выключено":"Не удалось отправить, попробуйте ещё раз")});return}
   if((!u)&&d&&d.file&&SUB_API){const me=PG;hub("gamefile",{q:{id:d.id}}).then(j=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));
       a.download=(d.title||"game").replace(/[^\wа-яё -]+/gi,"").trim().replace(/\s+/g,"-")+".html";document.body.appendChild(a);a.click();a.remove();sfx.play();toast("Файл игры скачан")}).catch(()=>toast("Не удалось скачать"));return}
   if(!/^(https?:\/\/|\.?\/?[\w-])/i.test(u)||!u){toast("Файл для скачивания пока не добавлен");return}

@@ -52,7 +52,9 @@ function parseBody(body) {
 /** Ник игрока = имя из Telegram (проверенный initData, обновляется при каждом заходе). Сменить его в приложении нельзя. */
 const tgName = (u) => clip(u?.first_name || u?.username || "", 16) || "Игрок";
 
-export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgApi = null, tgFile = null }) {
+export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgApi = null, tgFile = null, tgDoc = null }) {
+  const sentAt = new Map(); // uid -> время последней отправки файла ботом (не чаще раза в 15 с)
+  let botUser = ""; // @username бота (getMe, один раз) — для ссылки в подписи к файлу
   const pid = pidCodec(botToken);
   const json = (status, body) => ({ status, body });
 
@@ -187,6 +189,35 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
         return json(200, { text: (await store.gameHtml(id))?.file_html ?? "" });
+      }
+      // «Скачать» в Telegram: бот присылает файл игры в личку, в подписи — ссылки на канал, чат и бота
+      if (r === "sendgame") {
+        if (m !== "POST") return bad();
+        if (!tgDoc) return json(503, { error: "bot_off" });
+        const id = String(q.id ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const site = (await store.getSetting("site"))?.value ?? {};
+        if (!staff && (g.dl_off || site.dlOff === true)) return json(403, { error: "dl_off" });
+        const now = Date.now();
+        if (now - (sentAt.get(uid) ?? 0) < 15e3) return json(429, { error: "too_fast" });
+        sentAt.set(uid, now);
+        const html = (await store.gameHtml(id))?.file_html ?? "";
+        if (!html) return json(404, { error: "not_found" });
+        if (!botUser && tgApi) { try { botUser = (await tgApi("getMe", {}))?.username || ""; } catch { /* без ссылки на бота */ } }
+        const link = (v, d) => (/^https:\/\/[^\s"'<>]+$/i.test(v || "") ? v : d);
+        const caption = [
+          `🎮 ${g.title}${g.author_name ? " · автор " + g.author_name : ""}`,
+          "Откройте файл в браузере, чтобы играть.",
+          "",
+          `📢 Канал: ${link(site.channel, "https://t.me/coopixmarket")}`,
+          `💬 Чат: ${link(site.chat, "https://t.me/coopixchat")}`,
+          botUser ? `🤖 Coopix Market: https://t.me/${botUser}` : "",
+        ].filter((s, i, a) => s || a[i + 1]).join("\n").slice(0, 1000);
+        const name = (String(g.title).replace(/[^\wа-яё -]+/gi, "").trim().replace(/\s+/g, "-") || "game") + ".html";
+        try { await tgDoc(uid, name, html, caption); }
+        catch (e) { sentAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed", bot: botUser || "" }); }
+        return json(200, { ok: true, bot: botUser || "" });
       }
       // плейабл (маленький HTML для «телевизора» на странице игры): только если игра видна этому игроку
       if (r === "playable") {

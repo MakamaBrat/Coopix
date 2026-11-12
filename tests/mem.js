@@ -152,12 +152,14 @@ export function setup(o = {}) {
     tg.push([method, params]);
     if (method === "createInvoiceLink") return "https://t.me/$inv" + tg.length;
     if (method === "getUserProfilePhotos") return { total_count: o.photos?.length ? 1 : 0, photos: o.photos?.length ? [o.photos] : [] };
+    if (method === "getMe") return { username: "coopix_bot" };
     if (method === "getFile") return { file_id: params.file_id, file_path: "photos/" + params.file_id + ".jpg" };
     return true;
   };
   const tgFile = async (path) => { tg.push(["file", path]); return typeof o.file === "function" ? o.file(path) : o.file ?? Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]); };
   // touchTtl: 0 = без кэша «кто это» (тесты меняют бан прямо в store и сразу проверяют); кэш проверяется отдельным тестом
-  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, touchTtl: o.touchTtl ?? 0 });
+  const tgDoc = async (chat, name, text, caption) => { if (o.docFail) { const e = new Error("Forbidden"); e.code = 403; throw e; } tg.push(["doc", chat, name, text.length, caption]); return {}; };
+  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, tgDoc, touchTtl: o.touchTtl ?? 0 });
   const call = (route, method, hdr, o = {}) => core.handle({ route, method, headers: hdr ? { "x-tg-init": hdr } : {}, ...o });
   return { store, sent, call, tg };
 }
