@@ -47,7 +47,11 @@ function stick(m,t){const run=m.vx?Math.sin(m.run):0,air=!m.on;x.save();x.transl
   const a=air?.6:run*.8;x.moveTo(0,-8);x.lineTo(Math.sin(a)*7,0);x.moveTo(0,-8);x.lineTo(-Math.sin(a)*7,0);
   x.moveTo(0,-15);x.lineTo(m.f*8,-15);x.moveTo(0,-15);x.lineTo(-m.f*4+run*2,-9);x.stroke();
   x.shadowBlur=0;x.fillStyle="#cfd6ff";x.fillRect(m.f>0?6:-12,-17,6,3);x.restore()}
-function draw(){x.save();x.fillStyle="#0b0618";x.fillRect(0,0,W,H);
+/* пиксельные надписи «как на телике»: текст рисуется в маленький холст 320×200 и растягивается без сглаживания */
+const L=document.createElement("canvas");L.width=320;L.height=200;const lx=L.getContext("2d");
+function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";lx.textBaseline="alphabetic";
+  if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
+function draw(){lx.clearRect(0,0,320,200);x.save();x.fillStyle="#0b0618";x.fillRect(0,0,W,H);
   const ox=(W-320*S)/2+(Math.random()-.5)*shake,oy=(H-200*S)/2+(Math.random()-.5)*shake;x.translate(ox,oy);x.scale(S,S);
   const g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,"#1c0d3d");g.addColorStop(1,"#0a0518");x.fillStyle=g;x.fillRect(0,0,320,200);
   x.strokeStyle="rgba(140,90,255,.12)";x.lineWidth=1;for(let i=0;i<=320;i+=20){x.beginPath();x.moveTo(i,0);x.lineTo(i,200);x.stroke()}for(let j=0;j<=200;j+=20){x.beginPath();x.moveTo(0,j);x.lineTo(320,j);x.stroke()}
@@ -55,16 +59,16 @@ function draw(){x.save();x.fillStyle="#0b0618";x.fillRect(0,0,W,H);
   if(st!=="menu"){for(const b of B){x.fillStyle=b.own?"#ff8fc6":"#fff6a8";x.shadowColor=x.fillStyle;x.shadowBlur=6;x.fillRect(b.x-3,b.y-1,6,2)}x.shadowBlur=0;
     for(const e of E)stick(e);stick(P);
     for(const f of FX){x.globalAlpha=Math.min(1,f.l/10);x.fillStyle=f.c;if(f.p)x.fillRect(f.x,f.y,2,2);else{x.beginPath();x.arc(f.x,f.y,f.r,0,7);x.fill()}}x.globalAlpha=1;
-    x.font="bold 11px monospace";x.fillStyle="#fff";x.textAlign="left";x.fillText("СЧЁТ "+score,8,14);x.textAlign="right";x.fillText("ВОЛНА "+wave,312,14);
+    pt("СЧЁТ "+score,8,14,11,"#fff","left");pt("ВОЛНА "+wave,312,14,11,"#fff","right");
     for(let i=0;i<5;i++){x.fillStyle=i<P.hp?"#4df3ff":"#33236a";x.fillRect(8+i*9,19,7,4)}}
   if(flash){x.fillStyle="rgba(255,60,120,"+flash/30+")";x.fillRect(0,0,320,200)}
   if(st!=="play"){x.fillStyle="rgba(8,4,20,.72)";x.fillRect(0,0,320,200);x.textAlign="center";
-    x.font="bold 30px monospace";x.fillStyle="#4df3ff";x.shadowColor="#4df3ff";x.shadowBlur=12;x.fillText("STICK FIGHT",160,70);x.shadowBlur=0;
-    x.font="bold 11px monospace";x.fillStyle="#ff4fa3";x.fillText(st==="over"?"ВЫ ПАЛИ · СЧЁТ "+score+" · РЕКОРД "+best:"МИНИ-ТЕСТ · ВОЛНЫ БОТОВ",160,92);
-    x.fillStyle="#fff";x.fillText((Date.now()/500|0)%2?"":"НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,122);
-    x.fillStyle="#9a8cd0";x.font="9px monospace";x.fillText(TOUCH?"кнопки внизу: бег · прыжок · огонь":"←→ бег · ↑ прыжок · X или клик — огонь",160,146);
-    x.fillText("Полная версия: PvP до 7 игроков — «Скачать» или «Играть»",160,160)}
-  x.restore();if(TOUCH&&st==="play")pads()}
+    pt("STICK FIGHT",160,70,30,"#4df3ff","center","#123a52");
+    pt(st==="over"?"ВЫ ПАЛИ · СЧЁТ "+score+" · РЕКОРД "+best:"МИНИ-ТЕСТ · ВОЛНЫ БОТОВ",160,92,11,"#ff4fa3");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,122,11,"#fff");
+    pt(TOUCH?"КНОПКИ ВНИЗУ: БЕГ · ПРЫЖОК · ОГОНЬ":"←→ БЕГ · ↑ ПРЫЖОК · X — ОГОНЬ",160,146,9,"#9a8cd0");
+    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,160,9,"#9a8cd0")}
+  x.restore();x.save();x.imageSmoothingEnabled=false;x.drawImage(L,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore();if(TOUCH&&st==="play")pads()}
 /* ---------- управление ---------- */
 let TOUCH=matchMedia("(pointer:coarse)").matches;const PADS=[["l","◀",.09],["r","▶",.24],["j","▲",.76],["s","✦",.91]];
 function pads(){const r=Math.max(22,Math.min(W,H)*.09);x.font="bold "+(r*.8|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";

@@ -1613,8 +1613,9 @@ class Card{
       const [a,bb,,d]=P,ux=bb[0]-a[0],uy=bb[1]-a[1],vx=d[0]-a[0],vy=d[1]-a[1],S=256,lu=Math.hypot(ux,uy),lv=Math.hypot(vx,vy);
       const IA=this.iart&&this.m.item==="cards"?this.iart:null;
       if(IA){/* настоящие карты: половина картинки на карту (0 — задняя, 1 — передняя), по центру без растягивания, поверх как есть */
-        const hw=IA.width/2,ih=IA.height,cw=Math.min(hw,ih*lu/lv),ch=Math.min(ih,hw*lv/lu),sx=n*hw+(hw-cw)/2,sy=(ih-ch)/2;
-        x.globalCompositeOperation="source-over";x.globalAlpha=1;x.setTransform(ux/cw,uy/cw,vx/ch,vy/ch,a[0],a[1]);x.drawImage(IA,sx,sy,cw,ch,0,0,cw,ch);
+        /* карта вписывается целиком (цифры в углах не обрезаются), по краям остаётся белая рамка самого спрайта */
+        const hw=IA.width/2,ih=IA.height,s=Math.min(lu/hw,lv/ih)*.96,ox=(lu-hw*s)/2,oy=(lv-ih*s)/2,eu=[ux/lu,uy/lu],ev=[vx/lv,vy/lv];
+        x.globalCompositeOperation="source-over";x.globalAlpha=1;x.setTransform(eu[0]*s,eu[1]*s,ev[0]*s,ev[1]*s,a[0]+eu[0]*ox+ev[0]*oy,a[1]+eu[1]*ox+ev[1]*oy);x.drawImage(IA,n*hw,0,hw,ih,0,0,hw,ih);
         x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="soft-light";x.globalAlpha=.25;x.drawImage(b,0,0);x.restore();return}
       x.globalCompositeOperation="multiply";x.globalAlpha=.93;
       if(lv>lu){/* высокая область (карты): берём центральную вертикальную полосу картинки, без растягивания */
@@ -2593,7 +2594,6 @@ function pageHTML(m,kind){
       <span class="rec">● LIVE</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" type="button" aria-pressed="false" aria-label="Включить игру"></button><span class="lab">power</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
-  <p class="hint2">${m.playable&&SUB_API?"Мини-тест игры · нажмите на экран или кнопку power"+(m.file?". Полная версия — большая кнопка «Играть»":""):m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
     <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}${tagsOf(m).map(t=>`<button type="button" class="tag tagb" data-tag="${esc(t)}" title="Все игры с тегом">${esc(t)}</button>`).join("")}</div>

@@ -1,0 +1,85 @@
+-- UNIK: мини-тест для «телевизора» с пиксельным шрифтом. Выполнить один раз.
+update public.games set play_html = $cpx$<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>UNIK — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#0b0618;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{display:block;width:100%;height:100%}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+/* UNIK — мини-тест для «телевизора» Coopix: дуэль с ботом. Кладите карту того же цвета или числа,
+   +2 заставляет взять две, ⟲ пропускает ход соперника. Нет хода — нажмите на колоду. Первым без карт — победа. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1,OX=0,OY=0;
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);S=Math.min(W/320,H/220);OX=(W-320*S)/2;OY=(H-220*S)/2};
+addEventListener("resize",fit);fit();
+const COL=["#e8231b","#f5c518","#22b04b","#1f6fe0"],DK=["#8e120d","#9a7a05","#11692c","#0e3f87"];
+let deck,me,bot,top,turn,st="menu",msg="",msgT=0,wins=0,loss=0,anim=[],botT=0,hover=-1;
+try{const s=JSON.parse(localStorage.getItem("unik.tv")||"{}");wins=s.w|0;loss=s.l|0}catch(e){}
+const save=()=>{try{localStorage.setItem("unik.tv",JSON.stringify({w:wins,l:loss}))}catch(e){}};
+function newDeck(){const d=[];for(let c=0;c<4;c++){for(let v=0;v<=9;v++){d.push({c,v});if(v)d.push({c,v})}for(let k=0;k<2;k++){d.push({c,v:"+2"});d.push({c,v:"⟲"})}}
+  for(let i=d.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[d[i],d[j]]=[d[j],d[i]]}return d}
+function draw1(h){if(!deck.length)deck=newDeck();h.push(deck.pop())}
+function start(){deck=newDeck();me=[];bot=[];for(let i=0;i<7;i++){draw1(me);draw1(bot)}do{top=deck.pop()}while(typeof top.v!=="number");turn=0;st="play";say("Ваш ход");}
+const ok=k=>k.c===top.c||k.v===top.v;
+function say(t){msg=t;msgT=90}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function play(who,i){const h=who?bot:me,k=h.splice(i,1)[0];anim.push({k,t:0,from:who?[160,22]:[160,190]});top=k;beep(who?330:660,.08,"triangle",.06);
+  if(!h.length){st="over";if(who){loss++;say("Бот победил")}else{wins++;say("Победа!")}save();return}
+  if(h.length===1)say(who?"Бот: UNIK!":"UNIK!");
+  const other=who?me:bot;let skip=false;
+  if(k.v==="+2"){draw1(other);draw1(other);skip=true;if(!h.length)return;say(who?"Вам +2":"Боту +2")}
+  else if(k.v==="⟲"){skip=true;say(who?"Бот пропускает ваш ход":"Бот пропускает ход")}
+  turn=skip?(who?1:0):(who?0:1);if(turn===1)botT=40}
+function take(who){const h=who?bot:me;draw1(h);beep(220,.06,"square",.04);const k=h[h.length-1];
+  if(ok(k)){if(who){botT=30;return}say("Можно положить взятую");return}
+  turn=who?0:1;if(turn===1)botT=40;else say("Ваш ход")}
+function botMove(){const i=bot.findIndex(ok);if(i>=0){const pref=bot.findIndex(k=>ok(k)&&typeof k.v!=="number"&&me.length<=3);play(1,pref>=0?pref:i)}else take(1)}
+function step(){if(msgT)msgT--;anim=anim.filter(a=>(a.t+=.08)<1);
+  if(st==="play"&&turn===1&&--botT<=0)botMove()}
+/* ---------- рисование ---------- */
+function rr(px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath()}
+function card(k,px,py,w,h,face,lift,dim){x.save();x.translate(px,py-(lift||0));
+  x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=6;x.shadowOffsetY=2;rr(0,0,w,h,w*.14);x.fillStyle="#fff";x.fill();x.shadowBlur=0;x.shadowOffsetY=0;
+  rr(w*.07,w*.07,w*.86,h-w*.14,w*.1);
+  if(!face){x.fillStyle="#1a1030";x.fill();x.save();x.translate(w/2,h/2);x.rotate(-.5);x.fillStyle="#e8231b";x.beginPath();x.ellipse(0,0,w*.32,h*.3,0,0,7);x.fill();x.restore();
+    x.fillStyle="#f5c518";x.font="bold "+(w*.24|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("UNIK",w/2,h/2+1)}
+  else{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,COL[k.c]);g.addColorStop(1,DK[k.c]);x.fillStyle=g;x.fill();
+    x.save();x.translate(w/2,h/2);x.rotate(-.5);x.fillStyle="rgba(255,255,255,.92)";x.beginPath();x.ellipse(0,0,w*.3,h*.32,0,0,7);x.fill();x.restore();
+    const t=String(k.v);x.textAlign="center";x.textBaseline="middle";x.font="900 "+(w*(t.length>1?.36:.5)|0)+"px sans-serif";x.lineWidth=w*.06;x.strokeStyle=DK[k.c];x.strokeText(t,w/2,h/2+1);x.fillStyle=COL[k.c];x.fillText(t,w/2,h/2+1);
+    x.font="900 "+(w*.2|0)+"px sans-serif";x.fillStyle="#fff";x.fillText(t,w*.2,h*.14);x.fillText(t,w*.8,h*.86)}
+  if(dim){rr(0,0,w,h,w*.14);x.fillStyle="rgba(10,5,25,.45)";x.fill()}x.restore()}
+const CW=34,CH=50;
+/* пиксельные надписи «как на телике»: текст рисуется в маленький холст 320×220 и растягивается без сглаживания */
+const L=document.createElement("canvas");L.width=320;L.height=220;const lx=L.getContext("2d");
+function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";lx.textBaseline="alphabetic";
+  if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
+function handPos(n,i,y){const gap=Math.min(CW+4,(300-CW)/Math.max(1,n-1));const w=gap*(n-1)+CW;return[160-w/2+i*gap,y]}
+function draw(){x.setTransform(1,0,0,1,0,0);const d=c.width/W;x.setTransform(d,0,0,d,0,0);
+  const bg=x.createRadialGradient(W/2,H/2,10,W/2,H/2,Math.max(W,H)*.7);bg.addColorStop(0,"#2a145e");bg.addColorStop(1,"#0b0618");x.fillStyle=bg;x.fillRect(0,0,W,H);
+  lx.clearRect(0,0,320,220);x.save();x.translate(OX,OY);x.scale(S,S);
+  x.strokeStyle="rgba(165,107,255,.25)";x.lineWidth=2;x.beginPath();x.ellipse(160,110,120,44,0,0,7);x.stroke();
+  if(st!=="menu"){
+    bot.forEach((k,i)=>{const [px,py]=handPos(bot.length,i,4);card(k,px,py,CW*.8,CH*.8,false)});
+    card(null,112,84,CW,CH,false);pt("ВЗЯТЬ",129,144,8,"#cfc2ff");
+    card(top,174,84,CW,CH,true);
+    for(const a of anim){const e=1-(1-a.t)**3;card(a.k,a.from[0]+(174-a.from[0])*e-CW/2*(1-e),a.from[1]+(84-a.from[1])*e,CW,CH,true)}
+    me.forEach((k,i)=>{const [px,py]=handPos(me.length,i,162);card(k,px,py,CW,CH,true,i===hover?8:(turn===0&&st==="play"&&ok(k)?4:0),turn===0&&st==="play"&&!ok(k))});
+    pt("БОТ: "+bot.length,6,58,9,"#fff","left");pt("ПОБЕДЫ "+wins+":"+loss,314,58,9,"#fff","right");
+    if(st==="play")pt(turn===0?"▼ ВАШ ХОД":"▲ ХОДИТ БОТ",160,156,9,turn===0?"#7dffb0":"#ff9ad0");
+    if(msgT){lx.globalAlpha=Math.min(1,msgT/20);pt(msg.toUpperCase(),160,76,14,"#fff","center","#2a1260");lx.globalAlpha=1}}
+  if(st!=="play"){x.fillStyle="rgba(8,4,20,"+(st==="menu"?.35:.7)+")";x.fillRect(-OX/S,-OY/S,W/S,H/S);x.textAlign="center";
+    const g=lx.createLinearGradient(0,60,0,92);g.addColorStop(0,"#fff");g.addColorStop(1,"#bfaaff");pt("UNIK",160,88,38,g,"center","#2a1260");
+    pt(st==="over"?(msg+" · "+wins+":"+loss).toUpperCase():"МИНИ-ТЕСТ · ДУЭЛЬ С БОТОМ",160,110,11,"#ffd84d");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,140,11,"#fff");
+    pt("Цвет или число совпало — кладите,",160,162,9,"#b8a8f0");pt("нет хода — берите из колоды.",160,173,9,"#b8a8f0");
+    pt("Полная версия — «Играть» / «Скачать»",160,190,9,"#b8a8f0")}
+  x.restore();x.save();x.imageSmoothingEnabled=false;x.drawImage(L,OX,OY,320*S,220*S);x.restore()}
+/* ---------- управление: нажатие на карту / колоду ---------- */
+function at(ev){const r=c.getBoundingClientRect();return[(ev.clientX-r.left-OX)/S,(ev.clientY-r.top-OY)/S]}
+function hit(px,py){for(let i=me.length-1;i>=0;i--){const [hx,hy]=handPos(me.length,i,162);if(px>=hx&&px<=hx+CW&&py>=hy-8&&py<=hy+CH)return i}return -1}
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(st!=="play"){start();return}if(turn!==0)return;const [px,py]=at(e);
+  if(px>=112&&px<=112+CW&&py>=84&&py<=84+CH){take(0);return}
+  const i=hit(px,py);if(i<0)return;if(ok(me[i]))play(0,i);else{say("Не подходит");beep(120,.1,"square",.04)}});
+c.addEventListener("pointermove",e=>{if(st!=="play"){hover=-1;return}const [px,py]=at(e);hover=hit(px,py)});
+addEventListener("keydown",e=>{if(st!=="play"&&(e.code==="Space"||e.code==="Enter")){e.preventDefault();start()}});
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+})();
+</script></body></html>
+$cpx$, updated_at = now() where id = 'unik';
