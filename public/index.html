@@ -527,17 +527,16 @@ html.winter .panel::before,html.winter .chc::before{content:"";position:absolute
   background:radial-gradient(circle at 10px 0,#fff 7px,transparent 7.5px) 0 0/34px 14px repeat-x,radial-gradient(circle at 26px 2px,#e9f3ff 5px,transparent 5.5px) 0 0/34px 14px repeat-x,linear-gradient(#fff,#fff) 0 0/100% 4px no-repeat;
   filter:drop-shadow(0 2px 2px rgba(120,170,255,.35))}
 html.winter .chc{position:relative}
-/* гирлянда висит вдоль верха нижней панели с кнопками и под снежной шапкой окон и диаграммы (не в шапке сайта — там голубь); заголовкам добавлен отступ под неё */
-html.winter .panel::after,html.winter .chc::after,html.winter .dock-in::before{content:"";position:absolute;left:12px;right:12px;top:9px;height:16px;pointer-events:none;z-index:2;
-  background:radial-gradient(circle at 9px 11px,#ff4d6d 3.5px,transparent 4px) 0 0/72px 16px repeat-x,radial-gradient(circle at 27px 13px,#ffd84d 3.5px,transparent 4px) 0 0/72px 16px repeat-x,
-    radial-gradient(circle at 45px 11px,#4dff9a 3.5px,transparent 4px) 0 0/72px 16px repeat-x,radial-gradient(circle at 63px 13px,#4dc8ff 3.5px,transparent 4px) 0 0/72px 16px repeat-x,
-    radial-gradient(9px 7px at 50% 0,transparent 86%,rgba(220,235,255,.6) 90%,rgba(220,235,255,.6) 100%,transparent 101%) 0 0/18px 16px repeat-x;
+/* гирлянда (SVG: провисающий провод + лампочки): сверху страницы в своей полосе — шапка с логотипом и голубем сдвигается вниз на её высоту,
+   поэтому ничего не перекрывает; в окнах и на диаграмме — под снежной шапкой, заголовкам добавлен отступ */
+html.winter .panel::after,html.winter .chc::after,html.winter .top::after{content:"";position:absolute;left:12px;right:12px;top:9px;height:22px;pointer-events:none;z-index:2;
+  background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='22'><path d='M0 3Q12 11 24 3T48 3T72 3T96 3' fill='none' stroke='%23cfe0ff' stroke-opacity='.55' stroke-width='1.3'/><rect x='10' y='6' width='4' height='3.5' rx='1' fill='%238a86a8'/><ellipse cx='12' cy='14' rx='3.4' ry='4.8' fill='%23ff4d6d'/><circle cx='10.8' cy='12' r='1.1' fill='white' fill-opacity='.7'/><rect x='34' y='6' width='4' height='3.5' rx='1' fill='%238a86a8'/><ellipse cx='36' cy='14' rx='3.4' ry='4.8' fill='%23ffd84d'/><circle cx='34.8' cy='12' r='1.1' fill='white' fill-opacity='.7'/><rect x='58' y='6' width='4' height='3.5' rx='1' fill='%238a86a8'/><ellipse cx='60' cy='14' rx='3.4' ry='4.8' fill='%234dff9a'/><circle cx='58.8' cy='12' r='1.1' fill='white' fill-opacity='.7'/><rect x='82' y='6' width='4' height='3.5' rx='1' fill='%238a86a8'/><ellipse cx='84' cy='14' rx='3.4' ry='4.8' fill='%234dc8ff'/><circle cx='82.8' cy='12' r='1.1' fill='white' fill-opacity='.7'/></svg>") 0 0/96px 22px repeat-x;filter:drop-shadow(0 0 3px rgba(255,220,150,.55));
   animation:wglow 2.4s steps(2) infinite}
-html.winter .dock-in::before{top:4px;left:22px;right:22px;z-index:auto}html.winter .dock button+button::before{top:22px}html.winter .panel>.ph{padding-top:30px}html.winter .chc{padding-top:30px}
-@keyframes wglow{50%{filter:hue-rotate(140deg) brightness(1.25)}}
-html[data-q="0"].winter .panel::after,html[data-q="0"].winter .chc::after,html[data-q="0"].winter .dock-in::before{animation:none}
+html.winter .top{margin-top:22px}html.winter .top::after{top:-24px;left:0;right:0;z-index:0}html.winter .panel>.ph{padding-top:36px}html.winter .chc{padding-top:36px}
+@keyframes wglow{50%{filter:drop-shadow(0 0 5px rgba(255,220,150,.8)) brightness(1.3)}}
+html[data-q="0"].winter .panel::after,html[data-q="0"].winter .chc::after,html[data-q="0"].winter .top::after{animation:none}
 #snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
-@media (prefers-reduced-motion:reduce){html.winter .panel::after,html.winter .chc::after,html.winter .dock-in::before{animation:none}}
+@media (prefers-reduced-motion:reduce){html.winter .panel::after,html.winter .chc::after,html.winter .top::after{animation:none}}
 /* ---------- quality tiers (data-q: 2 high, 1 mid, 0 low) ---------- */
 .card.off .stage,.card.off .bob,.card.off .halo,.card.off .shine,.card.off .noise,.card.off .noise::after{animation-play-state:paused}
 body.pgopen .app,body.pgopen .dock{visibility:hidden}
