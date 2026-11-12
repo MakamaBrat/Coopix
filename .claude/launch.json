@@ -1,11 +1,23 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "static",
-      "runtimeExecutable": "D:\\Programs\\Adobe Photoshop 25\\node.exe",
-      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs'),p=require('path'),r=p.resolve('public'),T={'.html':'text/html; charset=utf-8','.js':'text/javascript','.png':'image/png','.css':'text/css','.mp3':'audio/mpeg','.svg':'image/svg+xml','.json':'application/json','.woff2':'font/woff2'};h.createServer((q,s)=>{let u=decodeURIComponent(q.url.split('?')[0]);if(u.startsWith('/api')){s.writeHead(404);return s.end('{}')}let fp=p.join(r,u==='/'?'index.html':u);if(!fp.startsWith(r)||!f.existsSync(fp)||f.statSync(fp).isDirectory()){s.writeHead(404);return s.end()}s.writeHead(200,{'content-type':T[p.extname(fp)]||'application/octet-stream'});f.createReadStream(fp).pipe(s)}).listen(5178)"],
-      "port": 5178
-    }
-  ]
+﻿{
+    "version":  "0.0.1",
+    "configurations":  [
+                           {
+                               "name":  "static",
+                               "runtimeExecutable":  "D:\\Programs\\Adobe Photoshop 25\\node.exe",
+                               "runtimeArgs":  [
+                                                   "-e",
+                                                   "const h=require(\u0027http\u0027),f=require(\u0027fs\u0027),p=require(\u0027path\u0027),r=p.resolve(\u0027public\u0027),T={\u0027.html\u0027:\u0027text/html; charset=utf-8\u0027,\u0027.js\u0027:\u0027text/javascript\u0027,\u0027.png\u0027:\u0027image/png\u0027,\u0027.css\u0027:\u0027text/css\u0027,\u0027.mp3\u0027:\u0027audio/mpeg\u0027,\u0027.svg\u0027:\u0027image/svg+xml\u0027,\u0027.json\u0027:\u0027application/json\u0027,\u0027.woff2\u0027:\u0027font/woff2\u0027};h.createServer((q,s)=\u003e{let u=decodeURIComponent(q.url.split(\u0027?\u0027)[0]);if(u.startsWith(\u0027/api\u0027)){s.writeHead(404);return s.end(\u0027{}\u0027)}let fp=p.join(r,u===\u0027/\u0027?\u0027index.html\u0027:u);if(!fp.startsWith(r)||!f.existsSync(fp)||f.statSync(fp).isDirectory()){s.writeHead(404);return s.end()}s.writeHead(200,{\u0027content-type\u0027:T[p.extname(fp)]||\u0027application/octet-stream\u0027});f.createReadStream(fp).pipe(s)}).listen(5178)"
+                                               ],
+                               "port":  5178
+                           },
+                           {
+                               "port":  5179,
+                               "runtimeExecutable":  "D:\\Programs\\Adobe Photoshop 25\\node.exe",
+                               "name":  "promo",
+                               "runtimeArgs":  [
+                                                   "-e",
+                                                   "const h=require(\u0027http\u0027),f=require(\u0027fs\u0027),p=require(\u0027path\u0027),r=p.resolve(\u0027.\u0027),T={\u0027.html\u0027:\u0027text/html; charset=utf-8\u0027,\u0027.js\u0027:\u0027text/javascript\u0027,\u0027.png\u0027:\u0027image/png\u0027,\u0027.css\u0027:\u0027text/css\u0027,\u0027.mp3\u0027:\u0027audio/mpeg\u0027,\u0027.svg\u0027:\u0027image/svg+xml\u0027,\u0027.json\u0027:\u0027application/json\u0027,\u0027.wav\u0027:\u0027audio/wav\u0027,\u0027.woff2\u0027:\u0027font/woff2\u0027};h.createServer((q,s)=\u003e{let u=decodeURIComponent(q.url.split(\u0027?\u0027)[0]);if(u.startsWith(\u0027/api\u0027)){s.writeHead(404);return s.end(\u0027{}\u0027)}let fp=p.join(r,u===\u0027/\u0027?\u0027index.html\u0027:u);if(!fp.startsWith(r)||!f.existsSync(fp)||f.statSync(fp).isDirectory()){s.writeHead(404);return s.end()}s.writeHead(200,{\u0027content-type\u0027:T[p.extname(fp)]||\u0027application/octet-stream\u0027});f.createReadStream(fp).pipe(s)}).listen(5179)"
+                                               ]
+                           }
+                       ]
 }
