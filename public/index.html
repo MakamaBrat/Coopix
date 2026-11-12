@@ -2058,7 +2058,7 @@ function pfLevel(P){const lv=lvOf(P.xp),max=lv>=10,a=xpAt(lv),b=xpAt(lv+1),pct=m
   return {pct,html:`<div class="pf-lv enter" style="--i:.06s"><div class="pf-lvh"><b>Уровень ${lv}</b><span>${P.xp} XP</span></div>
     <div class="pf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="--w:0%"></i></div>
     <div class="pf-lvn">${max?"Максимальный уровень":"До уровня "+(lv+1)+": "+(b-P.xp)+" XP · «"+RANKS[lv]+"»"}</div>
-    <div class="pf-st"><div><b>${P.plays}</b><span>Игр</span></div><div><b>${P.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>`}}
+    <div class="pf-st"><div><b>${P===PROF?DATA.filter(d=>d.fav).length:(P.favs||[]).length}</b><span>В избранном</span></div><div><b>${P.reviews}</b><span>Отзывов</span></div><div><b>${n}/${MEDALS.length}</b><span>Медалей</span></div></div></div>`}}
 const animBar=(root,pct)=>requestAnimationFrame(()=>requestAnimationFrame(()=>{const f=root.querySelector(".pf-bar i");if(f)f.style.setProperty("--w",pct+"%")}));
 const PTABS=[["post","Пост"],["medals","Медали"]];
 function pfTabs(P,own,tab){const n=Object.keys(P.medals).length;let post;
