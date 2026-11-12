@@ -1610,8 +1610,12 @@ class Card{
       const HO=D.holes&&D.holes[n];
       x.save();x.beginPath();P.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();
       if(HO){HO.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.clip("evenodd")}else x.clip();
-      const [a,bb,,d]=P,ux=bb[0]-a[0],uy=bb[1]-a[1],vx=d[0]-a[0],vy=d[1]-a[1],S=256,sh=Math.min(S,S*Math.hypot(vx,vy)/Math.hypot(ux,uy)),sy=(S-sh)*D.fy[n],m=[ux/S,uy/S,vx/sh,vy/sh];
-      x.globalCompositeOperation="multiply";x.globalAlpha=.93;x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[2]*sy,a[1]-m[3]*sy);x.drawImage(art,0,0);x.setTransform(1,0,0,1,0,0);fin();x.restore()})}
+      const [a,bb,,d]=P,ux=bb[0]-a[0],uy=bb[1]-a[1],vx=d[0]-a[0],vy=d[1]-a[1],S=256,lu=Math.hypot(ux,uy),lv=Math.hypot(vx,vy);
+      x.globalCompositeOperation="multiply";x.globalAlpha=.93;
+      if(lv>lu){/* высокая область (карты): берём центральную вертикальную полосу картинки, без растягивания */
+        const sw=S*lu/lv,sx=(S-sw)/2,m=[ux/sw,uy/sw,vx/S,vy/S];x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[0]*sx,a[1]-m[1]*sx)}
+      else{const sh=S*lv/lu,sy=(S-sh)*D.fy[n],m=[ux/S,uy/S,vx/sh,vy/sh];x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[2]*sy,a[1]-m[3]*sy)}
+      x.drawImage(art,0,0);x.setTransform(1,0,0,1,0,0);fin();x.restore()})}
   cdKill(){if(this.cda){this.cda.forEach(a=>a.cancel());this.cda=null}}
   cdMake(){this.cdKill();const cv=this.r.item.querySelectorAll(".cdw canvas");if(cv.length<2||!cv[0].animate)return;
     this.cda=[0,1].map(i=>cv[i].animate([{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],{duration:2600,iterations:Infinity}));this.cdRun()}
