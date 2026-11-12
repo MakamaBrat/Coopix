@@ -1,0 +1,90 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Gravity Fight — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#f7f4ec;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{display:block;width:100%;height:100%}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+/* Gravity Fight — мини-тест для «телевизора» Coopix: мотоцикл на трассе из тетради.
+   ↑/W — газ, ↓/S — тормоз, ←/→ — наклон. Телефон: кнопки на экране. Доедьте до флажка и не ударьтесь головой. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1,OX=0,OY=0;
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;S=Math.min(W/320,H/200);OX=(W-320*S)/2;OY=(H-200*S)/2};
+addEventListener("resize",fit);fit();
+/* трасса: ломаная по точкам, в конце флажок */
+const T=[];let FIN=0;
+function track(){T.length=0;let px=-60,py=150;T.push([px,py]);T.push([60,150]);px=60;
+  const segs=[[50,-6],[40,-18],[30,8],[50,0],[40,-30],[20,26],[60,0],[40,18],[40,-22],[30,-14],[50,0],[25,30],[25,-30],[60,0],[40,-26],[40,-10],[30,36],[60,0],[50,-20],[30,24],[80,0]];
+  for(const [dx,dy] of segs){px+=dx;py=Math.max(70,Math.min(175,py+dy));T.push([px,py])}FIN=px-40;T.push([px+400,py])}
+function ground(px){for(let i=1;i<T.length;i++){const [x0,y0]=T[i-1],[x1,y1]=T[i];if(px<=x1){const k=(px-x0)/(x1-x0);return[y0+(y1-y0)*k,Math.atan2(y1-y0,x1-x0)]}}return[T[T.length-1][1],0]}
+const R=7,LEN=27,G=.18,K={};let A,B,st="menu",t0=0,tm=0,best=0,camX=0,crash=0,dust=[];
+try{best=+localStorage.getItem("gf.tv")||0}catch(e){}
+function reset(){track();A={x:40,y:130,vx:0,vy:0,on:0};B={x:40+LEN,y:130,vx:0,vy:0,on:0};st="play";t0=performance.now();tm=0;crash=0;dust=[];camX=0}
+function wheel(w,drive){w.vy+=G;w.x+=w.vx;w.y+=w.vy;const [gy,ang]=ground(w.x),nx=Math.sin(ang),ny=-Math.cos(ang),tx=Math.cos(ang),ty=Math.sin(ang);
+  /* расстояние центра колеса до линии трассы по нормали */
+  const d=(w.y-gy)*Math.cos(ang);w.on=0;
+  if(d>-R){const p=d+R;w.x+=nx*p;w.y+=ny*p;const vn=w.vx*nx+w.vy*ny;if(vn>0){w.vx-=vn*nx*1.25;w.vy-=vn*ny*1.25}
+    let vt=w.vx*tx+w.vy*ty;vt*=.995;if(drive)vt=drive>0?Math.min(vt+.12,3.4):vt*.86;
+    const vn2=w.vx*nx+w.vy*ny;w.vx=tx*vt+nx*vn2;w.vy=ty*vt+ny*vn2;w.on=1;if(drive>0&&Math.random()<.4)dust.push({x:w.x,y:w.y+R,l:20,vx:-tx-Math.random(),vy:-Math.random()})}}
+function step(){if(st!=="play")return;tm=performance.now()-t0;
+  const gas=K.u?1:K.d?-1:0,lean=(K.r?1:0)-(K.l?1:0);
+  wheel(A,gas>0?1:gas<0?-1:0);wheel(B,gas<0?-1:0);
+  /* жёсткая рама между колёсами */
+  let dx=B.x-A.x,dy=B.y-A.y,dl=Math.hypot(dx,dy)||1,df=(dl-LEN)/dl/2;A.x+=dx*df;A.y+=dy*df;B.x-=dx*df;B.y-=dy*df;
+  const ux=dx/dl,uy=dy/dl;const rvx=B.vx-A.vx,rvy=B.vy-A.vy,along=rvx*ux+rvy*uy;A.vx+=ux*along/2;A.vy+=uy*along/2;B.vx-=ux*along/2;B.vy-=uy*along/2;
+  /* наклон: колёса толкаются в разные стороны поперёк рамы */
+  if(lean){const px=-uy,py=ux,f=.11*lean*(A.on||B.on?1:.8);A.vx+=px*f;A.vy+=py*f;B.vx-=px*f;B.vy-=py*f}
+  /* голова гонщика: над серединой рамы; коснулась земли — падение */
+  const hx=(A.x+B.x)/2+uy*22,hy=(A.y+B.y)/2-ux*22;if(hy>ground(hx)[0]-3||A.y>260){st="over";crash=1;beep(90,.3,"sawtooth",.08)}
+  if(A.x>FIN&&B.x>FIN){st="over";crash=0;const s=tm/1000;if(!best||s<best){best=s;try{localStorage.setItem("gf.tv",best)}catch(e){}}beep(880,.2,"triangle",.07)}
+  camX+=((A.x+B.x)/2-110-camX)*.12;dust=dust.filter(p=>(p.x+=p.vx,p.y+=p.vy,--p.l>0))}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+/* пиксельные надписи «как на телике» */
+const L=document.createElement("canvas");L.width=320;L.height=200;const lx=L.getContext("2d");
+function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
+function wheelDraw(w,rot){x.save();x.translate(w.x,w.y);x.rotate(rot);x.fillStyle="#222";x.beginPath();x.arc(0,0,R,0,7);x.fill();x.fillStyle="#9aa0a8";x.beginPath();x.arc(0,0,R*.55,0,7);x.fill();
+  x.strokeStyle="#333";x.lineWidth=1;for(let i=0;i<4;i++){x.beginPath();x.moveTo(0,0);x.lineTo(Math.cos(i*1.57)*R*.55,Math.sin(i*1.57)*R*.55);x.stroke()}x.restore()}
+function draw(){const d=c.width/W;x.setTransform(d,0,0,d,0,0);x.fillStyle="#f7f4ec";x.fillRect(0,0,W,H);lx.clearRect(0,0,320,200);
+  x.save();x.translate(OX,OY);x.scale(S,S);x.beginPath();x.rect(0,0,320,200);x.clip();
+  const cx=st==="menu"?0:camX;x.strokeStyle="rgba(120,150,200,.18)";x.lineWidth=1;for(let i=-(cx%20);i<=320;i+=20){x.beginPath();x.moveTo(i,0);x.lineTo(i,200);x.stroke()}for(let j=0;j<=200;j+=20){x.beginPath();x.moveTo(0,j);x.lineTo(320,j);x.stroke()}
+  x.translate(-cx,0);if(!T.length)track();
+  /* трасса: штриховка под линией и толстая линия карандашом */
+  x.beginPath();x.moveTo(T[0][0],220);for(const p of T)x.lineTo(p[0],p[1]);x.lineTo(T[T.length-1][0],220);x.closePath();x.fillStyle="#efebe0";x.fill();
+  x.save();x.clip();x.strokeStyle="rgba(60,60,60,.22)";x.lineWidth=1;for(let i=Math.floor(cx/8)*8-200;i<cx+340;i+=8){x.beginPath();x.moveTo(i,220);x.lineTo(i+120,0);x.stroke()}x.restore();
+  x.strokeStyle="#222";x.lineWidth=3;x.lineJoin="round";x.beginPath();T.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();
+  const [fy]=ground(FIN);x.strokeStyle="#222";x.lineWidth=2;x.beginPath();x.moveTo(FIN,fy);x.lineTo(FIN,fy-34);x.stroke();
+  for(let i=0;i<4;i++)for(let j=0;j<3;j++){x.fillStyle=(i+j)%2?"#222":"#fff";x.fillRect(FIN+i*4,fy-34+j*4,4,4)}
+  if(A){for(const p of dust){x.globalAlpha=p.l/20;x.fillStyle="#aaa";x.fillRect(p.x,p.y,2,2)}x.globalAlpha=1;
+    const dx=B.x-A.x,dy=B.y-A.y,ang=Math.atan2(dy,dx),mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+    wheelDraw(A,A.x/R);wheelDraw(B,B.x/R);
+    x.save();x.translate(mx,my);x.rotate(ang);
+    x.strokeStyle="#2b2b2b";x.lineWidth=2.4;x.lineCap="round";x.beginPath();x.moveTo(-13,0);x.lineTo(-4,-8);x.lineTo(8,-8);x.lineTo(13,0);x.moveTo(8,-8);x.lineTo(10,-15);x.stroke();
+    x.fillStyle="#3fa34d";x.beginPath();x.moveTo(-10,-9);x.lineTo(6,-11);x.lineTo(8,-6);x.lineTo(-6,-5);x.closePath();x.fill();
+    /* гонщик: синяя кофта, красная шапка, шарф */
+    x.strokeStyle="#2457c5";x.lineWidth=3.2;x.beginPath();x.moveTo(-3,-10);x.lineTo(0,-20);x.stroke();x.lineWidth=2;x.beginPath();x.moveTo(0,-19);x.lineTo(9,-15);x.stroke();
+    x.strokeStyle="#222";x.beginPath();x.moveTo(-3,-10);x.lineTo(3,-6);x.stroke();
+    x.fillStyle="#fff";x.strokeStyle="#222";x.lineWidth=1.4;x.beginPath();x.arc(1,-25,4.5,0,7);x.fill();x.stroke();
+    x.fillStyle="#e33";x.beginPath();x.arc(1,-26,4.6,Math.PI,0);x.fill();x.beginPath();x.arc(1,-31,1.4,0,7);x.fill();x.fillRect(-6,-22,5,2);
+    x.restore()}
+  x.restore();
+  if(st==="play"){pt((tm/1000).toFixed(1)+" С",8,14,11,"#222","left");if(best)pt("РЕКОРД "+best.toFixed(1),312,14,11,"#222","right")}
+  if(st!=="play"){x.save();x.translate(OX,OY);x.scale(S,S);x.fillStyle="rgba(247,244,236,"+(st==="menu"?.55:.75)+")";x.fillRect(0,0,320,200);x.restore();
+    pt("GRAVITY",160,62,30,"#fff","center","#222");pt("FIGHT",160,92,30,"#e33","center","#222");
+    pt(st==="over"?(crash?"ПАДЕНИЕ! ДЕРЖИТЕ БАЛАНС":"ФИНИШ · "+(tm/1000).toFixed(1)+" С"+(best?" · РЕКОРД "+best.toFixed(1):"")):"МИНИ-ТЕСТ · ОДНА ТРАССА",160,112,11,"#2457c5");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ЕХАТЬ",160,138,11,"#222");
+    pt(TOUCH?"КНОПКИ: ◀▶ НАКЛОН · ГАЗ · ТОРМОЗ":"↑ ГАЗ · ↓ ТОРМОЗ · ←→ НАКЛОН",160,160,9,"#555");
+    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,174,9,"#555")}
+  x.save();x.imageSmoothingEnabled=false;x.drawImage(L,OX,OY,320*S,200*S);x.restore();if(TOUCH&&st==="play")pads()}
+/* ---------- управление ---------- */
+let TOUCH=matchMedia("(pointer:coarse)").matches;const PADS=[["l","◀",.08],["r","▶",.22],["d","■",.78],["u","▲",.92]];
+function pads(){const r=Math.max(20,Math.min(W,H)*.085);x.font="bold "+(r*.8|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";
+  for(const [k,t,px] of PADS){const cx=W*px,cy=H-r*1.3;x.globalAlpha=K[k]?.6:.3;x.fillStyle="#222";x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=.95;x.fillStyle="#fff";x.fillText(t,cx,cy+1)}x.globalAlpha=1;x.textBaseline="alphabetic"}
+const touches=new Map();
+function padAt(px,py){const r=Math.max(20,Math.min(W,H)*.085);for(const [k,,f] of PADS)if(Math.hypot(px-W*f,py-(H-r*1.3))<r*1.6)return k;return null}
+function sync(){for(const [k] of PADS)K[k]=false;for(const k of touches.values())if(k)K[k]=true}
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(e.pointerType==="touch")TOUCH=true;if(st!=="play"){reset();return}if(e.pointerType==="touch"){touches.set(e.pointerId,padAt(e.offsetX,e.offsetY));sync()}else K.u=true});
+c.addEventListener("pointermove",e=>{if(touches.has(e.pointerId)){touches.set(e.pointerId,padAt(e.offsetX,e.offsetY));sync()}});
+const up=e=>{if(touches.delete(e.pointerId))sync();else K.u=false};c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+const KM={ArrowUp:"u",KeyW:"u",ArrowDown:"d",KeyS:"d",ArrowLeft:"l",KeyA:"l",ArrowRight:"r",KeyD:"r"};
+addEventListener("keydown",e=>{if(st!=="play"&&(e.code==="Space"||e.code==="Enter")){e.preventDefault();reset();return}const k=KM[e.code];if(!k)return;e.preventDefault();K[k]=true});
+addEventListener("keyup",e=>{const k=KM[e.code];if(k)K[k]=false});
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+})();
+</script></body></html>

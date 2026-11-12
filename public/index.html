@@ -219,7 +219,7 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
   box-shadow:inset 0 0 0 3px rgba(0,0,0,.4)}
 
 .info{position:absolute;left:478px;top:0;width:236px;height:100%}
-.title{position:absolute;left:0;top:44px;width:100%;font-weight:600;font-size:36px;line-height:44px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+.title{position:absolute;left:0;top:40px;width:100%;font-weight:600;font-size:42px;line-height:48px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-transform:uppercase;color:#fff4ee;text-shadow:0 3px 0 rgba(0,0,0,.45)}
 .stars{position:absolute;left:0;top:102px;display:flex;gap:4px}
 .stars button{width:38px;height:38px;display:grid;place-items:center;transition:transform .12s}
@@ -1192,8 +1192,8 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
 <script>/* Спрайты лежат файлами в assets/spr/ (кэш на год, см. vercel.json). Меняете картинку — переименуйте файл или папку, иначе у игроков останется старая. */
 window.SPRITES=Object.fromEntries(["cassette","cd","floppy","handheld","cards","case_a","case_b","case_c","case_d","case_e","case_f","case_g"].map(k=>[k,"assets/spr/"+k+".png"]));
 /* геометрия: лицевая грань коробки (куда ложится обложка) и детали предметов. Раньше лежала в том же sprites.js */
-window.FACES={"case_g":{"w":182,"h":198,"q":[[0.2857,0.1768],[0.7253,0.1212],[0.8242,0.7424],[0.3956,0.8333]]},"case_a":{"w":203,"h":203,"q":[[0.1527,0.1823],[0.729,0.0838],[0.8966,0.7783],[0.33,0.8966]]},"case_b":{"w":206,"h":196,"q":[[0.1262,0.1582],[0.8447,0.0408],[0.9466,0.7806],[0.2184,0.9286]]},"case_c":{"w":219,"h":190,"q":[[0.2237,0.2],[0.7534,0.0737],[0.9178,0.7474],[0.3881,0.9211]]},"case_d":{"w":170,"h":198,"q":[[0.1214,0.1],[0.9357,0.0421],[0.9357,0.8789],[0.1214,0.9526]]},"case_e":{"w":204,"h":178,"q":[[0.0784,0.2471],[0.7206,0.0786],[0.9461,0.7022],[0.2941,0.9382]]},"case_f":{"w":189,"h":178,"q":[[0.0529,0.236],[0.7037,0.0618],[0.9418,0.7472],[0.2858,0.9382]]}};
-window.DECOR={"cards":{"polys":[[[80,40],[158,53],[147,171],[68,158]],[[18,45],[88,33],[115,150],[42,167]]],"holes":[[[3,41],[94,21],[125,161],[36,181]],null],"fy":[0.5,0.5]},"cassette":{"polys":[[[30,60],[188,12],[204,92],[48,140]],[[124,146],[176,128],[182,146],[130,164]]],"holes":[[[56,82],[188,43],[196,75],[64,115]],null],"fy":[0.5,0.85]},"cd":{"c":[107,96],"rx":104,"ry":92,"hub":[107,96,29,28,13]},"floppy":{"polys":[[[60,100],[137,82],[152,146],[72,159]]],"fy":[0.5]},"handheld":{"polys":[[[43,40],[119,25],[124,77],[52,90]]],"fy":[0.5]}};</script>
+window.FACES={"case_g":{"w":182,"h":198,"q":[[0.2418,0.1515],[0.7692,0.0808],[0.8791,0.7677],[0.3626,0.8737]]},"case_a":{"w":203,"h":203,"q":[[0.1527,0.1823],[0.729,0.0838],[0.8966,0.7783],[0.33,0.8966]]},"case_b":{"w":206,"h":196,"q":[[0.1262,0.1582],[0.8447,0.0408],[0.9466,0.7806],[0.2184,0.9286]]},"case_c":{"w":219,"h":190,"q":[[0.2237,0.2],[0.7534,0.0737],[0.9178,0.7474],[0.3881,0.9211]]},"case_d":{"w":170,"h":198,"q":[[0.1214,0.1],[0.9357,0.0421],[0.9357,0.8789],[0.1214,0.9526]]},"case_e":{"w":204,"h":178,"q":[[0.0784,0.2471],[0.7206,0.0786],[0.9461,0.7022],[0.2941,0.9382]]},"case_f":{"w":189,"h":178,"q":[[0.0529,0.236],[0.7037,0.0618],[0.9418,0.7472],[0.2858,0.9382]]}};
+window.DECOR={"cards":{"polys":[[[80,40],[158,53],[147,171],[68,158]],[[18,45],[88,33],[115,150],[42,167]]],"holes":[[[3,41],[94,21],[125,161],[36,181]],null],"outer":[[[72,32],[168,47],[154,180],[60,166]],[[3,41],[94,21],[125,161],[36,181]]],"fy":[0.5,0.5]},"cassette":{"polys":[[[30,60],[188,12],[204,92],[48,140]],[[124,146],[176,128],[182,146],[130,164]]],"holes":[[[56,82],[188,43],[196,75],[64,115]],null],"fy":[0.5,0.85]},"cd":{"c":[107,96],"rx":104,"ry":92,"hub":[107,96,29,28,13]},"floppy":{"polys":[[[60,100],[137,82],[152,146],[72,159]]],"fy":[0.5]},"handheld":{"polys":[[[43,40],[119,25],[124,77],[52,90]]],"fy":[0.5]}};</script>
 <script>
 (()=>{
 "use strict";
@@ -1614,6 +1614,11 @@ class Card{
       const IA=this.iart&&this.m.item==="cards"?this.iart:null;
       if(IA){/* настоящие карты: половина картинки на карту (0 — задняя, 1 — передняя), по центру без растягивания, поверх как есть */
         /* карта вписывается целиком (цифры в углах не обрезаются), по краям остаётся белая рамка самого спрайта */
+        /* рамка карты — в цвет её картинки: средний цвет половины картинки «умножением» поверх белой рамки спрайта (тени и контур остаются) */
+        if(D.outer){x.restore();x.save();const O=D.outer[n],q=(IA._col||(IA._col=artCols(IA)))[n];x.beginPath();O.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();
+          if(HO){HO.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.clip("evenodd")}else x.clip();
+          x.globalCompositeOperation="multiply";x.fillStyle=`rgb(${q})`;x.fillRect(0,0,cv.width,cv.height);x.restore();
+          x.save();x.beginPath();P.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();if(HO){HO.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.clip("evenodd")}else x.clip()}
         const hw=IA.width/2,ih=IA.height,s=Math.min(lu/hw,lv/ih)*.96,ox=(lu-hw*s)/2,oy=(lv-ih*s)/2,eu=[ux/lu,uy/lu],ev=[vx/lv,vy/lv];
         x.globalCompositeOperation="source-over";x.globalAlpha=1;x.setTransform(eu[0]*s,eu[1]*s,ev[0]*s,ev[1]*s,a[0]+eu[0]*ox+ev[0]*oy,a[1]+eu[1]*ox+ev[1]*oy);x.drawImage(IA,n*hw,0,hw,ih,0,0,hw,ih);
         x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="soft-light";x.globalAlpha=.25;x.drawImage(b,0,0);x.restore();return}
@@ -2720,6 +2725,9 @@ function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=fal
   x.drawImage(PG.art,46,8,68,68);setOv("idle");tvShot()}
 /* скриншот игры на «телевизоре»: пока игра не запущена, экран показывает его (сжатый JPEG с сервера, кэш на сессию) */
 const SHOTC={},IARTC={};
+/* средний цвет левой и правой половины картинки карт (для окраски рамок), немного осветлённый */
+function artCols(im){const c=document.createElement("canvas");c.width=2;c.height=1;const g=c.getContext("2d");g.drawImage(im,0,0,2,1);const d=g.getImageData(0,0,2,1).data;
+  return[0,1].map(i=>[0,1,2].map(k=>Math.min(255,Math.round(d[i*4+k]*.85+60))).join(","))}
 /* картинка двух карт для предмета «Карты» (кэш на сессию) */
 function itemArt(id){if(!IARTC[id])IARTC[id]=hub("cover",{q:{id,kind:"item"}}).then(j=>new Promise(r=>{if(!j||!j.img)return r(null);const im=new Image();im.onload=()=>r(im);im.onerror=()=>r(null);im.src=j.img})).catch(()=>null);return IARTC[id]}
 async function tvShot(){const me=PG,s=$("#scr");if(!me||!s||!me.m.shot||!SUB_API)return;
