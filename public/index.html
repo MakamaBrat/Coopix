@@ -411,7 +411,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 }
 
 /* CD: rainbow diffraction sheen */
-.item.cd .shine{opacity:.85;mix-blend-mode:color;animation:cdsheen 5.5s ease-in-out infinite alternate;
+.item.cd .shine{opacity:.85;mix-blend-mode:color;animation:cdsheen 5.5s steps(36) infinite alternate; /* ступеньками: ~7 перерисовок в секунду вместо каждого кадра */
   background:conic-gradient(from var(--a),#0000 0deg,#ff4fb8 18deg,#ffd23f 42deg,#4dff9a 66deg,#3fc4ff 90deg,#8a5cff 114deg,#0000 140deg,#0000 180deg,#ff4fb8 198deg,#ffd23f 222deg,#4dff9a 246deg,#3fc4ff 270deg,#8a5cff 294deg,#0000 320deg,#0000 360deg)}
 .card:hover .item.cd .shine{animation-duration:2.2s;opacity:1}
 /* the disc itself really spins (cover wedges + hub, see Card.cdMake); the rainbow glint stays put and sweeps across it */
@@ -1250,7 +1250,7 @@ function gpuWeak(){if(GPUW>=0)return GPUW;GPUW=1;try{const c=document.createElem
   GPUW=/swiftshader|llvmpipe|softpipe|software|mali-?4\d\d|mali-t[0-7]\d\d|adreno.{0,6}[2-3]\d\d\b|powervr.{0,4}(sgx|ge)|vivante|videocore/i.test(r)?1:0;
   const l=g.getExtension("WEBGL_lose_context");l&&l.loseContext()}}catch(e){}return GPUW}
 const autoQ=()=>SAVE||OLD||MEM<=2||CORES<=2||gpuWeak()?0:navigator.deviceMemory&&MEM<=4?1:2;
-function applyQ(){document.documentElement.dataset.q=Q;FI=[100,66,50][Q];BI=[250,100,50][Q];bgPainted=false;if(typeof syncQsw==="function")syncQsw()}
+function applyQ(){document.documentElement.dataset.q=Q;FI=[100,80,66][Q];BI=[250,120,80][Q]; /* пиксельным фонам и звёздам хватает ~15 кадров/с */bgPainted=false;if(typeof syncQsw==="function")syncQsw()}
 var bgPainted=false;
 /* старт всегда полный (2); «Авто» может понизить качество позже, по реальной плавности, и только до закрытия приложения */
 Q=String(SET.quality)==="auto"?2:+SET.quality;applyQ();
@@ -1442,29 +1442,36 @@ void main(){
   vec3 c;
 `;
 const FBODY=[`
-  vec2 grid=vec2(40.,40./asp);
-  vec2 cell=floor(uv*grid);
-  vec2 q=(cell+.5)/grid;
-  vec2 pq=vec2(q.x*asp,q.y);
-  float w1=sin(pq.x*3.1+pq.y*2.2-uT*.35);
-  float w2=sin(pq.x*1.7-pq.y*3.4+uT*.27+w1*.8);
-  float lum=.5+.25*w1+.25*w2;
-  float ql=floor(lum*6.)/6.;
-  float m=smoothstep(1.,.12,q.x);
-  vec3 col=mix(uB*.45,uA*.95,ql);
-  col=mix(col,uC,smoothstep(.78,1.,ql)*.35);
-  c=mix(vec3(.035,.02,.08),col,m*.85+.06);
-  c+=uC*.06*m*step(.5,fract((cell.x+cell.y)*.5));
-`,`  vec2 g2=vec2(30.,30./asp);
+  vec2 g2=vec2(64.,64./asp);
   vec2 cl=floor(uv*g2);
   vec2 qq=(cl+.5)/g2;
+  float x=qq.x*asp;
+  vec3 sky=mix(uB*.18,uA*.42,smoothstep(.0,.6,qq.y));
+  c=floor(sky*8.)/8.;
+  c+=uC*step(.985,h21(cl))*step(qq.y,.5)*.6;
+  float s1=.52+.06*sin(x*4.-uT*.35)+.03*sin(x*9.+uT*.2);
+  float s2=.66+.07*sin(x*3.2+uT*.55+1.7)+.03*sin(x*7.-uT*.4);
+  float s3=.80+.06*sin(x*2.4-uT*.8+3.1)+.03*sin(x*6.3+uT*.6);
+  float px=1./g2.y;
+  if(qq.y>s1){c=mix(uB*.45,uA*.55,.35);c+=uC*.35*step(qq.y,s1+px);}
+  if(qq.y>s2){c=mix(uB*.55,uA*.75,.55);c+=uC*.45*step(qq.y,s2+px);}
+  if(qq.y>s3){c=mix(uB*.7,uA,.8);c+=uC*.55*step(qq.y,s3+px);}
+  c*=1.-.45*smoothstep(.55,1.,qq.x);
+`,`  vec2 g2=vec2(26.,26./asp);
+  vec2 cl=floor(uv*g2);
+  vec2 qq=(cl+.5)/g2;
+  vec2 fu=fract(uv*g2);
   vec3 t=cov(cl);
-  float mk=smoothstep(1.1,.18,qq.x);
-  float wv=.5+.5*sin((qq.x*asp*.9+qq.y*.6)*4.-uT*.6);
-  float gap=step(.08,fract(uv.x*g2.x))*step(.08,fract(uv.y*g2.y));
-  vec3 base=mix(uB*.5,t,.82)*(.62+.38*wv)+uC*smoothstep(.93,1.,wv)*.18;
-  c=mix(vec3(.035,.02,.08),base*(.86+.14*gap),mk*.95+.05);
-`,`  vec2 g2=vec2(72.,72./asp);
+  float d=distance(vec2(qq.x*asp,qq.y),vec2(uF.x*asp,uF.y));
+  float wv=.5+.5*sin(d*11.-uT*1.6);
+  float mk=smoothstep(1.05,.2,qq.x);
+  vec3 base=mix(uB*.45,t,.85)*(.55+.45*wv);
+  float bev=step(fu.x,.12)+step(fu.y,.12);
+  float shd=step(.88,fu.x)+step(.88,fu.y);
+  base*=1.+.22*min(bev,1.)-.28*min(shd,1.);
+  base+=uC*smoothstep(.9,1.,wv)*.22;
+  c=mix(vec3(.035,.02,.08),base,mk*.95+.05);
+`,` vec2 g2=vec2(72.,72./asp);
   vec2 cl=floor(uv*g2);
   vec2 qq=(cl+.5)/g2;
   float hz=.72;
@@ -1673,7 +1680,7 @@ class Card{
   spawn(n,fast){this.P=this.P||[];const [x,y,w,h]=this.pb;for(let i=0;i<n;i++)this.P.push({x:x+Math.random()*w,y:y+h*(.1+Math.random()*.9),vx:(Math.random()-.5)*(fast?70:10),vy:-(fast?20:6)-Math.random()*(fast?45:14),l:0,d:(fast?.8:1.4)+Math.random()*1.4,s:Math.random()<.3?2:1,c:Math.random()<.45?"L":"A"})}
   burst(){if(this.pb&&!RM&&Q)this.spawn(40,true)}
   fxp(now){
-    const px=this.px||(this.px=this.r.pt.getContext("2d")),dt=Math.min(.05,(now-(this.lt||now))/1000);this.lt=now;
+    const px=this.px||(this.px=this.r.pt.getContext("2d")),dt=Math.min(.1,(now-(this.lt||now))/1000);this.lt=now;
     if(!this.pb||RM)return;px.clearRect(0,0,453,110);this.P=this.P||[];
     if(this.gray>=1){this.acc=(this.acc||0)+dt*(Q?9:4);while(this.acc>=1){this.acc--;this.spawn(1)}}
     for(let i=this.P.length-1;i>=0;i--){const p=this.P[i];p.l+=dt;if(p.l>=p.d){this.P.splice(i,1);continue}
