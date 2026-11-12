@@ -208,6 +208,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const link = (v, d) => (/^https:\/\/[^\s"'<>]+$/i.test(v || "") ? v : d);
         const caption = [
           `🎮 ${g.title}${g.author_name ? " · автор " + g.author_name : ""}`,
+          `📦 Версия ${g.version || "1.0"} · оригинальная игра (не мод)`,
           "Откройте файл в браузере, чтобы играть.",
           "",
           `📢 Канал: ${link(site.channel, "https://t.me/coopixmarket")}`,
@@ -248,6 +249,36 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const W = { uid, pid: (a) => pid.encode(Number(a)) };
         const all = await store.listGameMods({ gameId: id });
         return json(200, { items: all.filter((x) => x.status === "approved").map((x) => modWire(x, W)), mine: all.filter((x) => Number(x.author_id) === uid && x.status !== "approved").map((x) => modWire(x, W)) });
+      }
+      // мод через бота в Telegram: файл мода в личку, в подписи — что это мод, для какой игры, версия и ссылки
+      if (r === "sendmod") {
+        if (m !== "POST") return bad();
+        if (!tgDoc) return json(503, { error: "bot_off" });
+        const id = String(q.id ?? "");
+        const md = MOD_ID.test(id) ? await store.getGameMod(id) : null;
+        const g = md ? await store.getGame(md.game_id) : null;
+        if (!md || !(staff || Number(md.author_id) === uid || (md.status === "approved" && g && isVisible(g, false)))) return json(404, { error: "not_found" });
+        const now = Date.now();
+        if (now - (sentAt.get(uid) ?? 0) < 15e3) return json(429, { error: "too_fast" });
+        sentAt.set(uid, now);
+        const html = (await store.gameModHtml(id))?.file_html ?? "";
+        if (!html) return json(404, { error: "not_found" });
+        const site = (await store.getSetting("site"))?.value ?? {};
+        if (!botUser && tgApi) { try { botUser = (await tgApi("getMe", {}))?.username || ""; } catch { /* без ссылки */ } }
+        const link = (v, d) => (/^https:\/\/[^\s"'<>]+$/i.test(v || "") ? v : d);
+        const caption = [
+          `🧩 Мод «${md.title}»${g ? " для игры " + g.title : ""}`,
+          `📦 Версия мода ${md.version || "1.0"} · это мод, нужна оригинальная игра`,
+          "Откройте файл в браузере, чтобы играть.",
+          "",
+          `📢 Канал: ${link(site.channel, "https://t.me/coopixmarket")}`,
+          `💬 Чат: ${link(site.chat, "https://t.me/coopixchat")}`,
+          botUser ? `🤖 Coopix Market: https://t.me/${botUser}` : "",
+        ].filter(Boolean).join("\n").slice(0, 1000);
+        const name = md.file_name || ((String(md.title).replace(/[^\wа-яё -]+/gi, "").trim().replace(/\s+/g, "-") || "mod") + ".html");
+        try { await tgDoc(uid, name, html, caption); }
+        catch (e) { sentAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed" }); }
+        return json(200, { ok: true });
       }
       if (r === "modfile") {
         if (m !== "GET") return bad();

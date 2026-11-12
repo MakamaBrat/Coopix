@@ -1007,6 +1007,7 @@ html.desk .pfv .mdl{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
 html.desk .pfv .md b{font-size:10.5px;letter-spacing:-.03em}
 html.desk .pfv .md-info{min-height:64px}
 html.desk .pfv>.pf-games{grid-column:1/-1;grid-row:3}
+.tagb{cursor:pointer;font:inherit}.tagb:hover{color:#fff;border-color:var(--acc)}
 .pg-aub{padding:0;background:none;border:0;color:inherit;font:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pg-aub:hover b{color:#fff}
 .pfg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 10px}.pfg-i h4{margin-top:0}
 /* card editor */
@@ -1801,6 +1802,8 @@ $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)r
   if(TABS[i][2]===null){toggleLite();return}if(TABS[i][2]==="sound"){toggleSound();return}tab=i;view=1;sync();render()});
 $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;sfx.tap();
   goView(i)});
+/* поиск из страницы игры: закрываем страницу, открываем маркет со всеми играми и подставляем запрос */
+function searchFor(q){backClick();setTimeout(()=>{SQ=q;qIn.value=q;if(view!==1||TABS[tab][0]==="favt"){view=1;tab=0;sync();render()}else filterList();scrollTo({top:0,behavior:RM?"auto":"smooth"})},60)}
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
@@ -1809,7 +1812,10 @@ function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classLis
 let SQ="";const qIn=$("#q"),qX=$("#qx");
 function filterList(){
   const k=SQ.trim().toLowerCase(),boxes=[...listEl.querySelectorAll(".cardbox")];let shown=0,tagged=0;
-  boxes.forEach(b=>{const s=b.dataset.s;if(s==null){b.hidden=!!k;return}tagged++;const ok=!k||s.includes(k);b.hidden=!ok;if(ok)shown++});
+  /* «#тег» — точное совпадение тега, «автор: имя» — только игры этого автора (так ищут клики по тегу и автору на странице игры) */
+  const tagQ=k.startsWith("#")?k.slice(1).trim():null,auQ=k.startsWith("автор:")?k.slice(6).trim():null;
+  boxes.forEach(b=>{const s=b.dataset.s;if(s==null){b.hidden=!!k;return}tagged++;
+    const ok=!k||(tagQ!=null?(b.dataset.t||"").includes("|"+tagQ+"|"):auQ!=null?b.dataset.a===auQ:s.includes(k));b.hidden=!ok;if(ok)shown++});
   let nf=listEl.querySelector(".nofound");
   if(k&&tagged&&!shown){if(!nf){nf=document.createElement("p");nf.className="empty nofound";listEl.prepend(nf)}nf.textContent='Ничего не найдено по запросу «'+SQ.trim()+'»'}
   else if(nf)nf.remove();
@@ -1835,12 +1841,13 @@ async function render(intro){
   const rows=sortRows(DATA.filter(f).filter(passF));drawFbar();
   if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
-  rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")).toLowerCase();
+  rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
     const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>{const d=DATA.find(x=>x.id===c.m.id);d.fav=!d.fav;persist();profFav(d.id,d.fav);sfx.tap();toast(d.fav?"Добавлено в избранное":"Убрано из избранного");if(TABS[tab][0]==="favt")render();else c.set({...d})},
       onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
     if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
     c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
-  if(view===1&&TABS[tab][0]!=="favt")addCard();filterList();
+  if(view===1&&TABS[tab][0]!=="favt"&&isAdmin())addCard(); /* «добавить игру» в списке — только у админов */
+  filterList();
 }
 /* ============ сортировка и фильтры магазина ============
    Два разных рейтинга: оценки в отзывах (звёзды 1–5) и поддержка авторов (звёзды Telegram, золотые блоки). */
@@ -2502,10 +2509,10 @@ const GAMES={
 const KIND={Arcade:"arcade",Music:"music",Shooter:"shooter",Puzzle:"puzzle"};
 const HINT={arcade:"Тяните или ← → чтобы двигать платформу",music:"Нажимайте на пады или ← ↓ ↑ →",shooter:"Тяните или ← → для управления · стреляет сама",puzzle:"Свайп — двигать · тап — повернуть · пробел — сбросить",catch:"Тяните или ← → чтобы ловить звёзды и уворачиваться от бомб"};
 const DESC={
- retro:"Аркадный микстейп из 90-х. Отбивайте мяч, разбивайте неоновые кирпичи и не давайте кассете остановиться.\nБета-версия: один бесконечный уровень, после каждой очищенной стены скорость растёт.",
- space:"Космический синтовый джем. Попадайте по светящимся падам в такт падающим нотам и собирайте мелодию из ничего.\nБета-версия: один бесконечный трек, после пяти промахов песня заканчивается.",
- toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nБета-версия: пока без боссов и бонусов.",
- blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nБета-версия: пока без слота хранения и без призрачной фигуры."};
+ retro:"Аркадный микстейп из 90-х. Отбивайте мяч, разбивайте неоновые кирпичи и не давайте кассете остановиться.\nОдин бесконечный уровень, после каждой очищенной стены скорость растёт.",
+ space:"Космический синтовый джем. Попадайте по светящимся падам в такт падающим нотам и собирайте мелодию из ничего.\nОдин бесконечный трек, после пяти промахов песня заканчивается.",
+ toxic:"Шутер на пустоши. Ведите пальцем, пушка стреляет сама. Держитесь против токсичных черепов как можно дольше.\nПока без боссов и бонусов.",
+ blocks:"Классические падающие блоки с закатным настроением. Складывайте, убирайте линии и бейте свой рекорд.\nПока без слота хранения и без призрачной фигуры."};
 const AUTHORS={retro:"Coopix",space:"Coopix",toxic:"Coopix",blocks:"Coopix"};
 const DL_LINKS={retro:"",space:"",toxic:"",blocks:""};
 let DL_OFF=false; /* скачивание выключено у всех (админка → «Игры»); у одной игры — m.dl===false */
@@ -2535,10 +2542,10 @@ const CHANGES={
   toxic:"Пушка стреляет чаще\nЧерепа стали живее\nИсправлен вылет на старых телефонах",
   blocks:"Свайпы стали отзывчивее\nНовые закатные цвета\nИсправлен сброс фигуры"};
 const SEED={
- retro:[["kira_88",5,"Арканоид с душой кассетного магнитофона. Платформа управляется отлично.",3],["moth",4,"Нужно больше уровней, но бета уже съедает мой обеденный перерыв.",9]],
+ retro:[["kira_88",5,"Арканоид с душой кассетного магнитофона. Платформа управляется отлично.",3],["moth",4,"Нужно больше уровней, но игра уже съедает мой обеденный перерыв.",9]],
  space:[["DJ Tofu",5,"Играл в автобусе со звуком. Очень расслабляет и очень сложно.",2],["nullptr",4,"Попадания засчитываются щедро. Я не жалуюсь.",6]],
  toxic:[["bitbaker",4,"Черепа так извиваются! Хочу босса в конце.",1],["Lena",5,"Автострельба на сенсорных экранах — правильное решение.",5]],
- blocks:[["oldschool",5,"Управление свайпами работает намного лучше, чем я ожидал.",4],["pixelfox",4,"Добавьте призрачную фигуру в следующей бете, пожалуйста.",8]]};
+ blocks:[["oldschool",5,"Управление свайпами работает намного лучше, чем я ожидал.",4],["pixelfox",4,"Добавьте призрачную фигуру в следующей версии, пожалуйста.",8]]};
 let CM=store.get("am.comments.v1",{});const saveCM=()=>store.set("am.comments.v1",CM);
 const cmOf=m=>{if(useSrv(m))return(REV[m.id]||(REV[m.id]={items:[],ok:0})).items;
   if(!CM[m.id]){CM[m.id]=(SEED[m.id]||[]).map(([n,r,t,d],i)=>({n,r,t,d:Date.now()-d*864e5-i*36e5}));saveCM()}return CM[m.id]};
@@ -2567,18 +2574,18 @@ function pageHTML(m,kind){
     <div class="pg-m"><span class="pg-stars" id="pgStars" role="img"></span><span id="pgRate"></span><span>${esc(tagsOf(m).join(" · "))}</span></div>
     <div class="pg-m"><span id="pgPlays"></span></div>
     <div class="pg-m"><span id="pgDl"></span></div>
-    <div class="pg-au">Автор: ${m.apid&&SUB_API?`<button type="button" class="pg-aub" data-p="${esc(m.apid)}" title="Все игры автора"><b>${esc(author)}</b> ›</button>`:`<b>${esc(author)}</b>`}</div>
+    <div class="pg-au">Автор: ${m.author?`<button type="button" class="pg-aub" data-au="${esc(m.author)}" title="Все игры автора"><b>${esc(author)}</b> ›</button>`:`<b>${esc(author)}</b>`}</div>
     <div class="pg-sup" id="pgSup"></div></div></div>
   <div class="tvw"><i class="ant"></i><div class="tv" id="tv"><div class="tv-row">
-    <div class="scr" id="scr" tabindex="0" role="application" aria-label="Beta game screen. Press to start.">
+    <div class="scr" id="scr" tabindex="0" role="application" aria-label="Экран игры. Нажмите, чтобы начать.">
       <canvas class="g" id="tvc" width="160" height="120"></canvas><div class="ov" id="ov"></div><i class="tvn"></i>
-      <span class="rec">● BETA</span><span class="chn">CH 03</span></div>
+      <span class="rec">● LIVE</span><span class="chn">CH 03</span></div>
     <div class="ctl"><button class="knob" id="knob" type="button" aria-pressed="false" aria-label="Включить игру"></button><span class="lab">power</span><i class="spk"></i><i class="led" id="led"></i></div>
   </div></div></div>
   <p class="hint2">${m.playable&&SUB_API?"Мини-тест игры · нажмите на экран или кнопку power"+(m.file?". Полная версия — большая кнопка «Играть»":""):m.file?"Игра откроется на весь экран. Закрыть — кнопка внизу":HINT[kind]}</p>
   </div><div class="pg-r">
   <section class="sec"><h3>Описание</h3><p class="desc${desc?"":" dim"}">${esc(desc||"Описания пока нет. Нажмите на карандаш на карточке, чтобы добавить.")}</p>
-    <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}${tagsOf(m).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    <div class="tags">${ver?`<span class="tag">Версия ${esc(ver)}</span>`:""}${tagsOf(m).map(t=>`<button type="button" class="tag tagb" data-tag="${esc(t)}" title="Все игры с тегом">${esc(t)}</button>`).join("")}</div>
     ${chl.length?`<div class="chg"><div class="chg-h"><span>Последние изменения</span>${ver?`<span>v${esc(ver)}</span>`:""}</div><ul>${chl.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}</section>
   <section class="sec thx"><div class="thx-in"><div class="thx-t"><b>Понравилась игра?</b><p>Если правда зашло, скажите автору спасибо звёздами Telegram. Поддержка видна на карточке игры.</p></div>
     <div class="thx-ch" id="thxCh" role="radiogroup" aria-label="Сколько звёзд">${THX.map(v=>`<button type="button" role="radio" data-v="${v}" aria-checked="${v===THX_DEF}">⭐ ${v}</button>`).join("")}</div>
@@ -2586,7 +2593,7 @@ function pageHTML(m,kind){
   <section class="sec"><div class="pgtabs" role="tablist"><button type="button" role="tab" data-t="cm" aria-selected="true">Отзывы <small id="cmN"></small></button><button type="button" role="tab" data-t="md" aria-selected="false">Моды <small id="mdN"></small></button></div>
   <div class="pgpane" id="tabCm"><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы · фильтры и сортировка</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
-      <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете о бете?"></textarea>
+      <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете об игре?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></div>
   <div class="pgpane" id="tabMd" hidden><div id="mdList"></div><button class="btn ghost mod-new" id="mdNew" type="button">${IC.plus}Предложить мод</button>
     <p class="hint2" style="text-align:left">Мод — ваша версия этой игры. Его проверит админ, потом он появится здесь с вашим именем.</p></div></section></div></div>`}
@@ -2656,7 +2663,7 @@ function renderCM(){
   const ab=$("#cmAll");if(ab)ab.hidden=!a.length;const mb=$("#cmMore");if(mb){const left=a.length-shown.length;mb.hidden=left<=0;mb.textContent="Показать ещё "+Math.min(CM_PAGE,left)+" · осталось "+left}
   const pb=$("#cmPost");if(pb)pb.textContent=a.some(c=>c.me)?"Обновить":"Отправить";
   $("#cmList").innerHTML=a.length?shown.map(cmItem).join("")
-   :`<p class="empty">${R&&R.err?"Не удалось загрузить отзывы. Проверьте связь.":R&&!R.ok?"Загрузка отзывов…":"Отзывов пока нет. Станьте первым, кто попробует бету."}</p>`;
+   :`<p class="empty">${R&&R.err?"Не удалось загрузить отзывы. Проверьте связь.":R&&!R.ok?"Загрузка отзывов…":"Отзывов пока нет. Станьте первым, кто оценит игру."}</p>`;
   loadAv($("#cmList"))}
 
 /* ---- expanded reviews: filters by stars / date / text, sorting ---- */
@@ -2695,7 +2702,7 @@ function openCMX(){
 
 function setOv(mode,nb){const o=$("#ov"),t=esc(PG.m.title||"Untitled");
   if(mode==="load"){o.className="ov";o.innerHTML=`<div><span class="blink">LOADING…</span></div>`}
-  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span><small>beta · micro build</small></div>`}
+  else if(mode==="idle"){o.className="ov";o.innerHTML=`<div><b>${t}</b><span class="blink">TAP TO START</span></div>`}
   else{o.className="ov end";o.innerHTML=`<div><b>Game over</b><span class="blink">TAP TO RETRY</span></div>`}}
 function tvIdle(){const x=$("#tvc").getContext("2d");x.imageSmoothingEnabled=false;
   const g=x.createLinearGradient(0,0,0,120);g.addColorStop(0,rgb(PG.pal.B));g.addColorStop(1,rgb(PG.pal.D));x.fillStyle=g;x.fillRect(0,0,160,120);
@@ -2940,7 +2947,9 @@ function openModFormOld(m){
       sfx.play();closeSheet();toast("Мод отправлен админу на проверку");loadMods(m)}
     catch(err){b.disabled=false;toast(MOD_ERR[err.code]||"Не удалось отправить мод")}}}
 function bindExtras(m){
-  const au=pageEl.querySelector(".pg-aub");au&&au.addEventListener("click",()=>{sfx.tap();openPlayer(au.dataset.p)}); /* профиль автора: внизу все его игры */
+  /* автор и теги на странице игры: открывают поиск в маркете — все игры этого автора / с этим тегом */
+  const au=pageEl.querySelector(".pg-aub");au&&au.addEventListener("click",()=>{sfx.tap();searchFor("автор: "+au.dataset.au)});
+  pageEl.querySelectorAll(".tagb").forEach(b=>b.addEventListener("click",()=>{sfx.tap();searchFor("#"+b.dataset.tag)}));
   /* спасибо */
   let amt=THX_DEF;const ch=$("#thxCh"),go=$("#thxGo");
   ch.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;amt=+b.dataset.v;ch.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-checked",x===b));go.textContent="Спасибо автору · ⭐ "+amt;sfx.tap()});
@@ -2951,6 +2960,11 @@ function bindExtras(m){
   $("#mdNew").addEventListener("click",()=>{sfx.tap();openModForm(m)});
   $("#mdList").addEventListener("click",async e=>{const p=e.target.closest("[data-p]");if(p){sfx.tap();openPlayer(p.dataset.p);return}
     const pl=e.target.closest("[data-mplay]"),dl=e.target.closest("[data-mdl]");if(!pl&&!dl)return;sfx.tap();
+    /* в Telegram мод присылает бот в личку (с пометкой «мод», версией и ссылками) */
+    const TGW=window.Telegram&&Telegram.WebApp;
+    if(dl&&SUB_API&&TGW&&TGW.initData){toast("Бот отправляет мод…",true);
+      hub("sendmod",{method:"POST",q:{id:dl.dataset.mdl},body:{}}).then(()=>toast("Мод у вас в личке от бота 📩"))
+        .catch(e=>toast(e.code==="open_bot"?"Сначала откройте бота и нажмите «Старт», потом снова «Скачать»":e.code==="too_fast"?"Подождите несколько секунд и попробуйте снова":"Не удалось отправить, попробуйте ещё раз"));return}
     try{const j=await modFile((pl||dl).dataset[pl?"mplay":"mdl"]);
       if(pl)sbView(j.text,"Закрыть мод");else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([j.text],{type:"text/html"}));a.download=j.name||"mod.html";document.body.appendChild(a);a.click();a.remove();toast("Мод скачан")}}
     catch(err){toast("Не удалось загрузить мод")}});
