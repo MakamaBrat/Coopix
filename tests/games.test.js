@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { setup, init, body } from "./mem.js";
+import { webhookSecret, makeBuyPayload } from "../api/_lib/thanks.js";
+import { TOK } from "./helpers.js";
 
 const MAIN = 1, MOD = 7, ANN = 42, BOB = 43;
 
@@ -249,4 +251,34 @@ test("автор игры: в списке игр есть apid (без Telegram
   const p = (await w.hub("profile", "GET", BOB, { query: { id: g.apid } })).body;
   assert.equal(p.games[0].id, game.id);
   assert.equal((await w.hub("games", "GET", BOB)).body.games.find((x) => x.id === "retro")?.apid ?? "", "", "у встроенных игр автора-игрока нет");
+});
+
+test("платная игра: без покупки нельзя скачать/запустить, покупка через бота открывает доступ; автору и персоналу можно", async () => {
+  const w = await world();
+  const { game } = await published(w, "public");
+  assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { price: 50 } })).body.price, 50);
+  assert.equal((await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { price: -1 } })).body.error, "bad_price");
+  let g = (await w.hub("games", "GET", BOB)).body.games.find((x) => x.id === game.id);
+  assert.equal(g.price, 50); assert.equal(g.owned, false);
+  assert.equal((await w.hub("gamefile", "GET", BOB, { query: { id: game.id } })).status, 402);
+  assert.equal((await w.hub("sendgame", "POST", BOB, { query: { id: game.id } })).body.error, "not_owned");
+  assert.equal((await w.hub("gamefile", "GET", ANN, { query: { id: game.id } })).status, 200); // автор
+  assert.equal((await w.hub("gamefile", "GET", MOD, { query: { id: game.id } })).status, 200); // персонал
+  const buy = await w.hub("buy", "POST", BOB, { body: { game: game.id } });
+  assert.equal(buy.status, 200); assert.match(buy.body.link, /^https:\/\/t\.me\//);
+  const inv = w.tg.find((x) => x[0] === "createInvoiceLink" && x[1].payload === makeBuyPayload(game.id, BOB, 50));
+  assert.ok(inv); assert.equal(inv[1].prices[0].amount, 50);
+  const hook = (u) => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: u });
+  await hook({ pre_checkout_query: { id: "q1", from: { id: BOB }, currency: "XTR", total_amount: 50, invoice_payload: makeBuyPayload(game.id, BOB, 50) } });
+  assert.equal(w.tg.at(-1)[1].ok, true);
+  await hook({ pre_checkout_query: { id: "q2", from: { id: BOB }, currency: "XTR", total_amount: 10, invoice_payload: makeBuyPayload(game.id, BOB, 10) } });
+  assert.equal(w.tg.at(-1)[1].ok, false); // цена не совпадает
+  const pay = { message: { from: { id: BOB }, successful_payment: { currency: "XTR", total_amount: 50, invoice_payload: makeBuyPayload(game.id, BOB, 50), telegram_payment_charge_id: "pc1" } } };
+  await hook(pay); await hook(pay); // повтор от Telegram не дублирует покупку
+  assert.equal(w.store.purchases.length, 1);
+  g = (await w.hub("games", "GET", BOB)).body.games.find((x) => x.id === game.id);
+  assert.equal(g.owned, true);
+  assert.equal((await w.hub("gamefile", "GET", BOB, { query: { id: game.id } })).status, 200);
+  assert.equal((await w.hub("buy", "POST", BOB, { body: { game: game.id } })).body.error, "owned");
+  assert.ok(w.sent.some(([c, t]) => c === BOB && /куплена/.test(t)));
 });

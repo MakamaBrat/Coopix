@@ -479,14 +479,15 @@ async function viewGames(root) {
         <div style="flex:1;min-width:200px"><b>Играть через ${site.playWaitM || 30} мин после регистрации</b><div class="hint" style="margin:2px 0 0">${site.playWait ? "Включено: новые игроки смогут запускать игры только через 30 минут после первого входа. Админов и модераторов не касается." : "Выключено: играть можно сразу после регистрации."}</div></div>
         <button class="btn ${site.playWait ? "bad" : "ok"}" id="playWait" type="button">${site.playWait ? "Выключить" : "Включить"}</button></div>
       <div class="nws" id="gl">${games.map(g => `<div class="nw" data-id="${esc(g.id)}" style="--c:${GACC[g.access].c}">
-        <div><span class="badge" style="--c:${GACC[g.access].c}">${GACC[g.access].t}</span> <span class="muted small">${esc(g.id)}${g.file ? " · свой HTML" : " · встроенная"}${g.dl ? "" : " · скачивание выключено"}</span>
+        <div><span class="badge" style="--c:${GACC[g.access].c}">${GACC[g.access].t}</span> <span class="muted small">${esc(g.id)}${g.file ? " · свой HTML" : " · встроенная"}${g.dl ? "" : " · скачивание выключено"}${g.price ? " · ⭐ " + g.price : ""}</span>
           <h4>${esc(g.title)}</h4><p>${esc((g.tags || []).join(" · "))}${g.author ? " · " + esc(g.author) : ""}</p>
           <div class="chips" style="margin-top:8px">${Object.keys(GACC).map(k => `<button class="chip" type="button" data-acc="${k}" aria-pressed="${k === g.access}">${GACC[k].t}</button>`).join("")}</div>
           <div class="row" style="margin-top:10px;gap:8px"><span class="muted small">Плейабл:</span>
             ${g.playable ? `<span class="badge" style="--c:#4dd2ff">свой HTML</span>` : `<select class="in" data-play aria-label="Мини-игра" style="width:auto;min-height:34px;padding:4px 8px">${Object.entries(PLAYS).map(([k, l]) => `<option value="${k}"${k === g.play ? " selected" : ""}>${l}</option>`).join("")}</select>`}
             <label class="btn ghost sm" style="cursor:pointer">${g.playable ? "Заменить HTML" : "Загрузить свой HTML"}<input type="file" accept=".html,.htm,text/html" data-pf hidden></label>
             ${g.playable ? `<button class="btn ghost sm" type="button" data-prm style="color:var(--bad)">Убрать свой</button>` : ""}</div></div>
-        <div class="acts"><button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button>
+        <div class="acts"><span class="row" style="gap:6px;align-items:center"><span class="muted small">Цена ⭐</span><input class="in" type="number" min="0" max="10000" step="1" data-price value="${g.price || 0}" aria-label="Цена в звёздах (0 — бесплатно)" style="width:90px;min-height:34px;padding:4px 8px"><button class="btn ghost sm" type="button" data-psave>OK</button></span>
+          <button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button>
           <label class="btn ghost sm" style="cursor:pointer" title="HTML игры, который автор прислал в @Coopsupbot">${g.file ? "Заменить HTML игры" : "Прикрепить HTML игры"}<input type="file" accept=".html,.htm,text/html" data-gf hidden></label></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
       <p class="hint">Плейабл — мини-игра на «телевизоре» на странице игры. Без своего HTML играет стандартная мини-игра, нарисованная картинкой этой игры. Свой HTML — один файл до 300 КБ, запускается в изолированном окне.</p>
       <p class="hint">«Скрыта» убирает игру из маркета у всех, но не удаляет: отзывы, моды и счётчики сохраняются, вернуть можно в один клик. Изменения видны игрокам сразу после обновления маркета.</p>`;
@@ -510,6 +511,7 @@ async function viewGames(root) {
     }
     const row = e.target.closest(".nw"); if (!row) return;
     const a = e.target.closest("[data-acc]"); if (a && a.getAttribute("aria-pressed") !== "true") return patch(row.dataset.id, { access: a.dataset.acc }, "Доступ: " + GACC[a.dataset.acc].t);
+    if (e.target.closest("[data-psave]")) { const v = Math.trunc(Number(row.querySelector("[data-price]").value)); if (!(v >= 0 && v <= 10000)) { toast("Цена: от 0 до 10000 звёзд", true); return; } return patch(row.dataset.id, { price: v }, v ? "Игра платная: ⭐ " + v : "Игра бесплатная"); }
     const d = e.target.closest("[data-dl]"); if (d) return patch(row.dataset.id, { dl_off: d.dataset.dl === "off" }, d.dataset.dl === "off" ? "Скачивание у игры выключено" : "Скачивание у игры включено");
     if (e.target.closest("[data-prm]")) return confirmBox("Убрать свой плейабл?", "На странице игры снова будет стандартная мини-игра с картинкой игры.", "Убрать", "bad", () => patch(row.dataset.id, { play_html: "" }, "Свой плейабл убран"));
   };

@@ -241,12 +241,20 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
 .card .play[aria-pressed=true]::before{animation:pfill .38s cubic-bezier(.2,.9,.3,1)}@keyframes pfill{from{transform:scaleY(0);transform-origin:50% 100%}to{transform:scaleY(1);transform-origin:50% 100%}}
 .card.isfav .shell-in{box-shadow:inset 0 0 60px color-mix(in srgb,var(--c1) 38%,transparent);background:color-mix(in srgb,var(--c1) 14%,#0b0716)}
 .card{touch-action:pan-y}
+/* платные игры: золотая рамка, ценник «⭐ N» справа сверху; купленные — «✓ КУПЛЕНО» */
+.card.paid .shell{background:linear-gradient(120deg,#ffe27a,#c8871a 35%,#fff1a8 55%,#b5780f 80%,#ffd84d)}
+.card.paid::before{box-shadow:0 0 calc(28px*var(--k) + 10px) calc(3px*var(--k)) rgba(255,190,40,.45)}
+.ptag{position:absolute;right:30px;top:12px;z-index:6;padding:4px 12px;font:700 22px/1 "Tektur",ui-monospace,monospace;letter-spacing:.04em;color:#2a1800;background:linear-gradient(#ffe27a,#ffb51f);border:3px solid #2a1800;box-shadow:3px 3px 0 #2a1800;transform:rotate(3deg);pointer-events:none}
+.card.owned .ptag{background:linear-gradient(#a6ffc9,#3fd27f);color:#062a15;border-color:#062a15;box-shadow:3px 3px 0 #062a15;font-size:18px}
+.bigplay.buy{background:linear-gradient(#ffe27a,#ffb51f)!important;color:#2a1800!important}.bigplay.buy svg{fill:#2a1800}
+#dlbtn.locked{opacity:.55}
+.card.paid .title{width:300px}
 /* подсказка свайпа: ♥ справа из-под карточки */
 .swh{position:absolute;right:6px;top:50%;z-index:0;display:flex;flex-direction:column;align-items:center;gap:4px;transform:translateY(-50%) scale(calc(.7 + var(--t,0)*.3));opacity:0;pointer-events:none;color:#ff4f8b;transition:transform .12s}
 .swh i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:3px solid currentColor;background:color-mix(in srgb,currentColor calc(var(--t,0)*35%),transparent)}
 .swh i svg{width:24px;height:24px;fill:currentColor}
 .swh b{font:700 11px/1 "Tektur",ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-.swh.on i{background:currentColor;box-shadow:0 0 18px currentColor;animation:swb .3s cubic-bezier(.2,1.8,.4,1)}.swh.on i svg{fill:#140a28}
+.swh.buy{color:#ffc72c}.swh.on i{background:currentColor;box-shadow:0 0 18px currentColor;animation:swb .3s cubic-bezier(.2,1.8,.4,1)}.swh.on i svg{fill:#140a28}
 @keyframes swb{40%{transform:scale(1.3)}}
 .cardbox>.card{position:relative;z-index:1}
 /* эффект добавления в избранное */
@@ -1572,14 +1580,14 @@ class Card{
       const mkHint=()=>{if(hint)return hint;hint=document.createElement("div");hint.className="swh";hint.innerHTML=`<i>${IC.favt}</i><b></b>`;host.append(hint);return hint};
       const paint=()=>{raf=0;const pull=dx<0?-dx:0,r=pull<TH?pull:TH+(pull-TH)*.35,t=Math.min(1,pull/TH);
         el.style.transform=`translateX(${-r}px) rotate(${-r*.025}deg)`;const hn=mkHint();hn.style.opacity=Math.min(1,t*1.4);hn.style.setProperty("--t",t);
-        hn.querySelector("b").textContent=this.m.fav?"Убрать":"В избранное";const now=pull>=TH;if(now!==armed){armed=now;hn.classList.toggle("on",now);if(now)sfx.tap()}};
+        hn.querySelector("b").textContent=isLocked(this.m)?"Купить ⭐"+this.m.price:this.m.fav?"Убрать":"В избранное";hn.classList.toggle("buy",isLocked(this.m));const now=pull>=TH;if(now!==armed){armed=now;hn.classList.toggle("on",now);if(now)sfx.tap()}};
       el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none"},{passive:true});
       el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;
         if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;back();return}if(!raf)raf=requestAnimationFrame(paint)},{passive:true});
       const back=()=>{cancelAnimationFrame(raf);raf=0;el.style.transition="transform .45s cubic-bezier(.2,1.5,.4,1)";el.style.transform="";
         if(hint){const hn=hint;hint=null;hn.style.transition="opacity .25s";hn.style.opacity=0;setTimeout(()=>hn.remove(),280)}setTimeout(()=>el.style.transition="",460)};
       const end=()=>{if(!on)return;on=false;const go=dx<-TH;back();
-        if(go){swiped=true;const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)setTimeout(()=>this.favFx(),120)}};
+        if(go){swiped=true;if(isLocked(this.m)){buyGame(this.m.id,this);return}const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)setTimeout(()=>this.favFx(),120)}};
       el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{on=false;back()});el.addEventListener("pointerleave",end);
       el.addEventListener("click",e=>{if(swiped){swiped=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
     el.addEventListener("pointerenter",()=>this.cdRate(4));el.addEventListener("pointerleave",()=>this.cdRate(1));el.addEventListener("click",()=>this.cdKick());
@@ -1670,8 +1678,7 @@ class Card{
       else{const sh=S*lv/lu,sy=(S-sh)*D.fy[n],m=[ux/S,uy/S,vx/sh,vy/sh];x.setTransform(m[0],m[1],m[2],m[3],a[0]-m[2]*sy,a[1]-m[3]*sy)}
       x.drawImage(art,0,0);x.setTransform(1,0,0,1,0,0);fin();x.restore()})}
   cdKill(){if(this.cda){this.cda.forEach(a=>a.cancel());this.cda=null}}
-  cdMake(){this.cdKill();const cv=this.r.item.querySelectorAll(".cdw canvas");if(cv.length<2||!cv[0].animate)return;
-    this.cda=[0,1].map(i=>cv[i].animate([{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],{duration:2600,iterations:Infinity}));this.cdRun()}
+  cdMake(){this.cdKill()} /* диск больше не крутится: картинка на нём стоит на месте */
   cdRun(){if(!this.cda)return;const on=!RM&&Q>0&&(this.vis||this.o.preview);this.cda.forEach(a=>on?a.play():a.pause())}
   cdRate(to){this.cdTo=to;if(this.cdRaf||!this.cda)return;
     const step=()=>{const a=this.cda;if(!a){this.cdRaf=0;return}let r=a[0].playbackRate;r+=(this.cdTo-r)*.12;if(Math.abs(this.cdTo-r)<.02)r=this.cdTo;a.forEach(x=>x.playbackRate=r);this.cdRaf=r===this.cdTo?0:requestAnimationFrame(step)};
@@ -1730,6 +1737,9 @@ class Card{
     this.iart=null;if(m.item==="cards"&&m.iart&&SUB_API){const me=this,id=m.id;itemArt(id).then(im=>{if(im&&me.m&&me.m.id===id&&me.m.item==="cards"){me.iart=im;me.paint()}})}
     const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s);
     const itemChanged=first||prev.item!==m.item,covChanged=first||prev.cover!==m.cover;
+    /* платная игра: золотая рамка и ценник; купленная — пометка «куплено» */
+    {const pd=(+m.price||0)>0,own=pd&&isOwned(m);this.el.classList.toggle("paid",pd);this.el.classList.toggle("owned",own);let tg=this.el.querySelector(".ptag");
+      if(pd){if(!tg){tg=document.createElement("b");tg.className="ptag";this.el.querySelector(".stage").append(tg)}tg.textContent=own?"✓ КУПЛЕНО":"⭐ "+m.price}else if(tg)tg.remove()}
     this.r.title.textContent=m.title||"Без названия";fitTitle(this.r.title);this.r.pill.textContent=m.genre;this.setStars();
     if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
     if(this.o&&this.o.onFav)this.favLook(!!m.fav);
@@ -1812,6 +1822,23 @@ function planetTick(now){if(Q===0&&lastPl)return;if(!PGO&&now-lastPl>(Q===2?260:
 
 /* ============ toast ============ */
 const toastEl=$("#toast");let toastT;
+/* ============ платные игры ============
+   Цена в звёздах Telegram задаёт админ. Пока игра не куплена, её нельзя запустить полностью и скачать (это проверяет и сервер);
+   мини-тест на «телевизоре» доступен. Покупка: свайп влево или кнопка «Купить» на странице — оплата в Telegram, после неё игра сама в избранном. */
+const isOwned=m=>!!m&&(!!m.owned||isAdmin());
+const isLocked=m=>!!m&&(+m.price||0)>0&&!isOwned(m);
+async function buyGame(id,card){const d=DATA.find(x=>x.id===id);if(!d)return;const TGW=window.Telegram&&Telegram.WebApp;
+  if(!SUB_API||!TGW||!TGW.initData||!TGW.openInvoice){toast("Покупка доступна в приложении Coopix в Telegram");return}
+  sfx.tap();toast("Открываем оплату…",true);
+  try{const j=await hub("buy",{method:"POST",body:{game:id}});
+    TGW.openInvoice(j.link,st=>{if(st==="paid"){d.owned=true;persist();sfx.play();toast("Игра «"+d.title+"» куплена!");setFav(id,true,card);
+        const c=LIVE.find(x=>x.m&&x.m.id===id);if(c){c.set({...d});setTimeout(()=>c.favFx(),150)}if(PG&&PG.m.id===id){PG.m.owned=true;payPaint(PG.m)}setTimeout(loadCatalog,2500)}
+      else if(st==="failed")toast("Оплата не прошла")})}
+  catch(e){toast(e.code==="owned"?"Эта игра у вас уже куплена":"Не удалось открыть оплату, попробуйте ещё раз");if(e.code==="owned"){d.owned=true;persist();const c=LIVE.find(x=>x.m&&x.m.id===id);c&&c.set({...d})}}}
+/* кнопки страницы игры для платной: «Купить ⭐N» вместо «Играть», скачивание после покупки */
+function payPaint(m){const b=$("#bigplay"),dl=$("#dlbtn");if(!b)return;const lk=isLocked(m);
+  if(!b.dataset.html)b.dataset.html=b.innerHTML;b.innerHTML=lk?`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z"/></svg>Купить ⭐ ${m.price}`:b.dataset.html;b.classList.toggle("buy",lk);
+  if(dl)dl.classList.toggle("locked",lk)}
 /* сообщение с кнопкой действия (например «Отменить»): нажатие на сообщение выполняет действие */
 function undoToast(msg,label,fn){clearTimeout(toastT);toastEl.className="toast";void toastEl.offsetWidth;toastEl.innerHTML=`${msg} <u class="tact">${label}</u>`;toastEl.classList.add("on","act");
   toastEl.onclick=()=>{toastEl.onclick=null;toastEl.classList.remove("on","act");clearTimeout(toastT);fn()};toastT=setTimeout(()=>{toastEl.classList.remove("on","act");toastEl.onclick=null},3800)}
@@ -1824,8 +1851,8 @@ function toast(msg,load){toastEl.onclick=null;toastEl.classList.remove("act");cl
 
 /* ============ data ============ */
 const DEFAULTS=[
- {id:"retro",title:"Retro Mix",genre:"Arcade",item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
- {id:"space",title:"Space Vibes",genre:"Music",item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
+ {id:"retro",price:50,title:"Retro Mix",genre:"Arcade",item:"cassette",cover:"b:retro",tint:{h:318,s:.92},built:1},
+ {id:"space",price:30,owned:true,title:"Space Vibes",genre:"Music",item:"cd",cover:"b:space",tint:{h:222,s:.88},built:1},
  {id:"toxic",title:"Toxic Run",genre:"Shooter",item:"floppy",cover:"b:toxic",tint:{h:112,s:.62},built:1},
  {id:"blocks",title:"Block Drop",genre:"Puzzle",item:"handheld",cover:"b:blocks",tint:{h:38,s:.95},built:1}
 ];
@@ -2700,7 +2727,7 @@ async function openPage(id,opt){
   {const x=$("#pgCov").getContext("2d");x.imageSmoothingEnabled=!!cov.hi;x.drawImage(cov.hi||cov.canvas,0,0,512,512)}
   pageEl.classList.toggle("hasbg",/^data:/.test(m.bgimg||""));pageEl.style.setProperty("--pgbg",/^data:/.test(m.bgimg||"")?`url("${m.bgimg}")`:"none");
   paintPage();loadReviews(m);act("open",m.id);
-  PGO=true;musicSync();dlPaint(m);pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+  PGO=true;musicSync();dlPaint(m);payPaint(m);pageEl.classList.add("open");document.body.classList.add("pgopen");pageEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
   try{history.pushState({pg:id},"")}catch(e){}bindPage();bindExtras(m);pageEl.querySelector("[data-fav]").addEventListener("click",()=>{const d=DATA.find(x=>x.id===m.id);setFav(m.id,!d.fav)});$("#scr").classList.add("hiss");setOv("load");sfx.tap();tvBoot(me);
   pgKey=e=>{if(e.key==="Escape"){if(sheet.classList.contains("open"))return;backClick();return}
     if(!PG||!PG.run||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=KN[e.key];if(!k)return;e.preventDefault();
@@ -2848,8 +2875,8 @@ async function playBeta(){
   sfx.in();stopGame();setOv("idle");
   $("#scr").scrollIntoView({block:"center",behavior:RM?"auto":"smooth"});tvPower();
   await wait(450);if(PG!==me)return;startGame()}
-$("#bigplay").addEventListener("click",()=>{if(!PG)return;if(PG.m.file&&SUB_API){playFile();return}if(PG.pal)playBeta()}); /* большая кнопка: полная игра (если есть файл), «телевизор» — мини-тест */
-$("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(dlBlocked(PG.m)){sfx.tap();const w=dlWaitLeft();toast(!DL_OFF&&PG.m.dl!==false&&w>0?"Скачивание откроется через "+Math.ceil(w/3600e3)+" ч после регистрации":"Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
+$("#bigplay").addEventListener("click",()=>{if(!PG)return;if(isLocked(PG.m)){buyGame(PG.m.id);return}if(PG.m.file&&SUB_API){playFile();return}if(PG.pal)playBeta()}); /* большая кнопка: полная игра (если есть файл), «телевизор» — мини-тест */
+$("#dlbtn").addEventListener("click",()=>{if(!PG)return;if(isLocked(PG.m)){sfx.tap();toast("Скачать можно после покупки · ⭐ "+PG.m.price);return}if(dlBlocked(PG.m)){sfx.tap();const w=dlWaitLeft();toast(!DL_OFF&&PG.m.dl!==false&&w>0?"Скачивание откроется через "+Math.ceil(w/3600e3)+" ч после регистрации":"Скачивание этой игры сейчас выключено");return}const d=DATA.find(x=>x.id===PG.m.id),u=((d&&d.link)||DL_LINKS[PG.m.id]||"").trim();
   /* нажатие «Скачать» считается всегда (даже если файл ещё не добавлен): игрок хотел скачать */
   if(d){d.downloads=(+d.downloads||0)+1;persist()}act("download",PG.m.id);paintPage();
   /* в Telegram скачивание из мини-приложения не работает: файл игры присылает бот в личку (с ссылками на канал, чат и бота) */
@@ -2924,7 +2951,7 @@ const saveCov=()=>{let ks=Object.keys(COV),sz=ks.reduce((t,k)=>t+COV[k].length,0
 const covOf=ref=>/^img:/.test(ref||"")?COV[ref]||"b:retro":ref||"b:retro";
 function fromWire(g,old){const t=Array.isArray(g.tags)&&g.tags.length?g.tags:["Arcade"];old=old||{};
   return{id:g.id,title:g.title,tags:t,genre:t[0],item:g.item,cref:g.cover,bref:g.bgimg||"",bgimg:g.bgimg?(old.bref===g.bgimg&&/^data:/.test(old.bgimg||"")?old.bgimg:COV[g.bgimg]||""):"",cover:/^img:/.test(g.cover)&&old.cref===g.cover&&/^data:/.test(old.cover||"")?old.cover:covOf(g.cover),tint:g.tint||null,bg:g.bg==="auto"?undefined:g.bg,
-    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,playKind:g.play||"auto",playable:!!g.playable,shot:!!g.shot,iart:!!g.iart,apid:g.apid||"",built:1,
+    desc:g.desc||"",changes:g.changes||"",version:g.ver||"",author:g.author||"",link:g.link||"",access:g.access||"public",file:!!g.file,mine:!!g.mine,dl:g.dl!==false,playKind:g.play||"auto",playable:!!g.playable,shot:!!g.shot,iart:!!g.iart,price:+g.price||0,owned:!!g.owned,apid:g.apid||"",built:1,
     fav:old.fav||0,played:old.played||0,downloads:old.downloads||0}}
 async function admReq(r,q,method,body){
   const x=await fetch(SUB_API+"/admin?"+new URLSearchParams({r,...q}),{method,headers:sbH(body!=null),body:body!=null?JSON.stringify(body):undefined});
@@ -2964,7 +2991,7 @@ async function edStatus(id){const el=$("#edst");if(!el)return;
     el.textContent=" "+(e.status==="new"?"Прошлая правка ещё на проверке: новая её заменит.":e.status==="approved"?"Последняя правка одобрена.":"Последняя правка отклонена"+(e.comment?": "+e.comment:"."));
     el.className="st-"+e.status}catch(e){}}
 /* игра игрока (HTML-файл): открываем в изолированном iframe, запуск считается как «Играли» */
-async function playFile(){const me=PG;if(!me)return;countPlay();toast("Загружаем игру…",true);
+async function playFile(){const me=PG;if(!me)return;if(isLocked(me.m)){buyGame(me.m.id);return}countPlay();toast("Загружаем игру…",true);
   try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;sbView(j.text,"Закрыть игру");toast("Приятной игры")}catch(e){toast("Не удалось загрузить игру")}}
 const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
 const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */

@@ -13,11 +13,12 @@ export const coverFor = (genre) => COVER_BY_GENRE[genre] ?? "b:retro";
 
 /** Поля страницы, которые автор может предложить изменить (меняются только после одобрения админа). */
 export const AUTHOR_FIELDS = ["desc", "changes", "ver", "link", "item", "bg", "tint", "cover", "bgimg"];
-const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off", "play_kind", "play_html", "file_html"]; // dl_off, play_*, file_html: только главный админ
+const ALL_FIELDS = ["title", "tags", "author", ...AUTHOR_FIELDS, "access", "sort", "dl_off", "play_kind", "play_html", "file_html", "price"]; // dl_off, play_*, file_html, price: только главный админ
 export const GAME_FILE_MAX = 1500000; // HTML игры, который админ прикрепляет из бота поддержки
 /** Плейабл на «телевизоре» страницы игры: свой маленький HTML или одна из стандартных мини-игр (auto = по жанру) */
 export const PLAY_KINDS = ["auto", "arcade", "music", "shooter", "puzzle", "catch"];
 export const PLAY_MAX = 300000;
+export const PRICE_MAX = 10000; // звёзд за платную игру
 
 /** Своя обложка: JPEG до 512×512 (клиент сам готовит), не больше ~280 КБ в base64. В базе: cover = "img:<хэш>", cover_img = data URL.
  *  Фон страницы и карточки: JPEG до 1280×720, не больше ~420 КБ. В базе: bg_ref = "img:<хэш>", bg_img = data URL. */
@@ -95,6 +96,8 @@ export function cleanGame(b, only = ALL_FIELDS) {
     else f.file_html = h;
   }
   if (ok("dl_off")) { if (typeof b.dl_off !== "boolean") return { error: "bad_dl" }; f.dl_off = b.dl_off; }
+  // цена в звёздах Telegram: 0 = бесплатная игра, иначе 1..10000
+  if (ok("price")) { const pr = Number(b.price); if (!Number.isInteger(pr) || pr < 0 || pr > PRICE_MAX) return { error: "bad_price" }; f.price = pr; }
   if (ok("sort")) f.sort = Math.min(100000, Math.max(0, Math.trunc(Number(b.sort)) || 0));
   return { f };
 }
@@ -104,7 +107,7 @@ export const gameWire = (g, uid) => ({
   id: g.id, title: g.title, tags: g.tags, desc: g.description, changes: g.changes, ver: g.version,
   author: g.author_name, item: g.item, cover: g.cover, tint: g.tint ?? null, bg: g.bg, link: g.link,
   access: g.access, sort: g.sort, file: !!g.has_file, dl: !g.dl_off,
-  play: PLAY_KINDS.includes(g.play_kind) ? g.play_kind : "auto", playable: !!(g.has_play ?? g.play_html), shot: !!(g.has_shot ?? g.shot_img), iart: !!(g.has_iart ?? g.item_img), bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
+  play: PLAY_KINDS.includes(g.play_kind) ? g.play_kind : "auto", playable: !!(g.has_play ?? g.play_html), price: +g.price || 0, shot: !!(g.has_shot ?? g.shot_img), iart: !!(g.has_iart ?? g.item_img), bgimg: g.bg_ref || "", mine: g.author_id != null && Number(g.author_id) === uid,
 });
 
 /** Очищенные поля -> патч автора в формате фронта (так он хранится в game_edits и показывается админу) */

@@ -469,7 +469,7 @@ revoke all on public.game_mods from anon, authenticated;
 
 
 -- =====================================================================================
--- ЗАГОТОВКА (пока нигде не используется ни сервером, ни сайтом): покупки игроков и подписка Pro.
+-- Покупки игроков (платные игры за звёзды Telegram — используется) и подписка Pro (заготовка).
 -- Таблицы создаются заранее, чтобы потом подключить оплату без миграций. Повторный запуск безопасен.
 -- =====================================================================================
 
@@ -505,5 +505,7 @@ create index if not exists subscriptions_exp_idx on public.subscriptions (expire
 
 -- Как и всё остальное: доступ только у сервера (service_role), из браузера таблиц не видно.
 alter table public.purchases     enable row level security;
+-- Цена игры в звёздах Telegram: 0 = бесплатная. Платную нельзя запустить и скачать, пока игрок её не купил.
+alter table public.games add column if not exists price integer not null default 0 check (price between 0 and 10000);
 alter table public.subscriptions enable row level security;
 revoke all on public.purchases, public.subscriptions from anon, authenticated;

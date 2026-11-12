@@ -1,6 +1,6 @@
 import { pidCodec } from "./pid.js";
 import { cleanGame, gameWire, isVisible, toPatch, AUTHOR_FIELDS, IMG_REF } from "./games.js";
-import { STAR_OPTIONS, makePayload } from "./thanks.js";
+import { STAR_OPTIONS, makePayload, makeBuyPayload } from "./thanks.js";
 import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
 
 /**
@@ -54,6 +54,8 @@ const tgName = (u) => clip(u?.first_name || u?.username || "", 16) || "Игро�
 
 export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgApi = null, tgFile = null, tgDoc = null }) {
   const sentAt = new Map(); // uid -> время последней отправки файла ботом (не чаще раза в 15 с)
+  // платная игра: полный файл только у купивших, автора и персонала
+  const locked = async (g, uid, staff) => +g.price > 0 && !staff && !(g.author_id != null && Number(g.author_id) === uid) && !(await store.ownedGames(uid)).includes(g.id);
   let botUser = ""; // @username бота (getMe, один раз) — для ссылки в подписи к файлу
   const pid = pidCodec(botToken);
   const json = (status, body) => ({ status, body });
@@ -183,13 +185,17 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       if (r === "games") {
         if (m !== "GET") return bad();
         // apid: непрозрачный id автора-игрока (как в отзывах): по нажатию на автора открывается его профиль со списком игр
-        return json(200, { games: (await store.listGames()).filter((g) => isVisible(g, staff)).map((g) => ({ ...gameWire(g, uid), apid: g.author_id != null ? pid.encode(Number(g.author_id)) : "" })) });
+        const list = (await store.listGames()).filter((g) => isVisible(g, staff));
+        const own = list.some((g) => +g.price > 0) ? new Set(await store.ownedGames(uid)) : new Set();
+        // owned: платная игра куплена этим игроком (или он автор) — её можно запускать и скачивать
+        return json(200, { games: list.map((g) => ({ ...gameWire(g, uid), owned: own.has(g.id) || (g.author_id != null && Number(g.author_id) === uid), apid: g.author_id != null ? pid.encode(Number(g.author_id)) : "" })) });
       }
       if (r === "gamefile") {
         if (m !== "GET") return bad();
         const id = String(q.id ?? "");
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        if (await locked(g, uid, staff)) return json(402, { error: "not_owned", price: +g.price });
         return json(200, { text: (await store.gameHtml(id))?.file_html ?? "" });
       }
       // «Скачать» в Telegram: бот присылает файл игры в личку, в подписи — ссылки на канал, чат и бота
@@ -201,6 +207,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
         const site = (await store.getSetting("site"))?.value ?? {};
         if (!staff && (g.dl_off || site.dlOff === true)) return json(403, { error: "dl_off" });
+        if (await locked(g, uid, staff)) return json(402, { error: "not_owned", price: +g.price });
         const now = Date.now();
         if (now - (sentAt.get(uid) ?? 0) < 15e3) return json(429, { error: "too_fast" });
         sentAt.set(uid, now);
@@ -321,6 +328,24 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       }
 
       // ---------- «Спасибо автору»: счёт в звёздах Telegram ----------
+      // покупка платной игры: счёт в звёздах Telegram; после оплаты вебхук бота записывает покупку (thanks.js)
+      if (r === "buy") {
+        if (m !== "POST") return bad();
+        const b = parseBody(req.body), id = String(b?.game ?? "");
+        const g = GAME_ID.test(id) ? await store.getGame(id) : null;
+        if (!g || !isVisible(g, staff) || !(+g.price > 0)) return json(404, { error: "not_found" });
+        if ((await store.ownedGames(uid)).includes(g.id)) return json(409, { error: "owned" });
+        if (!tgApi) return json(503, { error: "payments_off" });
+        if ((await store.countEvents(uid, Date.now() - 3600e3, "invoice")) >= 30) return json(429, { error: "rate_limited" });
+        await log(uid, "invoice", g.id, { s: +g.price, b: 1 }, 0);
+        try {
+          const link = await tgApi("createInvoiceLink", {
+            title: g.title.slice(0, 32), description: `Покупка игры «${g.title}» в Coopix Market: ⭐ ${+g.price}. Игра появится в избранном.`,
+            payload: makeBuyPayload(g.id, uid, +g.price), currency: "XTR", prices: [{ label: g.title.slice(0, 32), amount: +g.price }],
+          });
+          return json(200, { link, price: +g.price });
+        } catch (e) { console.error("[buy]", e?.message); return json(502, { error: "telegram_error" }); }
+      }
       if (r === "thank") {
         if (m !== "POST") return bad();
         const b = parseBody(req.body);
