@@ -49,7 +49,7 @@ const CW=34,CH=50;
 const L=document.createElement("canvas");L.width=320;L.height=220;const lx=L.getContext("2d");
 /* чёткие пиксели: у надписей убираем сглаживание (каждый пиксель либо есть, либо нет) */
 function crisp(){const d=lx.getImageData(0,0,L.width,L.height),p=d.data;for(let i=3;i<p.length;i+=4){if(p[i])p[i]=p[i]<100?0:255}lx.putImageData(d,0,0)}
-function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";lx.textBaseline="alphabetic";
+function pt(t,px,py,size,fill,al,stroke){lx.font=(size>=14?"bold ":"")+(size<14?size+1:size)+"px monospace";lx.textAlign=al||"center";lx.textBaseline="alphabetic";
   if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
 function handPos(n,i,y){const gap=Math.min(CW+4,(300-CW)/Math.max(1,n-1));const w=gap*(n-1)+CW;return[160-w/2+i*gap,y]}
 function draw(){x.setTransform(1,0,0,1,0,0);const d=c.width/W;x.setTransform(d,0,0,d,0,0);

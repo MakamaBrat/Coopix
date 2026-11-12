@@ -422,7 +422,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 /* ---------- app page ---------- */
 .card{cursor:pointer}
 textarea.in{height:auto;min-height:92px;padding:10px 14px;resize:vertical;line-height:1.25}
-.page{--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;position:fixed;top:0;left:0;right:0;bottom:0;-webkit-overflow-scrolling:touch;z-index:30;overflow-y:auto;overscroll-behavior:contain;visibility:hidden;opacity:0;transform:translateY(28px);
+.page{touch-action:pan-y;--c1:#a56bff;--c2:#2b1170;--c3:#efe3ff;position:fixed;top:0;left:0;right:0;bottom:0;-webkit-overflow-scrolling:touch;z-index:30;overflow-y:auto;overscroll-behavior:contain;visibility:hidden;opacity:0;transform:translateY(28px);
   transition:transform .35s cubic-bezier(.2,.9,.2,1),opacity .15s,visibility 0s .35s;
   background:radial-gradient(90% 38% at 50% 0,color-mix(in srgb,var(--c1) 28%,transparent),transparent 70%),linear-gradient(#0c0720,#07040f);background-color:#09051a}
 .page.open{visibility:visible;opacity:1;transform:none;transition-delay:0s}
@@ -2614,6 +2614,16 @@ const cmItem=(c,i)=>{const nm=c.me?(PROF.name||"Игрок"):c.n;
   return `<article class="cm">${cmAv(c)}<div><div class="cm-h">${c.me||c.pid?`<button type="button" class="cm-nm" data-p="${c.me?"me":esc(c.pid)}">${esc(nm)}</button>`:`<b>${esc(nm)}</b>`}${c.r?`<span class="cm-s">${starRow(c.r)}</span>`:""}<time>${ago(c.d)}</time></div><p>${esc(c.t)}</p>${canDel(c)?`<button class="del" data-del="${i}">Удалить</button>`:""}</div></article>`};
 
 const pageEl=$("#page"),pgBody=$("#pgBody");let PG=null,PGO=false,pgKey=null,pgKeyUp=null,pgFocus=null;
+/* свайп вправо по странице игры (пальцем) — закрыть её и вернуться в маркет; на «телевизоре», в полях ввода и открытых окнах не срабатывает */
+{let sx=0,sy=0,dx=0,on=false;
+  pageEl.addEventListener("pointerdown",e=>{if(e.pointerType!=="touch"||!PGO||e.target.closest("#scr,input,textarea,select,.sheet.open,iframe"))return;on=true;sx=e.clientX;sy=e.clientY;dx=0;pageEl.style.transition="none"},{passive:true});
+  pageEl.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;
+    if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>14){on=false;pageEl.style.transform="";pageEl.style.transition="";return}
+    if(dx>0)pageEl.style.transform=`translateX(${dx*.85}px)`},{passive:true});
+  const end=()=>{if(!on)return;on=false;pageEl.style.transition="transform .22s ease-out";
+    if(dx>Math.min(120,innerWidth*.28)){pageEl.style.transform=`translateX(${innerWidth}px)`;setTimeout(()=>{pageEl.style.transition="none";pageEl.style.transform="";backClick();setTimeout(()=>pageEl.style.transition="",30)},200)}
+    else{pageEl.style.transform="";setTimeout(()=>pageEl.style.transition="",230)}};
+  pageEl.addEventListener("pointerup",end);pageEl.addEventListener("pointercancel",()=>{on=false;pageEl.style.transform="";pageEl.style.transition=""})}
 const KN={ArrowLeft:"L",ArrowRight:"R",ArrowUp:"U",ArrowDown:"D"," ":"S",a:"L",d:"R",w:"U",s:"D"};
 
 function pageHTML(m,kind){
