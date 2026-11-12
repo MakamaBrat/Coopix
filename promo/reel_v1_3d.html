@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coopix Reel — Апокалипсис</title>
+<style>
+html,body{margin:0;height:100%;background:#050308;color:#fff;font-family:system-ui,sans-serif;overflow:hidden}
+#wrap{position:absolute;inset:0;display:grid;place-items:center}
+#out{height:min(100vh,calc(100vw*16/9));aspect-ratio:9/16;background:#000;box-shadow:0 0 40px #000}
+#gl{position:absolute;left:-99999px;top:0}
+#ui{position:fixed;left:12px;top:12px;display:flex;flex-direction:column;gap:8px;z-index:5;max-width:230px}
+#ui button{font:700 14px system-ui;padding:10px 14px;border:0;border-radius:10px;background:#a56bff;color:#140a28;cursor:pointer}
+#ui button.rec{background:#ff4f6d;color:#fff}#ui button:disabled{opacity:.5}
+#ui small{color:#bbb;line-height:1.35}
+#tm{font:600 13px ui-monospace,monospace;color:#ddd}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="wrap"><canvas id="out" width="1080" height="1920"></canvas></div>
+<div id="ui">
+  <button id="play" disabled>▶ Смотреть</button>
+  <button id="rec" class="rec" disabled>● Записать видео (.webm)</button>
+  <div id="tm">загрузка…</div>
+  <small>Рилс 9:16, ~1 мин. «Записать» проигрывает ролик и сохраняет файл со звуком. Нужен Chrome/Edge. Во время записи не сворачивайте вкладку.</small>
+</div>
+<script type="module">
+/* ==================================================================================================
+   COOPIX — рилс «Апокалипсис»: 3D-анимация на Three.js по таймлайну озвучки.
+   Сцены: 1 хук (руины, 7%) · 2 Телеграм → маркет · 3 свайп + скачать · 4 офлайн · 5 экшен Stick Fight
+          6 Серёга идёт за водой · 7 показали игры · 8 мультиплеер по QR · 9 время идёт · 10 скелеты (панчлайн) · 11 концовка
+   Кадр собирается в 2D-холсте #out (3D + субтитры + плашки), его и пишет MediaRecorder вместе со звуком.
+   ================================================================================================== */
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+
+const W = 1080, H = 1920, SPEED = 1.08; // ускорение озвучки
+const out = document.getElementById("out"), ox = out.getContext("2d");
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const ease = (t) => (t = clamp(t, 0, 1), t * t * (3 - 2 * t)), easeOut = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+const seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+
+/* ---------------- таймлайн из длительностей озвучки ---------------- */
+const LINES = await (await fetch("vo/lines.json")).json();
+const PAD = { l05: 3.2, l07: .6, l10: 1.4, l11: 1.6 }; // лишние секунды без слов: экшен, пауза перед панчлайном, концовка
+const SC = []; let acc = .3;
+for (const l of LINES) { const d = l.dur / SPEED + .25 + (PAD[l.id] || 0); SC.push({ id: l.id, a: acc, b: acc + d, vo: acc + .05, dur: l.dur / SPEED, text: l.text }); acc += d; }
+const TOTAL = acc + .4;
+const scAt = (t) => SC.find((s) => t >= s.a && t < s.b) || SC[SC.length - 1];
+
+/* ---------------- рендер ---------------- */
+const gl = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+gl.setPixelRatio(1); gl.setSize(W, H); gl.domElement.id = "gl"; document.body.append(gl.domElement);
+gl.toneMapping = THREE.ACESFilmicToneMapping; gl.outputColorSpace = THREE.SRGBColorSpace; gl.shadowMap.enabled = true;
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(50, W / H, .05, 400);
+const composer = new EffectComposer(gl); composer.addPass(new RenderPass(scene, cam));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .9, .55, .72); composer.addPass(bloom);
+
+const hemi = new THREE.HemisphereLight(0xffb27a, 0x1a0c18, 1.1); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xff8a50, 2.2); sun.position.set(-8, 10, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
+const phoneLight = new THREE.PointLight(0x9fd0ff, 0, 3.5); scene.add(phoneLight);
+
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .8, ...o });
+const glow = (c, i = 2.5) => new THREE.MeshStandardMaterial({ color: 0x000000, emissive: c, emissiveIntensity: i });
+
+/* ---------------- мир апокалипсиса ---------------- */
+const world = new THREE.Group(); scene.add(world);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), M(0x2a1b16)); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; world.add(ground);
+{ // руины: коробки-дома с «дырами», обломки
+  const rnd = mulberry(7);
+  for (let i = 0; i < 70; i++) {
+    const w = 1.5 + rnd() * 4, h = 2 + rnd() * 14, d = 1.5 + rnd() * 4, a = rnd() * Math.PI * 2, r = 10 + rnd() * 50;
+    const bx = Math.cos(a) * r, bz = Math.sin(a) * r - 10; if (Math.abs(bx) < 10 && bz > -8) continue; /* дома не ставим на площадку с героями */
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(new THREE.Color().setHSL(.05, .2, .08 + rnd() * .08)));
+    b.position.set(bx, h / 2 - rnd() * 1.5, bz); b.rotation.set((rnd() - .5) * .15, rnd() * 3, (rnd() - .5) * .2); b.castShadow = true; world.add(b);
+    for (let k = 0; k < 6; k++) { const win = new THREE.Mesh(new THREE.PlaneGeometry(.5, .7), rnd() < .12 ? glow(0xff7a2a, 1.4) : M(0x050304)); win.position.set(b.position.x + (rnd() - .5) * w * .7, 1 + rnd() * (h - 1.5), b.position.z + d / 2 + .02); win.rotation.y = b.rotation.y; }
+  }
+  for (let i = 0; i < 60; i++) { const x = (rnd() - .5) * 22, z = (rnd() - .5) * 14 - 3; if (Math.abs(x) < 7 && z > -3.5) continue; /* площадка с героями свободна от обломков */
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(.2 + rnd() * .6), M(0x3a2a22)); r.position.set(x, .1, z); r.castShadow = true; world.add(r); }
+  const car = new THREE.Group(); /* машина-руина справа за героями */ const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, .7, 1.1), M(0x5a2a1a)); body.position.y = .55; const top = new THREE.Mesh(new THREE.BoxGeometry(1.2, .5, 1), M(0x4a2216)); top.position.set(-.2, 1.1, 0);
+  car.add(body, top); car.position.set(3.4, 0, -2.5); car.rotation.set(.2, .7, .35); car.traverse((o) => o.castShadow = true); world.add(car);
+}
+const fire = new THREE.PointLight(0xff5a1a, 6, 12); fire.position.set(3.2, 1, -2.2); world.add(fire);
+const keyL = new THREE.PointLight(0xffd2a8, 9, 9); keyL.position.set(-.8, 2.6, 2.6); world.add(keyL); // тёплый свет «на героев», чтобы их было видно
+const rimL = new THREE.PointLight(0x6a9cff, 6, 7); rimL.position.set(1.5, 2.2, -1.6); world.add(rimL);
+const ashGeo = new THREE.BufferGeometry(), ashN = 1600, ashP = new Float32Array(ashN * 3);
+for (let i = 0; i < ashN; i++) { ashP[i * 3] = (Math.random() - .5) * 30; ashP[i * 3 + 1] = Math.random() * 14; ashP[i * 3 + 2] = (Math.random() - .5) * 20; }
+ashGeo.setAttribute("position", new THREE.BufferAttribute(ashP, 3));
+const ash = new THREE.Points(ashGeo, new THREE.PointsMaterial({ color: 0xffb08a, size: .05, transparent: true, opacity: .75 })); world.add(ash);
+const skyCol = new THREE.Color(0x4a1a12); scene.background = skyCol.clone(); scene.fog = new THREE.Fog(0x4a1a12, 8, 60);
+const sunBall = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 16), glow(0xff6a2a, 3)); sunBall.position.set(-30, 12, -70); world.add(sunBall);
+const moon = new THREE.Mesh(new THREE.SphereGeometry(2.4, 32, 16), glow(0xdfe8ff, 1.6)); moon.position.set(30, -20, -70); world.add(moon);
+
+/* ---------------- человечки: суставы — группы, позы задаются углами ---------------- */
+function person({ color = 0x2457c5, skin = 0xf3e6d6, hat = 0xe33b2e, neon = false } = {}) {
+  const mat = neon ? glow(color, .85) : M(color), sk = neon ? glow(color, .85) : M(skin), r = .055;
+  const cyl = (len, m) => { const g = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), m); g.position.y = -len / 2; g.castShadow = true; return g; };
+  const root = new THREE.Group(), hips = new THREE.Group(); hips.position.y = .9; root.add(hips);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.3, r * 1.3, .65, 8), mat); torso.position.y = .33; torso.castShadow = true; hips.add(torso);
+  const neck = new THREE.Group(); neck.position.y = .66; hips.add(neck);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.17, 20, 14), sk); head.position.y = .2; head.castShadow = true; neck.add(head);
+  if (!neon) {
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(.175, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), M(hat)); cap.position.y = .22; neck.add(cap);
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), M(hat)); pom.position.y = .4; neck.add(pom);
+    for (const x of [-.06, .06]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.022, 8, 6), M(0x111111)); e.position.set(x, .21, .155); neck.add(e); }
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(.09, .03, 6, 12), M(hat)); scarf.rotation.x = Math.PI / 2; scarf.position.y = .04; neck.add(scarf);
+  }
+  const limb = (x, y, l1, l2, m) => { const s = new THREE.Group(); s.position.set(x, y, 0); s.add(cyl(l1, m)); const j = new THREE.Group(); j.position.y = -l1; s.add(j); j.add(cyl(l2, m)); hips.add(s); return [s, j]; };
+  const [sL, eL] = limb(-.12, .6, .32, .3, mat), [sR, eR] = limb(.12, .6, .32, .3, mat), [hL, kL] = limb(-.08, 0, .44, .44, neon ? mat : M(0x22252b)), [hR, kR] = limb(.08, 0, .44, .44, neon ? mat : M(0x22252b));
+  const hand = new THREE.Group(); hand.position.y = -.3; eR.add(hand);
+  return { root, hips, neck, head, sL, eL, sR, eR, hL, kL, hR, kR, hand, mats: [mat, sk] };
+}
+function pose(p, name, t = 0) {
+  const set = (g, x = 0, y = 0, z = 0) => g.rotation.set(x, y, z);
+  p.hips.position.y = .9; set(p.hips); set(p.neck);
+  if (name === "stand") { set(p.sL, 0, 0, .15); set(p.sR, 0, 0, -.15); set(p.eL); set(p.eR); set(p.hL); set(p.hR); set(p.kL); set(p.kR); p.hips.position.y = .9 + Math.sin(t * 2) * .01; }
+  if (name === "walk" || name === "run") { const k = name === "run" ? 1.6 : 1, s = Math.sin(t * (name === "run" ? 11 : 6.5)) * .55 * k;
+    set(p.hL, s); set(p.hR, -s); set(p.kL, Math.max(0, -s) * 1.2); set(p.kR, Math.max(0, s) * 1.2); set(p.sL, -s * .8, 0, .12); set(p.sR, s * .8, 0, -.12); set(p.eL, -.3); set(p.eR, -.3); p.hips.position.y = .9 + Math.abs(Math.cos(t * 6.5)) * .03 * k; set(p.hips, name === "run" ? .2 : .05); }
+  if (name === "phone") { set(p.sL, -.9, .35, .1); set(p.eL, -1.1); set(p.sR, -.9, -.35, -.1); set(p.eR, -1.1); set(p.hL); set(p.hR); set(p.kL); set(p.kR); set(p.neck, .45); }
+  if (name === "sitPhone") { pose(p, "phone"); p.hips.position.y = .42; set(p.hL, -1.5, 0, -.12); set(p.hR, -1.5, 0, .12); set(p.kL, 1.45); set(p.kR, 1.45); set(p.neck, .55 + Math.sin(t * 3) * .03); }
+  if (name === "shoot") { set(p.sR, -1.57, 0, 0); set(p.eR); set(p.sL, -1.3, 0, .4); set(p.eL, -.5); set(p.hL, .25); set(p.hR, -.35); set(p.kL); set(p.kR, .5); }
+  if (name === "jump") { set(p.hL, -1.1); set(p.kL, 1.6); set(p.hR, -.4); set(p.kR, .9); set(p.sR, -1.57); set(p.sL, -2.6, 0, .3); }
+  if (name === "dead") { pose(p, "sitPhone"); set(p.neck, 1.05); set(p.hips, .25); }
+}
+function phoneMesh() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(.36, .72, .03), M(0x111216, { roughness: .35, metalness: .6 })); g.add(body);
+  const cv = document.createElement("canvas"); cv.width = 540; cv.height = 1080; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(.33, .66), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scr.position.z = .016; g.add(scr);
+  return { g, cv, cx: cv.getContext("2d"), tex };
+}
+
+/* ---------------- персонажи ---------------- */
+const hero = person({ color: 0x2457c5, hat: 0xe33b2e }); world.add(hero.root);
+const heroPhone = phoneMesh(); world.add(heroPhone.g);
+const sereg = person({ color: 0x3d7a3a, hat: 0x2a2a2a, skin: 0xf0dcc8 }); world.add(sereg.root);
+const pack = new THREE.Mesh(new THREE.BoxGeometry(.32, .42, .18), M(0x6a4a2a)); pack.position.set(0, .35, -.13); sereg.hips.add(pack);
+const bucket = new THREE.Mesh(new THREE.CylinderGeometry(.13, .1, .22, 12, 1, true), M(0x9aa2aa, { side: THREE.DoubleSide, metalness: .6 })); bucket.position.y = -.12; sereg.hand.add(bucket);
+const seregPhone = phoneMesh(); world.add(seregPhone.g);
+const bones = new THREE.MeshStandardMaterial({ color: 0xece4d2, roughness: .6 });
+const ribs = (p) => { for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(.1, .012, 5, 12, Math.PI), bones); r.rotation.set(Math.PI / 2, 0, 0); r.position.set(0, .2 + i * .1, .02); r.visible = false; r.userData.rib = 1; p.hips.add(r); } };
+ribs(hero); ribs(sereg);
+function skeleton(p, k) { // k 0..1: от живого к скелету
+  p.root.traverse((o) => { if (o.userData.rib) o.visible = k > .5; });
+  for (const m of p.mats) { if (!m.userData.c0) m.userData.c0 = m.color.clone(); m.color.copy(m.userData.c0).lerp(new THREE.Color(0xece4d2), k); }
+}
+
+/* ---------------- неоновая арена Stick Fight ---------------- */
+const arena = new THREE.Group(); arena.position.set(0, 0, -300); scene.add(arena);
+{
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), M(0x0b0618)); fl.rotation.x = -Math.PI / 2; arena.add(fl);
+  const grid = new THREE.GridHelper(60, 60, 0xa56bff, 0x3a2370); grid.position.y = .01; arena.add(grid);
+  for (const [x, y, w] of [[-4, 2.2, 4], [4, 2.2, 4], [0, 4.2, 5], [-7, 3.2, 3], [7, 3.4, 3]]) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(w, .25, 1.6), M(0x2a1a66)); p.position.set(x, y, 0); arena.add(p);
+    const e = new THREE.Mesh(new THREE.BoxGeometry(w, .05, 1.62), glow(0xa56bff, 1.4)); e.position.set(x, y + .14, 0); arena.add(e);
+  }
+}
+const fighters = [person({ color: 0x4df3ff, neon: true }), person({ color: 0xff4fa3, neon: true }), person({ color: 0xff4fa3, neon: true }), person({ color: 0xff4fa3, neon: true })];
+fighters.forEach((f) => { arena.add(f.root); const gun = new THREE.Mesh(new THREE.BoxGeometry(.06, .22, .08), glow(0xdfe6ff, 1.5)); gun.position.y = -.1; f.hand.add(gun); });
+const bullets = [], sparks = [];
+const bGeo = new THREE.BoxGeometry(.05, .05, .5);
+function fire3(from, dir, col) { const b = new THREE.Mesh(bGeo, glow(col, 2.5)); b.position.copy(from); b.lookAt(from.clone().add(dir)); b.userData.v = dir.clone().multiplyScalar(22); b.userData.l = .7; arena.add(b); bullets.push(b); }
+function boom(at, col, n = 40) { for (let i = 0; i < n; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(.07, .07, .07), glow(col, 2)); s.position.copy(at); s.userData.v = new THREE.Vector3((Math.random() - .5) * 7, Math.random() * 7, (Math.random() - .5) * 7); s.userData.l = .9 + Math.random() * .5; arena.add(s); sparks.push(s); } }
+const flash = new THREE.PointLight(0xffffff, 0, 8); arena.add(flash);
+
+/* ---------------- QR-луч и цифровой декор ---------------- */
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, 1, 8), glow(0x4df3ff, 5)); beam.visible = false; world.add(beam);
+
+/* ---------------- экран телефона: интерфейс рисуется в 2D ---------------- */
+const PAL = { bg: "#0b0618", card: "#1a1040", acc: "#a56bff", y: "#ffd84d", c: "#4df3ff", p: "#ff4fa3" };
+function rr(x, cx, cy, w, h, r) { x.beginPath(); x.moveTo(cx + r, cy); x.arcTo(cx + w, cy, cx + w, cy + h, r); x.arcTo(cx + w, cy + h, cx, cy + h, r); x.arcTo(cx, cy + h, cx, cy, r); x.arcTo(cx, cy, cx + w, cy, r); x.closePath(); }
+function statusBar(x, bat, net = true, plane = false) {
+  x.fillStyle = "#000"; x.fillRect(0, 0, 540, 54); x.fillStyle = "#fff"; x.font = "600 26px system-ui"; x.textAlign = "left"; x.fillText("23:59", 28, 38);
+  x.textAlign = "right"; x.fillText((plane ? "✈ " : net ? "▂▄▆ " : "✕ ") + bat + "%", 470, 38);
+  x.strokeStyle = bat < 10 ? "#ff3b3b" : "#fff"; x.lineWidth = 3; x.strokeRect(478, 18, 40, 22); x.fillStyle = bat < 10 ? "#ff3b3b" : "#7dff9a"; x.fillRect(481, 21, 34 * bat / 100 + 1, 16);
+}
+function cardRow(x, y, title, col, item, opts = {}) {
+  x.save(); x.translate(opts.dx || 0, 0);
+  rr(x, 24, y, 492, 150, 26); x.fillStyle = col + "33"; x.fill(); x.lineWidth = 4; x.strokeStyle = col; x.stroke();
+  x.fillStyle = col; rr(x, 50, y + 28, 92, 94, 12); x.fill(); x.fillStyle = "#0b0618"; x.font = "900 54px system-ui"; x.textAlign = "center"; x.fillText(item, 96, y + 94);
+  x.fillStyle = "#fff"; x.font = "800 34px system-ui"; x.textAlign = "left"; x.fillText(title, 164, y + 70); x.fillStyle = PAL.y; x.font = "28px system-ui"; x.fillText("★★★★★", 164, y + 112);
+  rr(x, 404, y + 40, 90, 70, 16); x.fillStyle = opts.fav ? col : "#0b0618"; x.fill(); x.strokeStyle = col; x.stroke(); x.fillStyle = opts.fav ? "#0b0618" : col; x.beginPath(); x.moveTo(438, y + 56); x.lineTo(438, y + 94); x.lineTo(468, y + 75); x.fill();
+  x.restore();
+  if (opts.heart) { const k = opts.heart; x.save(); x.globalAlpha = Math.min(1, k * 1.4); x.fillStyle = "#ff4f8b"; x.translate(470, y + 75); x.scale(.6 + k * .5, .6 + k * .5); heart(x); x.restore(); }
+}
+function heart(x) { x.beginPath(); x.moveTo(0, 22); x.bezierCurveTo(-46, -8, -22, -46, 0, -20); x.bezierCurveTo(22, -46, 46, -8, 0, 22); x.fill(); }
+function finger(x, fx, fy, press) { x.save(); x.globalAlpha = .9; x.fillStyle = "rgba(255,255,255,.35)"; x.beginPath(); x.arc(fx, fy, press ? 34 : 26, 0, 7); x.fill(); x.strokeStyle = "#fff"; x.lineWidth = 4; x.stroke(); x.restore(); }
+function screenUI(ph, mode, t, bat) {
+  const x = ph.cx; x.fillStyle = PAL.bg; x.fillRect(0, 0, 540, 1080);
+  if (mode === "off") { x.fillStyle = "#000"; x.fillRect(0, 0, 540, 1080); }
+  else if (mode === "battery") { statusBar(x, bat, false); x.fillStyle = "#ff3b3b"; x.font = "900 120px system-ui"; x.textAlign = "center"; x.fillText(bat + "%", 270, 560); x.font = "700 34px system-ui"; x.fillStyle = "#fff"; x.fillText("Нет сети", 270, 630); }
+  else if (mode === "tg") { // чат с ботом → кнопка «Маркет»
+    statusBar(x, bat, true); x.fillStyle = "#17212b"; x.fillRect(0, 54, 540, 1026); x.fillStyle = "#232e3c"; x.fillRect(0, 54, 540, 100);
+    x.fillStyle = PAL.acc; x.beginPath(); x.arc(70, 104, 32, 0, 7); x.fill(); x.fillStyle = "#fff"; x.font = "800 30px system-ui"; x.textAlign = "left"; x.fillText("Coopix Market", 120, 98); x.font = "22px system-ui"; x.fillStyle = "#8fa3b8"; x.fillText("бот · игры бесплатно", 120, 130);
+    const msg = (y, txt, me) => { x.font = "26px system-ui"; const w = Math.min(420, x.measureText(txt).width + 44); rr(x, me ? 516 - w : 24, y, w, 64, 20); x.fillStyle = me ? "#2b5278" : "#182533"; x.fill(); x.fillStyle = "#fff"; x.fillText(txt, (me ? 516 - w : 24) + 22, y + 42); };
+    if (t > .1) msg(220, "/start", true); if (t > .25) msg(310, "Привет! Игры в Телеграме 🎮", false); if (t > .4) msg(390, "Работают даже без интернета", false);
+    const pr = t > .72 && t < .82; rr(x, 60, 900, 420, 96, 24); x.fillStyle = pr ? "#7d4fe0" : PAL.acc; x.fill(); x.fillStyle = "#fff"; x.font = "800 36px system-ui"; x.textAlign = "center"; x.fillText("🕹  Открыть маркет", 270, 960);
+    if (t > .55 && t < .85) finger(x, 270, 948, pr);
+  }
+  else if (mode === "market") { // список карточек, свайп первой влево → сердечко → «В КОЛЛЕКЦИИ»
+    statusBar(x, bat, true); x.fillStyle = PAL.acc; x.font = "900 44px system-ui"; x.textAlign = "left"; x.fillText("COOPIX", 30, 130); x.fillStyle = "#fff"; x.fillText(" MARKET", 200, 130);
+    const sw = seg(t, .15, .45), back = seg(t, .45, .6), dx = -sw * 150 * (1 - back);
+    cardRow(x, 180, "Stick Fight", "#4df3ff", "⚔", { dx, fav: t > .5, heart: sw * (1 - back) });
+    cardRow(x, 360, "UNIK", "#ffd84d", "🃏"); cardRow(x, 540, "Gravity Fight", "#ff4fa3", "🏍"); cardRow(x, 720, "Retro Mix", "#a56bff", "📼");
+    if (t > .15 && t < .45) finger(x, 380 - sw * 150, 255, true);
+    if (t > .5 && t < .95) { const k = seg(t, .5, .58); x.save(); x.translate(330, 200); x.rotate(-.14); x.scale(.4 + k * .6, .4 + k * .6); x.globalAlpha = 1 - seg(t, .85, .95); rr(x, -150, -34, 300, 68, 8); x.fillStyle = PAL.y; x.fill(); x.lineWidth = 5; x.strokeStyle = "#140a28"; x.stroke(); x.fillStyle = "#140a28"; x.font = "900 34px system-ui"; x.textAlign = "center"; x.fillText("В КОЛЛЕКЦИИ!", 0, 12); x.restore();
+      for (let i = 0; i < 16; i++) { const a = i * 2.3, r = k * 160 + i * 4; x.fillStyle = i % 2 ? PAL.y : PAL.c; x.fillRect(450 + Math.cos(a) * r, 255 + Math.sin(a) * r * .7 - k * 40, 12, 12); } }
+  }
+  else if (mode === "download") { // страница игры → «Скачать» → бот прислал файл
+    statusBar(x, bat, true);
+    if (t < .55) {
+      x.fillStyle = "#4df3ff"; x.font = "900 54px system-ui"; x.textAlign = "center"; x.fillText("STICK FIGHT", 270, 170);
+      rr(x, 40, 210, 460, 340, 28); x.fillStyle = "#1c0d3d"; x.fill(); drawMiniFight(x, 40, 210, 460, 340, t * 8);
+      x.fillStyle = "#b8a8f0"; x.font = "26px system-ui"; x.fillText("PvP · до 7 игроков · офлайн", 270, 600);
+      const pr = t > .32 && t < .42; rr(x, 40, 860, 220, 100, 22); x.fillStyle = "#e33fa0"; x.fill(); rr(x, 280, 860, 220, 100, 22); x.fillStyle = pr ? "#2f1d7a" : "#3b2a9a"; x.fill();
+      x.fillStyle = "#fff"; x.font = "800 34px system-ui"; x.fillText("▶ Играть", 150, 922); x.fillText("⬇ Скачать", 390, 922); if (t > .22 && t < .5) finger(x, 390, 910, pr);
+    } else {
+      x.fillStyle = "#17212b"; x.fillRect(0, 54, 540, 1026); x.fillStyle = "#fff"; x.font = "800 30px system-ui"; x.textAlign = "left"; x.fillText("Coopix Market", 40, 110);
+      const k = easeOut(seg(t, .55, .7)); x.save(); x.translate(0, (1 - k) * 80); x.globalAlpha = k;
+      rr(x, 24, 300, 470, 260, 22); x.fillStyle = "#182533"; x.fill(); rr(x, 48, 328, 86, 86, 18); x.fillStyle = PAL.acc; x.fill(); x.fillStyle = "#fff"; x.font = "900 40px system-ui"; x.fillText("⬇", 72, 386);
+      x.font = "800 28px system-ui"; x.fillText("Stick_Fight.html", 150, 360); x.fillStyle = "#8fa3b8"; x.font = "24px system-ui"; x.fillText("536 КБ · HTML", 150, 398);
+      x.fillStyle = "#fff"; x.font = "24px system-ui"; ["🎮 Stick Fight · автор Makama", "📦 Версия 1.0 · не мод", "📢 Канал · 💬 Чат · 🤖 Бот"].forEach((s, i) => x.fillText(s, 48, 460 + i * 34)); x.restore();
+    }
+  }
+  else if (mode === "offline") { // включаем «самолёт» → открываем файл → игра
+    statusBar(x, bat, t < .35, t >= .35);
+    if (t < .5) { x.fillStyle = "#fff"; x.font = "800 40px system-ui"; x.textAlign = "left"; x.fillText("Настройки", 40, 150);
+      rr(x, 30, 220, 480, 110, 20); x.fillStyle = "#1d1830"; x.fill(); x.fillStyle = "#fff"; x.font = "34px system-ui"; x.fillText("✈  Авиарежим", 60, 290);
+      const on = t >= .35; rr(x, 400, 248, 90, 54, 27); x.fillStyle = on ? "#4cd964" : "#555"; x.fill(); x.fillStyle = "#fff"; x.beginPath(); x.arc(on ? 463 : 427, 275, 23, 0, 7); x.fill(); if (t > .2 && t < .45) finger(x, 445, 275, t > .33);
+      rr(x, 30, 350, 480, 110, 20); x.fillStyle = "#1d1830"; x.fill(); x.fillStyle = on ? "#777" : "#fff"; x.fillText("📶  Сотовая сеть", 60, 420);
+    } else { x.fillStyle = "#1c0d3d"; x.fillRect(0, 54, 540, 1026); drawMiniFight(x, 0, 200, 540, 520, t * 10); x.fillStyle = "#7dff9a"; x.font = "800 32px system-ui"; x.textAlign = "center"; x.fillText("✓ работает без сети", 270, 840); }
+  }
+  else if (mode === "game") { x.fillStyle = "#1c0d3d"; x.fillRect(0, 0, 540, 1080); statusBar(x, bat, false, true); drawMiniFight(x, 0, 160, 540, 700, t * 9); }
+  else if (mode === "qr") { statusBar(x, bat, false, true); x.fillStyle = "#fff"; rr(x, 70, 220, 400, 400, 20); x.fill(); const rn = mulberry(3);
+    for (let i = 0; i < 25; i++) for (let j = 0; j < 25; j++) if (rn() < .5 || (i < 7 && j < 7) || (i > 17 && j < 7) || (i < 7 && j > 17)) { x.fillStyle = "#000"; x.fillRect(95 + i * 14, 245 + j * 14, 14, 14); }
+    x.fillStyle = PAL.c; x.font = "800 34px system-ui"; x.textAlign = "center"; x.fillText(t > .5 ? "✓ Подключено 2/7" : "Сканируйте QR", 270, 700); x.fillStyle = "#b8a8f0"; x.font = "26px system-ui"; x.fillText("Wi-Fi · QR · без интернета", 270, 750); }
+  else if (mode === "gameover") { x.fillStyle = "#000"; x.fillRect(0, 0, 540, 1080); x.fillStyle = "#ff3b3b"; x.font = "900 70px ui-monospace,monospace"; x.textAlign = "center"; x.fillText("GAME", 270, 470); x.fillText("OVER", 270, 550); x.fillStyle = "#fff"; x.font = "700 30px ui-monospace,monospace"; if ((t * 3 | 0) % 2) x.fillText("RETRY?", 270, 640); statusBar(x, 1, false, true); }
+  ph.tex.needsUpdate = true;
+}
+function drawMiniFight(x, X, Y, w, h, t) { // маленький Stick Fight на экране телефона
+  x.save(); x.beginPath(); x.rect(X, Y, w, h); x.clip(); x.fillStyle = "#140a30"; x.fillRect(X, Y, w, h);
+  x.strokeStyle = "rgba(165,107,255,.25)"; x.lineWidth = 2; for (let i = 0; i < w; i += 30) { x.beginPath(); x.moveTo(X + i, Y); x.lineTo(X + i, Y + h); x.stroke(); }
+  x.fillStyle = "#a56bff"; x.fillRect(X, Y + h * .85, w, 6); x.fillRect(X + w * .1, Y + h * .55, w * .3, 5); x.fillRect(X + w * .6, Y + h * .55, w * .3, 5);
+  const man = (mx, my, col, f) => { x.strokeStyle = col; x.lineWidth = 6; x.lineCap = "round"; x.shadowColor = col; x.shadowBlur = 12; x.beginPath(); x.arc(mx, my - 62, 11, 0, 7); x.moveTo(mx, my - 50); x.lineTo(mx, my - 22); x.lineTo(mx - 12 + Math.sin(t) * 6, my); x.moveTo(mx, my - 22); x.lineTo(mx + 12 - Math.sin(t) * 6, my); x.moveTo(mx, my - 42); x.lineTo(mx + 24 * f, my - 42); x.stroke(); x.shadowBlur = 0; };
+  const px = X + w * (.3 + Math.sin(t * .7) * .12), gy = Y + h * .85; man(px, gy - Math.abs(Math.sin(t * 1.3)) * 40, "#4df3ff", 1); man(X + w * .78, gy, "#ff4fa3", -1); man(X + w * .62, Y + h * .55, "#ff4fa3", -1);
+  for (let i = 0; i < 4; i++) { const bx = px + 30 + ((t * 300 + i * 90) % (w * .5)); x.fillStyle = "#fff6a8"; x.fillRect(bx, gy - 46, 16, 5); }
+  x.restore();
+}
+
+/* ---------------- титры (рисуются прямо в кадр) ---------------- */
+const CAP = [ // [сцена, доля начала, текст, акценты]
+  ["l01", 0, "АПОКАЛИПСИС", "#ff5a3a"], ["l01", .35, "СВЯЗИ НЕТ", "#fff"], ["l01", .62, "ЗАРЯДКИ 7%", "#ff3b3b"],
+  ["l02", 0, "НО ТЕЛЕГРАМ ЕЩЁ ЛОВИТ", "#fff"], ["l02", .45, "COOPIX MARKET", "#a56bff"], ["l02", .72, "ИГРЫ БЕСПЛАТНО", "#ffd84d"],
+  ["l03", 0, "СВАЙП — В ИЗБРАННОЕ", "#ff4f8b"], ["l03", .5, "«СКАЧАТЬ» → БОТ ПРИСЛАЛ ФАЙЛ", "#4df3ff"],
+  ["l04", 0, "ИНТЕРНЕТ БОЛЬШЕ НЕ НУЖЕН", "#fff"], ["l04", .55, "РАБОТАЕТ БЕЗ СЕТИ", "#7dff9a"],
+  ["l05", 0, "STICK FIGHT", "#4df3ff"], ["l05", .3, "ВОЛНЫ БОТОВ", "#ff4fa3"], ["l05", .5, "ПУШКИ · ПРЫЖКИ", "#ffd84d"], ["l05", .72, "ЧИСТЫЙ ЭКШЕН", "#fff"],
+  ["l06", 0, "ЭТО СЕРЁГА", "#7dff9a"], ["l06", .4, "СЕРЁГА ВЫЖИВАЛ", "#fff"], ["l06", .7, "ШЁЛ ЗА ВОДОЙ", "#4df3ff"],
+  ["l07", 0, "МЫ ПОКАЗАЛИ СЕРЁГЕ ИГРЫ", "#ffd84d"],
+  ["l08", 0, "МУЛЬТИПЛЕЕР", "#4df3ff"], ["l08", .25, "WI-FI · QR-КОД", "#fff"], ["l08", .5, "ДО 7 ИГРОКОВ", "#ffd84d"], ["l08", .72, "БЕЗ ИНТЕРНЕТА · БЕСПЛАТНО", "#7dff9a"],
+  ["l09", 0, "ПРОШЁЛ ДЕНЬ", "#fff"], ["l09", .3, "НЕДЕЛЯ", "#fff"], ["l09", .6, "БАТАРЕЯ 1%", "#ff3b3b"],
+  ["l10", .05, "ЕСЛИ ВЫ И УМРЁТЕ…", "#fff"], ["l10", .5, "ТО ТОЧНО НЕ ОТ СКУКИ", "#ffd84d"],
+];
+function caption(t) {
+  const s = scAt(t); const list = CAP.filter((c) => c[0] === s.id); if (!list.length) return;
+  const lt = (t - s.a) / (s.b - s.a); let cur = null; for (const c of list) if (lt >= c[1]) cur = c; if (!cur) return;
+  const ct = (lt - cur[1]) * (s.b - s.a), k = easeOut(ct / .22), wob = Math.sin(ct * 18) * Math.exp(-ct * 6) * .06;
+  ox.save(); ox.translate(W / 2, H * .17); ox.rotate(-.03 + wob); ox.scale(.6 + k * .4, .6 + k * .4);
+  ox.font = "900 92px 'Arial Black', Impact, system-ui"; ox.textAlign = "center"; ox.textBaseline = "middle"; ox.lineJoin = "round";
+  const words = cur[2]; const tw = ox.measureText(words).width, sc = Math.min(1, 980 / tw); ox.scale(sc, sc);
+  ox.lineWidth = 22; ox.strokeStyle = "#000"; ox.strokeText(words, 0, 0); ox.fillStyle = cur[3]; ox.fillText(words, 0, 0); ox.restore();
+}
+function hud(t) { // плашка «батарея» и метка канала
+  const s = scAt(t); const bat = batteryAt(t);
+  if (["l01", "l09", "l10"].includes(s.id)) { ox.save(); ox.translate(W - 230, 80); ox.fillStyle = "rgba(0,0,0,.55)"; rr(ox, 0, 0, 190, 80, 18); ox.fill(); ox.strokeStyle = bat < 10 ? "#ff3b3b" : "#fff"; ox.lineWidth = 5; ox.strokeRect(22, 22, 100, 40); ox.fillRect(124, 32, 8, 20); ox.fillStyle = bat < 10 ? "#ff3b3b" : "#7dff9a"; ox.fillRect(27, 27, 90 * bat / 100 + 2, 30); ox.fillStyle = "#fff"; ox.font = "800 30px system-ui"; ox.fillText(bat + "%", 140, 54); ox.restore(); }
+  ox.save(); ox.globalAlpha = .7; ox.fillStyle = "#fff"; ox.font = "700 30px system-ui"; ox.textAlign = "left"; ox.fillText("@coopixmarket", 40, H - 60); ox.restore();
+}
+function batteryAt(t) { const s = scAt(t); if (s.id === "l09") return Math.max(1, Math.round(lerp(7, 1, seg(t, s.a, s.b - .5)))); if (s.id === "l10" || s.id === "l11") return 1; return 7; } // 7% до «прошла неделя», потом 1%
+
+/* ---------------- звук: озвучка + музыка + синтез эффектов, всё в один поток для записи ---------------- */
+const AC = new (window.AudioContext || window.webkitAudioContext)(), dest = AC.createMediaStreamDestination(), master = AC.createGain(); master.gain.value = 1; master.connect(AC.destination); master.connect(dest);
+const buf = async (u) => AC.decodeAudioData(await (await fetch(u)).arrayBuffer());
+const VO = {}; for (const l of LINES) VO[l.id] = await buf("vo/" + l.id + ".wav");
+const MUSIC = await Promise.all(["../public/assets/music/store.mp3", "../public/assets/music/store3.mp3"].map(buf).map((p) => p.catch(() => null)));
+let nodes = [];
+function playAudio(t0) {
+  nodes.forEach((n) => { try { n.stop(); } catch (e) {} }); nodes = [];
+  for (const s of SC) { const n = AC.createBufferSource(); n.buffer = VO[s.id]; n.playbackRate.value = SPEED; const g = AC.createGain(); g.gain.value = 1.6; n.connect(g).connect(master); n.start(t0 + s.vo); nodes.push(n); }
+  const mus = MUSIC.filter(Boolean); if (mus.length) { let at = 0, i = 0; while (at < TOTAL) { const n = AC.createBufferSource(); n.buffer = mus[i % mus.length]; const g = AC.createGain(); g.gain.value = .16; n.connect(g).connect(master); n.start(t0 + at); nodes.push(n); at += n.buffer.duration - .2; i++; } }
+  const sfx = (at, f) => f(t0 + at);
+  const sA = (id) => SC.find((s) => s.id === id);
+  sfx(sA("l01").a, (w) => boomS(w, .9)); sfx(sA("l03").a + .5, (w) => whoosh(w)); sfx(sA("l03").a + 1.1, (w) => ding(w, 880)); sfx(sA("l03").a + 3.6, (w) => ding(w, 1320));
+  sfx(sA("l04").a + 1.8, (w) => ding(w, 660));
+  const l5 = sA("l05"); for (let k = 0; k < 26; k++) sfx(l5.a + .3 + k * (l5.b - l5.a - .6) / 26, (w) => pew(w)); for (const k of [.25, .55, .85]) sfx(l5.a + k * (l5.b - l5.a), (w) => boomS(w, .7));
+  sfx(sA("l07").a, (w) => whoosh(w)); sfx(sA("l08").a + 3, (w) => ding(w, 990)); sfx(sA("l10").a + .2, (w) => sadTrombone(w)); sfx(sA("l11").a, (w) => boomS(w, .5));
+}
+function env(g, w, a, d, v) { g.gain.setValueAtTime(0, w); g.gain.linearRampToValueAtTime(v, w + a); g.gain.exponentialRampToValueAtTime(.0001, w + a + d); }
+function pew(w) { const o = AC.createOscillator(), g = AC.createGain(); o.type = "square"; o.frequency.setValueAtTime(1300, w); o.frequency.exponentialRampToValueAtTime(220, w + .12); env(g, w, .005, .13, .07); o.connect(g).connect(master); o.start(w); o.stop(w + .2); }
+function ding(w, f) { const o = AC.createOscillator(), g = AC.createGain(); o.type = "triangle"; o.frequency.value = f; env(g, w, .005, .4, .12); o.connect(g).connect(master); o.start(w); o.stop(w + .5); }
+function noiseBuf(d) { const b = AC.createBuffer(1, AC.sampleRate * d, AC.sampleRate), a = b.getChannelData(0); for (let i = 0; i < a.length; i++) a[i] = Math.random() * 2 - 1; return b; }
+function boomS(w, v) { const n = AC.createBufferSource(); n.buffer = noiseBuf(1.2); const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(900, w); f.frequency.exponentialRampToValueAtTime(60, w + 1); const g = AC.createGain(); env(g, w, .01, 1.1, v); n.connect(f).connect(g).connect(master); n.start(w); }
+function whoosh(w) { const n = AC.createBufferSource(); n.buffer = noiseBuf(.5); const f = AC.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 2; f.frequency.setValueAtTime(400, w); f.frequency.exponentialRampToValueAtTime(3000, w + .35); const g = AC.createGain(); env(g, w, .1, .35, .25); n.connect(f).connect(g).connect(master); n.start(w); }
+function sadTrombone(w) { [392, 370, 349, 330].forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, w + i * .42); if (i === 3) o.frequency.linearRampToValueAtTime(300, w + i * .42 + .9); env(g, w + i * .42, .03, i === 3 ? 1 : .38, .07); const fl = AC.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 1400; o.connect(fl).connect(g).connect(master); o.start(w + i * .42); o.stop(w + i * .42 + 1.3); }); }
+
+/* ---------------- сцены: камера, позы, экраны по времени ---------------- */
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+let lastT = 0;
+function update(t) {
+  const dt = clamp(t - lastT, 0, .1); lastT = t;
+  const s = scAt(t), lt = (t - s.a) / (s.b - s.a), bat = batteryAt(t);
+  world.visible = s.id !== "l05"; arena.visible = s.id === "l05" || (s.id === "l04" && lt > .92);
+  // небо: красное → (время идёт) день/ночь
+  let sky = new THREE.Color(0x4a1a12);
+  if (s.id === "l09") { const k = lt * 4, d = (Math.sin(k * Math.PI * 2 - 1.5) + 1) / 2; sky = new THREE.Color(0x0a0820).lerp(new THREE.Color(0x7a2a18), d); sunBall.position.set(Math.cos(k * 6.28) * -60, Math.sin(k * 6.28) * 30, -70); moon.position.set(-sunBall.position.x, -sunBall.position.y, -70); }
+  else { sunBall.position.set(-30, 12, -70); moon.position.set(30, -20, -70); }
+  if (s.id === "l10") sky = new THREE.Color(0x150a1c);
+  if (s.id === "l05") sky = new THREE.Color(0x0b0618); // неоновая арена — тёмный фон
+  scene.background = sky; scene.fog.color.copy(sky); hemi.intensity = s.id === "l10" ? .55 : 1.1; fire.intensity = 5 + Math.sin(t * 13) * 1.2 + Math.sin(t * 31) * .6;
+  const ap = ash.geometry.attributes.position; for (let i = 0; i < ashN; i++) { ap.array[i * 3 + 1] -= dt * (.4 + (i % 7) * .05); ap.array[i * 3] += Math.sin(t + i) * dt * .2; if (ap.array[i * 3 + 1] < 0) ap.array[i * 3 + 1] = 14; } ap.needsUpdate = true;
+
+  // по умолчанию: герой стоит с телефоном, Серёга за кадром
+  hero.root.position.set(0, 0, 0); hero.root.rotation.y = 0; pose(hero, "phone", t); skeleton(hero, 0); skeleton(sereg, 0);
+  sereg.root.position.set(40, 0, 0); pack.visible = true; bucket.visible = true; beam.visible = false; seregPhone.g.visible = false;
+  let camPos = V(0, 1.6, 3), look = V(0, 1.4, 0), fov = 50, mode = "off", ph = heroPhone, phoneBig = false;
+
+  if (s.id === "l01") { // хук: облёт руин, герой в центре, телефон светится
+    const k = ease(lt); camPos = V(lerp(-5, -1.2, k), lerp(5, 1.8, k), lerp(9, 3.2, k)); look = V(0, lerp(2, 1.45, k), 0); mode = lt > .45 ? "battery" : "off"; pose(hero, "stand", t); if (lt > .45) pose(hero, "phone", t);
+  }
+  if (s.id === "l02") { phoneBig = true; mode = "tg"; camPos = V(.05, 1.4, 1.08 - ease(lt) * .12); look = V(0, 1.36, 0); }
+  if (s.id === "l03") { phoneBig = true; mode = lt < .5 ? "market" : "download"; camPos = V(0, 1.39, 1.0); look = V(0, 1.38, 0); }
+  if (s.id === "l04") { phoneBig = true; mode = "offline"; camPos = V(0, 1.39, lerp(1.0, .55, ease(seg(lt, .75, 1)))); look = V(0, 1.38, 0); }
+  if (s.id === "l05") action(t, lt, dt);
+  if (s.id === "l06") { // Серёга идёт за водой мимо героя
+    const k = lt; sereg.root.position.set(lerp(-7, 1.6, ease(k)), 0, .8); sereg.root.rotation.y = Math.PI / 2; pose(sereg, k < .92 ? "walk" : "stand", t);
+    pose(hero, "sitPhone", t); camPos = V(lerp(-3.5, 2.2, k), 1.7, 5.6); look = V(lerp(-2, .8, k), .9, .3); mode = "game";
+  }
+  if (s.id === "l07") { // герой поворачивает телефон к Серёге, тот садится
+    sereg.root.position.set(1.2, 0, .5); sereg.root.rotation.y = -1.2; pose(sereg, lt < .45 ? "stand" : "sitPhone", t); bucket.visible = lt < .45;
+    pose(hero, "sitPhone", t); camPos = V(.5, 1.5, 3.4); look = V(.6, .8, 0); mode = "game"; seregPhone.g.visible = lt >= .45;
+  }
+  if (s.id === "l08") { // мультиплеер: оба сидят, QR-луч между телефонами
+    sereg.root.position.set(1.1, 0, .3); sereg.root.rotation.y = -1.4; pose(sereg, "sitPhone", t); bucket.visible = false; pose(hero, "sitPhone", t); seregPhone.g.visible = true;
+    const k = ease(lt); camPos = V(lerp(-.8, .7, k), lerp(1.7, 1.35, k), lerp(3.6, 2.6, k)); look = V(.55, .7, 0); mode = lt < .25 ? "qr" : "game"; beam.visible = lt > .18 && lt < .5;
+  }
+  if (s.id === "l09") { // время: камера медленно облетает, скелетирование
+    sereg.root.position.set(1.1, 0, .3); sereg.root.rotation.y = -1.4; pose(sereg, "sitPhone", t); bucket.visible = false; pose(hero, "sitPhone", t); seregPhone.g.visible = true;
+    const sk = seg(lt, .55, 1); skeleton(hero, sk); skeleton(sereg, sk); pack.visible = sk < .5;
+    const a = lt * 2.2; camPos = V(.55 + Math.sin(a) * 3.2, 1.6, Math.cos(a) * 3.2); look = V(.55, .6, 0); mode = "game";
+  }
+  if (s.id === "l10") { // панчлайн: два скелета с горящими телефонами
+    sereg.root.position.set(1.1, 0, .3); sereg.root.rotation.y = -1.4; pose(sereg, "dead", t); pose(hero, "dead", t); skeleton(hero, 1); skeleton(sereg, 1); bucket.visible = false; pack.visible = false; seregPhone.g.visible = true;
+    camPos = V(.55, lerp(1.6, 1.25, ease(lt)), lerp(3.8, 2.7, ease(lt))); look = V(.55, .6, 0); mode = "gameover"; fov = 46;
+  }
+  if (s.id === "l11") { phoneBig = true; mode = "market"; camPos = V(0, 1.39, 1.15); look = V(0, 1.38, 0); }
+
+  // телефон героя: в руках или крупно перед камерой
+  if (phoneBig) { heroPhone.g.position.set(0, 1.38, 0); heroPhone.g.rotation.set(0, 0, Math.sin(t * 1.4) * .015); hero.root.position.set(0, -10, 0); }
+  else { const hp = new THREE.Vector3(); hero.hips.localToWorld(hp.set(0, .38, .32)); heroPhone.g.position.copy(hp); heroPhone.g.quaternion.copy(hero.root.quaternion); heroPhone.g.rotateX(-.75); heroPhone.g.scale.setScalar(.55); }
+  if (phoneBig) heroPhone.g.scale.setScalar(1);
+  if (seregPhone.g.visible) { const sp = new THREE.Vector3(); sereg.hips.localToWorld(sp.set(0, .38, .32)); seregPhone.g.position.copy(sp); seregPhone.g.quaternion.copy(sereg.root.quaternion); seregPhone.g.rotateX(-.75); seregPhone.g.scale.setScalar(.55); screenUI(seregPhone, s.id === "l10" ? "gameover" : s.id === "l08" && lt < .25 ? "qr" : "game", lt + .3, bat); }
+  if (beam.visible) { const a = heroPhone.g.position, b = seregPhone.g.position, mid = a.clone().add(b).multiplyScalar(.5); beam.position.copy(mid); beam.scale.set(1, a.distanceTo(b), 1); beam.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize()); beam.material.emissiveIntensity = 3 + Math.sin(t * 30) * 2; }
+  screenUI(heroPhone, mode, lt, bat); phoneLight.position.copy(heroPhone.g.position).add(V(0, .1, .4)); phoneLight.intensity = mode === "off" || phoneBig ? 0 : 2.2;
+  if (s.id !== "l05") { cam.position.copy(camPos); cam.lookAt(look); cam.fov = fov; }
+  // встряска на хуке и в экшене
+  if (s.id === "l01" && lt < .1) cam.position.x += (Math.random() - .5) * .15 * (1 - lt * 10);
+  cam.updateProjectionMatrix(); bloom.strength = s.id === "l05" ? .65 : s.id === "l10" ? .5 : .55;
+}
+/* экшен Stick Fight: орбита камеры, замедление, пули, взрывы */
+let nextShot = 0;
+function action(t, lt, dt) {
+  const slow = lt > .45 && lt < .62 ? .18 : 1, T = t * 1; const [hero2, e1, e2, e3] = fighters;
+  hero2.root.position.set(Math.sin(T * .9) * 2.4, lt > .45 && lt < .62 ? 2.2 + Math.sin(seg(lt, .45, .62) * Math.PI) * 1.6 : 0, 0); hero2.root.rotation.y = Math.PI / 2;
+  pose(hero2, lt > .45 && lt < .62 ? "jump" : (T * 2 | 0) % 2 ? "shoot" : "run", T);
+  [[e1, 5.2, 0], [e2, 4, 2.2], [e3, -4.2, 2.2]].forEach(([e, x, y], i) => { e.root.position.set(x + Math.sin(T * 1.3 + i) * .6, y, 0); e.root.rotation.y = x > 0 ? -Math.PI / 2 : Math.PI / 2; pose(e, (T * 1.5 + i) % 2 < 1 ? "shoot" : "run", T + i); e.root.visible = !(i === 0 && lt > .3 && lt < .42) && !(i === 1 && lt > .7); });
+  if (t > nextShot) { nextShot = t + .14 / slow; const from = hero2.root.position.clone().add(V(.55, 1.45, 0)); const tgt = [e1, e2, e3][(t * 7 | 0) % 3].root.position.clone().add(V(0, 1.4, 0)); fire3(from, tgt.sub(from).normalize(), 0xfff6a8); flash.position.copy(from); flash.intensity = 3; }
+  if (Math.abs(lt - .3) < .01 && !action.b1) { action.b1 = 1; boom(e1.root.position.clone().add(V(0, 1.2, 0)), 0xff4fa3, 70); }
+  if (Math.abs(lt - .7) < .01 && !action.b2) { action.b2 = 1; boom(e2.root.position.clone().add(V(0, 1.2, 0)), 0xff4fa3, 90); }
+  flash.intensity *= .8;
+  for (let i = bullets.length - 1; i >= 0; i--) { const b = bullets[i]; b.position.addScaledVector(b.userData.v, dt * slow); b.userData.l -= dt * slow; if (b.userData.l <= 0) { arena.remove(b); bullets.splice(i, 1); } }
+  for (let i = sparks.length - 1; i >= 0; i--) { const p = sparks[i]; p.userData.v.y -= 12 * dt * slow; p.position.addScaledVector(p.userData.v, dt * slow); p.rotation.x += dt * 8; p.userData.l -= dt * slow; if (p.userData.l <= 0) { arena.remove(p); sparks.splice(i, 1); } }
+  // камера: облёт → наезд в замедлении → резкие перебивки
+  const a = lt * 3.2, base = hero2.root.position.clone().add(arena.position);
+  if (lt < .45) { cam.position.set(base.x + Math.sin(a) * 5, 2.4 + Math.sin(a * .7), arena.position.z + Math.cos(a) * 5 + 2); cam.lookAt(base.x, 1.6, arena.position.z); cam.fov = 52; }
+  else if (lt < .62) { const k = seg(lt, .45, .62); cam.position.set(base.x + 1.6 - k * .6, base.y + 1.8, arena.position.z + 2.2 - k * .8); cam.lookAt(base.x, base.y + 1.3, arena.position.z); cam.fov = 40; }
+  else { const cut = (lt * 10 | 0) % 3; const p = [V(-6, 3, 6), V(6, 1.2, 4), V(0, 7, 7)][cut]; cam.position.set(arena.position.x + p.x, p.y, arena.position.z + p.z); cam.lookAt(base.x, 1.6, arena.position.z); cam.fov = 48; }
+  if (lt < .02) { action.b1 = action.b2 = 0; }
+}
+
+/* ---------------- кадр: 3D → 2D-холст + титры ---------------- */
+function frame(t) {
+  update(t); composer.render(); ox.drawImage(gl.domElement, 0, 0, W, H);
+  // виньетка и лёгкое зерно для «кинца»
+  const g = ox.createRadialGradient(W / 2, H / 2, H * .25, W / 2, H / 2, H * .75); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)"); ox.fillStyle = g; ox.fillRect(0, 0, W, H);
+  const s = scAt(t), lt = (t - s.a) / (s.b - s.a);
+  if (lt < .06 && s !== SC[0]) { ox.fillStyle = `rgba(255,255,255,${(1 - lt / .06) * .5})`; ox.fillRect(0, 0, W, H); } // вспышка на склейке
+  caption(t); hud(t);
+  if (s.id === "l11") endCard(lt);
+}
+function endCard(k) {
+  const a = easeOut(seg(k, 0, .25)); ox.save(); ox.globalAlpha = a; ox.fillStyle = "rgba(8,4,20,.82)"; ox.fillRect(0, 0, W, H);
+  ox.textAlign = "center"; ox.font = "900 150px 'Arial Black', Impact, system-ui"; ox.lineJoin = "round"; ox.lineWidth = 26; ox.strokeStyle = "#140a28";
+  ox.save(); ox.translate(W / 2, H * .38); ox.scale(.7 + a * .3, .7 + a * .3); ox.strokeText("COOPIX", 0, 0); ox.fillStyle = "#a56bff"; ox.fillText("COOPIX", 0, 0); ox.strokeText("MARKET", 0, 150); ox.fillStyle = "#fff"; ox.fillText("MARKET", 0, 150); ox.restore();
+  ox.font = "800 54px system-ui"; ["Игры в Телеграме", "Бесплатно · без интернета", "Мультиплеер до 7 игроков"].forEach((l, i) => { ox.globalAlpha = a * easeOut(seg(k, .2 + i * .12, .35 + i * .12)); ox.fillStyle = ["#fff", "#7dff9a", "#4df3ff"][i]; ox.fillText(l, W / 2, H * .58 + i * 80); });
+  ox.globalAlpha = a; rr(ox, W / 2 - 330, H * .76, 660, 130, 40); ox.fillStyle = "#ffd84d"; ox.fill(); ox.fillStyle = "#140a28"; ox.font = "900 56px system-ui"; ox.fillText("ИЩИ В TELEGRAM", W / 2, H * .76 + 86);
+  ox.restore();
+}
+
+/* ---------------- проигрывание и запись ---------------- */
+let raf = 0, start = 0, rec = null;
+function run(record) {
+  cancelAnimationFrame(raf); AC.resume(); lastT = 0; nextShot = 0; bullets.splice(0).forEach((b) => arena.remove(b)); sparks.splice(0).forEach((b) => arena.remove(b));
+  const t0 = AC.currentTime + .15; playAudio(t0); start = t0;
+  if (record) {
+    const st = out.captureStream(30); dest.stream.getAudioTracks().forEach((tr) => st.addTrack(tr));
+    const mime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((m) => MediaRecorder.isTypeSupported(m));
+    const chunks = []; rec = new MediaRecorder(st, { mimeType: mime, videoBitsPerSecond: 12e6 }); rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    rec.onstop = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(chunks, { type: "video/webm" })); a.download = "coopix_reel_apocalypse.webm"; a.click(); $("#rec").disabled = false; $("#play").disabled = false; };
+    rec.start(500); $("#rec").disabled = true; $("#play").disabled = true;
+  }
+  const loop = () => { const t = AC.currentTime - start; frame(Math.max(0, t)); $("#tm").textContent = Math.max(0, t).toFixed(1) + " / " + TOTAL.toFixed(1) + " с · " + scAt(Math.max(0, t)).id;
+    if (t < TOTAL) raf = requestAnimationFrame(loop); else { if (rec && rec.state === "recording") rec.stop(); rec = null; } };
+  raf = requestAnimationFrame(loop);
+}
+$("#play").onclick = () => run(false); $("#rec").onclick = () => run(true);
+$("#play").disabled = $("#rec").disabled = false; $("#tm").textContent = "готово · " + TOTAL.toFixed(1) + " с";
+frame(.5); window.__seek = (t) => { lastT = t - .016; frame(t); };
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+</script>
+</body></html>
