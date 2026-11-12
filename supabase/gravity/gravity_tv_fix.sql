@@ -1,7 +1,7 @@
--- Gravity Fight: новая мини-игра для «телевизора» (неон в стиле ТВ, простая надёжная физика). Выполнить один раз.
+-- Gravity Fight: мини-игра для «телевизора» на белом фоне, простая надёжная физика. Выполнить один раз.
 update public.games set play_html = $cpx$<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Gravity Fight — мини-тест</title>
-<style>html,body{margin:0;height:100%;background:#0b0618;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{display:block;width:100%;height:100%}</style>
+<style>html,body{margin:0;height:100%;background:#fbfaf6;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{display:block;width:100%;height:100%}</style>
 </head><body><canvas id="c"></canvas>
 <script>
 /* Gravity Fight — мини-тест для «телевизора» Coopix. Простая надёжная физика: по земле мотоцикл едет вдоль трассы,
@@ -39,35 +39,35 @@ let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.w
 const L=document.createElement("canvas");L.width=320;L.height=200;const lx=L.getContext("2d");
 function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
 function bike(){x.save();x.translate(P.x,P.y);x.rotate(P.a);x.lineCap="round";x.lineJoin="round";
-  x.strokeStyle="#4df3ff";x.shadowColor="#4df3ff";x.shadowBlur=6;x.lineWidth=2;
+  x.strokeStyle="#1f6fe0";x.shadowBlur=0;x.lineWidth=2;
   for(const wx of [-11,11]){x.beginPath();x.arc(wx,-6,6,0,7);x.stroke()}
   x.beginPath();x.moveTo(-11,-6);x.lineTo(-3,-13);x.lineTo(7,-13);x.lineTo(11,-6);x.moveTo(7,-13);x.lineTo(9,-19);x.stroke();
-  x.strokeStyle="#ff4fa3";x.shadowColor="#ff4fa3";x.beginPath();x.moveTo(-2,-14);x.lineTo(0,-24);x.lineTo(8,-19);x.moveTo(-2,-14);x.lineTo(4,-9);x.stroke();
+  x.strokeStyle="#e8231b";x.beginPath();x.moveTo(-2,-14);x.lineTo(0,-24);x.lineTo(8,-19);x.moveTo(-2,-14);x.lineTo(4,-9);x.stroke();
   x.beginPath();x.arc(1,-29,4,0,7);x.stroke();x.shadowBlur=0;x.restore()}
-function draw(){const d=c.width/W;x.setTransform(d,0,0,d,0,0);x.fillStyle="#0b0618";x.fillRect(0,0,W,H);lx.clearRect(0,0,320,200);
+function draw(){const d=c.width/W;x.setTransform(d,0,0,d,0,0);x.fillStyle="#fbfaf6";x.fillRect(0,0,W,H);lx.clearRect(0,0,320,200);
   x.save();x.translate(OX,OY);x.scale(S,S);x.beginPath();x.rect(0,0,320,200);x.clip();
-  const g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,"#1c0d3d");g.addColorStop(1,"#0a0518");x.fillStyle=g;x.fillRect(0,0,320,200);
-  const cx=P?cam:0;x.strokeStyle="rgba(140,90,255,.12)";x.lineWidth=1;for(let i=-(cx*.5%20);i<=320;i+=20){x.beginPath();x.moveTo(i,0);x.lineTo(i,200);x.stroke()}for(let j=0;j<=200;j+=20){x.beginPath();x.moveTo(0,j);x.lineTo(320,j);x.stroke()}
+  x.fillStyle="#fbfaf6";x.fillRect(0,0,320,200);
+  const cx=P?cam:0;x.strokeStyle="rgba(110,140,200,.18)";x.lineWidth=1;for(let i=-(cx*.5%20);i<=320;i+=20){x.beginPath();x.moveTo(i,0);x.lineTo(i,200);x.stroke()}for(let j=0;j<=200;j+=20){x.beginPath();x.moveTo(0,j);x.lineTo(320,j);x.stroke()}
   x.translate(-cx,0);
-  x.beginPath();x.moveTo(T[0][0],220);for(const p of T)x.lineTo(p[0],p[1]);x.lineTo(T[T.length-1][0],220);x.closePath();x.fillStyle="#140b30";x.fill();
-  x.strokeStyle="#a56bff";x.shadowColor="#a56bff";x.shadowBlur=8;x.lineWidth=3;x.lineJoin="round";x.beginPath();T.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();x.shadowBlur=0;
-  const [fy]=gnd(FIN);x.strokeStyle="#fff";x.lineWidth=2;x.beginPath();x.moveTo(FIN,fy);x.lineTo(FIN,fy-34);x.stroke();
-  for(let i=0;i<4;i++)for(let j=0;j<3;j++){x.fillStyle=(i+j)%2?"#4df3ff":"#fff";x.fillRect(FIN+i*4,fy-34+j*4,4,4)}
-  for(const p of trail){x.globalAlpha=p.l/18;x.fillStyle="#a56bff";x.fillRect(p.x,p.y-2,2,2)}x.globalAlpha=1;
+  x.beginPath();x.moveTo(T[0][0],220);for(const p of T)x.lineTo(p[0],p[1]);x.lineTo(T[T.length-1][0],220);x.closePath();x.fillStyle="#efede6";x.fill();
+  x.strokeStyle="#222";x.shadowBlur=0;x.lineWidth=3;x.lineJoin="round";x.beginPath();T.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();x.shadowBlur=0;
+  const [fy]=gnd(FIN);x.strokeStyle="#222";x.lineWidth=2;x.beginPath();x.moveTo(FIN,fy);x.lineTo(FIN,fy-34);x.stroke();
+  for(let i=0;i<4;i++)for(let j=0;j<3;j++){x.fillStyle=(i+j)%2?"#222":"#fff";x.fillRect(FIN+i*4,fy-34+j*4,4,4)}
+  for(const p of trail){x.globalAlpha=p.l/18;x.fillStyle="#999";x.fillRect(p.x,p.y-2,2,2)}x.globalAlpha=1;
   if(P)bike();x.restore();
-  if(st==="play"){pt(tm.toFixed(1)+" С",8,14,11,"#fff","left");if(best)pt("РЕКОРД "+best.toFixed(1),312,14,11,"#fff","right");if(P.air)pt("НАКЛОН ←→",160,14,9,"#ffd84d")}
-  else{x.save();x.translate(OX,OY);x.scale(S,S);x.fillStyle="rgba(8,4,20,"+(st==="menu"?.45:.7)+")";x.fillRect(0,0,320,200);x.restore();
-    pt("GRAVITY",160,60,30,"#4df3ff","center","#123a52");pt("FIGHT",160,90,30,"#ff4fa3","center","#4a1030");
-    pt(st==="over"?msg:"МИНИ-ТЕСТ · ОДНА ТРАССА",160,110,10,"#ffd84d");
-    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ЕХАТЬ",160,136,11,"#fff");
-    pt(TOUCH?"▲ ГАЗ · ■ ТОРМОЗ · ◀▶ НАКЛОН":"↑ ГАЗ · ↓ ТОРМОЗ · ←→ НАКЛОН",160,158,9,"#9a8cd0");
-    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,172,9,"#9a8cd0")}
+  if(st==="play"){pt(tm.toFixed(1)+" С",8,14,11,"#222","left");if(best)pt("РЕКОРД "+best.toFixed(1),312,14,11,"#222","right");if(P.air)pt("НАКЛОН ←→",160,14,9,"#e8231b")}
+  else{x.save();x.translate(OX,OY);x.scale(S,S);x.fillStyle="rgba(251,250,246,"+(st==="menu"?.55:.78)+")";x.fillRect(0,0,320,200);x.restore();
+    pt("GRAVITY",160,60,30,"#fff","center","#222");pt("FIGHT",160,90,30,"#e8231b","center","#222");
+    pt(st==="over"?msg:"МИНИ-ТЕСТ · ОДНА ТРАССА",160,110,10,"#1f6fe0");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ЕХАТЬ",160,136,11,"#222");
+    pt(TOUCH?"▲ ГАЗ · ■ ТОРМОЗ · ◀▶ НАКЛОН":"↑ ГАЗ · ↓ ТОРМОЗ · ←→ НАКЛОН",160,158,9,"#666");
+    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,172,9,"#666")}
   x.save();x.imageSmoothingEnabled=false;x.drawImage(L,OX,OY,320*S,200*S);x.restore();if(TOUCH&&st==="play")pads()}
 /* ---------- управление ---------- */
 let TOUCH=matchMedia("(pointer:coarse)").matches;const PADS=[["l","◀",.08],["r","▶",.22],["d","■",.78],["u","▲",.92]];
 const pr=()=>Math.max(18,Math.min(W,H)*.09);
 function pads(){const r=pr();x.font="bold "+(r*.8|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";
-  for(const [k,t,f] of PADS){const cx=W*f,cy=H-r*1.25;x.globalAlpha=K[k]?.7:.35;x.fillStyle="#a56bff";x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=1;x.fillStyle="#fff";x.fillText(t,cx,cy+1)}x.textBaseline="alphabetic"}
+  for(const [k,t,f] of PADS){const cx=W*f,cy=H-r*1.25;x.globalAlpha=K[k]?.75:.4;x.fillStyle="#222";x.beginPath();x.arc(cx,cy,r,0,7);x.fill();x.globalAlpha=1;x.fillStyle="#fff";x.fillText(t,cx,cy+1)}x.textBaseline="alphabetic"}
 const touches=new Map();
 function padAt(px,py){const r=pr();let best=null,bd=1e9;for(const [k,,f] of PADS){const dd=Math.hypot(px-W*f,py-(H-r*1.25));if(dd<r*1.7&&dd<bd){bd=dd;best=k}}return best}
 function sync(){for(const [k] of PADS)K[k]=false;for(const k of touches.values())if(k)K[k]=true}

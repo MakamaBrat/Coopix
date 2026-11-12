@@ -49,6 +49,8 @@ function stick(m,t){const run=m.vx?Math.sin(m.run):0,air=!m.on;x.save();x.transl
   x.shadowBlur=0;x.fillStyle="#cfd6ff";x.fillRect(m.f>0?6:-12,-17,6,3);x.restore()}
 /* пиксельные надписи «как на телике»: текст рисуется в маленький холст 320×200 и растягивается без сглаживания */
 const L=document.createElement("canvas");L.width=320;L.height=200;const lx=L.getContext("2d");
+/* чёткие пиксели: у надписей убираем сглаживание (каждый пиксель либо есть, либо нет) */
+function crisp(){const d=lx.getImageData(0,0,L.width,L.height),p=d.data;for(let i=3;i<p.length;i+=4){if(p[i])p[i]=p[i]<100?0:255}lx.putImageData(d,0,0)}
 function pt(t,px,py,size,fill,al,stroke){lx.font="bold "+size+"px monospace";lx.textAlign=al||"center";lx.textBaseline="alphabetic";
   if(stroke){lx.lineWidth=Math.max(2,size/4);lx.strokeStyle=stroke;lx.lineJoin="round";lx.strokeText(t,px|0,py|0)}lx.fillStyle=fill;lx.fillText(t,px|0,py|0)}
 function draw(){lx.clearRect(0,0,320,200);x.save();x.fillStyle="#0b0618";x.fillRect(0,0,W,H);
@@ -68,7 +70,7 @@ function draw(){lx.clearRect(0,0,320,200);x.save();x.fillStyle="#0b0618";x.fillR
     if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,122,11,"#fff");
     pt(TOUCH?"КНОПКИ ВНИЗУ: БЕГ · ПРЫЖОК · ОГОНЬ":"←→ БЕГ · ↑ ПРЫЖОК · X — ОГОНЬ",160,146,9,"#9a8cd0");
     pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,160,9,"#9a8cd0")}
-  x.restore();x.save();x.imageSmoothingEnabled=false;x.drawImage(L,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore();if(TOUCH&&st==="play")pads()}
+  x.restore();x.save();x.imageSmoothingEnabled=false;crisp();x.drawImage(L,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore();if(TOUCH&&st==="play")pads()}
 /* ---------- управление ---------- */
 let TOUCH=matchMedia("(pointer:coarse)").matches;const PADS=[["l","◀",.09],["r","▶",.24],["j","▲",.76],["s","✦",.91]];
 function pads(){const r=Math.max(22,Math.min(W,H)*.09);x.font="bold "+(r*.8|0)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";
