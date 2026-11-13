@@ -26,9 +26,14 @@ export function parsePayload(p) {
 }
 
 export const RANDOM_BTN = "🎲 Рандомная игра";
+/** адрес игры в ссылке: название латиницей через дефис (UNIX -> unix, Metro Runner -> metro-runner), иначе id; startapp принимает [A-Za-z0-9_-] */
+export const gameSlug = (g) => { const s = String(g.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); return s || String(g.id).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60); };
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const MEM_DECK = new Map(); // очередь игрока в памяти сервера — если в базе ещё нет колонок для неё
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
-const KB = { keyboard: [[{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true };
+export const MARKET_BTN = "🛒 Открыть маркетплейс";
+/** клавиатура бота: «Открыть маркетплейс» (сразу открывает мини-апп, если известен адрес сайта) и «Рандомная игра» */
+const kb = (site) => ({ keyboard: [[site ? { text: MARKET_BTN, web_app: { url: site } } : { text: MARKET_BTN }, { text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 /** Мини-игра -> HTML виджета: без комментариев, отступов, <title> и viewport; заглушка matchMedia (в виджете нет браузера).
  *  null, если не влезает в лимиты Telegram (32768 байт и 4096 байт после zlib-9). */
@@ -122,16 +127,21 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
      Лимит виджета: 32 КБ HTML и 4096 байт после сжатия zlib (уровень 9) — поэтому мини-игру ужимаем и проверяем размер. */
   /* Пул: мини-игры маркета («m:<id>», с кнопкой открыть игру в маркете) + свои игры бота («w:<id>»).
      У каждого игрока своя перемешанная очередь: игра не повторяется, пока не пройден полный круг. */
-  async function pool() {
-    const m = (await store.listGames()).filter((g) => g.access === "public" && (g.has_play ?? g.play_html)).map((g) => ({ key: "m:" + g.id, id: g.id, title: g.title, market: true }));
-    return [...m, ...WIDGET_GAMES.map((w) => ({ key: "w:" + w.id, id: w.id, title: w.title, casino: w.casino, html: w.html }))];
+  /* Сейчас кнопка присылает ссылку на случайную игру маркета: текст «t.me/<бот>/<игра>»,
+     а сама ссылка открывает мини-апп бота сразу на этой игре (?startapp=<игра>). Мини-игры-виджеты (WIDGET_GAMES, sendWidget)
+     лежат в ресурсах и сейчас не отправляются. */
+  let SITE = ""; const KB = () => kb(SITE); // адрес сайта берём из запроса вебхука
+  let botName = "";
+  async function botUser() {
+    if (!botName) { try { botName = (await tgApi("getMe", {}))?.username || ""; } catch { /* нет связи — запасное имя */ } }
+    return botName || "coopixbot";
   }
-  async function sendGame(chatId, g, site) {
-    const html = widgetHtml(g.market ? (await store.gamePlay(g.id))?.play_html : g.html);
-    if (!html) return false;
-    const caption = g.market ? `🎮 ${g.title} — мини-версия игры из Coopix Market.` : `🎮 ${g.title} — играй прямо в чате.${g.casino ? " Игровые монеты, без реальных денег." : ""}`;
-    const reply_markup = g.market && site ? { inline_keyboard: [[{ text: "▶️ Открыть в Coopix Market", web_app: { url: `${site}/${g.id}` } }]] } : KB;
-    try { await tgApi("sendWidget", { chat_id: chatId, html, caption, reply_markup }); return true; } catch { return false; }
+  async function pool() {
+    return (await store.listGames()).filter((g) => g.access === "public").map((g) => ({ key: "m:" + g.id, id: g.id, title: g.title, slug: gameSlug(g) }));
+  }
+  async function sendGame(chatId, g) {
+    const bot = await botUser(), text = `🎲 <b>${esc(g.title)}</b>\n<a href="https://t.me/${bot}?startapp=${g.slug}">t.me/${bot}/${g.slug}</a>`;
+    try { await tgApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: KB() }); return true; } catch { return false; }
   }
   async function randomGame(chatId, uid, site) {
     const all = await pool(), byKey = new Map(all.map((g) => [g.key, g]));
@@ -142,20 +152,21 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
     for (let tries = 0; tries < all.length + 1; tries++) {
       if (!deck.length) { deck = shuffle(all.map((g) => g.key)); if (deck.length > 1 && deck[0] === st?.last) deck.push(deck.shift()); } // новый круг не начинается с последней игры
       const key = deck.shift();
-      if (await sendGame(chatId, byKey.get(key), site)) {
+      if (await sendGame(chatId, byKey.get(key))) {
         MEM_DECK.set(uid, { deck: [...deck], last: key }); // запас на случай, если база не сохранила
         try { await store.setBotDeck(uid, deck, key); } catch { /* не критично */ }
         return;
       }
     }
-    await tgApi("sendMessage", { chat_id: chatId, text: "Не получилось прислать игру. Попробуйте ещё раз чуть позже.", reply_markup: KB });
+    await tgApi("sendMessage", { chat_id: chatId, text: "Не получилось прислать игру. Попробуйте ещё раз чуть позже.", reply_markup: KB() });
   }
 
   async function message(msg, site) {
     if (msg.chat?.type !== "private") return; // виджеты пока работают только в личке с ботом
-    const t = String(msg.text ?? "").trim();
+    const t = String(msg.text ?? "").trim(); SITE = site || SITE;
+    if (t === MARKET_BTN) { const bot = await botUser(); await tgApi("sendMessage", { chat_id: msg.chat.id, text: "🛒 Coopix Market — все игры здесь:", reply_markup: { inline_keyboard: [[site ? { text: "Открыть маркетплейс", web_app: { url: site } } : { text: "Открыть маркетплейс", url: `https://t.me/${bot}?startapp` }]] } }); return; }
     if (BTN_TEXTS.includes(t) || /^\/random(@\w+)?$/i.test(t)) await randomGame(msg.chat.id, Number(msg.from?.id ?? msg.chat.id), site);
-    else if (/^\/start(\s|$)/.test(t)) await tgApi("sendMessage", { chat_id: msg.chat.id, text: `Привет! Жми «${RANDOM_BTN}» — пришлю мини-игру прямо сюда, в чат. Игры не повторяются, пока не сыграешь во все.`, reply_markup: KB });
+    else if (/^\/start(\s|$)/.test(t)) await tgApi("sendMessage", { chat_id: msg.chat.id, text: `Привет! «${MARKET_BTN}» — все игры, «${RANDOM_BTN}» — пришлю ссылку на случайную игру из Coopix Market. Игры не повторяются, пока не пройдёшь все.`, reply_markup: KB() });
   }
 
   return {

@@ -3385,6 +3385,8 @@ async function openAdmin(){
 let catP=null;
 const slugOf=s=>String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-z0-9а-я]+/g,"-").replace(/^-+|-+$/g,"");
 function deepSlug(){let p="";try{p=decodeURIComponent(location.pathname)}catch(e){}p=p.replace(/^\/+|\/+$/g,"");
+  /* ссылка из бота t.me/<бот>?startapp=<игра>: Telegram передаёт игру мини-аппу как start_param */
+  if(!p){try{const w=window.Telegram&&Telegram.WebApp,sp=(w&&w.initDataUnsafe&&w.initDataUnsafe.start_param)||new URLSearchParams(location.search).get("tgWebAppStartParam")||"";if(/^[A-Za-z0-9_-]{1,64}$/.test(sp))p=sp}catch(e){}}
   if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return slugOf(p)}
 const findDeep=s=>DATA.find(d=>slugOf(d.id)===s)||DATA.find(d=>slugOf(d.title)===s)||DATA.find(d=>slugOf(d.title).replace(/-/g,"")===s.replace(/-/g,""));
 async function spotGame(id){

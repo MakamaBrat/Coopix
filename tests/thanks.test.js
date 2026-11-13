@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { setup, init, body } from "./mem.js";
 import { TOK } from "./helpers.js";
-import { webhookSecret, makePayload, widgetHtml, RANDOM_BTN } from "../api/_lib/thanks.js";
+import { webhookSecret, makePayload, widgetHtml, RANDOM_BTN, MARKET_BTN, gameSlug } from "../api/_lib/thanks.js";
 import { readFileSync } from "node:fs";
 import { WIDGET_GAMES } from "../api/_lib/widgets.js";
 
@@ -71,27 +71,31 @@ test("спасибо: подключение вебхука только гла�
   assert.equal(w.tg.at(-1)[0], "setMyCommands"); assert.equal(w.tg.at(-1)[1].commands[0].command, "random");
 });
 
-test("рандомная игра: без повторов, пока не пройден весь круг; игры маркета — с кнопкой «Открыть»", async () => {
-  const w = await world();
-  await w.call("admin", "PATCH", init(MAIN), { query: { r: "game", id: w.game.id }, body: { play_html: "<canvas id=c></canvas><script>/* коммент */\n  let a=1;</script>" } });
-  const hook = (text, chat = { id: BOB, type: "private" }) => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK), host: "coopix.example" }, body: { message: { chat, from: { id: BOB }, text } } });
+const addGames = (w) => { for (const [id, title] of [["unik", "UNIX"], ["metro", "Metro Runner"], ["gravity", "Gravity Fight"], ["hid", "Скрытая"]]) w.store.games.set(id, { id, title, access: id === "hid" ? "staff" : "public", sort: 9 }); };
+test("рандомная игра: ссылка t.me/<бот>/<игра> на игру маркета, без повторов за круг", async () => {
+  const w = await world(); addGames(w);
+  const hook = (text, chat = { id: BOB, type: "private" }) => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: { message: { chat, from: { id: BOB }, text } } });
   await hook("/start");
-  assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.equal(w.tg.at(-1)[1].reply_markup.keyboard[0][0].text, RANDOM_BTN);
-  const N = WIDGET_GAMES.length + 1, seen = [];
+  assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.deepEqual(w.tg.at(-1)[1].reply_markup.keyboard[0].map((b) => b.text), [MARKET_BTN, RANDOM_BTN]);
+  await hook(MARKET_BTN); assert.match(JSON.stringify(w.tg.at(-1)[1].reply_markup.inline_keyboard), /startapp|web_app/);
+  const N = 4, seen = [];
   for (let i = 0; i < N; i++) {
     await hook(RANDOM_BTN);
-    const [m, p] = w.tg.at(-1); assert.equal(m, "sendWidget"); assert.equal(p.chat_id, BOB); assert.match(p.html, /class=tv/);
-    if (/Coopix Market/.test(p.caption)) { assert.equal(p.reply_markup.inline_keyboard[0][0].web_app.url, "https://coopix.example/" + w.game.id); assert.doesNotMatch(p.html, /коммент/) }
-    seen.push(p.caption);
+    const [m, p] = w.tg.at(-1); assert.equal(m, "sendMessage"); assert.equal(p.parse_mode, "HTML");
+    const [, href, label] = p.text.match(/<a href="([^"]+)">([^<]+)<\/a>/);
+    assert.match(label, /^t\.me\/\w+\/[a-z0-9_-]+$/); assert.equal(href, "https://" + label.replace(/\/([^/]+)$/, "?startapp=$1"));
+    assert.doesNotMatch(p.text, /Скрытая/); seen.push(label);
   }
   assert.equal(new Set(seen).size, N, "за круг ни одна игра не повторилась");
+  assert.ok(seen.some((s) => s.endsWith("/unix")) && seen.some((s) => s.endsWith("/metro-runner")));
   await hook("🎲 Случайная игра"); // старая надпись кнопки тоже работает и начинает новый круг
-  assert.notEqual(w.tg.at(-1)[1].caption, seen.at(-1), "новый круг не начинается с последней игры");
+  assert.notEqual(w.tg.at(-1)[1].text.match(/>([^<]+)<\/a>/)[1], seen.at(-1), "новый круг не начинается с последней игры");
   const n = w.tg.length; await hook(RANDOM_BTN, { id: -5, type: "group" });
-  assert.equal(w.tg.length, n); // в группах виджеты не работают — молчим
+  assert.equal(w.tg.length, n); // в группах молчим
+  assert.equal(gameSlug({ id: "x_1", title: "Шашки" }), "x_1");
 });
 
-test("рандомная игра: все мини-игры влезают в лимит виджета (с рамкой-телевизором)", () => {
+test("мини-игры для виджетов лежат в ресурсах и влезают в лимит (с рамкой-телевизором)", () => {
   for (const g of ["stickfight", "gravity", "unik", "metro"]) assert.ok(widgetHtml(readFileSync(new URL(`../games/${g}/tv.html`, import.meta.url), "utf8")), g);
   for (const g of WIDGET_GAMES) { const h = widgetHtml(g.html); assert.ok(h, g.id); for (const m of h.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(m[1]); }
   assert.equal(widgetHtml("<script>" + "x".repeat(40000) + "</script>"), null);
@@ -104,11 +108,11 @@ test("рандомная игра: все мини-игры влезают в л
   assert.equal(w.store.botUsers.has(78), false);
 });
 test("рандомная игра: без колонок очереди в базе круг держится в памяти сервера", async () => {
-  const w = await world();
+  const w = await world(); addGames(w);
   w.store.getBotDeck = async () => { throw new Error("column deck does not exist"); };
   w.store.setBotDeck = async () => { throw new Error("column deck does not exist"); };
   const hook = () => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: { message: { chat: { id: 555, type: "private" }, from: { id: 555 }, text: RANDOM_BTN } } });
   const seen = [];
-  for (let i = 0; i < WIDGET_GAMES.length; i++) { await hook(); seen.push(w.tg.at(-1)[1].caption); }
+  for (let i = 0; i < 4; i++) { await hook(); seen.push(w.tg.at(-1)[1].text); }
   assert.equal(new Set(seen).size, seen.length);
 });
