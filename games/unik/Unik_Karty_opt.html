@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>UNIK — карточная игра</title>
+<title>UNIX — карточная игра</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -333,7 +333,7 @@ input.tx:focus{box-shadow:0 0 0 3px #4cb8ff}
   <div class="mm-wrap">
     <div class="mm-l">
       <div class="mm-pg" id="logoFan" title="Перетасовать"></div>
-      <h1 class="mm-logo">UNIK</h1>
+      <h1 class="mm-logo">UNIX</h1>
       <div class="mm-tags"><span>Карты</span><span>Кооп</span><span>До 4 игроков</span></div>
       <div class="mm-rec" id="mmst"></div>
     </div>
@@ -344,7 +344,7 @@ input.tx:focus{box-shadow:0 0 0 3px #4cb8ff}
       <div class="two"><button class="ub" id="bHelp"><i class="ic" data-i="book"></i>Как играть</button><button class="ub" id="bSet"><i class="ic" data-i="gear"></i>Настройки</button></div>
     </div>
   </div>
-  <div class="mm-ver">UNIK · карточная игра</div>
+  <div class="mm-ver">UNIX · карточная игра</div>
 </section>
 
 <!-- ===================== КОМНАТА ===================== -->
@@ -420,7 +420,7 @@ input.tx:focus{box-shadow:0 0 0 3px #4cb8ff}
   <div id="me"></div>
   <div id="hand"></div>
   <div id="acts">
-    <button id="bCall" class="btn b-yellow">UNIK!</button>
+    <button id="bCall" class="btn b-yellow">UNIX!</button>
     <button id="bPass" class="btn b-blue">Пас ▶</button>
     <button id="bGift" class="btn b-purple"><img data-ico="gift">Подарить</button>
     <button id="bEmo" class="btn b-white">😊</button>
@@ -531,7 +531,7 @@ async function buildAssets() {
     g.fillStyle = "rgba(20,0,40,.35)"; g.fillRect(0, 0, CW, CH);
     g.save(); g.translate(CW / 2, CH / 2); g.rotate(-.5); g.scale(1, .55); g.beginPath(); g.arc(0, 0, 70, 0, 7); g.restore();
     g.fillStyle = "#ffd92e"; g.fill(); g.lineWidth = 5; g.strokeStyle = "#000"; g.stroke();
-    outText(g, "UNIK", CW / 2, CH / 2 + 2, 36, "#e8231b", -.5);
+    outText(g, "UNIX", CW / 2, CH / 2 + 2, 36, "#e8231b", -.5);
   });
   const s2 = cutBg(a2, 214); for (const k in R2) ICO[k] = crop(s2, R2[k]).toDataURL();
 }
@@ -568,12 +568,12 @@ const myName = () => (($("inName").value || "").trim() || lsG("vName") || "Иг�
 const AVC = ["#ff6a5e", "#4cb8ff", "#86ec3c", "#b866ff", "#ffab0a"];
 function avatar(name, i, bot) { return '<div class="av" style="background:' + AVC[i % 5] + '">' + (bot ? "🤖" : esc((name || "?")[0].toUpperCase())) + '<div class="ring"></div></div>'; }
 function rules() {
-  modal('<h2>Правила игры «UNIK»</h2><div class="rules">' +
+  modal('<h2>Правила игры «UNIX»</h2><div class="rules">' +
     '<p>Цель — первым избавиться от всех карт. Клади карту того же <b>цвета</b> или того же <b>значения</b>, что и верхняя карта сброса.</p>' +
     '<p><b>⊘ Пропуск</b> — следующий игрок пропускает ход. <b>⇄ Разворот</b> — меняет направление (вдвоём работает как пропуск). <b>+2</b> — следующий берёт 2 карты и пропускает ход.</p>' +
     '<p><b>Смена цвета</b> — кладётся на что угодно, ты выбираешь цвет. <b>+4</b> — то же, и следующий берёт 4.</p>' +
     '<p>Нечем ходить — нажми на колоду и возьми карту. Если она подходит — можно сразу сыграть, иначе «Пас».</p>' +
-    '<p><b>UNIK!</b> — когда у тебя остаётся одна карта, жми кнопку. Не успел, а соперник нажал «Поймать!» — берёшь 2 карты.</p>' +
+    '<p><b>UNIX!</b> — когда у тебя остаётся одна карта, жми кнопку. Не успел, а соперник нажал «Поймать!» — берёшь 2 карты.</p>' +
     '<p><b>Стопки</b> (если включены): на +2 можно ответить +2 или +4, на +4 — +4; штраф копится.</p>' +
     '<p><b>Кооп «Люди против ботов»:</b> все игроки — одна команда. Победа, если любой из вас выйдет первым. Вы видите карты союзников, а раз за раунд можно <b>подарить</b> карту союзнику (вместо хода), чтобы помочь лидеру.</p>' +
     '</div><div class="mbt"><button class="ub pr" onclick="closeModal()"><i class="ic">' + ICON.check + '</i>Понятно</button></div>');
@@ -987,7 +987,7 @@ const QR = { stream: null, loop: 0 };
 function qrCode(txt) { const m = /UNIK1:([A-Z0-9]{5})/.exec(String(txt || "").toUpperCase()); return m ? m[1] : null; }
 function qrGot(txt) {
   const code = qrCode(txt);
-  if (!code) { $("qMsg").textContent = "Это не QR игры «UNIK» — наведите камеру на QR хоста."; return false; }
+  if (!code) { $("qMsg").textContent = "Это не QR игры «UNIX» — наведите камеру на QR хоста."; return false; }
   qrStop(); $("qScan").style.display = ""; $("qVid").style.display = "none";
   $("qMsg").textContent = "QR принят — подключаюсь к комнате " + code + "…"; SFX.pop();
   NET.quick = 0; netOpen(); guestJoin(code, "qr");
@@ -1102,7 +1102,7 @@ function render() {
     h += '<div class="seat ' + p + (n === 3 ? " hi" : "") + (v.turn === i && v.phase === "play" ? " turn" : "") + '" data-s="' + i + '">' +
       '<div style="position:relative">' + avatar(s.name, i, s.kind === "bot") + '<span class="cnt">' + s.n + "</span></div>" +
       '<div class="nm">' + esc(s.name) + "</div>" + tag + fan + ah +
-      (s.n === 1 && v.unsafe !== i ? '<span class="tagS">UNIK!</span>' : "") +
+      (s.n === 1 && v.unsafe !== i ? '<span class="tagS">UNIX!</span>' : "") +
       (canCatch ? '<button class="btn b-red sm catch" data-catch="1">Поймать!</button>' : "") + "</div>";
   }
   $("seats").innerHTML = h;
@@ -1309,7 +1309,7 @@ function playEv(e) {
     case "skip": { const el = e.s === V.me ? $("me") : seatEl(e.s); if (el) { const c = rectC(el); bigPop(c, "⊘", "#ff3b30"); fxBurst(c.x, c.y, ["#ff3b30", "#fff"], 20, 5, "spark"); shake(el); } toast(nm(e.s) + (e.s === V.me ? " пропускаешь ход" : " пропускает ход")); break; }
     case "rev": toast("Направление сменилось ⇄"); break;
     case "pass": break;
-    case "call": { bubble(e.s, "UNIK!"); SFX.call(); const el = e.s === V.me ? $("me") : seatEl(e.s); if (el) { const c = rectC(el); fxRing(c.x, c.y, "#ffd23f", 140, 8); fxBurst(c.x, c.y, ["#ffd23f", "#fff6a0"], 30, 7, "mix"); } break; }
+    case "call": { bubble(e.s, "UNIX!"); SFX.call(); const el = e.s === V.me ? $("me") : seatEl(e.s); if (el) { const c = rectC(el); fxRing(c.x, c.y, "#ffd23f", 140, 8); fxBurst(c.x, c.y, ["#ffd23f", "#fff6a0"], 30, 7, "mix"); } break; }
     case "caught": { bubble(e.s, "Пойман! +2"); toast(nm(e.by) + " ловит: " + nm(e.s) + " +2"); SFX.bad(); const el = e.s === V.me ? $("me") : seatEl(e.s); if (el) { const c = rectC(el); fxRing(c.x, c.y, "#ff3b30", 150, 8); shake(el); } break; }
     case "gift": fly(e.s === V.me ? $("hand") : seatEl(e.s), e.to === V.me ? $("hand") : seatEl(e.to), IMG.back, 0, (at) => { if (at) { fxBurst(at.x, at.y, ["#b866ff", "#ffc6ec"], 26, 6, "mix"); fxRing(at.x, at.y, "#b866ff", 120, 6); } }, { glow: true, trail: ["#b866ff", "#ff5ec4"], lift: 120 }); toast(nm(e.s) + " дарит карту → " + nm(e.to)); break;
     case "turn": if (e.s === V.me) { if (SETS.ban) banner("Твой ход!"); SFX.turn(); const r = $("hand").getBoundingClientRect(); for (let k = 0; k < 6; k++) setTimeout(() => fxBurst(r.left + r.width * (.2 + Math.random() * .6), r.top + 20 + Math.random() * 30, ["#ffd23f", "#fff"], 8, 3, "star"), k * 70); } break;
