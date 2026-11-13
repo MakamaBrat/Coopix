@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { setup, init, body } from "./mem.js";
 import { TOK } from "./helpers.js";
-import { webhookSecret, makePayload } from "../api/_lib/thanks.js";
+import { webhookSecret, makePayload, widgetHtml, RANDOM_BTN } from "../api/_lib/thanks.js";
+import { readFileSync } from "node:fs";
 
 const MAIN = 1, ANN = 42, BOB = 43;
 async function world() {
@@ -66,4 +67,21 @@ test("спасибо: подключение вебхука только гла�
   assert.equal((await r(MAIN, "https://a.vercel.app/x")).status, 400);
   assert.equal((await r(MAIN, "https://a.vercel.app/api/bot")).status, 200);
   assert.equal(w.tg.at(-1)[0], "setWebhook"); assert.equal(w.tg.at(-1)[1].secret_token, webhookSecret(TOK));
+});
+
+test("случайная игра: кнопка присылает мини-игру виджетом, /start показывает кнопку", async () => {
+  const w = await world();
+  await w.call("admin", "PATCH", init(MAIN), { query: { r: "game", id: w.game.id }, body: { play_html: "<canvas id=c></canvas><script>/* коммент */\n  let a=1;</script>" } });
+  await w.hook({ message: { chat: { id: BOB, type: "private" }, from: { id: BOB }, text: "/start" } });
+  assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.equal(w.tg.at(-1)[1].reply_markup.keyboard[0][0].text, RANDOM_BTN);
+  await w.hook({ message: { chat: { id: BOB, type: "private" }, from: { id: BOB }, text: RANDOM_BTN } });
+  const [m, p] = w.tg.at(-1);
+  assert.equal(m, "sendWidget"); assert.equal(p.chat_id, BOB); assert.doesNotMatch(p.html, /коммент/); assert.match(p.html, /matchMedia/);
+  const n = w.tg.length; await w.hook({ message: { chat: { id: -5, type: "group" }, from: { id: BOB }, text: RANDOM_BTN } });
+  assert.equal(w.tg.length, n); // в группах виджеты не работают — молчим
+});
+
+test("случайная игра: все мини-игры «телевизора» влезают в лимит виджета", () => {
+  for (const g of ["stickfight", "gravity", "unik", "metro"]) assert.ok(widgetHtml(readFileSync(new URL(`../games/${g}/tv.html`, import.meta.url), "utf8")), g);
+  assert.equal(widgetHtml("<script>" + "x".repeat(40000) + "</script>"), null);
 });
