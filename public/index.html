@@ -418,6 +418,16 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .boot .lite{display:block;margin:22px auto 0;height:46px;padding:0 20px;border:3px solid var(--line);background:#120a2a;color:#fff;font-size:18px;text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
 .boot .lite:active{transform:translateY(2px)}.boot .lite:disabled{opacity:.5;cursor:default}
 .boot .lite-h{margin-top:8px;font-size:14px;opacity:.7}
+/* ссылка на игру: затемнение с «лучом» на карточке и стрелка-подпись */
+.spot{position:fixed;inset:0;z-index:90;pointer-events:auto;opacity:0;transition:opacity .22s ease-out}
+.spot.on{opacity:1}.spot.out{opacity:0;transition-duration:.4s}
+.spot-h{position:fixed;border-radius:14px;box-shadow:0 0 0 200vmax rgba(6,2,20,.8),0 0 0 3px #ffe66b,0 0 26px 6px rgba(255,230,107,.55);animation:spotP .9s ease-in-out infinite alternate}
+@keyframes spotP{to{box-shadow:0 0 0 200vmax rgba(6,2,20,.8),0 0 0 3px #fff3a8,0 0 40px 12px rgba(255,230,107,.75)}}
+.spot-t{position:fixed;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:4px;color:#ffe66b;font:700 24px/1 "Pixelify Sans",monospace;text-transform:uppercase;text-shadow:0 3px 0 #2a1260,0 0 12px rgba(255,230,107,.6);white-space:nowrap;animation:spotB .5s ease-in-out infinite alternate}
+.spot-t i{width:0;height:0;border:14px solid transparent;border-top:18px solid #ffe66b;border-bottom:0;filter:drop-shadow(0 3px 0 #2a1260)}
+.spot-t.dn{transform:translate(-50%,0);flex-direction:column-reverse}.spot-t.dn i{border-top:0;border-bottom:18px solid #ffe66b}
+@keyframes spotB{to{margin-top:-8px}}.spot-t.dn{animation-name:spotBd}@keyframes spotBd{to{margin-top:8px}}
+@media (prefers-reduced-motion:reduce){.spot-h,.spot-t{animation:none}}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
@@ -3346,6 +3356,24 @@ async function openAdmin(){
   try{all=await SUBS.list()}catch(e){}
   draw()}
 
+/* ============ ссылка на игру: coopix…/unix ============
+   Путь /<id или название игры> открывает маркет на этой игре: экран быстро темнеет, карточка остаётся в «луче» со стрелкой «Вот эта игра», затем обычный вид. */
+let catP=null;
+const slugOf=s=>String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-z0-9а-я]+/g,"-").replace(/^-+|-+$/g,"");
+function deepSlug(){let p="";try{p=decodeURIComponent(location.pathname)}catch(e){}p=p.replace(/^\/+|\/+$/g,"");
+  if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return slugOf(p)}
+const findDeep=s=>DATA.find(d=>slugOf(d.id)===s)||DATA.find(d=>slugOf(d.title)===s)||DATA.find(d=>slugOf(d.title).replace(/-/g,"")===s.replace(/-/g,""));
+function spotGame(id){
+  const c=LIVE.find(x=>x.mid===id),box=c&&c.host&&c.host.closest(".cardbox");if(!box)return;
+  box.scrollIntoView({block:"center",behavior:"auto"});
+  const o=document.createElement("div");o.className="spot";o.innerHTML='<div class="spot-h"></div><div class="spot-t"><span>Вот эта игра</span><i></i></div>';document.body.append(o);
+  const hole=o.firstChild,lab=o.lastChild;let done=false;
+  const place=()=>{const r=box.getBoundingClientRect(),p=8;Object.assign(hole.style,{left:r.left-p+"px",top:r.top-p+"px",width:r.width+2*p+"px",height:r.height+2*p+"px"});
+    const up=r.top>90;lab.classList.toggle("dn",!up);lab.style.left=r.left+r.width/2+"px";lab.style.top=(up?r.top-14:r.bottom+14)+"px"};
+  place();const ro=()=>place();addEventListener("scroll",ro,{passive:true});addEventListener("resize",ro);
+  const end=()=>{if(done)return;done=true;o.classList.add("out");removeEventListener("scroll",ro);removeEventListener("resize",ro);setTimeout(()=>o.remove(),450)};
+  requestAnimationFrame(()=>o.classList.add("on"));o.addEventListener("pointerdown",end);setTimeout(end,RM?1800:2600)}
+
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
   /* сеть и картинки параллельно: /config (доступ, роль, новости) уходит, пока декодируются спрайты и шрифты */
@@ -3358,11 +3386,14 @@ async function openAdmin(){
   if(SUB_API){
     if(!CFG_ROLE)await Promise.race([adminProbe(),wait(1500)]); /* старый сервер без роли в /config */
     /* есть кэш прошлого запуска: показываем его почти сразу, свежий каталог и счётчики приходят следом */
-    const cached=restoreCatalog(),cat=loadCatalog().then(loadStats);
-    await Promise.race([cat,wait(cached?250:3500)])}
+    const cached=restoreCatalog();catP=loadCatalog().then(loadStats);
+    await Promise.race([catP,wait(cached?250:3500)])}
+  const dl=deepSlug();if(dl&&!findDeep(dl)&&catP)await Promise.race([catP,wait(4000)]);
+  const dg=dl&&findDeep(dl);if(dg){view=1;tab=0;FL.r4=FL.sup=0;SQ="";qIn.value="";sync()} /* ссылка /название-игры: сразу маркет, все игры */
   await render(true);BOOTED=true;act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
+  if(dl){try{history.replaceState(null,"","/"+location.search)}catch(e){}if(dg)spotGame(dg.id)}
 })();
 })();
 </script>

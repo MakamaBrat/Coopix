@@ -5,7 +5,8 @@
   "functions": { "api/*.js": { "maxDuration": 15 } },
   "rewrites": [
     { "source": "/api/subs/:id/file", "destination": "/api/subs?id=:id&file=1" },
-    { "source": "/api/subs/:id", "destination": "/api/subs?id=:id" }
+    { "source": "/api/subs/:id", "destination": "/api/subs?id=:id" },
+    { "source": "/:game((?!api$|assets$|admin)[A-Za-z0-9_-]{1,40})", "destination": "/index.html" }
   ],
   "headers": [
     { "source": "/(.*)", "headers": [
