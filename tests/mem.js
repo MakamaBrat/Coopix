@@ -75,6 +75,7 @@ export function memStore() {
     async ownedGames(uid) { return this.purchases.filter((p) => p.user_id === uid && p.kind === "game" && p.status === "paid").map((p) => p.item_id); },
     async addThanks(row) { if (this.thanks.some((t) => t.charge_id === row.charge_id)) return null; const t = { id: crypto.randomUUID(), ...row, created_at: new Date().toISOString() }; this.thanks.push(t); return { id: t.id }; },
     async thanksStats(ids) { return ids.map((g) => { const t = this.thanks.filter((x) => x.game_id === g); return { game_id: g, stars: t.reduce((a, x) => a + x.stars, 0), backers: new Set(t.map((x) => x.from_id)).size }; }).filter((x) => x.stars); },
+    async gameThumb(id) { return this.games.get(id)?.thumb_img ?? null; },
     async gameCover(id) { const g = this.games.get(id); return g ? { cover_img: g.cover_img ?? null, bg_img: g.bg_img ?? null } : null; },
     async gameHtml(id) { const g = this.games.get(id); return g ? { file_html: g.file_html ?? null } : null; },
     async saveGame(row) {

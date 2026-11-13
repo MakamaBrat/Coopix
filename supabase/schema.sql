@@ -536,3 +536,5 @@ revoke all on function public.bot_seen(bigint, text, text, text, text) from publ
 -- Очередь «рандомной игры»: игры не повторяются, пока игрок не прошёл полный круг
 alter table public.bot_users add column if not exists deck jsonb not null default '[]'::jsonb;
 alter table public.bot_users add column if not exists last_game text not null default '';
+-- Уменьшенная обложка для карточек бота
+alter table public.games add column if not exists thumb_img text check (thumb_img is null or char_length(thumb_img) <= 60000);

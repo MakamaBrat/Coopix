@@ -76,10 +76,11 @@ test("рандомная игра: ссылка t.me/<бот>/<игра> на и
   const w = await world(); addGames(w);
   const hook = (text, chat = { id: BOB, type: "private" }) => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: { message: { chat, from: { id: BOB }, text } } });
   await hook("/start");
-  assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.deepEqual(w.tg.at(-1)[1].reply_markup.keyboard[0].map((b) => b.text), [MARKET_BTN, RANDOM_BTN]);
+  assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.deepEqual(w.tg.at(-1)[1].reply_markup.keyboard, [[{ text: MARKET_BTN }], [{ text: RANDOM_BTN }]]); // одна под другой, обычные кнопки
   await hook(MARKET_BTN); assert.match(JSON.stringify(w.tg.at(-1)[1].reply_markup.inline_keyboard), /startapp|web_app/);
   const N = 4, seen = [];
-  w.store.games.get("unik").cover_img = "data:image/jpeg;base64," + Buffer.from("jpegbytes").toString("base64");
+  w.store.games.get("unik").cover_img = "data:image/jpeg;base64," + Buffer.from("big-cover-bytes").toString("base64");
+  w.store.games.get("unik").thumb_img = "data:image/jpeg;base64," + Buffer.from("jpegbytes").toString("base64"); // уменьшенная — важнее обычной
   for (let i = 0; i < N; i++) {
     await hook(RANDOM_BTN);
     const [m, p] = w.tg.at(-1); assert.ok(m === "sendPhoto" || m === "sendMessage", m); assert.equal(p.parse_mode, "HTML");

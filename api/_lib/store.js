@@ -137,6 +137,8 @@ export function supabaseStore(url, serviceKey) {
     async setBotDeck(uid, deck, last) { ok(await db.from("bot_users").upsert({ tg_id: uid, deck, last_game: last, last_seen: new Date().toISOString() }, { onConflict: "tg_id" })); },
     async ownedGames(uid) { return (ok(await db.from("purchases").select("item_id").eq("user_id", uid).eq("kind", "game").eq("status", "paid")) ?? []).map((r) => r.item_id); },
     async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
+    /** уменьшенная обложка для карточки бота (отдельно: если колонки ещё нет, обложки маркета не ломаются) */
+    async gameThumb(id) { return ok(await db.from("games").select("thumb_img").eq("id", id).maybeSingle())?.thumb_img ?? null; },
     async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img,shot_img,item_img").eq("id", id).maybeSingle()); },
     async gamePlay(id) { return ok(await db.from("games").select("play_html").eq("id", id).maybeSingle()); },
     async gameHtml(id) { return ok(await db.from("games").select("file_html").eq("id", id).maybeSingle()); },

@@ -31,9 +31,10 @@ export const gameSlug = (g) => { const s = String(g.title || "").toLowerCase().r
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const MEM_DECK = new Map(); // очередь игрока в памяти сервера — если в базе ещё нет колонок для неё
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
-export const MARKET_BTN = "🛒 Открыть маркетплейс";
-/** клавиатура бота: «Открыть маркетплейс» (сразу открывает мини-апп, если известен адрес сайта) и «Рандомная игра» */
-const kb = (site) => ({ keyboard: [[site ? { text: MARKET_BTN, web_app: { url: site } } : { text: MARKET_BTN }, { text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
+export const MARKET_BTN = "🛒 Маркетплейс";
+const MARKET_TEXTS = [MARKET_BTN, "🛒 Открыть маркетплейс"]; // старая надпись — у тех, кому кнопка пришла раньше
+/** клавиатура бота: две обычные кнопки одна под другой (без значка мини-аппа в углу); «Маркетплейс» отвечает кнопкой открытия */
+const kb = () => ({ keyboard: [[{ text: MARKET_BTN }], [{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 /** Мини-игра -> HTML виджета: без комментариев, отступов, <title> и viewport; заглушка matchMedia (в виджете нет браузера).
  *  null, если не влезает в лимиты Telegram (32768 байт и 4096 байт после zlib-9). */
@@ -147,7 +148,9 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
     const caption = `🎲 <b>${esc(g.title)}</b>${g.desc ? "\n" + esc(String(g.desc).slice(0, 180)) + (String(g.desc).length > 180 ? "…" : "") : ""}`;
     const reply_markup = { inline_keyboard: [[btn]] };
     try {
-      const img = tgPhoto ? (await store.gameCover(g.id))?.cover_img : null, m = /^data:image\/jpeg;base64,(.+)$/.exec(img || "");
+      let img = null; // сначала уменьшенная вдвое обложка (256×256), иначе обычная
+      if (tgPhoto) { try { img = await store.gameThumb(g.id); } catch { /* колонки нет */ } if (!img) img = (await store.gameCover(g.id))?.cover_img; }
+      const m = /^data:image\/jpeg;base64,(.+)$/.exec(img || "");
       if (m) await tgPhoto({ chat_id: chatId, caption, parse_mode: "HTML", reply_markup }, Buffer.from(m[1], "base64"));
       else await tgApi("sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup });
       return true;
@@ -174,7 +177,7 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
   async function message(msg, site) {
     if (msg.chat?.type !== "private") return; // виджеты пока работают только в личке с ботом
     const t = String(msg.text ?? "").trim(); SITE = site || SITE;
-    if (t === MARKET_BTN) { const bot = await botUser(); await tgApi("sendMessage", { chat_id: msg.chat.id, text: "🛒 Coopix Market — все игры здесь:", reply_markup: { inline_keyboard: [[site ? { text: "Открыть маркетплейс", web_app: { url: site } } : { text: "Открыть маркетплейс", url: `https://t.me/${bot}?startapp` }]] } }); return; }
+    if (MARKET_TEXTS.includes(t)) { const bot = await botUser(); await tgApi("sendMessage", { chat_id: msg.chat.id, text: "🛒 Coopix Market — все игры здесь:", reply_markup: { inline_keyboard: [[SITE ? { text: "▶️ Открыть", web_app: { url: SITE } } : { text: "▶️ Открыть", url: `https://t.me/${bot}?startapp` }]] } }); return; }
     if (BTN_TEXTS.includes(t) || /^\/random(@\w+)?$/i.test(t)) await randomGame(msg.chat.id, Number(msg.from?.id ?? msg.chat.id), site);
     else if (/^\/start(\s|$)/.test(t)) await tgApi("sendMessage", { chat_id: msg.chat.id, text: `Привет! «${MARKET_BTN}» — все игры, «${RANDOM_BTN}» — пришлю ссылку на случайную игру из Coopix Market. Игры не повторяются, пока не пройдёшь все.`, reply_markup: KB() });
   }
