@@ -1899,7 +1899,7 @@ function syncSnd(){const b=document.querySelector(".tab.snd");if(!b)return;b.set
 function toggleSound(){SET.sound=!SET.sound;saveSet();syncSnd();musicSync();if(SET.sound)sfx.tap();toast(SET.sound?"Звук включён":"Звук выключен")}
 /* фоновая музыка сайта: 15 с с плавным началом и затуханием, по кругу. Начинает играть с первым касанием (раньше браузер не даёт звук),
    файл грузится тогда же (на старт сайта не влияет); на странице игры и когда приложение свёрнуто — молчит. */
-const MUS={el:null,vol:0,t:0,unlocked:false,i:0},MUSIC=["assets/music/store.mp3","assets/music/store2.mp3","assets/music/store3.mp3"];
+const MUS={el:null,vol:0,t:0,unlocked:false,i:0},MUSIC=["assets/music/store.mp3","assets/music/store2.mp3","assets/music/store3.mp3","assets/music/store4.mp3"];
 function musicSync(){
   const want=!!SET.sound&&MUS.unlocked&&!PGO&&!document.hidden; /* на всех экранах сайта; на странице игры молчит, чтобы не мешать её звукам */
   if(want&&!MUS.el){ /* три мелодии: первая выбирается случайно, дальше играют по очереди */
