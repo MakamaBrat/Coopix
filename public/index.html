@@ -421,8 +421,10 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 /* ссылка на игру: затемнение с «лучом» на карточке и стрелка-подпись */
 .spot{position:fixed;inset:0;z-index:90;pointer-events:auto;opacity:0;transition:opacity .22s ease-out}
 .spot.on{opacity:1}.spot.out{opacity:0;transition-duration:.4s}
-.spot-h{position:fixed;border-radius:14px;box-shadow:0 0 0 200vmax rgba(6,2,20,.8),0 0 0 3px #ffe66b,0 0 26px 6px rgba(255,230,107,.55);animation:spotP .9s ease-in-out infinite alternate}
-@keyframes spotP{to{box-shadow:0 0 0 200vmax rgba(6,2,20,.8),0 0 0 3px #fff3a8,0 0 40px 12px rgba(255,230,107,.75)}}
+.spot-h{position:fixed;inset:0;overflow:visible}
+.spot-h .d{fill:rgba(6,2,20,.8)}
+.spot-h .g{fill:none;stroke:#ffe66b;stroke-width:3;stroke-linejoin:miter;filter:drop-shadow(0 0 8px rgba(255,230,107,.8));animation:spotP .9s ease-in-out infinite alternate}
+@keyframes spotP{to{stroke:#fff3a8;filter:drop-shadow(0 0 16px rgba(255,230,107,1))}}
 .spot-t{position:fixed;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:4px;color:#ffe66b;font:700 24px/1 "Pixelify Sans",monospace;text-transform:uppercase;text-shadow:0 3px 0 #2a1260,0 0 12px rgba(255,230,107,.6);white-space:nowrap;animation:spotB .5s ease-in-out infinite alternate}
 .spot-t i{width:0;height:0;border:14px solid transparent;border-top:18px solid #ffe66b;border-bottom:0;filter:drop-shadow(0 3px 0 #2a1260)}
 .spot-t.dn{transform:translate(-50%,0);flex-direction:column-reverse}.spot-t.dn i{border-top:0;border-bottom:18px solid #ffe66b}
@@ -3372,9 +3374,14 @@ async function spotGame(id){
   let box=get();if(!box)return;
   for(let k=0,ok=0;k<12&&ok<3;k++){box=get()||box;const r=box.getBoundingClientRect(),d=r.top+r.height/2-innerHeight/2;
     if(Math.abs(d)>12){scrollTo(0,scrollY+d);ok=0}else ok++;await wait(80)}
-  const o=document.createElement("div");o.className="spot";o.innerHTML='<div class="spot-h"></div><div class="spot-t"><span>Вот эта игра</span><i></i></div>';document.body.append(o);
-  const hole=o.firstChild,lab=o.lastChild;let done=false;
-  const place=()=>{if(!box.isConnected)box=get()||box;const r=box.getBoundingClientRect(),p=8;Object.assign(hole.style,{left:r.left-p+"px",top:r.top-p+"px",width:r.width+2*p+"px",height:r.height+2*p+"px"});
+  const o=document.createElement("div");o.className="spot";
+  o.innerHTML='<svg class="spot-h" width="100%" height="100%"><path class="d" fill-rule="evenodd"/><path class="g"/></svg><div class="spot-t"><span>Вот эта игра</span><i></i></div>';document.body.append(o);
+  const dim=o.querySelector(".d"),edge=o.querySelector(".g"),lab=o.lastChild;let done=false;
+  /* вырез точно по рамке карточки: та же форма со срезанными углами (26px в масштабе карточки), что у .shell */
+  const place=()=>{if(!box.isConnected)box=get()||box;const card=box.querySelector(".card")||box,r=card.getBoundingClientRect();
+    const k=parseFloat(getComputedStyle(card).getPropertyValue("--k"))||r.width/905,c=26*k,{left:x,top:y,right:X,bottom:Y}=r;
+    const poly=`M${x+c} ${y}H${X-c}L${X} ${y+c}V${Y-c}L${X-c} ${Y}H${x+c}L${x} ${Y-c}V${y+c}Z`;
+    dim.setAttribute("d",`M-9 -9H${innerWidth+9}V${innerHeight+9}H-9Z`+poly);edge.setAttribute("d",poly);
     const up=r.top>90;lab.classList.toggle("dn",!up);lab.style.left=r.left+r.width/2+"px";lab.style.top=(up?r.top-14:r.bottom+14)+"px"};
   place();const ro=()=>place();let tk=0;const loop=()=>{if(done)return;place();tk=requestAnimationFrame(loop)};loop(); /* рамка идёт за карточкой каждый кадр */
   addEventListener("scroll",ro,{passive:true});addEventListener("resize",ro);
