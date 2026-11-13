@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#cfe8b8}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign="center";x.fillText(t,a,b)};
+const C=(a,b,r,f)=>{x.fillStyle=f;x.beginPath();x.arc(a,b,r,0,7);x.fill()};
+/* самоделкин: собери тележку в сетке 4×2 (ящик, колесо, мотор, шар) и проедь как можно дальше по холмам */
+const P=["","ЯЩИК","КОЛЕСО","МОТОР","ШАР"],PC=["","#c98a3c","#333","#d23a3a","#ff7ab0"],WT=[0,1,1.2,1.5,.2];
+let grid=[1,1,0,0,2,0,0,2],tool=1,st="build",car,cam=0,best=0,fuel=0,msg="";
+try{best=+localStorage.getItem("sm.b")||0}catch(e){}
+const hill=X=>{const k=Math.min(1,Math.max(0,(X-60)/80));return 150-X*.04*(X<140)+k*(Math.sin(X/90)*18+Math.sin(X/37)*7+(X>400?Math.sin(X/160)*(X/60):0))};
+function go(){const n=grid.filter(v=>v).length,w=grid.filter(v=>v==2).length,m=grid.filter(v=>v==3).length,b=grid.filter(v=>v==4).length;
+  if(!w){msg="Нужно хотя бы одно колесо";return}const mass=grid.reduce((s,v)=>s+WT[v],0);
+  car={t:0,x:40,y:hill(40)-30,vx:1.6,vy:0,a:0,pw:m*.05/Math.max(1,mass*.5),lift:b*.055,wh:w,mass,ok:grid.some((v,i)=>v==1&&i<4)||n>2};fuel=m?600:0;cam=0;st="drive";msg=""}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);
+  if(st=="drive"){if(car.done){st="build"}return}
+  if(py>168){if(px>230){go();return}const i=px/57|0;if(i<4)tool=i+1;return}
+  const q=(px-90)/36|0,r=(py-40)/36|0;if(px>=90&&q<4&&r>=0&&r<2){const k=r*4+q;grid[k]=grid[k]==tool?0:tool}});
+function step(){if(st!="drive"||car.done)return;const k=car;const g=.16-k.lift/Math.max(1,k.mass)*.6;
+  k.vy+=g;if(fuel>0){fuel--;k.vx+=k.pw}k.vx*=.995;k.x+=k.vx;k.y+=k.vy;const h=hill(k.x)-6;
+  if(k.y>h){const sl=(hill(k.x+4)-hill(k.x-4))/8;k.y=h;k.vy=Math.min(0,k.vy);k.vx+=sl*-.08*k.wh/2;k.a=Math.atan(sl)}else k.a+=(.0)*.1;
+  if(k.y<10)k.vy+=.05;if(k.x<20){k.x=20;k.vx=Math.abs(k.vx)*.3}cam=Math.max(0,k.x-100);
+  if(++k.t>1500||Math.abs(k.vx)<.02&&fuel<=0&&k.y>=h-.5){k.done=1;const d=Math.round((k.x-40)/10);msg="Проехал "+d+" м";if(d>best){best=d;msg+=" · РЕКОРД!";try{localStorage.setItem("sm.b",best)}catch(e){}}}}
+function part(v,px,py){if(v==2){C(px+6,py+6,6,"#222");C(px+6,py+6,2.5,"#aaa")}else if(v==4){C(px+6,py-6,7,"#ff7ab0");x.fillStyle="#555";x.fillRect(px+5.5,py,1,6)}else{x.fillStyle=PC[v];x.fillRect(px,py,12,12);if(v==3){x.fillStyle="#ffd84a";x.fillRect(px+3,py+3,6,6)}}}
+function cart(X,Y,a,s){x.save();x.translate(X,Y);x.rotate(a);x.scale(s,s);for(let i=0;i<8;i++)if(grid[i])part(grid[i],(i%4-2)*12,((i>>2)-2)*12);x.restore()}
+let acc=0,last=0;function draw(t){acc+=Math.min(100,t-last);last=t;while(acc>16.7){step();acc-=16.7}
+  x.setTransform(S,0,0,S,0,0);x.fillStyle="#cfe8ff";x.fillRect(0,0,320,200);
+  if(st=="build"){T("САМОДЕЛКИН",160,22,16,"#3a5a1a");T("собери тележку и жми ЕХАТЬ",160,34,9,"#456");
+    for(let i=0;i<8;i++){const q=i%4,r=i>>2,X=90+q*36,Y=40+r*36;x.fillStyle="#e8f4d8";x.fillRect(X,Y,34,34);x.strokeStyle="#8a9a7a";x.strokeRect(X+.5,Y+.5,33,33);
+      const v=grid[i];if(v){x.save();x.translate(X+17,Y+(v==4?22:17));x.scale(2.2,2.2);part(v,-6,-6);x.restore()}}
+    T(msg||"рекорд: "+best+" м",160,128,10,msg?"#c22":"#456");
+    for(let i=0;i<4;i++){x.fillStyle=tool==i+1?"#ffd84a":"#fff";x.fillRect(i*57+4,170,53,26);T(P[i+1],i*57+30,187,9,PC[i+1])}
+    x.fillStyle="#4caf50";x.fillRect(234,170,82,26);T("ЕХАТЬ ▶",275,188,12,"#fff")}
+  else{x.save();x.translate(-cam,0);x.fillStyle="#7cbf4a";x.beginPath();x.moveTo(cam,200);for(let X=cam;X<=cam+330;X+=6)x.lineTo(X,hill(X));x.lineTo(cam+330,200);x.fill();
+    for(let m=0;m<cam+330;m+=100){if(m<cam-10)continue;x.fillStyle="#fff";x.fillRect(m,hill(m)-16,2,16);T((m-40)/10|0,m,hill(m)-19,8,"#345")}
+    cart(car.x,car.y-8,car.a,1);x.restore();T(Math.max(0,(car.x-40)/10|0)+" м",40,18,12,"#234");if(fuel)T("мотор: "+(fuel/6|0)+"%",270,18,9,"#d23a3a");
+    if(car.done){x.fillStyle="rgba(0,0,0,.45)";x.fillRect(0,70,320,60);T(msg,160,96,13,"#ffd84a");T("тап — перестроить",160,116,10,"#fff")}}
+  requestAnimationFrame(draw)}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

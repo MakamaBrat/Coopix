@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#8fd3ff}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign="center";x.fillText(t,a,b)};
+const C=(a,b,r,f)=>{x.fillStyle=f;x.beginPath();x.arc(a,b,r,0,7);x.fill()};
+/* птичья катапульта: тапни, куда лететь, — птица стартует с рогатки; сбей всех крыс-бандитов */
+const G=.18,FL=178,SX=40,SY=140;let lv=0,B,R,bird,birds,st,score=0,best=0,aim=null;
+try{best=+localStorage.getItem("pt.b")||0}catch(e){}
+const LV=[[[200,1,4],[240,1,4]],[[190,2,3],[230,3,3],[270,2,3]],[[180,3,2],[215,1,5],[250,3,2],[285,2,3]],[[200,4,2],[245,4,3],[290,4,2]]];
+function load(){B=[];R=[];const L=LV[lv%LV.length];for(const[px,h,n]of L){let y=FL;for(let i=0;i<n;i++){const w=h%2?10:30,hh=h%2?30:10;B.push({x:px-w/2,y:y-hh,w,h:hh,vx:0,vy:0,hp:2});y-=hh}R.push({x:px,y:y-8,r:8,vy:0,dead:0})}
+  birds=3;bird=null;st="aim"}
+function start(){lv=0;score=0;load()}
+function shoot(px,py){if(st!="aim"||!birds)return;const dx=px-SX,dy=py-SY,d=Math.hypot(dx,dy)||1,v=Math.min(9,3+d/28);bird={x:SX,y:SY,vx:dx/d*v,vy:dy/d*v-1.2,t:0};birds--;st="fly"}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const p=pos(e);if(st=="menu"||st=="over"){start();return}if(st=="win"){lv++;load();return}aim=p;shoot(p[0],p[1])});
+const hit=(a,b,r)=>a.x>b.x-r&&a.x<b.x+b.w+r&&a.y>b.y-r&&a.y<b.y+b.h+r;
+function step(){if(st=="menu"||st=="over"||st=="win")return;
+  if(bird){bird.vy+=G;bird.x+=bird.vx;bird.y+=bird.vy;bird.t++;
+    for(const b of B)if(hit(bird,b,6)){b.vx+=bird.vx*.5;b.vy+=bird.vy*.4-.5;b.hp--;bird.vx*=-.3;bird.vy*=.5;score+=10}
+    for(const r of R)if(!r.dead&&Math.hypot(bird.x-r.x,bird.y-r.y)<r.r+6){r.dead=1;score+=100}
+    if(bird.y>FL-6){bird.y=FL-6;bird.vy*=-.3;bird.vx*=.7}if(bird.x>340||bird.x<-20||bird.t>260||Math.abs(bird.vx)+Math.abs(bird.vy)<.2&&bird.y>=FL-7)bird=null}
+  for(const b of B){const sup=b.y+b.h>=FL-.5||B.some(o=>o!=b&&o.hp>0&&b.y+b.h>=o.y-1&&b.y+b.h<=o.y+3&&b.x+b.w>o.x&&b.x<o.x+o.w);
+    if(!sup||b.vy<0)b.vy+=G;else b.vy=0;b.x+=b.vx;b.y+=b.vy;b.vx*=.92;if(b.y+b.h>FL){b.y=FL-b.h;b.vy=0}
+    if(Math.abs(b.vy)>2.5)for(const r of R)if(!r.dead&&r.x>b.x-6&&r.x<b.x+b.w+6&&r.y>b.y&&r.y<b.y+b.h+8){r.dead=1;score+=100}}
+  B=B.filter(b=>b.hp>0||Math.random()<0);
+  for(const r of R){if(r.dead)continue;const under=r.y+r.r>=FL-.5||B.some(b=>r.x>b.x-4&&r.x<b.x+b.w+4&&r.y+r.r>=b.y-1&&r.y+r.r<=b.y+4);
+    if(!under){r.vy+=G;r.y+=r.vy}else{if(r.vy>3){r.dead=1;score+=100}r.vy=0}if(r.y+r.r>FL)r.y=FL-r.r}
+  if(!bird&&st=="fly"){if(R.every(r=>r.dead)){st="win";score+=birds*200;sv()}else if(!birds){st="over";sv()}else st="aim"}}
+function sv(){if(score>best){best=score;try{localStorage.setItem("pt.b",best)}catch(e){}}}
+let acc=0,last=0;function draw(t){acc+=Math.min(100,t-last);last=t;while(acc>16.7){step();acc-=16.7}
+  x.setTransform(S,0,0,S,0,0);const g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,"#8fd3ff");g.addColorStop(1,"#e8f7ff");x.fillStyle=g;x.fillRect(0,0,320,200);
+  C(70,40,14,"#fff");C(84,36,16,"#fff");C(230,30,12,"#fff");C(244,28,14,"#fff");x.fillStyle="#6cc24a";x.fillRect(0,FL,320,22);x.fillStyle="#4e9a34";x.fillRect(0,FL,320,4);
+  x.fillStyle="#7a4a1f";x.fillRect(SX-3,SY,6,FL-SY);x.fillRect(SX-10,SY-12,4,14);x.fillRect(SX+6,SY-12,4,14);
+  for(const b of B){x.fillStyle=b.hp>1?"#c98a3c":"#9a6428";x.fillRect(b.x,b.y,b.w,b.h);x.strokeStyle="#6a3e12";x.lineWidth=1;x.strokeRect(b.x+.5,b.y+.5,b.w-1,b.h-1)}
+  for(const r of R){if(r.dead)continue;C(r.x,r.y,r.r,"#8a8a96");C(r.x-5,r.y-7,3.5,"#b8a0a8");C(r.x+5,r.y-7,3.5,"#b8a0a8");x.fillStyle="#222";x.fillRect(r.x-6,r.y-3,12,3);C(r.x,r.y+3,2,"#e06a8a")}
+  const bd=bird||(st=="aim"&&birds?{x:SX,y:SY-6}:null);if(bd){C(bd.x,bd.y,6,"#e8322e");C(bd.x+2,bd.y-1,2,"#fff");x.fillStyle="#ffb020";x.beginPath();x.moveTo(bd.x+5,bd.y);x.lineTo(bd.x+10,bd.y+2);x.lineTo(bd.x+5,bd.y+3);x.fill()}
+  for(let i=0;i<birds-(st=="aim"?1:0);i++)C(14+i*10,FL-5,4,"#e8322e");
+  if(aim&&st=="aim"){x.fillStyle="rgba(0,0,0,.3)";for(let k=1;k<8;k++)x.fillRect(SX+(aim[0]-SX)*k/8-1,SY+(aim[1]-SY)*k/8-1,2,2)}
+  T("ОЧКИ "+score,276,16,10,"#123");T("УР. "+(lv+1),24,16,10,"#123");
+  if(st=="aim"&&!aim)T("тапни, куда запустить птицу",180,60,10,"#123");
+  if(st=="menu"||st=="over"||st=="win"){x.fillStyle="rgba(10,30,60,.55)";x.fillRect(0,0,320,200);T("ПТИЧЬЯ КАТАПУЛЬТА",160,70,18,"#ffd84a");
+    T(st=="win"?"Уровень пройден! "+score:st=="over"?"Птицы кончились · "+score+" · рекорд "+best:"сбей всех крыс-бандитов",160,96,11,"#fff");T(st=="win"?"тап — дальше":"тап — играть",160,124,12,"#ffe0a8")}
+  requestAnimationFrame(draw)}
+st="menu";load();st="menu";try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

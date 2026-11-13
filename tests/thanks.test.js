@@ -103,3 +103,12 @@ test("рандомная игра: все мини-игры влезают в л
   assert.deepEqual(w.store.botUsers.get(77), { tg_id: 77, username: "vasya2", first_name: "Вася", messages: 2 });
   assert.equal(w.store.botUsers.has(78), false);
 });
+test("рандомная игра: без колонок очереди в базе круг держится в памяти сервера", async () => {
+  const w = await world();
+  w.store.getBotDeck = async () => { throw new Error("column deck does not exist"); };
+  w.store.setBotDeck = async () => { throw new Error("column deck does not exist"); };
+  const hook = () => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: { message: { chat: { id: 555, type: "private" }, from: { id: 555 }, text: RANDOM_BTN } } });
+  const seen = [];
+  for (let i = 0; i < WIDGET_GAMES.length; i++) { await hook(); seen.push(w.tg.at(-1)[1].caption); }
+  assert.equal(new Set(seen).size, seen.length);
+});

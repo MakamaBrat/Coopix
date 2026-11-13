@@ -26,6 +26,7 @@ export function parsePayload(p) {
 }
 
 export const RANDOM_BTN = "🎲 Рандомная игра";
+const MEM_DECK = new Map(); // очередь игрока в памяти сервера — если в базе ещё нет колонок для неё
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
 const KB = { keyboard: [[{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true };
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -135,12 +136,14 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
   async function randomGame(chatId, uid, site) {
     const all = await pool(), byKey = new Map(all.map((g) => [g.key, g]));
     let st = null;
-    try { st = await store.getBotDeck(uid); } catch { /* нет колонок — просто случайно */ }
+    try { st = await store.getBotDeck(uid); } catch { /* нет таблицы или колонок — очередь из памяти сервера */ }
+    if (!st) st = MEM_DECK.get(uid) ?? null;
     let deck = (Array.isArray(st?.deck) ? st.deck : []).filter((k) => byKey.has(k));
     for (let tries = 0; tries < all.length + 1; tries++) {
       if (!deck.length) { deck = shuffle(all.map((g) => g.key)); if (deck.length > 1 && deck[0] === st?.last) deck.push(deck.shift()); } // новый круг не начинается с последней игры
       const key = deck.shift();
       if (await sendGame(chatId, byKey.get(key), site)) {
+        MEM_DECK.set(uid, { deck: [...deck], last: key }); // запас на случай, если база не сохранила
         try { await store.setBotDeck(uid, deck, key); } catch { /* не критично */ }
         return;
       }

@@ -17,6 +17,8 @@ export const META = {
   ruletka: { title: "Рулетка", casino: true },
   blekdzhek: { title: "Блэкджек", casino: true },
   sloty: { title: "Слоты", casino: true },
+  pticy: { title: "Птичья катапульта" },
+  samodelkin: { title: "Самоделкин" },
 };
 const list = Object.entries(META).map(([id, m]) => ({ id, ...m, html: fs.readFileSync(path.join(dir, id + ".html"), "utf8") }));
 const out = "// СГЕНЕРИРОВАНО scripts/build-widgets.mjs из api/_lib/widgets/*.html — правьте исходники и пересоберите.\n" +
