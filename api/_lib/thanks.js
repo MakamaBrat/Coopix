@@ -33,7 +33,13 @@ export function widgetHtml(h) {
   if (typeof h !== "string" || !h) return null;
   let s = h.replace(/<title>[\s\S]*?<\/title>/i, "").replace(/<meta name="viewport"[^>]*>/i, "")
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n[ \t]*/g, "\n").replace(/\n+/g, "\n").replace(/\0/g, "").trim();
-  s = s.replace(/<script>/i, "<script>window.matchMedia=window.matchMedia||(()=>({matches:!0}));");
+  /* среда виджета (не браузер): нет getImageData/putImageData и теней — «чёткие пиксели» и тени выключаем;
+     высота 100% в пузыре не растягивается — холст задаём пропорцией 8:5 (мир мини-игр 320×200);
+     вертикальные смахивания всегда прокручивают чат, горизонтальные и тапы отдаём игре (touch-action:none) */
+  s = s.replace(/\bcrisp\(\);/g, "").replace(/\b\w+\.shadow(?:Blur|Color|OffsetX|OffsetY)=(?:"[^"]*"|[\w.#]+);?(?=[\s\S])/g, (m) => (/;$/.test(m) ? "" : ";")).replace(/function crisp\(\)\{[^\n]*getImageData[^\n]*\n/, "")
+    .replace(/<\/style>/i, "html,body{height:auto!important}canvas{height:auto!important;aspect-ratio:8/5;touch-action:none}</style>")
+    .replace(/<script>/i, "<script>window.matchMedia=window.matchMedia||(()=>({matches:!0}));")
+    .replace(/<\/body>/i, '<script>try{new ResizeObserver(()=>dispatchEvent(new Event("resize"))).observe(document.querySelector("canvas"))}catch(e){}</script></body>');
   const b = Buffer.from(s, "utf8");
   return b.length <= 32768 && deflateSync(b, { level: 9 }).length <= 4096 ? s : null;
 }
@@ -97,7 +103,7 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
       const html = widgetHtml((await store.gamePlay(g.id))?.play_html);
       if (!html) continue;
       try {
-        await tgApi("sendWidget", { chat_id: chatId, html, height: 340, caption: `🎮 ${g.title} — мини-версия из Coopix Market. Полная игра — в маркете.`, reply_markup: KB });
+        await tgApi("sendWidget", { chat_id: chatId, html, caption: `🎮 ${g.title} — мини-версия из Coopix Market. Полная игра — в маркете.`, reply_markup: KB });
         return;
       } catch { /* клиент или сервер не принял виджет — пробуем другую игру */ }
     }

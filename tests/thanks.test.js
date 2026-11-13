@@ -66,7 +66,8 @@ test("спасибо: подключение вебхука только гла�
   assert.equal((await r(MAIN, "http://a.vercel.app/api/bot")).status, 400);
   assert.equal((await r(MAIN, "https://a.vercel.app/x")).status, 400);
   assert.equal((await r(MAIN, "https://a.vercel.app/api/bot")).status, 200);
-  assert.equal(w.tg.at(-1)[0], "setWebhook"); assert.equal(w.tg.at(-1)[1].secret_token, webhookSecret(TOK));
+  const wh = w.tg.findLast((c) => c[0] === "setWebhook"); assert.ok(wh); assert.equal(wh[1].secret_token, webhookSecret(TOK));
+  assert.equal(w.tg.at(-1)[0], "setMyCommands"); assert.equal(w.tg.at(-1)[1].commands[0].command, "random");
 });
 
 test("случайная игра: кнопка присылает мини-игру виджетом, /start показывает кнопку", async () => {
