@@ -67,7 +67,7 @@ const toUser = (u, role) => ({
  * verify: (initData, botToken, maxAge) -> { ok, userId, user }
  * notify: (chatId, text) -> void
  */
-export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null, tgDoc = null, touchTtl = 30_000 }) {
+export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null, tgDoc = null, tgPhoto = null, touchTtl = 30_000 }) {
   const json = (status, body) => ({ status, body });
 
   /* «Кто это»: touch_user пишет в базу (регистрация, последняя активность) и отдаёт бан и роль.
@@ -87,7 +87,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
   }
   const forget = (id) => seen.delete(Number(id));
   const hub = createHub({ store, botToken, notify, adminIds, tgApi, tgFile, tgDoc });
-  const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), notify, log: hub.log, weight: WEIGHTS.thank });
+  const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), tgPhoto, notify, log: hub.log, weight: WEIGHTS.thank });
 
   async function handle(req) {
     // вебхук Telegram (оплата звёздами): без initData, проверяется секретным заголовком

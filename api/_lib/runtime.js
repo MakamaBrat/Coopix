@@ -49,6 +49,17 @@ export function getCore() {
     return j.result;
   };
 
+  // отправить фото (JPEG-байты) с подписью и кнопками: карточка игры от «Рандомной игры»
+  const tgPhoto = async (params, jpeg) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(params)) if (v != null) fd.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+    fd.append("photo", new Blob([jpeg], { type: "image/jpeg" }), "cover.jpg");
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) throw new Error(j.description || "telegram " + r.status);
+    return j.result;
+  };
+
   core = createCore({
     store: supabaseStore(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY),
     verify: verifyTelegramInitData,
@@ -59,6 +70,7 @@ export function getCore() {
     tgApi,
     tgFile,
     tgDoc,
+    tgPhoto,
   });
   return core;
 }

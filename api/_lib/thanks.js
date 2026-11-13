@@ -73,7 +73,7 @@ export function widgetHtml(h, raw = false) {
 }
 
 /** Обработчик вебхука бота. tgApi(method, params) -> Promise<result>. */
-export function createBot({ store, botToken, tgApi, notify, log, weight }) {
+export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log, weight }) {
   const secret = webhookSecret(botToken);
   const ok = { status: 200, body: { ok: true } };
 
@@ -137,13 +137,21 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
     return botName || "coopixbot";
   }
   async function pool() {
-    return (await store.listGames()).filter((g) => g.access === "public").map((g) => ({ key: "m:" + g.id, id: g.id, title: g.title, slug: gameSlug(g) }));
+    return (await store.listGames()).filter((g) => g.access === "public").map((g) => ({ key: "m:" + g.id, id: g.id, title: g.title, desc: g.description, slug: gameSlug(g) }));
   }
   async function sendGame(chatId, g) {
-    /* ссылка на именное мини-приложение t.me/<бот>/<короткое_имя>: Telegram показывает под ней большую карточку
-       с названием, картинкой и кнопкой LAUNCH (их задают в BotFather → /newapp, короткое имя = gameSlug) */
-    const bot = await botUser(), url = `https://t.me/${bot}/${g.slug}`, text = `🎲 <b>${esc(g.title)}</b>\n<a href="${url}">t.me/${bot}/${g.slug}</a>`;
-    try { await tgApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", link_preview_options: { url, prefer_large_media: true }, reply_markup: KB() }); return true; } catch { return false; }
+    /* карточка игры без BotFather: обложка + название + кнопка «Играть», которая открывает маркет сразу на этой игре
+       (web_app на адрес сайта /<игра>; если адрес сайта неизвестен — ссылка t.me/<бот>?startapp=<игра> на главное мини-приложение) */
+    const bot = await botUser(), slug = g.slug;
+    const btn = SITE ? { text: "▶️ Играть", web_app: { url: `${SITE}/${slug}` } } : { text: "▶️ Играть", url: `https://t.me/${bot}?startapp=${slug}` };
+    const caption = `🎲 <b>${esc(g.title)}</b>${g.desc ? "\n" + esc(String(g.desc).slice(0, 180)) + (String(g.desc).length > 180 ? "…" : "") : ""}`;
+    const reply_markup = { inline_keyboard: [[btn]] };
+    try {
+      const img = tgPhoto ? (await store.gameCover(g.id))?.cover_img : null, m = /^data:image\/jpeg;base64,(.+)$/.exec(img || "");
+      if (m) await tgPhoto({ chat_id: chatId, caption, parse_mode: "HTML", reply_markup }, Buffer.from(m[1], "base64"));
+      else await tgApi("sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup });
+      return true;
+    } catch { return false; }
   }
   async function randomGame(chatId, uid, site) {
     const all = await pool(), byKey = new Map(all.map((g) => [g.key, g]));
