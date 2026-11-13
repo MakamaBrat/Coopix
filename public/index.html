@@ -2999,8 +2999,12 @@ const catErr=e=>CAT_ERR[e&&e.code]||(e&&e.status===413?"Картинка сли�
 /* загружает каталог: у главного админа все игры (и скрытые), у остальных только видимые им */
 /* каталог из кэша прошлого запуска: маркет показывается сразу, свежий список приходит следом */
 function restoreCatalog(){const c=store.get(CATK,null);if(!Array.isArray(c)||!c.length)return false;
-  DATA=c.map(d=>({...d,cover:covOf(d.cover),bgimg:d.bref?COV[d.bref]||"":""}));CAT_OK=true;return true}
-const reRender=()=>{if(BOOTED&&!PGO&&(view===0||view===1))render()};
+  DATA=c.map(d=>({...d,cover:covOf(d.cover),bgimg:d.bref?COV[d.bref]||"":""}));CAT_OK=true;
+  const s=store.get(STK,null);if(s&&typeof s==="object")for(const k in s)if(!STATS[k])STATS[k]=s[k];return true}
+/* тот же порядок игр — обновляем карточки на месте (обложка, цифры), без пересборки списка */
+const reRender=()=>{if(!BOOTED||PGO||!(view===0||view===1))return;
+  if(view===1&&LIVE.length&&listOrder()===LIVE.map(c=>c.mid).join("|")){LIVE.forEach(c=>{const m=DATA.find(d=>d.id===c.mid);if(m)c.set({...m})});return}
+  render()};
 async function loadCatalog(){
   if(!SUB_API)return;
   const prev=new Map([...DATA,...(store.get(CATK,null)||[])].map(d=>[d.id,d]));
@@ -3059,7 +3063,12 @@ function gstat(m){
 const refreshCards=()=>LIVE.forEach(c=>c.setStars());
 async function loadStats(){
   if(!SUB_API)return;const ids=DATA.filter(d=>d.built).map(d=>d.id);if(!ids.length)return;
-  try{const j=await hub("stats",{q:{ids:ids.join(",")}});Object.assign(STATS,j.games);if(BOOTED&&view===1&&(FL.sort!=="def"||FL.r4||FL.sup))render();else refreshCards();paintPage()}catch(e){}}
+  try{const j=await hub("stats",{q:{ids:ids.join(",")}});Object.assign(STATS,j.games);store.set(STK,STATS);
+    /* список пересобираем, только если от новых цифр реально поменялся порядок или состав; иначе просто обновляем звёзды на карточках */
+    if(BOOTED&&view===1&&listOrder()!==LIVE.map(c=>c.mid).join("|"))render();else refreshCards();paintPage()}catch(e){}}
+/* цифры прошлого запуска: список сразу строится в правильном порядке по рейтингу, без перестановки, когда придут свежие */
+const STK="am.stats";
+function listOrder(){return sortRows(DATA.filter(TABS[tab][2]).filter(passF)).map(m=>m.id).join("|")}
 const PLW=["игрок","игрока","игроков"];
 function paintPage(){
   if(!PG)return;const st=$("#pgStars");if(!st)return;const g=gstat(PG.m);
