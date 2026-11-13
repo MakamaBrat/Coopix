@@ -1971,11 +1971,12 @@ async function render(intro){
   const rows=sortRows(DATA.filter(f).filter(passF));drawFbar();
   if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
-  rows.forEach((m,i)=>{const box=document.createElement("div");box.className="cardbox enter";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
+  const anim=keepY==null; /* перерисовка того же списка (каталог, счётчики, профиль пришли с сервера) — без повторной анимации появления */
+  rows.forEach((m,i)=>{const box=document.createElement("div");box.className=anim?"cardbox enter":"cardbox";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
     const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>setFav(c.m.id,!DATA.find(x=>x.id===c.m.id).fav,c),
       onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
     if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
-    c.mid=m.id;LIVE.push(c);c.set({...m},{intro:true,delay:250+i*140})});
+    c.mid=m.id;LIVE.push(c);c.set({...m},anim?{intro:true,delay:250+i*140}:{})});
   if(view===1&&TABS[tab][0]!=="favt"&&isAdmin())addCard(); /* «добавить игру» в списке — только у админов */
   filterList();
 }
@@ -3363,15 +3364,21 @@ const slugOf=s=>String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-z0-
 function deepSlug(){let p="";try{p=decodeURIComponent(location.pathname)}catch(e){}p=p.replace(/^\/+|\/+$/g,"");
   if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return slugOf(p)}
 const findDeep=s=>DATA.find(d=>slugOf(d.id)===s)||DATA.find(d=>slugOf(d.title)===s)||DATA.find(d=>slugOf(d.title).replace(/-/g,"")===s.replace(/-/g,""));
-function spotGame(id){
-  const c=LIVE.find(x=>x.mid===id),box=c&&c.host&&c.host.closest(".cardbox");if(!box)return;
-  box.scrollIntoView({block:"center",behavior:"auto"});
+async function spotGame(id){
+  const get=()=>{const n=LIVE.find(x=>x.mid===id);return n&&n.host&&n.host.closest(".cardbox")};
+  /* на телефоне карточки ещё «въезжают» и над ними догружаются блоки: убираем анимацию появления и доцентровываем, пока раскладка не устоится */
+  listEl.querySelectorAll(".cardbox.enter").forEach(b=>b.classList.remove("enter"));
+  const fr=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));await fr();
+  let box=get();if(!box)return;
+  for(let k=0,ok=0;k<12&&ok<3;k++){box=get()||box;const r=box.getBoundingClientRect(),d=r.top+r.height/2-innerHeight/2;
+    if(Math.abs(d)>12){scrollTo(0,scrollY+d);ok=0}else ok++;await wait(80)}
   const o=document.createElement("div");o.className="spot";o.innerHTML='<div class="spot-h"></div><div class="spot-t"><span>Вот эта игра</span><i></i></div>';document.body.append(o);
   const hole=o.firstChild,lab=o.lastChild;let done=false;
-  const place=()=>{const r=box.getBoundingClientRect(),p=8;Object.assign(hole.style,{left:r.left-p+"px",top:r.top-p+"px",width:r.width+2*p+"px",height:r.height+2*p+"px"});
+  const place=()=>{if(!box.isConnected)box=get()||box;const r=box.getBoundingClientRect(),p=8;Object.assign(hole.style,{left:r.left-p+"px",top:r.top-p+"px",width:r.width+2*p+"px",height:r.height+2*p+"px"});
     const up=r.top>90;lab.classList.toggle("dn",!up);lab.style.left=r.left+r.width/2+"px";lab.style.top=(up?r.top-14:r.bottom+14)+"px"};
-  place();const ro=()=>place();addEventListener("scroll",ro,{passive:true});addEventListener("resize",ro);
-  const end=()=>{if(done)return;done=true;o.classList.add("out");removeEventListener("scroll",ro);removeEventListener("resize",ro);setTimeout(()=>o.remove(),450)};
+  place();const ro=()=>place();let tk=0;const loop=()=>{if(done)return;place();tk=requestAnimationFrame(loop)};loop(); /* рамка идёт за карточкой каждый кадр */
+  addEventListener("scroll",ro,{passive:true});addEventListener("resize",ro);
+  const end=()=>{if(done)return;done=true;cancelAnimationFrame(tk);o.classList.add("out");removeEventListener("scroll",ro);removeEventListener("resize",ro);setTimeout(()=>o.remove(),450)};
   requestAnimationFrame(()=>o.classList.add("on"));o.addEventListener("pointerdown",end);setTimeout(end,RM?1800:2600)}
 
 (async()=>{
