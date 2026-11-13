@@ -167,7 +167,8 @@ export function setup(o = {}) {
   const tgFile = async (path) => { tg.push(["file", path]); return typeof o.file === "function" ? o.file(path) : o.file ?? Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]); };
   // touchTtl: 0 = без кэша «кто это» (тесты меняют бан прямо в store и сразу проверяют); кэш проверяется отдельным тестом
   const tgDoc = async (chat, name, text, caption) => { if (o.docFail) { const e = new Error("Forbidden"); e.code = 403; throw e; } tg.push(["doc", chat, name, text.length, caption]); return {}; };
-  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, tgDoc, touchTtl: o.touchTtl ?? 0 });
+  const tgPhoto = async (params, jpeg) => { tg.push(["sendPhoto", { ...params, bytes: jpeg.length }]); return {}; };
+  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, tgDoc, tgPhoto, touchTtl: o.touchTtl ?? 0 });
   const call = (route, method, hdr, o = {}) => core.handle({ route, method, headers: hdr ? { "x-tg-init": hdr } : {}, ...o });
   return { store, sent, call, tg };
 }

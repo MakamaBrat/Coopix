@@ -79,17 +79,18 @@ test("рандомная игра: ссылка t.me/<бот>/<игра> на и
   assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.deepEqual(w.tg.at(-1)[1].reply_markup.keyboard[0].map((b) => b.text), [MARKET_BTN, RANDOM_BTN]);
   await hook(MARKET_BTN); assert.match(JSON.stringify(w.tg.at(-1)[1].reply_markup.inline_keyboard), /startapp|web_app/);
   const N = 4, seen = [];
+  w.store.games.get("unik").cover_img = "data:image/jpeg;base64," + Buffer.from("jpegbytes").toString("base64");
   for (let i = 0; i < N; i++) {
     await hook(RANDOM_BTN);
-    const [m, p] = w.tg.at(-1); assert.equal(m, "sendMessage"); assert.equal(p.parse_mode, "HTML");
-    const [, href, label] = p.text.match(/<a href="([^"]+)">([^<]+)<\/a>/);
-    assert.match(label, /^t\.me\/\w+\/[a-z0-9_]{3,30}$/); assert.equal(href, "https://" + label); assert.equal(p.link_preview_options.url, href); assert.equal(p.link_preview_options.prefer_large_media, true);
-    assert.doesNotMatch(p.text, /Скрытая/); seen.push(label);
-  }
-  assert.equal(new Set(seen).size, N, "за круг ни одна игра не повторилась");
-  assert.ok(seen.some((s) => s.endsWith("/unix")) && seen.some((s) => s.endsWith("/metro_runner")));
+    const [m, p] = w.tg.at(-1); assert.ok(m === "sendPhoto" || m === "sendMessage", m); assert.equal(p.parse_mode, "HTML");
+    const btn = p.reply_markup.inline_keyboard[0][0]; assert.equal(btn.text, "▶️ Играть");
+    const slug = btn.url.match(/startapp=([a-z0-9_]{3,30})$/)[1];
+    if (slug === "unix") { assert.equal(m, "sendPhoto"); assert.equal(p.bytes, 9); assert.match(p.caption, /UNIX/) } else assert.equal(m, "sendMessage");
+    assert.doesNotMatch(p.caption ?? p.text, /Скрытая/); seen.push(slug);
+  }  assert.equal(new Set(seen).size, N, "за круг ни одна игра не повторилась");
+  assert.ok(seen.includes("unix") && seen.includes("metro_runner"));
   await hook("🎲 Случайная игра"); // старая надпись кнопки тоже работает и начинает новый круг
-  assert.notEqual(w.tg.at(-1)[1].text.match(/>([^<]+)<\/a>/)[1], seen.at(-1), "новый круг не начинается с последней игры");
+  assert.notEqual(w.tg.at(-1)[1].reply_markup.inline_keyboard[0][0].url.split("=")[1], seen.at(-1), "новый круг не начинается с последней игры");
   const n = w.tg.length; await hook(RANDOM_BTN, { id: -5, type: "group" });
   assert.equal(w.tg.length, n); // в группах молчим
   assert.equal(gameSlug({ id: "x_1", title: "Шашки" }), "x_1");
@@ -113,6 +114,6 @@ test("рандомная игра: без колонок очереди в ба�
   w.store.setBotDeck = async () => { throw new Error("column deck does not exist"); };
   const hook = () => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK) }, body: { message: { chat: { id: 555, type: "private" }, from: { id: 555 }, text: RANDOM_BTN } } });
   const seen = [];
-  for (let i = 0; i < 4; i++) { await hook(); seen.push(w.tg.at(-1)[1].text); }
+  for (let i = 0; i < 4; i++) { await hook(); seen.push(w.tg.at(-1)[1].reply_markup.inline_keyboard[0][0].url); }
   assert.equal(new Set(seen).size, seen.length);
 });
