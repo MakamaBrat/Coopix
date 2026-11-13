@@ -302,6 +302,13 @@ body.gamemode>*:not(.gmv){display:none!important}
 /* intro */
 .cardbox.enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 @keyframes enter{from{opacity:0;transform:translateY(22px) scale(.97)}}
+/* рамка «Новинка» поверх карточки: вспыхивает и гаснет */
+.nwf{position:absolute;inset:0;z-index:8;pointer-events:none;opacity:0;animation:nwf 2s ease-out both}
+.nwf svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.nwf path{fill:none;stroke:#ffe66b;stroke-width:4;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 8px rgba(255,230,107,.9))}
+.nwf b{position:absolute;left:50%;top:0;transform:translate(-50%,-55%) rotate(-3deg);padding:3px 12px;background:#ffe66b;color:#2a1260;font:700 18px/1.2 "Pixelify Sans",monospace;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 3px 0 #2a1260,0 0 14px rgba(255,230,107,.7)}
+@keyframes nwf{0%{opacity:0;transform:scale(1.04)}15%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.nwf{animation-duration:1.4s}}
 
 /* ---------- dock ---------- */
 .dock{position:fixed;z-index:20;left:50%;bottom:calc(10px + var(--bot));transform:translateX(-50%);width:var(--col);height:clamp(58px,15vw,74px);
@@ -1973,12 +1980,13 @@ async function render(intro){
   const rows=sortRows(DATA.filter(f).filter(passF));drawFbar();
   if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
-  const anim=keepY==null; /* перерисовка того же списка (каталог, счётчики, профиль пришли с сервера) — без повторной анимации появления */
+  const anim=keepY==null,nid=newestId(); /* перерисовка того же списка (каталог, счётчики, профиль пришли с сервера) — без повторной анимации появления */
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className=anim?"cardbox enter":"cardbox";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
     const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>setFav(c.m.id,!DATA.find(x=>x.id===c.m.id).fav,c),
       onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
     if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
-    c.mid=m.id;LIVE.push(c);c.set({...m},anim?{intro:true,delay:250+i*140}:{})});
+    c.mid=m.id;LIVE.push(c);c.set({...m},anim?{intro:true,delay:250+i*140}:{});
+    if(anim&&nid===m.id)newFlash(box,250+i*140)});
   if(view===1&&TABS[tab][0]!=="favt"&&isAdmin())addCard(); /* «добавить игру» в списке — только у админов */
   filterList();
 }
@@ -1988,6 +1996,11 @@ const SORTS=[["def","Как в каталоге"],["rate","По рейтингу
 /* сортировка по умолчанию — по рейтингу (новый ключ v2: старый сохранённый «как в каталоге» не мешает) */
 let FL=Object.assign({sort:"rate",r4:0,sup:0},store.get("am.fl.v2",{}));const saveFL=()=>store.set("am.fl.v2",FL);
 const passF=m=>{const g=gstat(m);return(!FL.r4||(g.rated||g.favs)&&g.rating>=4)&&(!FL.sup||g.stars>0)};
+/* «Новинка»: у самой новой игры (по дате добавления) при показе списка вспыхивает рамка с подписью и сразу гаснет */
+const newestId=()=>{let b=null;for(const d of DATA)if(d.at&&(!d.access||d.access==="public")&&(!b||d.at>b.at))b=d;return b&&b.id};
+function newFlash(box,delay){const n=document.createElement("div");n.className="nwf";n.setAttribute("aria-hidden","true");
+  n.innerHTML='<svg viewBox="0 0 905 220" preserveAspectRatio="none"><path d="M26 2H879L903 26V194L879 218H26L2 194V26Z"/></svg><b>Новинка</b>';
+  n.style.animationDelay=(delay+350)/1000+"s";(box.querySelector(".card")||box).append(n);setTimeout(()=>n.remove(),delay+2600)}
 function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat(m);
     return FL.sort==="rate"?[g.rated||g.favs?g.rating:-1,g.rated+(g.favs||0)]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.pp,g.dp]:[g.reviews,g.rating]};
   return rows.map((m,i)=>({m,i,k:k(m)})).sort((a,b)=>b.k[0]-a.k[0]||b.k[1]-a.k[1]||a.i-b.i).map(x=>x.m)}
