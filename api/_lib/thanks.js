@@ -33,9 +33,10 @@ const MEM_DECK = new Map(); // очередь игрока в памяти се�
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
 export const MARKET_BTN = "🛒 Маркетплейс";
 const MARKET_TEXTS = [MARKET_BTN, "🛒 Открыть маркетплейс"]; // старая надпись — у тех, кому кнопка пришла раньше
-/** клавиатура бота: две кнопки одна под другой. «Маркетплейс» сразу открывает мини-апп (web_app; Telegram сам рисует на такой кнопке значок в углу).
- *  Пока адрес сайта неизвестен — обычная кнопка, бот отвечает на неё кнопкой «Открыть». */
-const kb = (site) => ({ keyboard: [[site ? { text: MARKET_BTN, web_app: { url: site } } : { text: MARKET_BTN }], [{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
+/** клавиатура бота: две обычные кнопки одна под другой. Мини-апп из кнопки клавиатуры Telegram открывает урезанным
+ *  (без данных входа — маркет не узнаёт игрока), поэтому «Маркетплейс» отвечает инлайн-кнопкой «Открыть» (полноценный запуск),
+ *  а в одно касание маркет открывает кнопка «Меню» слева от поля ввода (setChatMenuButton). */
+const kb = () => ({ keyboard: [[{ text: MARKET_BTN }], [{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 /** Мини-игра -> HTML виджета: без комментариев, отступов, <title> и viewport; заглушка matchMedia (в виджете нет браузера).
  *  null, если не влезает в лимиты Telegram (32768 байт и 4096 байт после zlib-9). */
@@ -132,7 +133,7 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
   /* Сейчас кнопка присылает ссылку на случайную игру маркета: текст «t.me/<бот>/<игра>»,
      а сама ссылка открывает мини-апп бота сразу на этой игре (?startapp=<игра>). Мини-игры-виджеты (WIDGET_GAMES, sendWidget)
      лежат в ресурсах и сейчас не отправляются. */
-  let SITE = ""; const KB = () => kb(SITE); // адрес сайта берём из запроса вебхука
+  let SITE = "", MENU_SET = ""; const KB = () => kb(SITE); // адрес сайта берём из запроса вебхука
   let botName = "";
   async function botUser() {
     if (!botName) { try { botName = (await tgApi("getMe", {}))?.username || ""; } catch { /* нет связи — запасное имя */ } }
@@ -178,6 +179,7 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
   async function message(msg, site) {
     if (msg.chat?.type !== "private") return; // виджеты пока работают только в личке с ботом
     const t = String(msg.text ?? "").trim(); SITE = site || SITE;
+    if (SITE && MENU_SET !== SITE) { MENU_SET = SITE; try { await tgApi("setChatMenuButton", { menu_button: { type: "web_app", text: "Маркет", web_app: { url: SITE } } }); } catch { MENU_SET = ""; } } // «Меню» → маркет в одно касание
     if (MARKET_TEXTS.includes(t)) { const bot = await botUser(); await tgApi("sendMessage", { chat_id: msg.chat.id, text: "🛒 Coopix Market — все игры здесь:", reply_markup: { inline_keyboard: [[SITE ? { text: "▶️ Открыть", web_app: { url: SITE } } : { text: "▶️ Открыть", url: `https://t.me/${bot}?startapp` }]] } }); return; }
     if (BTN_TEXTS.includes(t) || /^\/random(@\w+)?$/i.test(t)) await randomGame(msg.chat.id, Number(msg.from?.id ?? msg.chat.id), site);
     else if (/^\/start(\s|$)/.test(t)) await tgApi("sendMessage", { chat_id: msg.chat.id, text: `Привет! «${MARKET_BTN}» — все игры, «${RANDOM_BTN}» — пришлю ссылку на случайную игру из Coopix Market. Игры не повторяются, пока не пройдёшь все.`, reply_markup: KB() });

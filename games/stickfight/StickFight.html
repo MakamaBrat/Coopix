@@ -104,8 +104,9 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
    слева движение 2×2 (⬇ 🏃 / ◀ ▶), справа бой 2×2 (▲ 🛡️ / 👊 🦵); размеры от ширины экрана — кнопки крупные и не перекрываются */
 @media (orientation:portrait) and (pointer:coarse){
   #rot{display:none!important}
-  #w{--s:min(20vw,96px);--g:3vw;--bb:calc(var(--sb) + 6vw);--ct:max(calc(var(--st) + 54px),calc((100dvh - var(--bb) - 2*var(--s) - var(--g) - 56.25vw)/2 - 2vw));display:block;background:linear-gradient(#0e0820,#07040f 60%)}
-  #w canvas{position:absolute;left:0;top:var(--ct);width:100vw;max-width:none;height:auto;box-shadow:0 0 0 2px #3a2a70,0 10px 40px rgba(0,0,0,.6)}
+  /* экран игры занимает всю свободную высоту между верхними кнопками и панелью; бока обрезаются, камера и так держит игрока по центру */
+  #w{--s:min(20vw,96px);--g:3vw;--bb:calc(var(--sb) + 6vw);--ct:calc(var(--st) + 58px);--ch:calc(100dvh - var(--ct) - var(--bb) - 2*var(--s) - var(--g) - 4vw);display:block;overflow:hidden;background:#07040f}
+  #w canvas{position:absolute;left:50%;top:var(--ct);height:var(--ch);width:auto;max-width:none;aspect-ratio:16/9;transform:translateX(-50%)}
   #w .b{width:var(--s)!important;height:var(--s)!important;font-size:calc(var(--s)*.42)!important;left:auto!important;right:auto!important;top:auto!important}
   #w .b[data-k=c]{left:5vw!important;bottom:calc(var(--bb) + var(--s) + var(--g))!important}
   #w .b[data-k=n]{left:calc(5vw + var(--s) + var(--g))!important;bottom:calc(var(--bb) + var(--s) + var(--g))!important}
@@ -115,7 +116,7 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
   #w .b[data-k=b]{right:5vw!important;bottom:calc(var(--bb) + var(--s) + var(--g))!important}
   #w .b[data-k=p]{right:calc(5vw + var(--s) + var(--g))!important;bottom:var(--bb)!important}
   #w .b[data-k=k]{right:5vw!important;bottom:var(--bb)!important}
-  #w .b[data-k=d]{--s:min(12vw,56px);right:5vw!important;top:calc(var(--ct) + 56.25vw + 3vw)!important;bottom:auto!important}
+  #w .b[data-k=d]{--s:min(12vw,56px);right:5vw!important;top:calc(var(--ct) + var(--ch) - var(--s) - 2vw)!important;bottom:auto!important;opacity:.7}
 }
 
 /* ===== кнопки в углу HUD ===== */
@@ -1888,7 +1889,10 @@ function step(){
 const TOUCH=(()=>{try{return matchMedia('(pointer:coarse)').matches||('ontouchstart' in window)}catch(e){return false}})();
 let cla=0,cyv=0;
 let _ch=0,_ct=-1e9;const cvH=()=>{const n=performance.now();if(n-_ct>500){_ct=n;_ch=cv.clientHeight;}return _ch;};
-function camYo(){if(!TOUCH)return 0;const hh=cvH()||H;return Math.min(0,Math.max(-150,(H-150*H/hh-14)-G));}
+/* сколько мира (в пикселях холста) обрезано с каждого бока в вертикальном режиме — чтобы интерфейс рисовать в видимой части */
+let PCX=0;function pcxUpd(){PCX=0;try{if(!matchMedia('(orientation:portrait) and (pointer:coarse)').matches)return;const r=cv.getBoundingClientRect(),vw=document.documentElement.clientWidth||innerWidth;if(r.width>vw+1)PCX=Math.round(W*(r.width-vw)/(2*r.width));}catch(e){}}
+addEventListener('resize',pcxUpd);setInterval(pcxUpd,700);setTimeout(pcxUpd,50);
+function camYo(){if(PCX>0)return 0;if(!TOUCH)return 0;const hh=cvH()||H;return Math.min(0,Math.max(-150,(H-150*H/hh-14)-G));}
 function camFollow(t,k){
   const f=t.dead?0:(t.f||0);cla+=(f*50-cla)*k*.3;
   const hv=W/(2*zoom),CM=TOUCH?230:110,lo=Math.min(hv-CM,WW/2),hi=Math.max(WW-hv+CM,WW/2);
@@ -1918,8 +1922,12 @@ function draw(){
   drawFxs();drawShadow();
   if(flash>0){ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.globalAlpha=flash*7;ctx.beginPath();ctx.arc(fx,fy,8+(.12-flash)*250,0,7);ctx.stroke();}
   ctx.globalAlpha=1;ctx.restore();
-  hudBars();hudInfo();hudHint();hudWaveBanner();
-  drawOver();drawNetHud();
+  if(PCX>0){ /* вертикальный телефон: бока холста обрезаны — интерфейс переносим в видимую часть */
+    const vw=W-2*PCX,k=Math.min(1,vw/272),c=Math.max(vw/W,.62);
+    ctx.save();ctx.translate(PCX,0);ctx.scale(k,k);hudBars();if(!PV.on)hudInfo();ctx.restore();
+    if(PV.on){ctx.save();ctx.translate(W/2,66*k);ctx.scale(c,c);ctx.translate(-W/2,0);hudInfo();ctx.restore();}
+    ctx.save();ctx.translate(W/2,H/2);ctx.scale(c,c);ctx.translate(-W/2,-H/2);hudHint();hudWaveBanner();drawOver();drawNetHud();ctx.restore();
+  }else{hudBars();hudInfo();hudHint();hudWaveBanner();drawOver();drawNetHud();}
   camx=cs;for(const c of ch)for(const q of c.p){q.x=q.sx;q.y=q.sy;}
 }
 function drawC(c){

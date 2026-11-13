@@ -78,7 +78,9 @@ test("рандомная игра: ссылка t.me/<бот>/<игра> на и
   await hook("/start");
   assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.deepEqual(w.tg.at(-1)[1].reply_markup.keyboard.map((r) => r.map((b) => b.text)), [[MARKET_BTN], [RANDOM_BTN]]); // одна под другой
   const site = await w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK), host: "coopix.example" }, body: { message: { chat: { id: BOB, type: "private" }, from: { id: BOB }, text: "/start" } } });
-  assert.equal(w.tg.at(-1)[1].reply_markup.keyboard[0][0].web_app.url, "https://coopix.example"); // маркетплейс открывается сразу
+  assert.equal(w.tg.at(-1)[1].reply_markup.keyboard[0][0].web_app, undefined); // в клавиатуре без web_app (там мини-апп урезан)
+  assert.ok(w.tg.some(([m, p]) => m === "setChatMenuButton" && p.menu_button.web_app.url === "https://coopix.example")); // «Меню» открывает маркет
+  await hook(MARKET_BTN); assert.equal(w.tg.at(-1)[1].reply_markup.inline_keyboard[0][0].web_app.url, "https://coopix.example");
   await hook(MARKET_BTN); assert.match(JSON.stringify(w.tg.at(-1)[1].reply_markup.inline_keyboard), /startapp|web_app/);
   const N = 4, seen = [];
   w.store.games.get("unik").cover_img = "data:image/jpeg;base64," + Buffer.from("big-cover-bytes").toString("base64");
