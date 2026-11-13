@@ -1938,8 +1938,8 @@ $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   goView(i)});
 /* поиск из страницы игры: закрываем страницу, открываем маркет со всеми играми и подставляем запрос */
 function searchFor(q){backClick();setTimeout(()=>{SQ=q;qIn.value=q;if(view!==1||TABS[tab][0]==="favt"){view=1;tab=0;sync();render()}else filterList();scrollTo({top:0,behavior:RM?"auto":"smooth"})},60)}
-/* раздел игр открывается сразу на «Избранном», если там что-то есть */
-function goView(i){view=i;tab=i===1&&DATA.some(d=>d.fav)?Math.max(0,TABS.findIndex(t=>t[0]==="favt")):0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
+/* раздел игр всегда открывается на маркете (все игры); «Избранное» — своей вкладкой */
+function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
@@ -1994,7 +1994,7 @@ async function render(intro){
    Два разных рейтинга: оценки в отзывах (звёзды 1–5) и поддержка авторов (звёзды Telegram, золотые блоки). */
 const SORTS=[["def","Как в каталоге"],["rate","По рейтингу"],["sup","Поддержка авторов"],["pop","Больше всего играли"],["rev","Больше отзывов"]];
 /* сортировка по умолчанию — по рейтингу (новый ключ v2: старый сохранённый «как в каталоге» не мешает) */
-let FL=Object.assign({sort:"rate",r4:0,sup:0},store.get("am.fl.v2",{}));const saveFL=()=>store.set("am.fl.v2",FL);
+let FL=Object.assign({sort:"rate",r4:0,sup:0},store.get("am.fl.v2",{}));FL.sup=0; /* фильтра «с поддержкой» больше нет: сохранённый не должен прятать игры */const saveFL=()=>store.set("am.fl.v2",FL);
 const passF=m=>{const g=gstat(m);return(!FL.r4||(g.rated||g.favs)&&g.rating>=4)&&(!FL.sup||g.stars>0)};
 /* «Новинка»: у самой новой игры (по дате добавления) при показе списка вспыхивает рамка с подписью и сразу гаснет */
 const newestId=()=>{let b=null;for(const d of DATA)if(d.at&&(!d.access||d.access==="public")&&(!b||d.at>b.at))b=d;return b&&b.id};
@@ -2006,8 +2006,7 @@ function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat
   return rows.map((m,i)=>({m,i,k:k(m)})).sort((a,b)=>b.k[0]-a.k[0]||b.k[1]-a.k[1]||a.i-b.i).map(x=>x.m)}
 function drawFbar(){const el=$("#fbar");if(!el)return;const lb=(SORTS.find(x=>x[0]===FL.sort)||SORTS[0])[1];
   el.innerHTML=`<button type="button" class="fsort" id="fsort" aria-haspopup="menu" data-keep="1"><span>Сортировка:</span> <b>${lb}</b> ▾</button>
-    <button type="button" class="fchip" data-f="r4" aria-pressed="${!!FL.r4}"><i class="fst">★</i> 4 и выше</button>
-    <button type="button" class="fchip" data-f="sup" aria-pressed="${!!FL.sup}">${goldIc} с поддержкой</button>`;
+    <button type="button" class="fchip" data-f="r4" aria-pressed="${!!FL.r4}"><i class="fst">★</i> 4 и выше</button>`;
   $("#fsort").onclick=e=>openMenu(e.currentTarget,SORTS,FL.sort,v=>{FL.sort=v;saveFL();sfx.tap();render()});
   el.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{const k=b.dataset.f;FL[k]=FL[k]?0:1;saveFL();sfx.tap();render()})}
 /* ============ home: title screen ============ */
