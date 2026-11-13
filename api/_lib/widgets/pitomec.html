@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#20163a}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f,al)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign=al||"center";x.fillText(t,a,b)};
+const C=(a,b,r,f)=>{x.fillStyle=f;x.beginPath();x.arc(a,b,r,0,7);x.fill()};
+/* питомец: сытость, веселье, бодрость падают со временем (и пока чат закрыт) */
+const K="pet.v1",now=()=>Date.now();let p;
+function load(){try{p=JSON.parse(localStorage.getItem(K))}catch(e){}if(!p||!p.born)p={born:now(),t:now(),f:80,j:80,e:80,sl:0,dead:0};tick()}
+function save(){try{localStorage.setItem(K,JSON.stringify(p))}catch(e){}}
+function tick(){const m=(now()-p.t)/60000;p.t=now();if(p.dead)return;p.f-=m*.8;p.j-=m*.6;p.e+=p.sl?m*3:-m*.4;
+  for(const k of["f","j","e"])p[k]=Math.max(0,Math.min(100,p[k]));if(p.e>=100)p.sl=0;if(!p.f&&!p.j)p.dead=1;save()}
+let say="",sayT=0,jump=0,food=0;
+const B=[["КОРМИТЬ","#ff9a3c"],["ИГРАТЬ","#4dd2ff"],["СПАТЬ","#a07aff"]];
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);tick();
+  if(p.dead){if(py>150){p=null;try{localStorage.removeItem(K)}catch(e){}load()}return}
+  if(py>166){const i=px/107|0;if(i==0){if(p.f>95){say="Я сыт!"}else{p.f+=25;food=40;say="Ням!"}p.sl=0}
+    else if(i==1){if(p.e<10)say="Сил нет…";else{p.j+=20;p.e-=8;jump=30;say="Ура!"}p.sl=0}else{p.sl=!p.sl;say=p.sl?"Zzz…":"Доброе утро!"}
+    sayT=80;tick()}else if(Math.hypot(px-160,py-90)<40&&!p.sl){jump=20;p.j=Math.min(100,p.j+3);say="Хи-хи";sayT=50;save()}});
+function bar(l,v,y,col){T(l,8,y+8,9,"#cbb8ff","left");x.fillStyle="#3a2a66";x.fillRect(58,y,62,9);x.fillStyle=v<25?"#ff4d6a":col;x.fillRect(58,y,62*v/100,9)}
+let lt=0;function draw(t){x.setTransform(S,0,0,S,0,0);if(t-lt>5000){lt=t;tick()}
+  x.fillStyle=p.sl?"#120c26":"#20163a";x.fillRect(0,0,320,200);x.fillStyle=p.sl?"#1c1440":"#2e2156";x.fillRect(0,140,320,26);
+  const days=Math.floor((now()-p.born)/864e5);T("ПИТОМЕЦ",312,16,13,"#ffd84a","right");T("возраст: "+days+" дн.",312,30,9,"#cbb8ff","right");
+  bar("сытость",p.f,8,"#ff9a3c");bar("веселье",p.j,22,"#4dd2ff");bar("бодрость",p.e,36,"#a07aff");
+  const sad=p.f<25||p.j<25,j=jump>0?-Math.abs(Math.sin(jump/5))*16:0,br=Math.sin(t/(p.sl?900:300))*2,Y=100+j;
+  if(p.dead){T("Питомец убежал искать",160,90,12,"#fff");T("тех, кто будет кормить :(",160,108,12,"#fff");x.fillStyle="#ffd84a";x.fillRect(100,150,120,26);T("ЗАВЕСТИ НОВОГО",160,167,10,"#20163a")}
+  else{x.fillStyle="rgba(0,0,0,.3)";x.beginPath();x.arc(160,140,30,0,Math.PI);x.fill();
+    C(160,Y,36+br,sad?"#9fc6a0":"#7ef0a0");C(160,Y+10,20,sad?"#c6e3c6":"#c9ffd9");
+    for(const s of[-1,1]){if(p.sl){x.strokeStyle="#234";x.lineWidth=2.5;x.beginPath();x.moveTo(160+s*16-6,Y-8);x.lineTo(160+s*16+6,Y-8);x.stroke()}
+      else{C(160+s*15,Y-9,8,"#fff");C(160+s*15,Y-8,4,"#234")}}
+    x.strokeStyle="#234";x.lineWidth=2.5;x.beginPath();if(sad)x.arc(160,Y+12,7,Math.PI*1.15,Math.PI*1.85);else x.arc(160,Y+3,7,.2,Math.PI-.2);x.stroke();
+    if(p.sl)T("z",200+Math.sin(t/500)*4,Y-34-(t/40%20),14,"#cbb8ff");
+    if(food>0){C(214,Y+20,8,"#ff9a3c");food--}if(sayT>0){T(say,160,Y-46,13,"#fff");sayT--}if(jump>0)jump--}
+  B.forEach((b,i)=>{x.fillStyle=b[1];x.fillRect(i*107+4,170,99,26);T(b[0]+(i==2&&p.sl?"↑":""),i*107+53,188,11,"#160f2c")});
+  requestAnimationFrame(draw)}
+load();try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

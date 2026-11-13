@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0f5132}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320;draw()};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f,al)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign=al||"center";x.fillText(t,a,b)};
+const SU="♠♥♦♣",RK=["6","7","8","9","10","В","Д","К","Т"];
+let dk,tr,P,A,tb,att,msg,over;
+function deal(){dk=[];for(let s=0;s<4;s++)for(let r=6;r<15;r++)dk.push({r,s});for(let i=35;i>0;i--){const j=Math.random()*(i+1)|0;[dk[i],dk[j]]=[dk[j],dk[i]]}
+  tr=dk[0].s;P=[];A=[];tb=[];over=0;fill("p");att="p";msg="Ваш ход: атакуйте";sortP();draw()}
+const val=k=>k.r+(k.s==tr?20:0),sortP=()=>P.sort((a,b)=>val(a)-val(b));
+const beats=(d,a)=>d.s==a.s&&d.r>a.r||d.s==tr&&a.s!=tr;
+function fill(first){for(const h of first=="p"?[P,A]:[A,P])while(h.length<6&&dk.length)h.push(dk.pop());sortP()}
+const open=()=>tb.filter(p=>!p.d).length,canAdd=(k,def)=>tb.length<6&&open()<def.length&&(!tb.length||tb.some(p=>p.a.r==k.r||p.d&&p.d.r==k.r));
+function check(){if(dk.length)return 0;if(!P.length||!A.length){over=1;msg=!P.length&&!A.length?"Ничья":!P.length?"Победа! Вы не дурак":"Вы — дурак!";return 1}return 0}
+function finish(took){const w=att;if(took){const h=w=="p"?A:P;for(const p of tb){h.push(p.a);if(p.d)h.push(p.d)}}tb=[];fill(w);if(!took)att=w=="p"?"a":"p";
+  sortP();if(check()){draw();return}if(att=="a"){msg="Соперник ходит";draw();setTimeout(aiAtt,600)}else{msg="Ваш ход: атакуйте";draw()}}
+function aiDef(){const p=tb.find(z=>!z.d);if(!p)return;let o=A.filter(k=>beats(k,p.a)).sort((a,b)=>val(a)-val(b))[0];
+  if(!o){msg="Соперник берёт";draw();setTimeout(()=>finish(1),700);return}A.splice(A.indexOf(o),1);p.d=o;msg="Отбился. Подкиньте или «Бито»"}
+function aiAtt(){if(over)return;let o=A.filter(k=>canAdd(k,P)).sort((a,b)=>val(a)-val(b));if(tb.length)o=o.filter(k=>k.s!=tr||dk.length<4);
+  if(!o.length){msg="Бито";finish(0);return}const k=o[0];A.splice(A.indexOf(k),1);tb.push({a:k});msg="Отбивайтесь или «Беру»";draw()}
+function tap(k){if(over)return;if(att=="p"){if(tb.some(p=>!p.d)||!canAdd(k,A))return;P.splice(P.indexOf(k),1);tb.push({a:k});aiDef()}
+  else{const p=tb.find(z=>!z.d);if(!p||!beats(k,p.a))return;P.splice(P.indexOf(k),1);p.d=k;if(!open()){msg="Отбились!";setTimeout(aiAtt,500)}}draw()}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);
+  if(over){deal();return}
+  if(px>258&&py>66&&py<92){if(att=="p"&&tb.length&&!open())finish(0);else if(att=="a"&&open())finish(1);return}
+  if(py>142){const n=P.length,st=Math.min(30,(300-30)/Math.max(1,n-1));for(let i=n-1;i>=0;i--){const X=10+i*st;if(px>=X&&px<X+30){tap(P[i]);return}}}});
+function card(k,X,Y,back){x.fillStyle=back?"#7a1f2b":"#fff";x.fillRect(X,Y,30,42);x.strokeStyle="#222";x.lineWidth=1;x.strokeRect(X+.5,Y+.5,29,41);
+  if(back){x.strokeStyle="#d4a24a";x.strokeRect(X+4,Y+4,22,34);return}const f=k.s==1||k.s==2?"#d2232a":"#111";T(RK[k.r-6],X+15,Y+16,11,f);T(SU[k.s],X+15,Y+34,15,f)}
+function draw(){if(!P)return;x.setTransform(S,0,0,S,0,0);x.fillStyle="#0f5132";x.fillRect(0,0,320,200);
+  for(let i=0;i<A.length;i++)card(0,60+i*Math.min(14,200/A.length),4,1);
+  if(dk.length){card(dk[0],4,74,0);if(dk.length>1)card(0,24,68,1);T(dk.length,39,124,10,"#fff")}T("козырь "+SU[tr],32,62,9,tr==1||tr==2?"#ff8a8a":"#fff");
+  tb.forEach((p,i)=>{const X=70+i*31;card(p.a,X,58,0);if(p.d)card(p.d,X+6,72,0)});
+  const can=att=="p"?tb.length&&!open():open();x.fillStyle=can?"#ffd84a":"#4a7a5a";x.fillRect(260,68,56,22);T(att=="p"?"БИТО":"БЕРУ",288,83,11,"#123");
+  T(msg,160,136,10,"#ffe9a8");
+  const n=P.length,st=Math.min(30,(300-30)/Math.max(1,n-1));P.forEach((k,i)=>card(k,10+i*st,148,0));
+  if(over){x.fillStyle="rgba(0,0,0,.6)";x.fillRect(0,0,320,200);T(msg,160,96,16,"#ffd84a");T("тап — новая партия",160,120,11,"#fff")}}
+deal();try{new ResizeObserver(fit).observe(c)}catch(e){}fit();
+</script></body></html>

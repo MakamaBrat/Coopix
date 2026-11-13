@@ -21,3 +21,6 @@ $$;
 alter table public.bot_users enable row level security;
 revoke all on public.bot_users from anon, authenticated;
 revoke all on function public.bot_seen(bigint, text, text, text, text) from public, anon, authenticated;
+-- Очередь «рандомной игры»: игры не повторяются, пока игрок не прошёл полный круг
+alter table public.bot_users add column if not exists deck jsonb not null default '[]'::jsonb;
+alter table public.bot_users add column if not exists last_game text not null default '';

@@ -132,6 +132,9 @@ export function supabaseStore(url, serviceKey) {
     },
     /** кто написал боту: ник, имя, язык, счётчик сообщений, первый и последний раз */
     async botSeen(u) { ok(await db.rpc("bot_seen", { p_id: u.id, p_username: String(u.username ?? "").slice(0, 64), p_first: String(u.first_name ?? "").slice(0, 128), p_last: String(u.last_name ?? "").slice(0, 128), p_lang: String(u.language_code ?? "").slice(0, 16) })); },
+    /** очередь «рандомной игры» игрока: оставшиеся игры круга и последняя присланная */
+    async getBotDeck(uid) { const r = ok(await db.from("bot_users").select("deck,last_game").eq("tg_id", uid).maybeSingle()); return r ? { deck: r.deck ?? [], last: r.last_game ?? "" } : null; },
+    async setBotDeck(uid, deck, last) { ok(await db.from("bot_users").update({ deck, last_game: last }).eq("tg_id", uid)); },
     async ownedGames(uid) { return (ok(await db.from("purchases").select("item_id").eq("user_id", uid).eq("kind", "game").eq("status", "paid")) ?? []).map((r) => r.item_id); },
     async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
     async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img,shot_img,item_img").eq("id", id).maybeSingle()); },

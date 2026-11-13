@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#2a1a10}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320;draw()};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign="center";x.fillText(t,a,b)};
+let b,turn,sel,lock,msg,W=0,L=0;
+function init(){b=[];for(let i=0;i<64;i++){const r=i>>3,q=i&7;b.push((r+q)%2?(r<3?-1:r>4?1:0):0)}turn=1;sel=-1;lock=-1;msg="Ваш ход";draw()}
+const D=[[-1,-1],[-1,1],[1,-1],[1,1]],own=(v,s)=>v*s>0,ok=(r,q)=>r>=0&&r<8&&q>=0&&q<8;
+function caps(i,s){const r=i>>3,q=i&7,o=[];for(const[a,d]of D){const r2=r+2*a,q2=q+2*d;if(!ok(r2,q2))continue;const m=(r+a)*8+q+d,t=r2*8+q2;if(b[m]*s<0&&!b[t])o.push({f:i,t,c:m})}return o}
+function steps(i,s){const r=i>>3,q=i&7,o=[];for(const[a,d]of D){if(Math.abs(b[i])==1&&a!=-s)continue;if(!ok(r+a,q+d))continue;const t=(r+a)*8+q+d;if(!b[t])o.push({f:i,t})}return o}
+function all(s){const k=[],m=[];for(let i=0;i<64;i++)if(own(b[i],s)&&(lock<0||lock==i)){k.push(...caps(i,s));m.push(...steps(i,s))}return k.length?k:lock<0?m:[]}
+function go(v,s){b[v.t]=b[v.f];b[v.f]=0;const r=v.t>>3;if(s==1&&r==0)b[v.t]=2;if(s==-1&&r==7)b[v.t]=-2;
+  if(v.c!=null){b[v.c]=0;if(caps(v.t,s).length){lock=v.t;return 1}}lock=-1;return 0}
+function end(s){if(all(s).length)return 0;turn=0;if(s==1){msg="Вы проиграли";L++}else{msg="Победа!";W++}return 1}
+function ai(){const m=all(-1);if(!m.length){end(-1);draw();return}
+  const v=m.find(z=>z.c!=null&&caps(z.t,-1).length)||m[Math.random()*m.length|0];
+  if(go(v,-1)){draw();setTimeout(ai,350);return}turn=1;msg="Ваш ход";end(1);draw()}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);if(px>206&&py>150){init();return}if(turn!=1)return;
+  const q=(px-4)/24|0,r=(py-4)/24|0;if(px<4||py<4||q>7||r>7)return;const i=r*8+q,m=all(1);
+  if(own(b[i],1)&&m.some(v=>v.f==i)&&lock<0)sel=i;
+  else if(sel>=0){const v=m.find(z=>z.f==sel&&z.t==i);if(v){if(go(v,1))sel=v.t;else{sel=-1;turn=-1;msg="Ход соперника…";if(!end(-1))setTimeout(ai,400)}}}
+  draw()});
+function draw(){if(!b)return;x.setTransform(S,0,0,S,0,0);x.fillStyle="#2a1a10";x.fillRect(0,0,320,200);
+  const m=turn==1?all(1):[];
+  for(let i=0;i<64;i++){const r=i>>3,q=i&7,X=4+q*24,Y=4+r*24;x.fillStyle=(r+q)%2?"#7a4a2a":"#e8cfa0";x.fillRect(X,Y,24,24);
+    if(i==sel){x.fillStyle="rgba(255,220,60,.55)";x.fillRect(X,Y,24,24)}
+    else if(sel>=0&&m.some(v=>v.f==sel&&v.t==i)){x.fillStyle="rgba(80,220,120,.5)";x.fillRect(X,Y,24,24)}
+    else if(sel<0&&m.some(v=>v.f==i)){x.strokeStyle="#ffd84a";x.lineWidth=1.5;x.strokeRect(X+1,Y+1,22,22)}
+    const v=b[i];if(v){x.fillStyle=v>0?"#f4efe6":"#1d1d22";x.beginPath();x.arc(X+12,Y+12,9,0,7);x.fill();x.strokeStyle=v>0?"#9a8a70":"#555";x.lineWidth=1.5;x.stroke();
+      if(Math.abs(v)==2){x.strokeStyle="#e0a020";x.lineWidth=2;x.beginPath();x.arc(X+12,Y+12,4.5,0,7);x.stroke()}}}
+  T("ШАШКИ",263,26,18,"#ffd84a");T(msg,263,60,11,"#fff");
+  let p=0,a=0;for(const v of b){if(v>0)p++;if(v<0)a++}
+  T("Вы: "+p+"  Он: "+a,263,84,11,"#e8cfa0");T("Побед: "+W+" / "+L,263,104,10,"#c9a77a");
+  x.fillStyle="#ffd84a";x.fillRect(214,158,98,30);T("ЗАНОВО",263,178,12,"#2a1a10")}
+init();try{new ResizeObserver(fit).observe(c)}catch(e){}fit();
+</script></body></html>

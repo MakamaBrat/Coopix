@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#2a0a3a}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f,al)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign=al||"center";x.fillText(t,a,b)};
+/* слоты на игровые монеты (без реальных денег) */
+const SY=[["7","#ff3a3a",50],["$","#3ad16a",20],["★","#ffd23a",10],["♥","#ff5aa8",6],["♦","#4dd2ff",4],["♣","#c8c8ff",3]],REEL=[0,5,3,1,4,2,5,4,3,2,5,1,4,3,5,2,4,0,3,5];
+let coins=1000;try{coins=+localStorage.getItem("sl.c")||1000}catch(e){}
+let bet=10,R=[0,6,12],V=[0,0,0],stopAt=[0,0,0],spin=0,msg="Жми КРУТИТЬ",win=0,fl=0;
+const save=()=>{try{localStorage.setItem("sl.c",coins)}catch(e){}};
+function go(){if(spin||coins<bet)return;coins-=bet;save();spin=1;win=0;msg="";for(let i=0;i<3;i++){V[i]=.9;stopAt[i]=40+i*22}}
+function result(){const s=R.map(r=>REEL[Math.round(r)%REEL.length]);let w=0;
+  if(s[0]==s[1]&&s[1]==s[2])w=bet*SY[s[0]][2];else if(s[0]==s[1]||s[1]==s[2])w=bet*2;else if(s.includes(0))w=bet;
+  coins+=w;win=w;fl=w>=bet*10?60:0;msg=w?"Выигрыш +"+w:"Мимо";if(coins<10){coins=1000;msg+=" · ещё 1000"}save()}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);if(py>168){if(px<106){if(!spin)bet=bet==10?50:bet==50?100:10}else go()}else if(py>36&&py<150)go()});
+function draw(){x.setTransform(S,0,0,S,0,0);x.fillStyle=fl&&fl--%10<5?"#5a1a6a":"#2a0a3a";x.fillRect(0,0,320,200);
+  T("СЛОТЫ",160,22,18,"#ffd84a");T("монет: "+coins,312,16,10,"#fff","right");
+  x.fillStyle="#d4a24a";x.fillRect(28,34,264,118);
+  for(let i=0;i<3;i++){const X=36+i*86;x.fillStyle="#fff";x.fillRect(X,40,78,106);
+    if(spin){if(stopAt[i]>0){stopAt[i]--;R[i]+=V[i]}else if(V[i]){const tgt=Math.ceil(R[i]);R[i]+=Math.min(.3,tgt-R[i]);if(R[i]>=tgt-.001){R[i]=tgt;V[i]=0}}}
+    for(let k=-1;k<=1;k++){const f=R[i]-Math.floor(R[i]),y=93+(k-f)*36,s=SY[REEL[((Math.floor(R[i])+k)%REEL.length+REEL.length)%REEL.length]];
+      if(y>40&&y<150){x.save();x.beginPath();x.rect(X,40,78,106);x.clip();T(s[0],X+39,y+11,30,s[1]);x.restore()}}}
+  x.fillStyle="rgba(255,60,60,.5)";x.fillRect(30,92,260,3);
+  if(spin&&!V[0]&&!V[1]&&!V[2]){spin=0;result()}
+  T(msg,160,164,12,win?"#ffd84a":"#e8d8ff");
+  x.fillStyle="#3a1a5a";x.fillRect(4,172,100,24);T("СТАВКА "+bet,54,188,11,"#ffd84a");
+  x.fillStyle=spin||coins<bet?"#555":"#ffd84a";x.fillRect(110,172,206,24);T("КРУТИТЬ",213,189,13,"#2a0a3a");
+  requestAnimationFrame(draw)}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

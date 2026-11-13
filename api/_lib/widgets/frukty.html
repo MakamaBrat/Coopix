@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#3b2414}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign="center";x.fillText(t,a,b)};
+const C=(a,b,r,f,s,e)=>{x.fillStyle=f;x.beginPath();x.arc(a,b,r,s||0,e||7);x.fill()};
+/* фрукты подлетают снизу: режь пальцем (тап или росчерк влево-вправо), бомбы не трогай */
+const FR=[["#e8322e","#ffd6c8",13],["#ff9a1a","#ffe0a8",12],["#7ad33a","#e8ffd0",11],["#ffd23a","#fff6c8",12],["#2fbf4f","#ff5a6a",16]];
+let st="menu",F=[],H=[],J=[],sc=0,life=3,best=0,spawn=0,tr=[],down=0,lp=null;
+try{best=+localStorage.getItem("fr.b")||0}catch(e){}
+function start(){st="play";F=[];H=[];J=[];sc=0;life=3;spawn=30}
+function cut(a,b){for(const f of F){if(f.cut)continue;const dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy||1;let k=((f.x-a[0])*dx+(f.y-a[1])*dy)/L;k=Math.max(0,Math.min(1,k));
+  if(Math.hypot(a[0]+dx*k-f.x,a[1]+dy*k-f.y)<f.r+4){f.cut=1;if(f.bomb){over();return}sc++;const t=FR[f.t];
+    for(const s of[-1,1])H.push({x:f.x,y:f.y,vx:f.vx+s*1.4,vy:f.vy-1,r:f.r,t:f.t,s,a:0});for(let i=0;i<8;i++)J.push({x:f.x,y:f.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.8)*4,l:25,c:t[0]})}}}
+function over(){st="over";if(sc>best){best=sc;try{localStorage.setItem("fr.b",best)}catch(e){}}}
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(st!="play"){start();return}down=1;lp=pos(e);tr=[lp];cut(lp,[lp[0]+1,lp[1]+1])});
+c.addEventListener("pointermove",e=>{if(!down||st!="play")return;const p=pos(e);cut(lp,p);lp=p;tr.push(p);if(tr.length>8)tr.shift()});
+const up=()=>{down=0;tr=[]};c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+function step(){if(st!="play")return;if(--spawn<=0){spawn=Math.max(22,60-sc);const n=1+(Math.random()*Math.min(3,1+sc/15)|0);
+    for(let i=0;i<n;i++){const bomb=Math.random()<.13,t=Math.random()*5|0;F.push({x:40+Math.random()*240,y:210,vx:(Math.random()-.5)*2.4,vy:-6.2-Math.random()*1.6,r:bomb?12:FR[t][2],t,bomb})}}
+  for(const f of F){f.x+=f.vx;f.y+=f.vy;f.vy+=.12;if(f.y>215&&f.vy>0&&!f.cut){f.cut=1;if(!f.bomb&&--life<=0)over()}}F=F.filter(f=>!f.cut);
+  for(const h of H){h.x+=h.vx;h.y+=h.vy;h.vy+=.15;h.a+=.08*h.s}H=H.filter(h=>h.y<230);for(const j of J){j.x+=j.vx;j.y+=j.vy;j.vy+=.15;j.l--}J=J.filter(j=>j.l>0)}
+function fruit(f){const t=FR[f.t];if(f.bomb){C(f.x,f.y,12,"#222");x.strokeStyle="#c84";x.lineWidth=2;x.beginPath();x.moveTo(f.x+6,f.y-10);x.lineTo(f.x+11,f.y-16);x.stroke();C(f.x+11,f.y-17,3,"#ffcc33");return}
+  C(f.x,f.y,f.r,t[0]);C(f.x-f.r*.35,f.y-f.r*.35,f.r*.3,"rgba(255,255,255,.35)")}
+let acc=0,last=0;function draw(t){acc+=Math.min(100,t-last);last=t;while(acc>16.7){step();acc-=16.7}
+  x.setTransform(S,0,0,S,0,0);x.fillStyle="#3b2414";x.fillRect(0,0,320,200);x.fillStyle="#4a2f1b";for(let i=0;i<320;i+=40)x.fillRect(i,0,3,200);
+  for(const j of J){x.fillStyle=j.c;x.fillRect(j.x,j.y,3,3)}
+  for(const h of H){const t=FR[h.t];x.save();x.translate(h.x,h.y);x.rotate(h.a);C(0,0,h.r,t[0],h.s>0?-Math.PI/2:Math.PI/2,h.s>0?Math.PI/2:Math.PI*1.5);C(0,0,h.r-3,t[1],h.s>0?-Math.PI/2:Math.PI/2,h.s>0?Math.PI/2:Math.PI*1.5);x.restore()}
+  F.forEach(fruit);
+  if(tr.length>1){x.strokeStyle="rgba(255,255,255,.85)";x.lineWidth=3;x.lineCap="round";x.beginPath();x.moveTo(tr[0][0],tr[0][1]);for(const p of tr)x.lineTo(p[0],p[1]);x.stroke()}
+  T(""+sc,20,22,18,"#ffd84a");T("✕".repeat(3-life)+"○".repeat(life),288,20,14,"#ff6a5a");
+  if(st!="play"){x.fillStyle="rgba(20,10,4,.7)";x.fillRect(0,0,320,200);T("РУБКА ФРУКТОВ",160,74,22,"#ffd84a");
+    T(st=="over"?"Счёт "+sc+" · рекорд "+best:"Режь фрукты, не трогай бомбы",160,100,11,"#fff");T("тап — начать",160,128,12,"#ffe0a8")}
+  requestAnimationFrame(draw)}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

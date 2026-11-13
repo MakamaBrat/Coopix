@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#bfe6ff}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign="center";x.fillText(t,a,b)};
+const C=(a,b,r,f)=>{x.fillStyle=f;x.beginPath();x.arc(a,b,r,0,7);x.fill()};
+let love=0;try{love=+localStorage.getItem("kot.l")||0}catch(e){}
+let say="Привет! Потыкай меня",sayT=0,mood=0,moodT=0,tail=0,ear=0,food=0,blink=0,hearts=[];
+const PH={head:["Мур-мяу!","Ещё погладь!","Мрррр…","Я самый милый кот"],belly:["Хи-хи-хи!","Щекотно!","Ай, живот!","Ха-ха, хватит!"],tail:["Ай! Хвост!","Не трожь хвост!","Шшш!"],
+  feed:["Ням-ням!","Рыбка! Обожаю","Ещё! Ещё!","Вкуснотища"],paw:["Дай пять!","Лапа!","Пожми лапку"]};
+const pick=a=>a[Math.random()*a.length|0];
+function act(k,m){say=pick(PH[k]);sayT=150;mood=m;moodT=60;if(m>=0){love++;try{localStorage.setItem("kot.l",love)}catch(e){}hearts.push({x:150+Math.random()*40,y:70,l:50})}}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);
+  if(py>168&&px>222){food=60;act("feed",1);return}
+  if(Math.hypot(px-160,py-62)<36){ear=20;act("head",1)}else if(Math.hypot(px-160,py-128)<30)act("belly",2);
+  else if(px>190&&px<250&&py>100&&py<170){tail=30;act("tail",-1)}else if(py>140&&px>120&&px<200)act("paw",1)});
+function draw(t){x.setTransform(S,0,0,S,0,0);const g=x.createLinearGradient(0,0,0,200);g.addColorStop(0,"#bfe6ff");g.addColorStop(1,"#fff2d6");x.fillStyle=g;x.fillRect(0,0,320,200);
+  x.fillStyle="#d9b98a";x.fillRect(0,165,320,35);
+  const b=Math.sin(t/400)*2,O="#f39a3c",D="#c8701e";
+  x.strokeStyle=O;x.lineWidth=9;x.lineCap="round";x.beginPath();x.moveTo(190,150);x.quadraticCurveTo(235,140+Math.sin(t/(tail?60:300))*(tail?18:8),225,105);x.stroke();
+  C(160,128+b,34,O);C(160,132+b,20,"#ffe2b8");C(140,160,10,O);C(180,160,10,O);
+  const hy=62+b;for(const s of[-1,1]){x.fillStyle=O;x.beginPath();x.moveTo(160+s*30,hy-18);x.lineTo(160+s*(26-(ear&&s>0?4:0)),hy-50+(ear&&s>0?6:0));x.lineTo(160+s*8,hy-30);x.fill()}
+  C(160,hy,34,O);x.fillStyle=D;x.fillRect(150,hy-34,4,10);x.fillRect(158,hy-35,4,12);x.fillRect(166,hy-34,4,10);
+  const sh=blink>0||mood==2;for(const s of[-1,1]){if(sh){x.strokeStyle="#333";x.lineWidth=2.5;x.beginPath();x.arc(160+s*13,hy-4,6,Math.PI*1.1,Math.PI*1.9);x.stroke()}
+    else{C(160+s*13,hy-4,8,"#fff");C(160+s*13+(mood<0?0:1),hy-3,4.5,mood<0?"#c22":"#2a6e2a");C(160+s*13+2,hy-5,1.5,"#fff")}}
+  C(160,hy+8,3.5,"#e05a7a");x.strokeStyle="#333";x.lineWidth=1.5;
+  for(const s of[-1,1])for(const k of[-4,2]){x.beginPath();x.moveTo(160+s*14,hy+10+k/2);x.lineTo(160+s*40,hy+6+k*1.6);x.stroke()}
+  if(sayT>0){x.fillStyle="#7a2a2a";x.beginPath();x.arc(160,hy+18,mood<0?3:7,0,Math.PI);x.fill()}else{x.beginPath();x.arc(156,hy+12,4,0,Math.PI);x.arc(164,hy+12,4,0,Math.PI);x.stroke()}
+  if(food>0){C(98,152,13,"#9cc6e8");C(96,152,6,"#468");x.fillStyle="#468";x.beginPath();x.moveTo(100,152);x.lineTo(108,146);x.lineTo(108,158);x.fill()}
+  if(sayT>0){x.font="bold 12px monospace";const w=x.measureText(say).width+16;x.fillStyle="#fff";x.fillRect(16,14,w,24);x.beginPath();x.moveTo(30+w/2,38);x.lineTo(110,48);x.lineTo(40+w/2,38);x.fill();
+    x.fillStyle="#222";x.textAlign="left";x.fillText(say,24,31)}
+  for(const h of hearts){T("♥",h.x,h.y,14,"#ff4d7a");h.y-=.8;h.l--}hearts=hearts.filter(h=>h.l>0);
+  x.fillStyle="#ff7aa8";x.fillRect(226,172,88,22);T("ПОКОРМИТЬ",270,187,11,"#fff");T("♥ "+love,40,190,13,"#ff4d7a");
+  sayT--;moodT--;if(moodT<0)mood=0;if(tail)tail--;if(ear)ear--;if(food)food--;if(blink>0)blink--;else if(Math.random()<.008)blink=8;
+  requestAnimationFrame(draw)}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>

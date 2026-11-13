@@ -4,6 +4,7 @@ import { setup, init, body } from "./mem.js";
 import { TOK } from "./helpers.js";
 import { webhookSecret, makePayload, widgetHtml, RANDOM_BTN } from "../api/_lib/thanks.js";
 import { readFileSync } from "node:fs";
+import { WIDGET_GAMES } from "../api/_lib/widgets.js";
 
 const MAIN = 1, ANN = 42, BOB = 43;
 async function world() {
@@ -70,23 +71,31 @@ test("спасибо: подключение вебхука только гла�
   assert.equal(w.tg.at(-1)[0], "setMyCommands"); assert.equal(w.tg.at(-1)[1].commands[0].command, "random");
 });
 
-test("случайная игра: кнопка присылает мини-игру виджетом, /start показывает кнопку", async () => {
+test("рандомная игра: без повторов, пока не пройден весь круг; игры маркета — с кнопкой «Открыть»", async () => {
   const w = await world();
   await w.call("admin", "PATCH", init(MAIN), { query: { r: "game", id: w.game.id }, body: { play_html: "<canvas id=c></canvas><script>/* коммент */\n  let a=1;</script>" } });
-  await w.hook({ message: { chat: { id: BOB, type: "private" }, from: { id: BOB }, text: "/start" } });
+  const hook = (text, chat = { id: BOB, type: "private" }) => w.call("bot", "POST", null, { headers: { "x-telegram-bot-api-secret-token": webhookSecret(TOK), host: "coopix.example" }, body: { message: { chat, from: { id: BOB }, text } } });
+  await hook("/start");
   assert.equal(w.tg.at(-1)[0], "sendMessage"); assert.equal(w.tg.at(-1)[1].reply_markup.keyboard[0][0].text, RANDOM_BTN);
-  await w.hook({ message: { chat: { id: BOB, type: "private" }, from: { id: BOB }, text: RANDOM_BTN } });
-  const [m, p] = w.tg.at(-1);
-  assert.equal(m, "sendWidget"); assert.equal(p.chat_id, BOB); assert.doesNotMatch(p.html, /коммент/); assert.match(p.html, /matchMedia/);
-  const n = w.tg.length; await w.hook({ message: { chat: { id: -5, type: "group" }, from: { id: BOB }, text: RANDOM_BTN } });
+  const N = WIDGET_GAMES.length + 1, seen = [];
+  for (let i = 0; i < N; i++) {
+    await hook(RANDOM_BTN);
+    const [m, p] = w.tg.at(-1); assert.equal(m, "sendWidget"); assert.equal(p.chat_id, BOB); assert.match(p.html, /class=tv/);
+    if (/Coopix Market/.test(p.caption)) { assert.equal(p.reply_markup.inline_keyboard[0][0].web_app.url, "https://coopix.example/" + w.game.id); assert.doesNotMatch(p.html, /коммент/) }
+    seen.push(p.caption);
+  }
+  assert.equal(new Set(seen).size, N, "за круг ни одна игра не повторилась");
+  await hook("🎲 Случайная игра"); // старая надпись кнопки тоже работает и начинает новый круг
+  assert.notEqual(w.tg.at(-1)[1].caption, seen.at(-1), "новый круг не начинается с последней игры");
+  const n = w.tg.length; await hook(RANDOM_BTN, { id: -5, type: "group" });
   assert.equal(w.tg.length, n); // в группах виджеты не работают — молчим
 });
 
-test("случайная игра: все мини-игры «телевизора» влезают в лимит виджета", () => {
+test("рандомная игра: все мини-игры влезают в лимит виджета (с рамкой-телевизором)", () => {
   for (const g of ["stickfight", "gravity", "unik", "metro"]) assert.ok(widgetHtml(readFileSync(new URL(`../games/${g}/tv.html`, import.meta.url), "utf8")), g);
+  for (const g of WIDGET_GAMES) { const h = widgetHtml(g.html); assert.ok(h, g.id); for (const m of h.matchAll(/<script>([\s\S]*?)<\/script>/g)) new Function(m[1]); }
   assert.equal(widgetHtml("<script>" + "x".repeat(40000) + "</script>"), null);
-});
-test("бот запоминает ник и id каждого, кто ему написал (только личка)", async () => {
+});test("бот запоминает ник и id каждого, кто ему написал (только личка)", async () => {
   const w = await world();
   await w.hook({ message: { chat: { id: 77, type: "private" }, from: { id: 77, username: "vasya", first_name: "Вася" }, text: "/start" } });
   await w.hook({ message: { chat: { id: 77, type: "private" }, from: { id: 77, username: "vasya2", first_name: "Вася" }, text: "привет" } });

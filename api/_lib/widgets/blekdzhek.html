@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0f4d3a}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320;draw()};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f,al)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign=al||"center";x.fillText(t,a,b)};
+/* блэкджек на игровые монеты (без реальных денег): дилер добирает до 17, блэкджек платит 3:2 */
+const SU="♠♥♦♣",RN=["","Т","2","3","4","5","6","7","8","9","10","В","Д","К"];
+let coins=1000;try{coins=+localStorage.getItem("bj.c")||1000}catch(e){}
+let dk=[],P=[],D=[],bet=50,st="bet",msg="Ставка — и раздавай";
+const save=()=>{try{localStorage.setItem("bj.c",coins)}catch(e){}};
+const draw1=()=>{if(dk.length<15){dk=[];for(let d=0;d<2;d++)for(let s=0;s<4;s++)for(let r=1;r<14;r++)dk.push({r,s});dk.sort(()=>Math.random()-.5)}return dk.pop()};
+function sum(h){let s=0,a=0;for(const k of h){s+=Math.min(10,k.r);if(k.r==1)a++}while(a--&&s+10<=21)s+=10;return s}
+function deal(){if(coins<bet)return;coins-=bet;save();P=[draw1(),draw1()];D=[draw1(),draw1()];st="play";msg="Ещё или хватит?";if(sum(P)==21)stand()}
+function hit(){P.push(draw1());if(sum(P)>21)end();else if(sum(P)==21)stand()}
+function dbl(){if(P.length!=2||coins<bet)return;coins-=bet;bet*=2;P.push(draw1());if(sum(P)>21)end();else stand()}
+function stand(){while(sum(D)<17)D.push(draw1());end()}
+function end(){st="end";const p=sum(P),d=sum(D),bj=p==21&&P.length==2;let w=0;
+  if(p>21)msg="Перебор: "+p;else if(bj&&!(d==21&&D.length==2)){w=bet*2.5;msg="БЛЭКДЖЕК! +"+w}else if(d>21||p>d){w=bet*2;msg="Победа! +"+w}else if(p==d){w=bet;msg="Ничья"}else msg="Дилер выиграл ("+d+")";
+  coins+=w;if(bet>250)bet/=2;if(coins<10){coins=1000;msg+=" · ещё 1000"}save()}
+const BT=()=>st=="play"?[["ЕЩЁ",hit],["ХВАТИТ",stand],["УДВОИТЬ",dbl]]:[["СТАВКА "+bet,()=>{bet=bet>=250?10:bet==10?50:bet*2.5}],["РАЗДАТЬ",deal]];
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);if(py<170)return;const b=BT(),i=px/(320/b.length)|0;if(b[i])b[i][1]();draw()});
+function card(k,X,Y,back){x.fillStyle=back?"#7a1f2b":"#fff";x.fillRect(X,Y,34,48);x.strokeStyle="#222";x.strokeRect(X+.5,Y+.5,33,47);
+  if(back){x.strokeStyle="#d4a24a";x.strokeRect(X+4,Y+4,26,40);return}const f=k.s==1||k.s==2?"#d2232a":"#111";T(RN[k.r],X+17,Y+19,13,f);T(SU[k.s],X+17,Y+40,17,f)}
+function draw(){x.setTransform(S,0,0,S,0,0);x.fillStyle="#0f4d3a";x.fillRect(0,0,320,200);x.strokeStyle="#d4a24a";x.lineWidth=1;x.beginPath();x.arc(160,-60,190,.3,Math.PI-.3);x.stroke();
+  T("БЛЭКДЖЕК",8,16,12,"#ffd84a","left");T("монет: "+coins,312,16,11,"#fff","right");
+  if(D.length){D.forEach((k,i)=>card(k,110+i*26,22,st=="play"&&i==1));T("дилер: "+(st=="play"?"?":sum(D)),60,52,10,"#cfe","center")}
+  if(P.length){P.forEach((k,i)=>card(k,110+i*26,96,0));T("вы: "+sum(P),60,126,11,"#fff","center")}
+  T(msg,160,160,11,"#ffe9a8");const b=BT(),w=320/b.length;b.forEach((v,i)=>{x.fillStyle=i==b.length-1?"#ffd84a":"#e8e0c8";x.fillRect(i*w+4,172,w-8,24);T(v[0],i*w+w/2,188,11,"#0f4d3a")})}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();
+</script></body></html>

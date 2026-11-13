@@ -286,7 +286,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       try {
         await tgApi("setWebhook", { url, secret_token: bot.secret, allowed_updates: ["message", "pre_checkout_query"] });
         // команды в меню бота: «/random» видно в кнопке «Меню», даже если игрок ещё не нажимал /start
-        try { await tgApi("setMyCommands", { commands: [{ command: "random", description: "🎲 Случайная игра прямо в чате" }, { command: "start", description: "Показать кнопку «Случайная игра»" }] }); } catch { /* не критично */ }
+        try { await tgApi("setMyCommands", { commands: [{ command: "random", description: "🎲 Рандомная игра прямо в чате" }, { command: "start", description: "Показать кнопку «Рандомная игра»" }] }); } catch { /* не критично */ }
         return json(200, { ok: true, url });
       } catch (e) { return json(502, { error: "telegram_error", detail: String(e?.message ?? "").slice(0, 200) }); }
     }

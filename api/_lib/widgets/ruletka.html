@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#0b3d24}canvas{width:100%;display:block;touch-action:none}</style></head><body><canvas id="c" width="320" height="200"></canvas><script>
+const c=document.getElementById("c"),x=c.getContext("2d");let S=1;
+const fit=()=>{const w=c.getBoundingClientRect().width||320;c.width=w;c.height=Math.round(w*5/8);S=w/320};
+const pos=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)/S,(e.clientY-r.top)/S]};
+const T=(t,a,b,s,f,al)=>{x.font="bold "+s+"px monospace";x.fillStyle=f;x.textAlign=al||"center";x.fillText(t,a,b)};
+/* рулетка на игровые монеты (без реальных денег) */
+const W=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26],RED=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+const col=n=>n==0?"#1aa04a":RED.includes(n)?"#d2232a":"#151515";
+const BETS=[["КРАСНОЕ",n=>RED.includes(n),2,"#d2232a"],["ЧЁРНОЕ",n=>n&&!RED.includes(n),2,"#222"],["ЧЁТ",n=>n&&n%2==0,2,"#2a5a8a"],["НЕЧЕТ",n=>n%2==1,2,"#2a5a8a"],["1-18",n=>n>=1&&n<=18,2,"#6a4a1a"],["19-36",n=>n>=19,2,"#6a4a1a"],["ЗЕРО",n=>n==0,36,"#1aa04a"]];
+let coins=1000;try{coins=+localStorage.getItem("rl.c")||1000}catch(e){}
+let bet=50,pick=0,ang=0,spd=0,res=null,msg="Выбери ставку и крути",hist=[];
+const save=()=>{try{localStorage.setItem("rl.c",coins)}catch(e){}};
+function spin(){if(spd||coins<bet)return;coins-=bet;save();spd=.35+Math.random()*.15;res=null;msg="Крутится…"}
+function stop(){const P2=Math.PI*2,a=((-ang)%P2+P2)%P2;const n=W[Math.round(a/(P2/37))%37];res=n;hist.unshift(n);hist.length=Math.min(6,hist.length);
+  const b=BETS[pick];if(b[1](n)){const w=bet*b[2];coins+=w;msg="Выпало "+n+"! +"+w}else msg="Выпало "+n+". Мимо";if(coins<10){coins=1000;msg+=" · держи ещё 1000"}save()}
+c.addEventListener("pointerdown",e=>{e.preventDefault();const[px,py]=pos(e);
+  if(px>150&&py>34&&py<146){const i=((py-34)/16|0);if(i<7&&!spd)pick=i;return}
+  if(px>150&&py>150&&py<172){if(!spd)bet=bet==10?50:bet==50?100:bet==100?250:10;return}
+  if(px>150&&py>176||Math.hypot(px-74,py-104)<70)spin()});
+function draw(){x.setTransform(S,0,0,S,0,0);x.fillStyle="#0b3d24";x.fillRect(0,0,320,200);
+  if(spd){ang+=spd;spd*=.985;if(spd<.003){spd=0;stop()}}
+  const seg=Math.PI*2/37;x.save();x.translate(74,104);x.rotate(ang);
+  for(let i=0;i<37;i++){x.fillStyle=col(W[i]);x.beginPath();x.moveTo(0,0);x.arc(0,0,66,i*seg-seg/2-Math.PI/2,i*seg+seg/2-Math.PI/2);x.fill();
+    x.save();x.rotate(i*seg);T(""+W[i],0,-54,7,"#fff");x.restore()}
+  x.fillStyle="#7a4a1a";x.beginPath();x.arc(0,0,40,0,7);x.fill();x.fillStyle="#d4a24a";x.beginPath();x.arc(0,0,10,0,7);x.fill();x.restore();
+  x.fillStyle="#fff";x.beginPath();x.arc(74,44,4,0,7);x.fill();x.fillStyle="#ffd84a";x.beginPath();x.moveTo(68,34);x.lineTo(80,34);x.lineTo(74,42);x.fill();
+  if(res!=null&&!spd){x.fillStyle=col(res);x.beginPath();x.arc(74,104,22,0,7);x.fill();T(""+res,74,110,16,"#fff")}
+  T("РУЛЕТКА",232,16,14,"#ffd84a");T("монет: "+coins,232,30,10,"#fff");
+  BETS.forEach((b,i)=>{const Y=34+i*16;x.fillStyle=b[3];x.fillRect(154,Y,158,14);if(i==pick){x.strokeStyle="#ffd84a";x.lineWidth=2;x.strokeRect(154,Y,158,14)}T(b[0]+"  x"+b[2],233,Y+11,9,"#fff")});
+  x.fillStyle="#123";x.fillRect(154,152,158,18);T("СТАВКА: "+bet+" (сменить)",233,165,9,"#ffd84a");
+  x.fillStyle=spd||coins<bet?"#555":"#ffd84a";x.fillRect(154,176,158,20);T("КРУТИТЬ",233,190,12,"#0b3d24");
+  T(msg,74,192,8,"#ffe9a8");hist.forEach((n,i)=>{x.fillStyle=col(n);x.fillRect(4+i*16,4,14,12);T(""+n,11+i*16,13,7,"#fff")});
+  requestAnimationFrame(draw)}
+try{new ResizeObserver(fit).observe(c)}catch(e){}fit();requestAnimationFrame(draw);
+</script></body></html>
