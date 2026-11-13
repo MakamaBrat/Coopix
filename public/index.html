@@ -1304,11 +1304,13 @@ const SPR={};
 async function loadSprites(){
   await Promise.all(Object.entries(window.SPRITES).map(([k,src])=>new Promise(res=>{
     const im=new Image();im.onload=()=>{
-      const w=im.naturalWidth,h=im.naturalHeight,c=document.createElement("canvas");c.width=w;c.height=h;
-      const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0);const d=x.getImageData(0,0,w,h).data;
-      const lum=new Float32Array(w*h),al=new Uint8Array(w*h);
-      for(let i=0;i<w*h;i++){lum[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;al[i]=d[i*4+3]}
-      SPR[k]={w,h,lum,al,src};res()};im.onerror=()=>res();im.src=src}))); } /* без связи картинка не загрузится: не вешаем старт */
+      const w=im.naturalWidth,h=im.naturalHeight;let L=null,A=null;
+      const px=()=>{if(L)return; /* яркость и альфа считаются лениво: при старте только размеры, попиксельный разбор — когда спрайт впервые перекрашивают */
+        const c=document.createElement("canvas");c.width=w;c.height=h;
+        const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0);const d=x.getImageData(0,0,w,h).data;
+        L=new Float32Array(w*h);A=new Uint8Array(w*h);
+        for(let i=0;i<w*h;i++){L[i]=(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114)/255;A[i]=d[i*4+3]}};
+      SPR[k]={w,h,src,get lum(){px();return L},get al(){px();return A}};res()};im.onerror=()=>res();im.src=src}))); } /* без связи картинка не загрузится: не вешаем старт */
 /* название на карточке: крупно (42), а длинное плавно уменьшается до 30, чтобы помещалось целиком без «…» */
 function fitTitle(el){const go=()=>{if(!el.isConnected||!el.clientWidth)return;el.style.fontSize="";let fs=42;while(el.scrollWidth>el.clientWidth+1&&fs>30){fs-=1;el.style.fontSize=fs+"px"}};
   go();requestAnimationFrame(go);document.fonts&&document.fonts.ready.then(go)}
