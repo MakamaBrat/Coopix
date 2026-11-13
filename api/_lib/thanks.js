@@ -33,8 +33,9 @@ const MEM_DECK = new Map(); // очередь игрока в памяти се�
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
 export const MARKET_BTN = "🛒 Маркетплейс";
 const MARKET_TEXTS = [MARKET_BTN, "🛒 Открыть маркетплейс"]; // старая надпись — у тех, кому кнопка пришла раньше
-/** клавиатура бота: две обычные кнопки одна под другой (без значка мини-аппа в углу); «Маркетплейс» отвечает кнопкой открытия */
-const kb = () => ({ keyboard: [[{ text: MARKET_BTN }], [{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
+/** клавиатура бота: две кнопки одна под другой. «Маркетплейс» сразу открывает мини-апп (web_app; Telegram сам рисует на такой кнопке значок в углу).
+ *  Пока адрес сайта неизвестен — обычная кнопка, бот отвечает на неё кнопкой «Открыть». */
+const kb = (site) => ({ keyboard: [[site ? { text: MARKET_BTN, web_app: { url: site } } : { text: MARKET_BTN }], [{ text: RANDOM_BTN }]], resize_keyboard: true, is_persistent: true });
 const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 /** Мини-игра -> HTML виджета: без комментариев, отступов, <title> и viewport; заглушка matchMedia (в виджете нет браузера).
  *  null, если не влезает в лимиты Telegram (32768 байт и 4096 байт после zlib-9). */
