@@ -37,8 +37,16 @@ export function widgetHtml(h) {
      высота 100% в пузыре не растягивается — холст задаём пропорцией 8:5 (мир мини-игр 320×200);
      вертикальные смахивания всегда прокручивают чат, горизонтальные и тапы отдаём игре (touch-action:none) */
   s = s.replace(/\bcrisp\(\);/g, "").replace(/\b\w+\.shadow(?:Blur|Color|OffsetX|OffsetY)=(?:"[^"]*"|[\w.#]+);?(?=[\s\S])/g, (m) => (/;$/.test(m) ? "" : ";")).replace(/function crisp\(\)\{[^\n]*getImageData[^\n]*\n/, "")
-    .replace(/<\/style>/i, "html,body{height:auto!important}canvas{height:auto!important;aspect-ratio:8/5;touch-action:none}</style>")
-    .replace(/<script>/i, "<script>window.matchMedia=window.matchMedia||(()=>({matches:!0}));")
+    /* клавиатуры в виджете нет: обработчики клавиш убираем (экономит байты) */
+    .replace(/\n?[^\n]*addEventListener\("key(?:down|up)"[^\n]*/g, "").replace(/\n?const KM=\{[^\n]*/g, "")
+    /* размеры: clientWidth/offsetX в виджете не гарантированы — берём getBoundingClientRect (он есть);
+       холст сразу 320×200, а высота по пропорции (height:auto), чтобы пузырь не схлопывался */
+    .replace(/\bc\.client(Width|Height)\b/g, (m, k) => `(c.getBoundingClientRect().${k.toLowerCase()}||${k === "Width" ? 320 : 200})`)
+    .replace(/\be\.offset([XY])\b/g, (m, k) => `(e.client${k}-c.getBoundingClientRect().${k === "X" ? "left" : "top"})`)
+    .replace(/<canvas id="c">/, '<canvas id="c" width="320" height="200">')
+    .replace(/<\/style>/i, "html,body{height:auto!important}canvas{width:100%!important;height:auto!important;touch-action:none}</style>")
+    .replace(/<script>/i, "<script>window.matchMedia=window.matchMedia||(()=>({matches:!0}));window.performance=window.performance||{now:()=>Date.now()};" +
+      "{const P=(window.CanvasRenderingContext2D||{}).prototype;P&&!P.ellipse&&(P.ellipse=function(x,y,a,b,r,s,e){this.save();this.translate(x,y);this.rotate(r);this.scale(a,b);this.arc(0,0,1,s,e);this.restore()})}")
     .replace(/<\/body>/i, '<script>try{new ResizeObserver(()=>dispatchEvent(new Event("resize"))).observe(document.querySelector("canvas"))}catch(e){}</script></body>');
   const b = Buffer.from(s, "utf8");
   return b.length <= 32768 && deflateSync(b, { level: 9 }).length <= 4096 ? s : null;
