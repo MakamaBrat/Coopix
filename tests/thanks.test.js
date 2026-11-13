@@ -83,11 +83,11 @@ test("рандомная игра: ссылка t.me/<бот>/<игра> на и
     await hook(RANDOM_BTN);
     const [m, p] = w.tg.at(-1); assert.equal(m, "sendMessage"); assert.equal(p.parse_mode, "HTML");
     const [, href, label] = p.text.match(/<a href="([^"]+)">([^<]+)<\/a>/);
-    assert.match(label, /^t\.me\/\w+\/[a-z0-9_-]+$/); assert.equal(href, "https://" + label.replace(/\/([^/]+)$/, "?startapp=$1"));
+    assert.match(label, /^t\.me\/\w+\/[a-z0-9_]{3,30}$/); assert.equal(href, "https://" + label); assert.equal(p.link_preview_options.url, href); assert.equal(p.link_preview_options.prefer_large_media, true);
     assert.doesNotMatch(p.text, /Скрытая/); seen.push(label);
   }
   assert.equal(new Set(seen).size, N, "за круг ни одна игра не повторилась");
-  assert.ok(seen.some((s) => s.endsWith("/unix")) && seen.some((s) => s.endsWith("/metro-runner")));
+  assert.ok(seen.some((s) => s.endsWith("/unix")) && seen.some((s) => s.endsWith("/metro_runner")));
   await hook("🎲 Случайная игра"); // старая надпись кнопки тоже работает и начинает новый круг
   assert.notEqual(w.tg.at(-1)[1].text.match(/>([^<]+)<\/a>/)[1], seen.at(-1), "новый круг не начинается с последней игры");
   const n = w.tg.length; await hook(RANDOM_BTN, { id: -5, type: "group" });

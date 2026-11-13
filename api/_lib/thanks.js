@@ -27,7 +27,7 @@ export function parsePayload(p) {
 
 export const RANDOM_BTN = "🎲 Рандомная игра";
 /** адрес игры в ссылке: название латиницей через дефис (UNIX -> unix, Metro Runner -> metro-runner), иначе id; startapp принимает [A-Za-z0-9_-] */
-export const gameSlug = (g) => { const s = String(g.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); return s || String(g.id).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60); };
+export const gameSlug = (g) => { const s = String(g.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30); return s.length >= 3 ? s : String(g.id).replace(/[^A-Za-z0-9_]/g, "_").slice(0, 30); }; // как короткое имя мини-приложения в BotFather: a-z, 0-9, _, 3–30 символов
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const MEM_DECK = new Map(); // очередь игрока в памяти сервера — если в базе ещё нет колонок для неё
 const BTN_TEXTS = [RANDOM_BTN, "🎲 Случайная игра"]; // старая надпись — у тех, кому кнопка пришла раньше
@@ -140,8 +140,10 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
     return (await store.listGames()).filter((g) => g.access === "public").map((g) => ({ key: "m:" + g.id, id: g.id, title: g.title, slug: gameSlug(g) }));
   }
   async function sendGame(chatId, g) {
-    const bot = await botUser(), text = `🎲 <b>${esc(g.title)}</b>\n<a href="https://t.me/${bot}?startapp=${g.slug}">t.me/${bot}/${g.slug}</a>`;
-    try { await tgApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: KB() }); return true; } catch { return false; }
+    /* ссылка на именное мини-приложение t.me/<бот>/<короткое_имя>: Telegram показывает под ней большую карточку
+       с названием, картинкой и кнопкой LAUNCH (их задают в BotFather → /newapp, короткое имя = gameSlug) */
+    const bot = await botUser(), url = `https://t.me/${bot}/${g.slug}`, text = `🎲 <b>${esc(g.title)}</b>\n<a href="${url}">t.me/${bot}/${g.slug}</a>`;
+    try { await tgApi("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", link_preview_options: { url, prefer_large_media: true }, reply_markup: KB() }); return true; } catch { return false; }
   }
   async function randomGame(chatId, uid, site) {
     const all = await pool(), byKey = new Map(all.map((g) => [g.key, g]));
