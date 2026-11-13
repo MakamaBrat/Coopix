@@ -124,6 +124,8 @@ export function createBot({ store, botToken, tgApi, notify, log, weight }) {
       let u = req.body;
       if (typeof u === "string") { try { u = JSON.parse(u); } catch { return ok; } }
       if (!u || typeof u !== "object") return ok;
+      const from = u.message?.from;
+      if (from?.id && !from.is_bot && u.message.chat?.type === "private") { try { await store.botSeen(from); } catch { /* таблицы ещё нет — не мешаем боту */ } }
       if (u.pre_checkout_query) await preCheckout(u.pre_checkout_query);
       else if (u.message?.successful_payment) await paid(u.message);
       else if (u.message?.text) { try { await message(u.message); } catch { /* ответ боту не должен ронять вебхук */ } }

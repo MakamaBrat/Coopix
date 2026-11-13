@@ -86,3 +86,11 @@ test("случайная игра: все мини-игры «телевизор
   for (const g of ["stickfight", "gravity", "unik", "metro"]) assert.ok(widgetHtml(readFileSync(new URL(`../games/${g}/tv.html`, import.meta.url), "utf8")), g);
   assert.equal(widgetHtml("<script>" + "x".repeat(40000) + "</script>"), null);
 });
+test("бот запоминает ник и id каждого, кто ему написал (только личка)", async () => {
+  const w = await world();
+  await w.hook({ message: { chat: { id: 77, type: "private" }, from: { id: 77, username: "vasya", first_name: "Вася" }, text: "/start" } });
+  await w.hook({ message: { chat: { id: 77, type: "private" }, from: { id: 77, username: "vasya2", first_name: "Вася" }, text: "привет" } });
+  await w.hook({ message: { chat: { id: -1, type: "group" }, from: { id: 78, username: "petya" }, text: "/start" } });
+  assert.deepEqual(w.store.botUsers.get(77), { tg_id: 77, username: "vasya2", first_name: "Вася", messages: 2 });
+  assert.equal(w.store.botUsers.has(78), false);
+});

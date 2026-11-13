@@ -130,6 +130,8 @@ export function supabaseStore(url, serviceKey) {
       if (error) { if (error.code === "23505") return null; throw new Error(error.message); }
       return data;
     },
+    /** кто написал боту: ник, имя, язык, счётчик сообщений, первый и последний раз */
+    async botSeen(u) { ok(await db.rpc("bot_seen", { p_id: u.id, p_username: String(u.username ?? "").slice(0, 64), p_first: String(u.first_name ?? "").slice(0, 128), p_last: String(u.last_name ?? "").slice(0, 128), p_lang: String(u.language_code ?? "").slice(0, 16) })); },
     async ownedGames(uid) { return (ok(await db.from("purchases").select("item_id").eq("user_id", uid).eq("kind", "game").eq("status", "paid")) ?? []).map((r) => r.item_id); },
     async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
     async gameCover(id) { return ok(await db.from("games").select("cover_img,bg_img,shot_img,item_img").eq("id", id).maybeSingle()); },

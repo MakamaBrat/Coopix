@@ -68,6 +68,8 @@ export function memStore() {
     thanks: [],
     purchases: [],
     async addPurchase(row) { if (this.purchases.some((t) => t.charge_id === row.charge_id)) return null; const t = { id: crypto.randomUUID(), status: "paid", ...row }; this.purchases.push(t); return { id: t.id }; },
+    botUsers: new Map(),
+    async botSeen(u) { const p = this.botUsers.get(u.id); this.botUsers.set(u.id, { tg_id: u.id, username: u.username ?? "", first_name: u.first_name ?? "", messages: (p?.messages ?? 0) + 1 }); },
     async ownedGames(uid) { return this.purchases.filter((p) => p.user_id === uid && p.kind === "game" && p.status === "paid").map((p) => p.item_id); },
     async addThanks(row) { if (this.thanks.some((t) => t.charge_id === row.charge_id)) return null; const t = { id: crypto.randomUUID(), ...row, created_at: new Date().toISOString() }; this.thanks.push(t); return { id: t.id }; },
     async thanksStats(ids) { return ids.map((g) => { const t = this.thanks.filter((x) => x.game_id === g); return { game_id: g, stars: t.reduce((a, x) => a + x.stars, 0), backers: new Set(t.map((x) => x.from_id)).size }; }).filter((x) => x.stars); },
