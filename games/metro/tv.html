@@ -1,0 +1,74 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Metro Runner — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#3aa0ff;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
+<script>
+/* Metro Runner — микро-тест для «телевизора» Coopix: бег по трём путям, поезда, барьеры и монеты.
+   ПК: ←/→ — смена пути, ↑/пробел — прыжок, ↓ — подкат. Телефон: смахивания. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1;
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);S=Math.min(W/320,H/200)};
+addEventListener("resize",fit);fit();
+/* мир 320×200: горизонт y=70, дорога сходится к точке (160,70); z — расстояние (0 — у игрока, 1 — горизонт) */
+const HY=70,BY=200;let st="menu",lane=1,lx=1,jy=0,vy=0,slide=0,O=[],spd=0,dist=0,coins=0,best=0,spawn=0,hit=0;
+try{best=+localStorage.getItem("mr.tv")||0}catch(e){}
+const P=z=>{const k=1/(1+z*9);return{y:HY+(BY-HY)*k,s:k}};const LX=(l,s)=>160+(l-1)*96*s;
+function reset(){O=[];spd=.006;dist=0;coins=0;spawn=0;lane=lx=1;jy=vy=slide=hit=0;st="play"}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function step(){if(st!=="play")return;
+  spd=Math.min(.016,spd+.0000035);dist+=spd*60;lx+=(lane-lx)*.3;
+  if(jy>0||vy){vy-=.55;jy+=vy;if(jy<=0){jy=0;vy=0}}slide>0&&slide--;hit&&hit--;
+  if((spawn-=spd)<=0){spawn=.28+Math.random()*.22;const l=Math.random()*3|0,r=Math.random();
+    if(r<.35)O.push({z:1,l,t:"train"});else if(r<.6)O.push({z:1,l,t:"low"});else if(r<.75)O.push({z:1,l,t:"high"});
+    const cl=(l+1+(Math.random()*2|0))%3;for(let i=0;i<4;i++)O.push({z:1+i*.06,l:cl,t:"coin"})}
+  for(const o of O){o.z-=spd*(o.t==="train"?1.6:1);
+    if(o.z<.03&&o.z>-.03&&!o.done&&Math.abs(o.l-lx)<.5){
+      if(o.t==="coin"){o.done=1;coins++;beep(1200,.06,"square",.04)}
+      else{const ok=o.t==="low"?jy>14:o.t==="high"?slide>0:jy>40;if(!ok){o.done=1;crash();return}}}}
+  O=O.filter(o=>o.z>-.1&&!(o.t==="coin"&&o.done))}
+function crash(){st="over";hit=20;beep(90,.35,"sawtooth",.08);const s=(dist|0)+coins*10;if(s>best){best=s;try{localStorage.setItem("mr.tv",best)}catch(e){}}}
+/* пиксельные надписи: маленький холст 320×200 без сглаживания */
+const Lc=document.createElement("canvas");Lc.width=320;Lc.height=200;const lc=Lc.getContext("2d");
+function crisp(){const d=lc.getImageData(0,0,320,200),p=d.data;for(let i=3;i<p.length;i+=4){if(p[i])p[i]=p[i]<100?0:255}lc.putImageData(d,0,0)}
+function pt(t,px,py,size,fill,al,stroke){lc.font=(size>=14?"bold ":"")+(size<14?size+1:size)+"px monospace";lc.textAlign=al||"center";
+  if(stroke){lc.lineWidth=Math.max(2,size/4);lc.strokeStyle=stroke;lc.lineJoin="round";lc.strokeText(t,px|0,py|0)}lc.fillStyle=fill;lc.fillText(t,px|0,py|0)}
+function quad(l,z0,z1,w,c){const a=P(z0),b=P(z1);x.fillStyle=c;x.beginPath();x.moveTo(LX(l,a.s)-w*a.s,a.y);x.lineTo(LX(l,a.s)+w*a.s,a.y);x.lineTo(LX(l,b.s)+w*b.s,b.y);x.lineTo(LX(l,b.s)-w*b.s,b.y);x.fill()}
+function draw(){lc.clearRect(0,0,320,200);x.save();x.fillStyle="#3aa0ff";x.fillRect(0,0,W,H);
+  x.translate((W-320*S)/2+(hit?(Math.random()-.5)*hit/2:0),(H-200*S)/2);x.scale(S,S);
+  let g=x.createLinearGradient(0,0,0,HY);g.addColorStop(0,"#2f8cf0");g.addColorStop(1,"#a8dcff");x.fillStyle=g;x.fillRect(0,0,320,HY);
+  x.fillStyle="#fff";for(const [cx,cy] of [[60,22],[230,30]]){x.beginPath();x.arc(cx,cy,9,0,7);x.arc(cx+11,cy-4,11,0,7);x.arc(cx+23,cy,8,0,7);x.fill()}
+  x.fillStyle="#7fb6e8";for(let i=0;i<8;i++)x.fillRect(100+i*15,HY-10-(i*37%13),12,10+(i*37%13));
+  x.fillStyle="#f2d39a";x.fillRect(0,HY,320,130);x.fillStyle="#6a4a4f";x.beginPath();x.moveTo(150,HY);x.lineTo(170,HY);x.lineTo(330,200);x.lineTo(-10,200);x.fill();
+  const off=(dist*.35)%1;for(let i=0;i<14;i++){const z=(i-off)/13,a=P(z),w=150*a.s;x.fillStyle="#4d3437";x.fillRect(160-w,a.y,w*2,Math.max(1,3*a.s))}
+  for(let l=0;l<3;l++)for(const d of [-26,26]){x.strokeStyle="#cfe3ff";x.lineWidth=1.6;x.beginPath();const a=P(0),b=P(1);x.moveTo(LX(l,a.s)+d*a.s,a.y);x.lineTo(LX(l,b.s)+d*b.s,b.y);x.stroke()}
+  for(const o of [...O].sort((a,b)=>b.z-a.z)){if(o.z>1||o.z<-.08)continue;const a=P(Math.max(0,o.z)),s=a.s,cx=LX(o.l,s);
+    if(o.t==="coin"){x.fillStyle="#ffc928";x.beginPath();x.ellipse(cx,a.y-30*s,7*s,9*s,0,0,7);x.fill();x.fillStyle="#fff3a0";x.fillRect(cx-1.5*s,a.y-35*s,3*s,10*s)}
+    else if(o.t==="train"){const w=40*s,h=78*s;x.fillStyle="#d8dde6";x.fillRect(cx-w,a.y-h,w*2,h);x.fillStyle="#e8414a";x.fillRect(cx-w,a.y-h*.42,w*2,h*.12);
+      x.fillStyle="#24305e";x.fillRect(cx-w*.8,a.y-h*.9,w*.75,h*.32);x.fillRect(cx+w*.05,a.y-h*.9,w*.75,h*.32);x.fillStyle="#ffd84a";x.fillRect(cx-w*.75,a.y-h*.22,w*.3,h*.07);x.fillRect(cx+w*.45,a.y-h*.22,w*.3,h*.07)}
+    else{const hi=o.t==="high",y0=hi?a.y-62*s:a.y-24*s,w=36*s;x.fillStyle="#2b5bd7";x.fillRect(cx-w,y0,4*s,hi?62*s:24*s);x.fillRect(cx+w-4*s,y0,4*s,hi?62*s:24*s);
+      for(let i=0;i<6;i++){x.fillStyle=i%2?"#fff":"#e8414a";x.fillRect(cx-w+i*w/3,y0,w/3,10*s)}}}
+  if(st!=="menu"){const px=LX(lx,1),py=196-jy,sl=slide>0;x.fillStyle="rgba(0,0,0,.25)";x.beginPath();x.ellipse(px,198,16,4,0,0,7);x.fill();
+    const t=Date.now()/90,lg=sl?0:Math.sin(t)*6,bh=sl?22:40;
+    x.fillStyle="#2a5fd0";x.fillRect(px-9,py-14,7,14+lg*.5);x.fillRect(px+2,py-14,7,14-lg*.5);
+    x.fillStyle="#f3f5fa";x.fillRect(px-13,py-14-bh*.7,26,bh*.7);x.fillStyle="#e8414a";x.fillRect(px-7,py-10-bh*.6,14,bh*.4);
+    x.fillStyle="#f6d6b4";x.beginPath();x.arc(px,py-18-bh*.7,9,0,7);x.fill();x.fillStyle="#e8414a";x.beginPath();x.arc(px,py-21-bh*.7,9.5,Math.PI,0);x.fill();
+    pt("МОНЕТЫ "+coins,8,13,11,"#fff","left","#1a3d7a");pt((dist|0)+" М",312,13,11,"#fff","right","#1a3d7a")}
+  if(st!=="play"){x.fillStyle="rgba(10,30,70,.55)";x.fillRect(0,0,320,200);
+    pt("METRO RUNNER",160,64,28,"#ffd84a","center","#a8320c");
+    pt(st==="over"?"ВРЕЗАЛСЯ · "+((dist|0)+coins*10)+" ОЧК. · РЕКОРД "+best:"МИНИ-ТЕСТ · БЕГИ ПО РЕЛЬСАМ",160,88,11,"#fff","center","#1a3d7a");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ИГРАТЬ",160,118,11,"#fff","center","#1a3d7a");
+    pt(TOUCH?"СМАХИВАЙ: ←→ ПУТЬ · ↑ ПРЫЖОК · ↓ ПОДКАТ":"←→ ПУТЬ · ↑ ПРЫЖОК · ↓ ПОДКАТ",160,142,9,"#e6f2ff","center","#1a3d7a");
+    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ» / «СКАЧАТЬ»",160,156,9,"#e6f2ff","center","#1a3d7a")}
+  x.restore();x.save();x.imageSmoothingEnabled=false;crisp();x.drawImage(Lc,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore()}
+/* управление */
+let TOUCH=matchMedia("(pointer:coarse)").matches;
+const act=k=>{if(st!=="play"){reset();return}if(k==="l"&&lane>0){lane--;beep(500,.04,"triangle",.04)}else if(k==="r"&&lane<2){lane++;beep(500,.04,"triangle",.04)}
+  else if(k==="j"&&!jy){vy=8.2;jy=.1;slide=0;beep(420,.08,"triangle",.05)}else if(k==="d"){slide=34;vy=Math.min(vy,-6)}};
+let sx=0,sy=0,sw=0;c.addEventListener("pointerdown",e=>{e.preventDefault();if(e.pointerType==="touch")TOUCH=true;sx=e.clientX;sy=e.clientY;sw=1;if(st!=="play")act()});
+c.addEventListener("pointermove",e=>{if(!sw||st!=="play")return;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;sw=0;
+  act(Math.abs(dx)>Math.abs(dy)?(dx<0?"l":"r"):(dy<0?"j":"d"))});
+c.addEventListener("pointerup",()=>sw=0);
+const KM={ArrowLeft:"l",KeyA:"l",ArrowRight:"r",KeyD:"r",ArrowUp:"j",KeyW:"j",Space:"j",ArrowDown:"d",KeyS:"d",Enter:"j"};
+addEventListener("keydown",e=>{const k=KM[e.code];if(!k)return;e.preventDefault();if(!e.repeat)act(k)});
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+})();
+</script></body></html>
