@@ -60,6 +60,9 @@ const toUser = (u, role) => ({
   reason: u.ban_reason || "",
   bannedAt: u.banned_at ? Date.parse(u.banned_at) : null,
   role,
+  market: u.via_market !== false,                              // заходил через маркет-бота (у старых игроков всегда да)
+  game: !!u.via_game,                                          // заходил хотя бы через одного игрового бота
+  bots: (u.user_bots ?? []).map((x) => x.bot_id).filter(Boolean), // через каких именно игровых ботов
 });
 
 /**
@@ -67,7 +70,7 @@ const toUser = (u, role) => ({
  * verify: (initData, botToken, maxAge) -> { ok, userId, user }
  * notify: (chatId, text) -> void
  */
-export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null, tgDoc = null, tgPhoto = null, touchTtl = 30_000 }) {
+export function createCore({ store, verify, botToken, tgApiFor = null, adminIds = [], maxAgeSec = 86400, notify = () => {}, tgApi = null, tgFile = null, tgDoc = null, tgPhoto = null, touchTtl = 30_000 }) {
   const json = (status, body) => ({ status, body });
 
   /* «Кто это»: touch_user пишет в базу (регистрация, последняя активность) и отдаёт бан и роль.
@@ -76,23 +79,41 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
      выданные в другом экземпляре функции начинают действовать не позже чем через touchTtl. */
   const seen = new Map();
   async function touch(u, force) {
-    const c = seen.get(u.id), now = Date.now();
+    const key = u.id + ":" + (u.bot || "market"); // отдельно по ботам: зашёл через второго бота — отметка ставится сразу
+    const c = seen.get(key), now = Date.now();
     if (!force && touchTtl > 0 && c && now - c.at < touchTtl) return c.t;
     const t = (await store.touchUser(u)) ?? {};
     // первый заход = регистрация: ключевое событие для журнала админа (на график регистрации идут из users)
     if (t.created) await hub.log(u.id, "register", null, { k: 1 }, 0).catch((e) => console.error("[event]", e.message));
     if (seen.size > 5000) seen.clear();
-    if (touchTtl > 0) seen.set(u.id, { t, at: now });
+    if (touchTtl > 0) seen.set(key, { t, at: now });
     return t;
   }
-  const forget = (id) => seen.delete(Number(id));
+  /* Игровые боты (у каждой игры свой): токены лежат в таблице game_bots, их добавляет главный админ.
+     Список держим минуту в памяти экземпляра функции; правки в админке сбрасывают кэш сразу. Нет таблицы (SQL не выполнен) — пустой список. */
+  let botCache = { at: 0, list: [] };
+  async function gameBots(force) {
+    const now = Date.now();
+    if (!force && now - botCache.at < 60_000) return botCache.list;
+    let list = [];
+    try { list = (await store.listBots?.()) ?? []; } catch (e) { console.error("[bots]", e.message); }
+    botCache = { at: now, list };
+    return list;
+  }
+  const BOT_ID = /^[A-Za-z0-9_]{3,64}$/, BOT_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,64}$/;
+  const mask = (t) => "…" + String(t).slice(-4);
+  const forget = (id) => { seen.delete(Number(id) + ":market"); seen.delete(Number(id) + ":game"); };
   const hub = createHub({ store, botToken, notify, adminIds, tgApi, tgFile, tgDoc });
   const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), tgPhoto, notify, log: hub.log, weight: WEIGHTS.thank });
 
   async function handle(req) {
     // вебхук Telegram (оплата звёздами): без initData, проверяется секретным заголовком
     if (req.route === "bot") return req.method === "POST" ? bot.handle(req) : json(405, { error: "method_not_allowed" });
-    const v = verify(req.headers?.["x-tg-init"], botToken, maxAgeSec);
+    // Мини-приложение открывают через маркет-бота (BOT_TOKEN) и через игровых ботов (у каждой игры свой, токены в game_bots).
+    // Telegram подписывает initData токеном того бота, через которого открыли, — проверяем по очереди и запоминаем, через какого.
+    const initData = req.headers?.["x-tg-init"];
+    let v = verify(initData, botToken, maxAgeSec), via = "market";
+    if (!v.ok && initData) for (const gb of await gameBots()) { const g = verify(initData, gb.token, maxAgeSec); if (g.ok) { v = g; via = gb.id; break; } }
     if (!v.ok) return json(401, { error: "unauthorized" });
 
     const uid = Number(v.userId);
@@ -102,7 +123,7 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     const route = req.route === "hub" && req.query?.r === "config" ? "config" : req.route;
 
     // Заход: создаём/обновляем игрока (регистрация, «последняя активность»), узнаём бан и роль.
-    const t = await touch({ id: uid, first_name: clip(v.user.first_name, 40), username: clip(v.user.username, 40) }, route === "config" || route === "me" || route === "admin");
+    const t = await touch({ id: uid, first_name: clip(v.user.first_name, 40), username: clip(v.user.username, 40), bot: via }, route === "config" || route === "me" || route === "admin");
     const role = isMain ? "main" : t.moderator ? "moderator" : null;
     const staff = !!role;
     const banned = !!t.banned && !isMain; // главного админа заблокировать нельзя
@@ -344,14 +365,15 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
     // --- пользователи ---
     if (r === "stats") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
-      return json(200, await store.userStats());
+      return json(200, { ...(await store.userStats()), gameBots: (await gameBots()).length });
     }
     if (r === "users") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
       const num = (x, d, lo, hi) => Math.min(hi, Math.max(lo, Number.isFinite(+x) ? Math.trunc(+x) : d));
       const out = await store.listUsers({
         q: String(q.q ?? ""),
-        filter: ["all", "active", "banned"].includes(q.filter) ? q.filter : "all",
+        filter: ["all", "active", "banned", "game"].includes(q.filter) ? q.filter : "all",
+        bot: BOT_ID.test(String(q.bot ?? "")) ? String(q.bot) : "",
         sort: q.sort === "reg" ? "reg" : "seen",
         limit: num(q.limit, 50, 1, 100),
         offset: num(q.offset, 0, 0, 1_000_000),
@@ -391,22 +413,68 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       return json(200, toUser(row, null));
     }
 
+    // --- игровые боты: у каждой игры свой Telegram-бот. Токен виден только серверу, в ответах — последние 4 символа ---
+    if (r === "bots") {
+      if (m === "GET") {
+        const list = await gameBots(true), games = new Map((await store.listGames()).map((g) => [g.id, g.title]));
+        const counts = list.length ? await store.botCounts(list.map((x) => x.id)) : {};
+        return json(200, list.map((x) => ({ id: x.id, title: x.title, game: x.game_id, gameTitle: games.get(x.game_id) ?? "", token: mask(x.token), players: counts[x.id] ?? 0, at: Date.parse(x.created_at) || 0 })));
+      }
+      if (m !== "POST") return json(405, { error: "method_not_allowed" });
+      const b = parseBody(req.body);
+      const token = String(b?.token ?? "").trim();
+      if (!BOT_TOKEN_RE.test(token)) return json(400, { error: "bad_token" });
+      if (token === botToken) return json(400, { error: "market_token" });
+      if (!tgApiFor) return json(503, { error: "payments_off" });
+      let me;
+      try { me = await tgApiFor(token)("getMe", {}); } catch { return json(400, { error: "bad_token" }); } // Telegram не узнал токен
+      if (!me?.username || !BOT_ID.test(me.username)) return json(400, { error: "bad_token" });
+      const game = String(b?.game ?? "");
+      if (game && !(await store.listGames()).some((g) => g.id === game)) return json(400, { error: "bad_game" });
+      if ((await gameBots(true)).some((x) => x.id === me.username || x.token === token)) return json(409, { error: "bot_exists" });
+      const row = await store.addBot({ id: me.username, token, game_id: game || null, title: clip(me.first_name, 64) });
+      await gameBots(true);
+      return json(201, { id: row.id, title: row.title, game: row.game_id, token: mask(row.token), players: 0 });
+    }
+    if (r === "bot") {
+      const id = String(q.id ?? "");
+      if (!BOT_ID.test(id)) return json(404, { error: "not_found" });
+      if (m === "DELETE") { await store.deleteBot(id); await gameBots(true); return json(200, { deleted: true, id }); }
+      if (m !== "PATCH") return json(405, { error: "method_not_allowed" });
+      const b = parseBody(req.body), game = String(b?.game ?? "");
+      if (game && !(await store.listGames()).some((g) => g.id === game)) return json(400, { error: "bad_game" });
+      const row = await store.updateBot(id, { game_id: game || null });
+      await gameBots(true);
+      if (!row) return json(404, { error: "not_found" });
+      return json(200, { id: row.id, game: row.game_id });
+    }
+
     // --- рассылка от бота всем игрокам (кроме забаненных): пачками, админка вызывает повторно с курсором after ---
     if (r === "broadcast") {
       if (m !== "POST") return json(405, { error: "method_not_allowed" });
-      if (!tgApi) return json(503, { error: "payments_off" });
       const b = parseBody(req.body);
+      // bot: "market" — от маркет-бота его игрокам, иначе username игрового бота — от него тем, кто заходил через него.
+      // Бот может написать только тем, кто заходил через него: игроки другого бота ему «чужие».
+      const bot = !b?.bot || b.bot === "market" ? "market" : String(b.bot);
+      let api = tgApi;
+      if (bot !== "market") {
+        const gb = BOT_ID.test(bot) && (await gameBots(true)).find((x) => x.id === bot);
+        if (!gb) return json(404, { error: "bot_not_found" });
+        api = tgApiFor ? tgApiFor(gb.token) : null;
+      }
+      if (!api) return json(503, { error: "payments_off" });
       const text = String(b?.text ?? "").trim().slice(0, 2000);
       if (text.length < 2) return json(400, { error: "bad_text" });
       const after = Number.isSafeInteger(Number(b.after)) ? Number(b.after) : 0;
-      const ids = await store.userIdsAfter(after, BROADCAST_BATCH);
+      const ids = await store.userIdsAfter(after, BROADCAST_BATCH, bot);
       let sent = 0, failed = 0;
       for (const id of ids) {
-        try { await tgApi("sendMessage", { chat_id: id, text }); sent++; } catch { failed++; } // не открывал бота / заблокировал его
+        try { await api("sendMessage", { chat_id: id, text }); sent++; } catch { failed++; } // не открывал бота / заблокировал его
         await new Promise((res) => setTimeout(res, BROADCAST_GAP));                          // ~25 сообщений в секунду: лимит Telegram 30
       }
       const s = after === 0 ? await store.userStats() : null;
-      return json(200, { sent, failed, next: ids.length === BROADCAST_BATCH ? ids[ids.length - 1] : null, total: s ? s.total - s.banned : undefined });
+      const total = !s ? undefined : bot === "market" ? s.market : (await store.botCounts([bot]))[bot];
+      return json(200, { sent, failed, bot, next: ids.length === BROADCAST_BATCH ? ids[ids.length - 1] : null, total });
     }
 
     // --- сайт: ссылки «Канал» и «Чатик» на главной, общий выключатель скачивания ---

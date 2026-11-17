@@ -23,12 +23,14 @@ export function getCore() {
   };
 
   // вызов Bot API: результат или ошибка с описанием Telegram
-  const tgApi = async (method, params) => {
-    const r = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(params) });
+  const apiFor = (token) => async (method, params) => {
+    const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(params) });
     const j = await r.json().catch(() => ({}));
     if (!j.ok) throw new Error(j.description || "telegram " + r.status);
     return j.result;
   };
+  const tgApi = apiFor(botToken);
+  // игровые боты (у каждой игры свой): токены в таблице game_bots, Bot API для них строится по токену (рассылка, проверка getMe)
 
   // файл с серверов Telegram (фото профиля): путь из getFile -> Buffer
   const tgFile = async (path) => {
@@ -64,6 +66,7 @@ export function getCore() {
     store: supabaseStore(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY),
     verify: verifyTelegramInitData,
     botToken,
+    tgApiFor: apiFor,
     adminIds: process.env.ADMIN_IDS.split(",").map((s) => Number(s.trim())).filter(Number.isSafeInteger),
     maxAgeSec: Number(process.env.INITDATA_MAX_AGE) || 86400,
     notify,

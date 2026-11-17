@@ -161,7 +161,7 @@ const AVC = ["#a56bff", "#ff5ec4", "#4dd2ff", "#5dff8a", "#ffb23f", "#ff5e7a"];
 const ERR = {
   banned: "Аккаунт заблокирован", forbidden: "Недостаточно прав для этого действия", bad_address: "Неверный адрес: нужен TRON (TRC20), начинается с T, 34 символа",
   bad_news: "Проверьте новость: заголовок обязателен, ссылка только https://", cannot_ban_self: "Нельзя заблокировать самого себя",
-  cannot_ban_staff: "Нельзя заблокировать админа или модератора", cannot_delete_self: "Нельзя удалить самого себя", cannot_delete_staff: "Нельзя удалить админа или модератора (сначала уберите его из команды)", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
+  cannot_ban_staff: "Нельзя заблокировать админа или модератора", cannot_delete_self: "Нельзя удалить самого себя", bad_token: "Токен не подошёл: проверьте, что скопировали его из @BotFather целиком", bot_exists: "Этот бот уже добавлен", market_token: "Это токен маркет-бота, он уже подключён", bad_game: "Такой игры нет в каталоге", bot_not_found: "Бот не найден — обновите страницу", cannot_delete_staff: "Нельзя удалить админа или модератора (сначала уберите его из команды)", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
   already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
   bad_text: "Слишком короткое сообщение", bad_file: "Файл игры: нужен HTML не больше 1,5 МБ",
@@ -218,6 +218,7 @@ const TABS = [
   { id: "games", label: "Игры", main: true, render: viewGames },
   { id: "site", label: "Сайт", main: true, render: viewSite },
   { id: "cast", label: "Рассылка", main: true, render: viewCast },
+  { id: "bots", label: "Боты", main: true, render: viewBots },
   { id: "news", label: "Новости", main: true, render: viewNews },
   { id: "wallet", label: "Помощь · донат", main: true, render: viewWallet },
   { id: "stars", label: "Звёзды", main: true, render: viewStars },
@@ -249,6 +250,7 @@ async function viewUsers(root) {
       <button class="chip" type="button" data-k="all" aria-pressed="true">Все</button>
       <button class="chip" type="button" data-k="active" aria-pressed="false">Активные за 24 ч</button>
       <button class="chip" type="button" data-k="banned" aria-pressed="false">Забаненные</button>
+      <button class="chip" type="button" data-k="game" aria-pressed="false">Через игровых ботов</button>
     </div>
     <div id="ul"></div>
     <p class="hint">В списке игроки, которые уже заходили в приложение после подключения панели. Дата регистрации = первый заход.</p>`;
@@ -264,13 +266,14 @@ async function viewUsers(root) {
   const rowHTML = u => {
     const c = AVC[Number(u.id) % AVC.length], on = Date.now() - u.seen < 5 * 60e3;
     const role = u.role === "main" ? `<span class="badge" style="--c:#ffd23f">Гл. админ</span> ` : u.role === "moderator" ? `<span class="badge" style="--c:#4dd2ff">Модератор</span> ` : "";
+    const via = (u.bots || []).map(b => `<span class="badge" style="--c:#4dd2ff" title="Заходил через игрового бота">@${esc(b)}</span> `).join("") + (u.game && !u.market ? "" : "");
     const st = u.banned ? `<span class="badge" style="--c:var(--bad)">Забанен</span>${u.reason ? `<span class="reason">${esc(u.reason)}</span>` : ""}` : `<span class="badge" style="--c:var(--ok)">Активен</span>`;
     return `<div class="ur${u.banned ? " ban" : ""}" data-id="${esc(u.id)}">
       <div class="c-u who"><div class="av" style="--c:${c}">${esc((u.name || u.username || "?").trim().charAt(0).toUpperCase() || "?")}</div>
         <div class="t"><b>${esc(u.name || "Без имени")}</b><small>${u.username ? "@" + esc(u.username) + " · " : ""}<button class="cid" type="button" data-copy="${esc(u.id)}" title="Скопировать id">id ${esc(u.id)}</button></small></div></div>
       <div class="c-r" data-l="Регистрация">${fmt(u.reg)}</div>
       <div class="c-s" data-l="Активность" title="${fmt(u.seen)}"><span class="dot${on ? " on" : ""}"></span>${on ? "онлайн" : ago(u.seen)}</div>
-      <div class="c-t" data-l="Статус">${role}${st}</div>
+      <div class="c-t" data-l="Статус">${role}${via}${st}</div>
       <div class="c-a">${u.role ? "" : (u.banned ? `<button class="btn sm ok" data-act="unban" type="button">Разбанить</button>` : `<button class="btn sm bad" data-act="ban" type="button">Забанить</button>`) + ` <button class="btn sm ghost" data-act="del" type="button" title="Стереть игрока из базы">Удалить</button>`}</div></div>`;
   };
 
@@ -547,26 +550,41 @@ async function viewCast(root) {
     <div class="panel"><span class="lbl" style="margin-top:0">Текст сообщения (придёт от бота каждому игроку)</span>
       <textarea class="in" id="ct" maxlength="2000" style="min-height:140px" placeholder="Например: В маркете новая игра! Заходите поиграть 🎮"></textarea>
       <div class="hint" id="cn">0 / 2000</div><div class="err" id="ce"></div>
+      <span class="lbl">От какого бота</span>
+      <div class="chips" id="cb"><button class="chip" type="button" data-b="market" aria-pressed="true">Маркет-бот<span id="cbm"></span></button></div>
+      <div class="hint" id="cbh"></div>
       <div class="row" style="margin-top:12px"><button class="btn" id="cs" type="button">Отправить всем</button></div>
       <div id="cp" class="hint" style="margin-top:10px"></div></div>
-    <p class="hint">Сообщение получат все, кто заходил в маркет, кроме забаненных. Telegram доставит его только тем, кто хоть раз нажимал «Старт» у бота и не заблокировал его, остальные попадут в «не доставлено». Отправка идёт пачками (около 25 в секунду), не закрывайте вкладку до конца.</p>`;
+    <p class="hint">Каждый бот пишет только своим игрокам: маркет-бот — тем, кто открывал маркет через него, игровой бот — тем, кто заходил через этого бота (ссылка на его игру). Игровые боты добавляются во вкладке «Боты». Забаненным не приходит. Telegram доставит сообщение только тем, кто не запретил боту писать, остальные попадут в «не доставлено». Отправка идёт пачками (около 25 в секунду), не закрывайте вкладку до конца.</p>`;
   const ta = $("#ct"); ta.oninput = () => { $("#cn").textContent = ta.value.length + " / 2000"; };
+  let bot = "market";
+  const botName = b => b === "market" ? "маркет-бота" : "@" + b;
+  const pick = (b) => { bot = b; root.querySelectorAll("#cb .chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.b === b));
+    $("#cs").textContent = "Отправить от " + botName(b); };
+  $("#cb").onclick = e => { const c = e.target.closest("[data-b]"); if (c) pick(c.dataset.b); };
+  api("/admin?r=stats").then(s => { if (s.market != null) $("#cbm").textContent = " · " + s.market; }).catch(() => {});
+  api("/admin?r=bots").then(list => {
+    $("#cb").insertAdjacentHTML("beforeend", list.map(b => `<button class="chip" type="button" data-b="${esc(b.id)}" aria-pressed="false">@${esc(b.id)}${b.gameTitle ? " · " + esc(b.gameTitle) : ""} · ${b.players}</button>`).join(""));
+    $("#cbh").textContent = list.length ? "" : "Игровых ботов пока нет: добавьте их во вкладке «Боты».";
+    pick(bot);
+  }).catch(() => {});
+  pick("market");
   let busy = false;
   $("#cs").onclick = () => {
     const text = ta.value.trim(); $("#ce").textContent = "";
     if (text.length < 2) { $("#ce").textContent = "Напишите текст сообщения"; return; }
     if (busy) return;
-    modal("Отправить рассылку?", `<p style="margin:12px 0 6px">Это сообщение получат все игроки. Отменить отправку нельзя.</p><div class="addr" style="font-size:16px;white-space:pre-wrap">${esc(text)}</div>`,
+    modal("Отправить рассылку?", `<p style="margin:12px 0 6px">Сообщение отправит <b>${bot === "market" ? "маркет-бот" : "@" + esc(bot)}</b> всем своим игрокам. Отменить отправку нельзя.</p><div class="addr" style="font-size:16px;white-space:pre-wrap">${esc(text)}</div>`,
       [{ t: "Отмена", cls: "ghost" }, { t: "Да, отправить", fn: () => { run(text); } }]);
   };
   async function run(text) {
     busy = true; $("#cs").disabled = true; ta.disabled = true;
     let after = 0, sent = 0, failed = 0, total = null;
-    const show = (done) => { $("#cp").innerHTML = `${done ? "<b style='color:var(--ok)'>Готово.</b> " : "Отправляем… "}доставлено: <b>${sent}</b> · не доставлено: <b>${failed}</b>${total != null ? ` · всего игроков: <b>${total}</b>` : ""}`; };
+    const show = (done) => { $("#cp").innerHTML = `${done ? "<b style='color:var(--ok)'>Готово.</b> " : "Отправляем… "}доставлено: <b>${sent}</b> · не доставлено: <b>${failed}</b>${total != null ? ` · игроков у ${bot === "market" ? "маркет-бота" : "@" + esc(bot)}: <b>${total}</b>` : ""}`; };
     show(false);
     try {
       for (;;) {
-        const r = await api("/admin?r=broadcast", { method: "POST", body: { text, after } });
+        const r = await api("/admin?r=broadcast", { method: "POST", body: { text, after, bot } });
         sent += r.sent; failed += r.failed; if (r.total != null) total = r.total; show(false);
         if (!r.next) break; after = r.next;
       }
@@ -574,6 +592,46 @@ async function viewCast(root) {
     } catch (e) { $("#ce").textContent = errText(e) + (sent ? ` (успели отправить ${sent})` : ""); }
     busy = false; $("#cs").disabled = false; ta.disabled = false;
   }
+}
+
+/* ===================== БОТЫ: у каждой игры свой Telegram-бот (ссылка сразу в игру) ===================== */
+async function viewBots(root) {
+  let list = [], games = [];
+  const load = async () => { [list, games] = await Promise.all([api("/admin?r=bots"), api("/admin?r=games").catch(() => [])]); draw(); };
+  const opts = sel => `<option value="">— без игры —</option>` + games.map(g => `<option value="${esc(g.id)}"${g.id === sel ? " selected" : ""}>${esc(g.title)}</option>`).join("");
+  const draw = () => {
+    root.innerHTML = `<div class="sec-h"><h2>Игровые боты</h2></div>
+    <div class="panel"><span class="lbl" style="margin-top:0">Добавить бота</span>
+      <input class="in" id="bt" type="password" autocomplete="off" spellcheck="false" placeholder="Токен бота из @BotFather, например 7123456789:AAH…">
+      <span class="lbl">Игра этого бота</span><select class="in" id="bg">${opts("")}</select>
+      <div class="err" id="be"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="ba" type="button">Добавить</button></div>
+      <p class="hint">Сервер сам узнает имя бота у Telegram и сразу начнёт пускать в маркет игроков, пришедших через него. Токен хранится только на сервере, здесь видны его последние 4 символа.</p></div>
+    ${list.length ? list.map(b => `<div class="panel" data-id="${esc(b.id)}" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><b style="font-size:18px">@${esc(b.id)}</b><span class="hint" style="margin:0">токен ${esc(b.token)} · игроков: <b>${b.players}</b></span></div>
+        <span class="lbl">Игра</span><select class="in" data-game>${opts(b.game || "")}</select>
+        <span class="lbl">Ссылка сразу в игру</span><div class="addr" style="font-size:14px">t.me/${esc(b.id)}/<i>имя_mini_app</i>?startapp=${esc(b.game || "игра")}R</div>
+        <div class="row" style="margin-top:10px"><button class="btn sm ghost" data-users type="button">Игроки бота</button><button class="btn sm bad" data-del type="button">Удалить бота</button></div></div>`).join("")
+      : `<div class="empty" style="margin-top:12px">Игровых ботов пока нет</div>`}
+    <p class="hint">Порядок: создайте бота в @BotFather → у бота настройте Mini App с тем же адресом сайта → вставьте токен сюда. Рассылка от бота — во вкладке «Рассылка».</p>`;
+    $("#ba").onclick = add;
+    root.querySelectorAll("[data-id]").forEach(card => {
+      const id = card.dataset.id;
+      card.querySelector("[data-game]").onchange = async e => { try { await api("/admin?r=bot&id=" + encodeURIComponent(id), { method: "PATCH", body: { game: e.target.value } }); toast("Игра бота сохранена"); await load(); } catch (er) { toast(errText(er), true); } };
+      card.querySelector("[data-del]").onclick = () => confirmBox("Удалить бота?", `<b>@${esc(id)}</b> перестанет пускать игроков в маркет, рассылка от него будет недоступна. Сами игроки останутся в базе.`, "Удалить", "bad",
+        async () => { try { await api("/admin?r=bot&id=" + encodeURIComponent(id), { method: "DELETE" }); toast("Бот удалён"); await load(); } catch (er) { toast(errText(er), true); return false; } });
+      card.querySelector("[data-users]").onclick = () => go("users");
+    });
+  };
+  async function add() {
+    const token = $("#bt").value.trim(), game = $("#bg").value; $("#be").textContent = "";
+    if (!token) { $("#be").textContent = "Вставьте токен бота"; return; }
+    $("#ba").disabled = true;
+    try { const b = await api("/admin?r=bots", { method: "POST", body: { token, game } }); toast("Бот @" + b.id + " добавлен"); await load(); }
+    catch (e) { $("#be").textContent = errText(e); }
+    finally { const x = $("#ba"); if (x) x.disabled = false; }
+  }
+  await load();
 }
 
 /* ===================== САЙТ: ссылки «Канал» и «Чатик» на главной ===================== */

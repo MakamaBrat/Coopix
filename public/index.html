@@ -1211,7 +1211,11 @@ body.onhome .ts{flex:1 1 0;min-height:0}
 .ns .nw h4{font-size:17px;line-height:1.3;letter-spacing:0}
 .nw-tag{white-space:nowrap}
 /* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
-.btn,.lbtn,.bigplay,.chip,.tab .ql{white-space:nowrap}
+.lbtn,.bigplay,.chip,.tab .ql,.pf-subr .btn,.thx-go{white-space:nowrap}
+/* кнопки в нижнем ряду окон делят ширину поровну и могут сжиматься (иначе вторая уезжает за край экрана) */
+.sheet .row>.btn{flex:1 1 0;min-width:0;padding-left:8px;padding-right:8px}
+/* длинные кнопки под отзывами: переносятся и растут по высоте, а не вылезают за края */
+.cm-more{height:auto;min-height:44px;padding:8px 14px;font-size:15px;line-height:1.2;text-align:center;white-space:normal}
 .pf-subr .btn{padding:0 8px;font-size:15px}
 .thx-go{font-size:16px;padding:0 10px}
 /* карточка «Новая игра / Своя карточка» у админа: подпись в колонку 240px до кнопки «+» */
@@ -2819,7 +2823,7 @@ function pageHTML(m,kind){
     <div class="thx-ch" id="thxCh" role="radiogroup" aria-label="Сколько звёзд">${THX.map(v=>`<button type="button" role="radio" data-v="${v}" aria-checked="${v===THX_DEF}">⭐ ${v}</button>`).join("")}</div>
     <button class="btn thx-go" id="thxGo" type="button">Спасибо автору · ⭐ ${THX_DEF}</button></div></section>
   <section class="sec"><div class="pgtabs" role="tablist"><button type="button" role="tab" data-t="cm" aria-selected="true">Отзывы <small id="cmN"></small></button><button type="button" role="tab" data-t="md" aria-selected="false">Моды <small id="mdN"></small></button></div>
-  <div class="pgpane" id="tabCm"><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы · фильтры и сортировка</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
+  <div class="pgpane" id="tabCm"><button class="btn ghost cm-more cm-all" id="cmAll" type="button" hidden>Все отзывы и фильтры</button><div id="cmList"></div><button class="btn ghost cm-more" id="cmMore" type="button" hidden></button>
     <div class="wr"><span class="lbl">Написать отзыв</span><div class="spick" id="pk"></div>
       <textarea class="in" id="cmText" maxlength="240" rows="3" placeholder="Что вы думаете об игре?"></textarea>
       <div class="row"><span class="cnt" id="cnt">0/240</span><button class="btn" id="cmPost">Отправить</button></div></div></div>

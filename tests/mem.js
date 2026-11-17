@@ -1,10 +1,15 @@
 import { createCore } from "../api/_lib/core.js";
 import { verifyTelegramInitData } from "../api/_lib/telegramAuth.js";
 import { sign, TOK } from "./helpers.js";
+/* токен игрового бота в тестах: формат как у настоящего (цифры:30+ символов), username = bot */
+export const gameTok = (bot) => "2000000:" + bot.padEnd(34, "_");
+const botOfTok = (t) => (String(t).startsWith("2000000:") ? String(t).slice(8).replace(/_+$/, "") : null);
 
 const now = () => Math.floor(Date.now() / 1000);
 export const HTML = "<html><body><canvas></canvas><script>1</script></body></html>";
 export const init = (id, extra = {}) => sign({ auth_date: now(), user: JSON.stringify({ id, first_name: "U" + id, ...extra }) });
+/** initData, подписанные игровым ботом (как при входе через второго бота) */
+export const initGame = (id, bot = "unik_bot") => sign({ auth_date: now(), user: JSON.stringify({ id, first_name: "U" + id }) }, gameTok(bot));
 
 // in-memory Store с той же семантикой, что SQL-функция (лимит 5 / 24 ч)
 export function memStore() {
@@ -26,18 +31,29 @@ export function memStore() {
     async touchUser(u) {
       const t = new Date().toISOString();
       const created = !users.has(u.id);
-      const r = users.get(u.id) ?? { tg_id: u.id, registered_at: t, last_seen_at: t, banned: false, ban_reason: "", banned_at: null, banned_by: null };
-      Object.assign(r, { first_name: u.first_name, username: u.username, last_seen_at: t });
+      const g = !!u.bot && u.bot !== "market";
+      const r = users.get(u.id) ?? { tg_id: u.id, registered_at: t, last_seen_at: t, banned: false, ban_reason: "", banned_at: null, banned_by: null, via_market: !g, via_game: g };
+      Object.assign(r, { first_name: u.first_name, username: u.username, last_seen_at: t, via_market: r.via_market || !g, via_game: r.via_game || g });
       users.set(u.id, r);
+      if (g && this.bots.has(u.bot)) this.userBots.add(u.id + "|" + u.bot); // как в touch_user: только известный бот
       return { banned: r.banned, ban_reason: r.ban_reason, moderator: mods.has(u.id), created };
     },
-    async listUsers({ q = "", filter = "all", sort = "seen", limit = 50, offset = 0 } = {}) {
-      let a = [...users.values()].filter((u) => (!q || `${u.first_name} ${u.username} ${u.tg_id}`.toLowerCase().includes(q.toLowerCase())) && (filter !== "banned" || u.banned));
+    async listUsers({ q = "", filter = "all", sort = "seen", limit = 50, offset = 0, bot = "" } = {}) {
+      const ub = (id) => [...this.userBots].filter((k) => k.startsWith(id + "|")).map((k) => ({ bot_id: k.split("|")[1] }));
+      let a = [...users.values()].filter((u) => (!q || `${u.first_name} ${u.username} ${u.tg_id}`.toLowerCase().includes(q.toLowerCase())) && (filter !== "banned" || u.banned) && (filter !== "game" || u.via_game)
+        && (!bot || this.userBots.has(u.tg_id + "|" + bot))).map((u) => ({ ...u, user_bots: ub(u.tg_id) }));
       a.sort((x, y) => String(y[sort === "reg" ? "registered_at" : "last_seen_at"]).localeCompare(String(x[sort === "reg" ? "registered_at" : "last_seen_at"])));
       return { rows: a.slice(offset, offset + limit), total: a.length };
     },
-    async userStats() { const a = [...users.values()]; return { total: a.length, banned: a.filter((u) => u.banned).length, active24h: a.length, new7d: a.length }; },
-    async userIdsAfter(after, limit) { return [...users.values()].filter((u) => !u.banned && u.tg_id > after).map((u) => u.tg_id).sort((a, b) => a - b).slice(0, limit); },
+    async userStats() { const a = [...users.values()]; return { total: a.length, banned: a.filter((u) => u.banned).length, active24h: a.length, new7d: a.length, market: a.filter((u) => !u.banned && u.via_market !== false).length, game: a.filter((u) => !u.banned && u.via_game).length }; },
+    async userIdsAfter(after, limit, bot = "market") { return [...users.values()].filter((u) => !u.banned && u.tg_id > after && (bot === "market" ? u.via_market !== false : this.userBots.has(u.tg_id + "|" + bot))).map((u) => u.tg_id).sort((a, b) => a - b).slice(0, limit); },
+    // ---- игровые боты ----
+    bots: new Map(), userBots: new Set(),
+    async listBots() { return [...this.bots.values()].map((b) => ({ ...b })); },
+    async addBot(row) { if (this.bots.has(row.id)) throw new Error("duplicate key"); const b = { title: "", ...row, created_at: new Date().toISOString() }; this.bots.set(row.id, b); return { ...b }; },
+    async updateBot(id, p) { const b = this.bots.get(id); if (!b) return null; Object.assign(b, p); return { ...b }; },
+    async deleteBot(id) { this.bots.delete(id); for (const k of [...this.userBots]) if (k.endsWith("|" + id)) this.userBots.delete(k); },
+    async botCounts(ids) { const o = {}; for (const id of ids) o[id] = [...users.values()].filter((u) => !u.banned && this.userBots.has(u.tg_id + "|" + id)).length; return o; },
     async usersByIds(ids) { return ids.map((i) => users.get(i)).filter(Boolean); },
     async setBan(id, banned, reason, by) {
       const u = users.get(id); if (!u) return null;
@@ -47,6 +63,7 @@ export function memStore() {
     async deleteUser(id) {
       const had = users.delete(id);
       mods.delete(id); this.profiles?.delete(id); this.botUsers?.delete(id);
+      for (const k of [...(this.userBots ?? [])]) if (k.startsWith(id + "|")) this.userBots.delete(k); // user_bots: каскад от users
       for (const g of this.games?.values() ?? []) if (Number(g.author_id) === id) g.author_id = null;
       const keep = (a, k) => a.filter((x) => Number(x[k]) !== id);
       for (let i = rows.length - 1; i >= 0; i--) if (Number(rows[i].author_id) === id) rows.splice(i, 1);
@@ -179,9 +196,15 @@ export function setup(o = {}) {
   // touchTtl: 0 = без кэша «кто это» (тесты меняют бан прямо в store и сразу проверяют); кэш проверяется отдельным тестом
   const tgDoc = async (chat, name, text, caption) => { if (o.docFail) { const e = new Error("Forbidden"); e.code = 403; throw e; } tg.push(["doc", chat, name, text.length, caption]); return {}; };
   const tgPhoto = async (params, jpeg) => { tg.push(["sendPhoto", { ...params, bytes: jpeg.length }]); return {}; };
-  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, tgDoc, tgPhoto, touchTtl: o.touchTtl ?? 0 });
+  // Bot API игровых ботов: по токену «2:<username>» — getMe отдаёт username, сообщения пишутся в gtg с пометкой бота
+  const gtg = [], tgApiFor = (token) => async (method, params) => {
+    const bot = botOfTok(token);
+    if (method === "getMe") { if (!bot) throw new Error("Unauthorized"); return { username: bot, first_name: "Bot " + bot }; }
+    gtg.push([method, params, bot]); return true;
+  };
+  const core = createCore({ store, verify: verifyTelegramInitData, botToken: TOK, tgApiFor, adminIds: [1], notify: (c, t) => sent.push([c, t]), tgApi, tgFile, tgDoc, tgPhoto, touchTtl: o.touchTtl ?? 0 });
   const call = (route, method, hdr, o = {}) => core.handle({ route, method, headers: hdr ? { "x-tg-init": hdr } : {}, ...o });
-  return { store, sent, call, tg };
+  return { store, sent, call, tg, gtg };
 }
 export const body = (o = {}) => ({ title: "Game", desc: "desc", genre: "Arcade", ver: "1.0", contact: "@a", author: "Ann", file: { name: "g.html", text: HTML }, ...o });
 

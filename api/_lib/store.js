@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const COLS = "id,author_id,author,tg,title,genre,description,version,contact,file_name,file_size,status,comment,created_at,updated_at";
-const UCOLS = "tg_id,first_name,username,registered_at,last_seen_at,banned,ban_reason,banned_at,banned_by";
+const UCOLS = "tg_id,first_name,username,registered_at,last_seen_at,banned,ban_reason,banned_at,banned_by,via_market,via_game";
 const PROF_COLS = "tg_id,name,color,photo,xp,medals,stats,synced,post_title,post_text,post_at,updated_at";
 const REV_COLS = "id,game_id,author_id,rating,body,created_at,updated_at";
 const GAME_COLS = "id,title,tags,description,changes,version,author_name,author_id,item,cover,tint,bg,bg_ref,link,access,sort,dl_off,play_kind,price,has_play,has_shot,has_iart,has_file,submission,created_at,updated_at";
@@ -39,11 +39,16 @@ export function supabaseStore(url, serviceKey) {
     // ---------- игроки ----------
     /** Заход игрока: создаёт/обновляет строку, возвращает { banned, ban_reason, moderator }. */
     async touchUser(u) {
-      return ok(await db.rpc("touch_user", { p_id: u.id, p_first_name: u.first_name, p_username: u.username }));
+      // p_bot только для игровых ботов: так маркет продолжает работать, даже если SQL (supabase/game_bot.sql) ещё не выполнен
+      const args = { p_id: u.id, p_first_name: u.first_name, p_username: u.username };
+      if (u.bot && u.bot !== "market") args.p_bot = u.bot;
+      return ok(await db.rpc("touch_user", args));
     },
     /** opts: { q, filter: all|active|banned, sort: seen|reg, limit, offset } -> { rows, total } */
-    async listUsers({ q = "", filter = "all", sort = "seen", limit = 50, offset = 0 } = {}) {
-      let b = db.from("users").select(UCOLS, { count: "exact" });
+    async listUsers({ q = "", filter = "all", sort = "seen", limit = 50, offset = 0, bot = "" } = {}) {
+      // user_bots(bot_id): через каких игровых ботов заходил игрок; bot — только игроки этого бота
+      let b = db.from("users").select(UCOLS + (bot ? ",user_bots!inner(bot_id)" : ",user_bots(bot_id)"), { count: "exact" });
+      if (bot) b = b.eq("user_bots.bot_id", bot);
       const term = String(q).replace(/[,()%*\\:"']/g, " ").trim().slice(0, 40);
       if (term) {
         const like = `%${term}%`;
@@ -52,6 +57,7 @@ export function supabaseStore(url, serviceKey) {
         b = b.or(cond);
       }
       if (filter === "banned") b = b.eq("banned", true);
+      if (filter === "game") b = b.eq("via_game", true);
       if (filter === "active") b = b.gt("last_seen_at", new Date(Date.now() - 86400e3).toISOString());
       b = b.order(sort === "reg" ? "registered_at" : "last_seen_at", { ascending: false })
            .range(offset, offset + limit - 1);
@@ -62,14 +68,33 @@ export function supabaseStore(url, serviceKey) {
     async userStats() {
       const c = async (f) => { const r = await f(db.from("users").select("tg_id", { count: "exact", head: true })); if (r.error) throw new Error(r.error.message); return r.count ?? 0; };
       const day = new Date(Date.now() - 86400e3).toISOString(), week = new Date(Date.now() - 7 * 86400e3).toISOString();
-      const [total, banned, active24h, new7d] = await Promise.all([
+      const [total, banned, active24h, new7d, market, game] = await Promise.all([
         c((q) => q), c((q) => q.eq("banned", true)), c((q) => q.gt("last_seen_at", day)), c((q) => q.gt("registered_at", week)),
+        c((q) => q.eq("banned", false).eq("via_market", true)), c((q) => q.eq("banned", false).eq("via_game", true)), // маркет-бот / все игровые боты
       ]);
-      return { total, banned, active24h, new7d };
+      return { total, banned, active24h, new7d, market, game };
     },
-    /** Рассылка: следующая пачка Telegram id (без забаненных) по возрастанию id после after */
-    async userIdsAfter(after, limit) {
-      return (ok(await db.from("users").select("tg_id").eq("banned", false).gt("tg_id", after).order("tg_id", { ascending: true }).limit(limit)) ?? []).map((r) => Number(r.tg_id));
+    /** Рассылка: следующая пачка Telegram id (без забаненных) по возрастанию id после after; bot: "market" или username игрового бота — только его игроки */
+    async userIdsAfter(after, limit, bot = "market") {
+      let b = bot === "market" ? db.from("users").select("tg_id").eq("via_market", true)
+        : db.from("users").select("tg_id,user_bots!inner(bot_id)").eq("user_bots.bot_id", bot);
+      return (ok(await b.eq("banned", false).gt("tg_id", after).order("tg_id", { ascending: true }).limit(limit)) ?? []).map((r) => Number(r.tg_id));
+    },
+
+    // ---------- игровые боты (токены видит только сервер) ----------
+    async listBots() { return ok(await db.from("game_bots").select("id,token,game_id,title,created_at").order("created_at")) ?? []; },
+    async addBot(row) { return ok(await db.from("game_bots").insert(row).select("id,token,game_id,title,created_at").maybeSingle()); },
+    async updateBot(id, patch) { return ok(await db.from("game_bots").update(patch).eq("id", id).select("id,token,game_id,title,created_at").maybeSingle()); },
+    async deleteBot(id) { ok(await db.from("game_bots").delete().eq("id", id)); },
+    /** сколько незабаненных игроков у каждого бота: { username: n } */
+    async botCounts(ids) {
+      const out = {};
+      await Promise.all(ids.map(async (id) => {
+        const r = await db.from("users").select("tg_id,user_bots!inner(bot_id)", { count: "exact", head: true }).eq("user_bots.bot_id", id).eq("banned", false);
+        if (r.error) throw new Error(r.error.message);
+        out[id] = r.count ?? 0;
+      }));
+      return out;
     },
     async usersByIds(ids) {
       if (!ids.length) return [];
