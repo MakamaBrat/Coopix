@@ -1,13 +1,17 @@
--- Stick Fight: сразу геймплей, меню в паузе. Часть 2 из 2.
--- Части можно выполнять в любом порядке. Игра обновится, только когда выполнены ВСЕ 2; до этого остаётся прежняя версия.
--- Буфер загрузки: части файла игры складываются сюда, а в игру файл попадает только целиком (проверка длины).
+-- Stick Fight: часть 2 из 2 (версия 542159).
+-- Части можно выполнять в любом порядке. Игра обновится, только когда выполнены ВСЕ 2 части этой версии;
+-- до этого в игре остаётся прежний файл. Последняя строка результата скажет «готово» или сколько частей не хватает.
+-- Буфер загрузки: части складываются сюда, в игру файл попадает только целиком.
 create table if not exists public.game_upload (
   game_id text not null, part int not null, total int not null, body text not null,
   primary key (game_id, part)
 );
+alter table public.game_upload add column if not exists ver text not null default '';
 alter table public.game_upload enable row level security;
 revoke all on public.game_upload from anon, authenticated;
-insert into public.game_upload (game_id, part, total, body) values ('stickfight', 2, 2, $cpx$lse if(c.at.ty=='k'&&!c.at.cr&&!c.at.ay&&ch.some(e=>e!==c&&!e.dead&&e.tm!==c.tm&&(e.p[2].x-h.x)*c.f>-4&&(e.p[2].x-h.x)*c.f<42&&Math.abs(e.p[2].y-h.y)<45)){c.at.kn=1;c.at.d=.3;c.lg=.6;}}
+-- части других версий этой игры убираем, чтобы старое и новое не смешалось
+delete from public.game_upload where game_id = 'stickfight' and ver <> '542159';
+insert into public.game_upload (game_id, part, total, ver, body) values ('stickfight', 2, 2, '542159', $cpx$lse if(c.at.ty=='k'&&!c.at.cr&&!c.at.ay&&ch.some(e=>e!==c&&!e.dead&&e.tm!==c.tm&&(e.p[2].x-h.x)*c.f>-4&&(e.p[2].x-h.x)*c.f<42&&Math.abs(e.p[2].y-h.y)<45)){c.at.kn=1;c.at.d=.3;c.lg=.6;}}
     if(c.at&&!c.at.m&&!c.at.h){c.at.m=1;if(!c.gr)p.forEach(q=>{q.px-=c.f*1.3;q.py-=c.at.ay>0?(c.at.ty=='k'?2.6:1.2):0;});}
   }
   if(c.at&&c.at.t<.12&&c.gr&&!c.at.rs)h.px=h.x-c.f*(c.lg||0)*c.k;
@@ -1562,14 +1566,13 @@ uiTxt();
 init();uiStart();requestAnimationFrame(loop);
 </script></body></html>
 $cpx$)
-on conflict (game_id, part) do update set total = excluded.total, body = excluded.body;
+on conflict (game_id, part) do update set total = excluded.total, ver = excluded.ver, body = excluded.body;
 
--- все части на месте и длина сходится → записать файл в игру и очистить буфер
+-- все части этой версии на месте и длина сходится → записать файл в игру и очистить буфер
 update public.games g set file_html = s.html, updated_at = now()
-  from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'stickfight' and total = 2) s
+  from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'stickfight' and ver = '542159') s
  where g.id = 'stickfight' and s.n = 2 and char_length(s.html) = 542159;
 delete from public.game_upload where game_id = 'stickfight' and (select char_length(file_html) from public.games where id = 'stickfight') = 542159;
 
--- итог: «готово», если игра обновлена, иначе сколько частей ещё не хватает
-select case when (select char_length(file_html) from public.games where id = 'stickfight') = 542159 then 'готово: Stick Fight обновлена'
-  else 'загружено частей: ' || (select count(*) from public.game_upload where game_id = 'stickfight' and total = 2) || ' из 2' end as status;
+select case when (select char_length(file_html) from public.games where id = 'stickfight') = 542159 then 'ГОТОВО: Stick Fight обновлена'
+  else 'НЕ ГОТОВО: загружено частей ' || (select count(*) from public.game_upload where game_id = 'stickfight' and ver = '542159') || ' из 2, выполните остальные' end as status;

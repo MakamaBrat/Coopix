@@ -1,13 +1,17 @@
--- UNIX: сразу геймплей, меню в паузе. Часть 5 из 5.
--- Части можно выполнять в любом порядке. Игра обновится, только когда выполнены ВСЕ 5; до этого остаётся прежняя версия.
--- Буфер загрузки: части файла игры складываются сюда, а в игру файл попадает только целиком (проверка длины).
+-- UNIX: часть 5 из 5 (версия 1636949).
+-- Части можно выполнять в любом порядке. Игра обновится, только когда выполнены ВСЕ 5 части этой версии;
+-- до этого в игре остаётся прежний файл. Последняя строка результата скажет «готово» или сколько частей не хватает.
+-- Буфер загрузки: части складываются сюда, в игру файл попадает только целиком.
 create table if not exists public.game_upload (
   game_id text not null, part int not null, total int not null, body text not null,
   primary key (game_id, part)
 );
+alter table public.game_upload add column if not exists ver text not null default '';
 alter table public.game_upload enable row level security;
 revoke all on public.game_upload from anon, authenticated;
-insert into public.game_upload (game_id, part, total, body) values ('unik', 5, 5, $cpx$" 👑" : "") + "</span>" + (coop ? '<span class="tag">Люди</span>' : "") + "</div>";
+-- части других версий этой игры убираем, чтобы старое и новое не смешалось
+delete from public.game_upload where game_id = 'unik' and ver <> '1636949';
+insert into public.game_upload (game_id, part, total, ver, body) values ('unik', 5, 5, '1636949', $cpx$" 👑" : "") + "</span>" + (coop ? '<span class="tag">Люди</span>' : "") + "</div>";
     else if (i < total) h += '<div class="slot bot">' + avatar("", i, 1) + "<span>" + BOTN[i - L.members.length] + "</span>" + (coop ? '<span class="tag t1">Боты</span>' : "") + "</div>";
     else h += '<div class="slot empty"><div class="av" style="background:#ccc">·</div><span>Свободно</span></div>';
   }
@@ -484,14 +488,13 @@ window.addEventListener("beforeunload", () => { if (role === "host") unhost(); }
 </body>
 </html>
 $cpx$)
-on conflict (game_id, part) do update set total = excluded.total, body = excluded.body;
+on conflict (game_id, part) do update set total = excluded.total, ver = excluded.ver, body = excluded.body;
 
--- все части на месте и длина сходится → записать файл в игру и очистить буфер
+-- все части этой версии на месте и длина сходится → записать файл в игру и очистить буфер
 update public.games g set file_html = s.html, updated_at = now()
-  from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'unik' and total = 5) s
+  from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'unik' and ver = '1636949') s
  where g.id = 'unik' and s.n = 5 and char_length(s.html) = 1636949;
 delete from public.game_upload where game_id = 'unik' and (select char_length(file_html) from public.games where id = 'unik') = 1636949;
 
--- итог: «готово», если игра обновлена, иначе сколько частей ещё не хватает
-select case when (select char_length(file_html) from public.games where id = 'unik') = 1636949 then 'готово: UNIX обновлена'
-  else 'загружено частей: ' || (select count(*) from public.game_upload where game_id = 'unik' and total = 5) || ' из 5' end as status;
+select case when (select char_length(file_html) from public.games where id = 'unik') = 1636949 then 'ГОТОВО: UNIX обновлена'
+  else 'НЕ ГОТОВО: загружено частей ' || (select count(*) from public.game_upload where game_id = 'unik' and ver = '1636949') || ' из 5, выполните остальные' end as status;
