@@ -13,14 +13,17 @@ var P=mq("(pointer:coarse)")&&Math.min(screen.width||9999,screen.height||9999)<6
 function land(){var o=screen.orientation;if(o&&typeof o.type==="string")return o.type.indexOf("landscape")===0;if(typeof window.orientation==="number")return Math.abs(window.orientation)===90;return innerWidth>innerHeight*1.2}
 function lock(){if(!P||window.__gm)return;try{var o=screen.orientation;if(o&&o.lock)o.lock("portrait").catch(function(){})}catch(e){}
   try{var w=window.Telegram&&Telegram.WebApp;if(w&&w.lockOrientation&&!land())w.lockOrientation()}catch(e){}}
-function upd(){de.classList.toggle("phone",P);de.classList.toggle("desk",!P&&innerWidth>=900);de.classList.toggle("rotate",P&&land()&&!window.__gm)}
+function upd(){de.classList.toggle("phone",P);de.classList.toggle("desk",!P&&innerWidth>=900);de.classList.toggle("rotate",P&&land()&&!window.__gm);lock()}
+/* маркет на телефоне всегда вертикальный (игры в режиме игры — как угодно). Telegram фиксирует ТЕКУЩУЮ ориентацию,
+   поэтому фиксируем только в вертикали: повернули обратно — фиксируем снова. Вызывается и после загрузки скрипта Telegram (tgInit). */
+window.__lockP=function(){lock()};
 upd();addEventListener("resize",upd);addEventListener("orientationchange",upd);
 if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener("change",upd);
 lock();document.addEventListener("DOMContentLoaded",lock);addEventListener("pointerdown",lock,{once:true,passive:true});
 })();</script>
 <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.tgInit&&tgInit()"></script>
 <script>window.tgInit=function(){try{var w=window.Telegram&&Telegram.WebApp;if(!w||!(w.initData||(w.platform&&w.platform!=="unknown")))return;document.documentElement.classList.add("tg");
-w.ready();w.expand();
+w.ready();w.expand();try{window.__lockP&&window.__lockP()}catch(e){}
 /* «Назад» из игры переживает перезагрузку страницы (Telegram её помнит), но обработчика уже нет — кнопка в шапке «залипает»
    и мини-приложение нельзя закрыть. На старте маркета её всегда прячем: в шапке снова «Закрыть». */
 try{w.BackButton&&w.BackButton.hide()}catch(e){}
@@ -1200,6 +1203,43 @@ html.desk .chc svg text{font-size:13px}html.desk .chc svg text.pt{font-size:12px
 .planet{display:none!important}               /* пиксельная планета за маскотом */
 .notch{display:none}                           /* уголок-стрелка под активной вкладкой */
 body.scan::after{display:none}                 /* ЭЛТ-полоски поверх экрана */
+/* главная: ровно один экран без прокрутки; новости одинаковой высоты, без наложений */
+body.onhome .home{height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot));min-height:0}
+body.onhome .ts{flex:1 1 0;min-height:0}
+.ns{align-items:stretch}.ns-i{display:flex}.ns-i>.nw{flex:1 1 auto;display:flex;border-radius:18px}.ns-i .nw-in{flex:1;min-width:0;border-radius:16px;overflow:hidden}
+.ns .nw p{-webkit-line-clamp:2}
+.ns .nw h4{font-size:17px;line-height:1.3;letter-spacing:0}
+.nw-tag{white-space:nowrap}
+/* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
+.btn,.lbtn,.bigplay,.chip,.tab .ql{white-space:nowrap}
+.pf-subr .btn{padding:0 8px;font-size:15px}
+.thx-go{font-size:16px;padding:0 10px}
+/* карточка «Новая игра / Своя карточка» у админа: подпись в колонку 240px до кнопки «+» */
+.add .hint{top:38px;width:240px;font-size:30px;line-height:34px;white-space:nowrap}
+.add .hint small{white-space:normal;margin-top:8px;font-size:19px;line-height:23px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* график «Активность сообщества» в стиле нового магазина: стеклянная карточка, капсулы, градиенты, без пикселей */
+.chc{border-radius:22px;border:1.5px solid rgba(165,107,255,.38);background:linear-gradient(180deg,rgba(40,24,92,.85),rgba(18,10,44,.92));
+  box-shadow:0 0 24px rgba(124,58,237,.22),inset 0 1px 0 rgba(255,255,255,.06);padding:14px}
+.chc-t{letter-spacing:.04em}
+.chc-t em{border-radius:999px}
+.chc-p{border-radius:999px;padding:4px;background:rgba(10,6,28,.7);border:1px solid rgba(165,107,255,.28);gap:2px}
+.chc-p button{height:30px;border-radius:999px;font-weight:600}
+.chc-p button[aria-pressed=true]{color:#1a0d40;background:linear-gradient(160deg,#d6bcff,#8a52f5);box-shadow:0 0 12px rgba(165,107,255,.45)}
+.chc-f .chip{height:32px;border-width:1.5px;font-size:13px;font-weight:600;padding:0 12px}
+.chc-f .chip[aria-checked=true]{color:#1a0d40;border-color:transparent;background:linear-gradient(160deg,#d6bcff,#8a52f5)}
+.chc .ln{stroke:url(#chLn);stroke-width:3;filter:drop-shadow(0 0 6px rgba(200,110,255,.55))}
+.chc .ar{fill:url(#chAr);fill-opacity:1}
+.chc .ed{fill:#fff;stroke:#ff5ec4;stroke-width:3}
+.chc .bar{fill:url(#chBar)}.chc .bar.hl{fill:#e6d6ff}
+.chc .cn{fill:url(#chCoin)}.chc .cnh{fill:#fff;fill-opacity:.55}
+.chc .gl{stroke:rgba(165,107,255,.14)}.chc .gb{stroke:rgba(165,107,255,.3)}
+.chc .xd{fill:#fff;stroke:#a56bff;stroke-width:3}
+.chc-tip{border-radius:14px;border:1px solid rgba(165,107,255,.45);background:rgba(20,12,48,.96);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.chc-tip .ks{border-radius:50%;background:#ffcf3f}.chc-tip .kl{background:linear-gradient(90deg,#ff5ec4,#4dd2ff);height:3px;border-radius:2px}.chc-tip .kb{background:linear-gradient(#c7a3ff,#6a3ff0)}
+.chc-gb{height:12px;border-radius:999px;border:1px solid rgba(165,107,255,.3);background:rgba(10,6,28,.7)}
+.chc-gb i{border-radius:999px;background:linear-gradient(90deg,#ff5ec4,#a56bff,#4dd2ff);background-size:100% 100%;animation:none}
+.chc-lg .ll{height:3px;border-radius:2px;background:linear-gradient(90deg,#ff5ec4,#4dd2ff)}.chc-lg .lb{background:linear-gradient(#c7a3ff,#6a3ff0)}
+.chc-lg .ls2{border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff1a8,#ffcf3f 55%,#c8871a);box-shadow:none}
 /* квадратные плашки → скруглённые, как на референсе */
 .chip{border-radius:999px}
 .btn,.in,textarea.in,.chc,.chc-tip,.chg,.pf-lv,.pf-st,.pf-sub,.thx-in,.wr{border-radius:16px}
@@ -1223,6 +1263,9 @@ body.scan::after{display:none}                 /* ЭЛТ-полоски пове
 <script>/* лёгкий режим запоминается на устройстве (localStorage): если игрок включил лайт, следующий запуск тоже лайт */
 (function(){var b=document.getElementById("lite");if(!b)return;
 function on(){try{return localStorage.getItem("am.lite")==="1"}catch(e){return false}}
+/* кнопка только при самом первом заходе в маркет; дальше экран загрузки — просто «загрузка…» (режим меняется тумблером «Лайт» во вкладках) */
+var seen=false;try{seen=localStorage.getItem("am.seen")==="1"}catch(e){}
+if(seen){b.remove();var h=document.querySelector("#boot .lite-h");h&&h.remove();return}
 if(on()){b.textContent="Лёгкий режим включён";b.disabled=true;return}
 b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textContent="Переключаем…";b.disabled=true;location.reload()}})();</script>
 
@@ -2014,17 +2057,17 @@ async function render(intro){
    Два разных рейтинга: оценки в отзывах (звёзды 1–5) и поддержка авторов (звёзды Telegram, золотые блоки). */
 const SORTS=[["def","Как в каталоге"],["rate","По рейтингу"],["sup","Поддержка авторов"],["pop","Больше всего играли"],["rev","Больше отзывов"]];
 /* сортировка по умолчанию — по рейтингу (новый ключ v2: старый сохранённый «как в каталоге» не мешает) */
-let FL=Object.assign({sort:"rate",r4:0,sup:0},store.get("am.fl.v2",{}));FL.sup=0; /* фильтра «с поддержкой» больше нет: сохранённый не должен прятать игры */const saveFL=()=>store.set("am.fl.v2",FL);
+let FL={sort:"rate",r4:0,sup:0}; /* сортировки и фильтра «4 и выше» под поиском больше нет: всегда по рейтингу, сохранённые фильтры не действуют */ /* фильтра «с поддержкой» больше нет: сохранённый не должен прятать игры */const saveFL=()=>store.set("am.fl.v2",FL);
 const passF=m=>{const g=gstat(m);return(!FL.r4||(g.rated||g.favs)&&g.rating>=4)&&(!FL.sup||g.stars>0)};
 /* «Новинка»: у самой новой игры (по дате добавления) при показе списка вспыхивает рамка с подписью и сразу гаснет */
 const newestId=()=>{let b=null;for(const d of DATA)if(d.at&&(!d.access||d.access==="public")&&(!b||d.at>b.at))b=d;return b&&b.id};
 function newFlash(box,delay){const n=document.createElement("div");n.className="nwf";n.setAttribute("aria-hidden","true");
-  n.innerHTML='<svg viewBox="0 0 905 220" preserveAspectRatio="none"><path d="M26 2H879L903 26V194L879 218H26L2 194V26Z"/></svg><b>Новинка</b>';
+  n.innerHTML='<svg viewBox="0 0 905 220" preserveAspectRatio="none"><path d="M38 2H867A36 36 0 0 1 903 38V182A36 36 0 0 1 867 218H38A36 36 0 0 1 2 182V38A36 36 0 0 1 38 2Z"/></svg><b>Новинка</b>';
   n.style.animationDelay=(delay+350)/1000+"s";(box.querySelector(".card")||box).append(n);setTimeout(()=>n.remove(),delay+2600)}
 function sortRows(rows){if(FL.sort==="def")return rows;const k=m=>{const g=gstat(m);
     return FL.sort==="rate"?[g.rated||g.favs?g.rating:-1,g.rated+(g.favs||0)]:FL.sort==="sup"?[g.stars,g.backers]:FL.sort==="pop"?[g.pp,g.dp]:[g.reviews,g.rating]};
   return rows.map((m,i)=>({m,i,k:k(m)})).sort((a,b)=>b.k[0]-a.k[0]||b.k[1]-a.k[1]||a.i-b.i).map(x=>x.m)}
-function drawFbar(){const el=$("#fbar");if(!el)return;const lb=(SORTS.find(x=>x[0]===FL.sort)||SORTS[0])[1];
+function drawFbar(){const el=$("#fbar");if(!el)return;el.hidden=true;el.innerHTML="";return;const lb=(SORTS.find(x=>x[0]===FL.sort)||SORTS[0])[1];
   el.innerHTML=`<button type="button" class="fsort" id="fsort" aria-haspopup="menu" data-keep="1"><span>Сортировка:</span> <b>${lb}</b> ▾</button>
     <button type="button" class="fchip" data-f="r4" aria-pressed="${!!FL.r4}"><i class="fst">★</i> 4 и выше</button>`;
   $("#fsort").onclick=e=>openMenu(e.currentTarget,SORTS,FL.sort,v=>{FL.sort=v;saveFL();sfx.tap();render()});
@@ -2080,8 +2123,16 @@ function renderHome(){
   ns.addEventListener("scroll",()=>{const i=Math.round(ns.scrollLeft/ns.clientWidth);if(i!==cur){cur=i;dots.forEach((d,j)=>d.setAttribute("aria-current",j===i))}},{passive:true});
   ns.addEventListener("pointerdown",()=>{hold=Date.now()});
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
+  fitHome();requestAnimationFrame(fitHome);document.fonts&&document.fonts.ready.then(fitHome);
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
+
+/* главная всегда в один экран: средний блок (предметы, заголовок, кнопка) уменьшается ровно настолько, чтобы влезть над новостями */
+function fitHome(){const ts=homeEl.querySelector(".ts");if(!ts||view!==0)return;
+  ts.style.zoom="1";const kids=[...ts.children].filter(e=>getComputedStyle(e).position!=="absolute"&&e.offsetHeight);
+  const gap=parseFloat(getComputedStyle(ts).rowGap)||0,need=kids.reduce((t,e)=>t+e.offsetHeight,0)+gap*Math.max(0,kids.length-1);
+  const have=ts.getBoundingClientRect().height;ts.style.zoom=String(Math.max(.5,Math.min(.95,have/need)).toFixed(3))}
+addEventListener("resize",()=>requestAnimationFrame(fitHome));
 
 /* ============ профиль: уровень, звание, медали ============ */
 /* XP: игра +5, очки в игре (до +30), отзыв +20, новая игра в избранном +5, своя карточка +25, заход в новый день +10, медали дают бонус */
@@ -2313,8 +2364,8 @@ function initCharts(root){
      Сетка сплошная и тихая; без svg-фильтров свечения и бесконечных анимаций: линия прорисовывается один раз. */
   const colPath=(x,y,w,h)=>{const r=Math.min(3,w/2,h),f=v=>v.toFixed(1);
     return `M${f(x)} ${f(y+h)}V${f(y+r)}Q${f(x)} ${f(y)} ${f(x+r)} ${f(y)}H${f(x+w-r)}Q${f(x+w)} ${f(y)} ${f(x+w)} ${f(y+r)}V${f(y+h)}Z`};
-  const coin=(x,y,s)=>{const h=s/2,p=Math.max(1.5,s/5),f=v=>v.toFixed(1);
-    return `<rect class="cn" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(s)}"/><rect class="cnh" x="${f(x-h)}" y="${f(y-h)}" width="${f(s)}" height="${f(p)}"/>`};
+  const coin=(x,y,s)=>{const h=s/2,f=v=>v.toFixed(1); /* круглая золотая монетка с бликом */
+    return `<circle class="cn" cx="${f(x)}" cy="${f(y)}" r="${f(h)}"/><circle class="cnh" cx="${f(x-h*.25)}" cy="${f(y-h*.3)}" r="${f(h*.35)}"/>`};
   const PLA=["событие","события","событий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
@@ -2338,7 +2389,10 @@ function initCharts(root){
     const coins=mxS>0?stars.map((v,i)=>v?coin(xs[i],sY,Math.min(Math.max(slot-2,4),6+8*Math.sqrt(v/mxS))):"").join(""):"";
     const tix=[...new Set((narrow?[0,.5,1]:[0,.25,.5,.75,1]).map(k=>Math.round(k*(n-1))))];
     const tx=tix.map(i=>`<text class="ax" x="${xs[i].toFixed(1)}" y="${xB}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${dt[i].t}</text>`).join("");
-    svg.innerHTML=`${g}${tx}
+    svg.innerHTML=`<defs><linearGradient id="chLn" x1="0" x2="1"><stop offset="0" stop-color="#ff5ec4"/><stop offset=".55" stop-color="#a56bff"/><stop offset="1" stop-color="#4dd2ff"/></linearGradient>
+      <linearGradient id="chAr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c06bff" stop-opacity=".35"/><stop offset="1" stop-color="#7a62f0" stop-opacity="0"/></linearGradient>
+      <linearGradient id="chBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7a3ff"/><stop offset="1" stop-color="#6a3ff0"/></linearGradient>
+      <radialGradient id="chCoin" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff1a8"/><stop offset=".55" stop-color="#ffcf3f"/><stop offset="1" stop-color="#c8871a"/></radialGradient></defs>${g}${tx}
       <path class="ar${an?" fi":""}" d="${d}L${xs[n-1].toFixed(1)} ${lB}L${xs[0].toFixed(1)} ${lB}Z"/>
       <path class="ln${an?" dr":""}" pathLength="1" d="${d}"/>
       <circle class="ed" cx="${xs[n-1].toFixed(1)}" cy="${ys[n-1].toFixed(1)}" r="4"/>
@@ -3439,8 +3493,8 @@ async function spotGame(id){
   const dim=o.querySelector(".d"),edge=o.querySelector(".g"),lab=o.lastChild;let done=false;
   /* вырез точно по рамке карточки: та же форма со срезанными углами (26px в масштабе карточки), что у .shell */
   const place=()=>{if(!box.isConnected)box=get()||box;const card=box.querySelector(".card")||box,r=card.getBoundingClientRect();
-    const k=parseFloat(getComputedStyle(card).getPropertyValue("--k"))||r.width/905,c=26*k,{left:x,top:y,right:X,bottom:Y}=r;
-    const poly=`M${x+c} ${y}H${X-c}L${X} ${y+c}V${Y-c}L${X-c} ${Y}H${x+c}L${x} ${Y-c}V${y+c}Z`;
+    const k=parseFloat(getComputedStyle(card).getPropertyValue("--k"))||r.width/905,c=36*k,{left:x,top:y,right:X,bottom:Y}=r;
+    const poly=`M${x+c} ${y}H${X-c}A${c} ${c} 0 0 1 ${X} ${y+c}V${Y-c}A${c} ${c} 0 0 1 ${X-c} ${Y}H${x+c}A${c} ${c} 0 0 1 ${x} ${Y-c}V${y+c}A${c} ${c} 0 0 1 ${x+c} ${y}Z`; /* скруглённая рамка, как у карточки */
     dim.setAttribute("d",`M-9 -9H${innerWidth+9}V${innerHeight+9}H-9Z`+poly);edge.setAttribute("d",poly);
     const up=r.top>90;lab.classList.toggle("dn",!up);lab.style.left=r.left+r.width/2+"px";lab.style.top=(up?r.top-14:r.bottom+14)+"px"};
   place();const ro=()=>place();let tk=0;const loop=()=>{if(done)return;place();tk=requestAnimationFrame(loop)};loop(); /* рамка идёт за карточкой каждый кадр */
@@ -3467,13 +3521,13 @@ async function spotGame(id){
   if(dl){try{history.replaceState(null,"","/"+location.search)}catch(e){}} /* выход из игры перезагружает уже обычный маркет */
   /* …/играR: игрок уже зарегистрирован запросом /config выше; маркет не рисуем, сразу полная игра */
   if(quick&&dg.file&&SUB_API&&!isLocked(dg)){act("visit");flushActs();
-    if(await playDirect(dg.id,true)){BOOTED=true;$("#boot").remove();return}}
+    if(await playDirect(dg.id,true)){BOOTED=true;try{localStorage.setItem("am.seen","1")}catch(e){}$("#boot").remove();return}}
   const visited=quick&&dg.file&&SUB_API&&!isLocked(dg);
   let back=false;try{back=sessionStorage.getItem("am.back")==="list";sessionStorage.removeItem("am.back")}catch(e){}
   if(back&&!dg){view=1;tab=0;sync()} /* вышли из игры: список игр; обычный запуск — главная */
   if(dg){view=1;tab=0;FL.r4=FL.sup=0;SQ="";qIn.value="";sync()} /* ссылка /название-игры: сразу маркет, все игры */
   await render(true);BOOTED=true;if(!visited)act("visit");if(SUB_API){flushActs();pullProfile()}
-  $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
+  try{localStorage.setItem("am.seen","1")}catch(e){}$("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
   if(dg){if(quick)openPage(dg.id,{auto:true,page:true});else spotGame(dg.id)}
 })();
