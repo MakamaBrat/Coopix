@@ -309,6 +309,9 @@ input.tx:focus{box-shadow:0 0 0 3px #4cb8ff}
 .score{display:grid;gap:6px;margin:12px 0;font-weight:700}
 .score div{display:flex;justify-content:space-between;background:#120a2a;padding:8px 12px;clip-path:var(--c6);box-shadow:inset 0 0 0 2px var(--n-line)}
 .mbt{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+/* меню паузы: столбиком; на низком (горизонтальном) экране — две колонки, всё видно без прокрутки */
+.mbt.pzm{flex-direction:column;align-items:stretch}
+@media (max-height:520px){.mbt.pzm{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mbt.pzm #pzGo,.mbt.pzm #pzMenu{grid-column:1/-1}}
 .mbt .ub{width:auto;flex:1;min-width:130px}
 .rules{text-align:left;font-size:14px;line-height:1.5;color:#cdbfff}
 .rules p{margin:6px 0}
@@ -881,15 +884,17 @@ function pauseOpen() {
   if (!V) return;
   const solo = role === "solo";
   if (solo && !PZ) PZ = Date.now();
-  modal('<h2>Пауза</h2><div class="mbt" style="flex-direction:column;align-items:stretch">' +
+  modal('<h2>Пауза</h2><div class="mbt pzm">' +
     '<button class="ub pr" id="pzGo"><i class="ic">' + ICON.play + '</i>Продолжить</button>' +
     (solo ? '<button class="ub" id="pzNew"><i class="ic">' + ICON.redo + '</i>Заново</button>' : '') +
+    '<button class="ub cy" id="pzNet"><i class="ic">' + ICON.wifi + '</i>По сети</button>' +
     '<button class="ub" id="pzHelp"><i class="ic">' + ICON.book + '</i>Как играть</button>' +
     '<button class="ub" id="pzSet"><i class="ic">' + ICON.gear + '</i>Настройки</button>' +
     '<button class="ub dn" id="pzMenu"><i class="ic">' + ICON.home + '</i>Главное меню</button></div>' +
     (solo ? '' : '<div class="nst">В сетевой игре партия не останавливается</div>'));
   $("pzGo").onclick = closeModal;
   if (solo) $("pzNew").onclick = () => { closeModal(); pauseEnd(); startRound(); };
+  $("pzNet").onclick = () => { PZ = 0; if (role === "solo") leave(""); else closeModal(); openNet(); }; /* сеть: одиночная партия заканчивается, открывается окно «По сети» */
   $("pzHelp").onclick = rules;
   $("pzSet").onclick = openSet;
   $("pzMenu").onclick = () => { PZ = 0; leave(""); };

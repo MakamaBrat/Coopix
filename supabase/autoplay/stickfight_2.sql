@@ -7,7 +7,15 @@ create table if not exists public.game_upload (
 );
 alter table public.game_upload enable row level security;
 revoke all on public.game_upload from anon, authenticated;
-insert into public.game_upload (game_id, part, total, body) values ('stickfight', 2, 2, $cpx$ if(c.pt>0){
+insert into public.game_upload (game_id, part, total, body) values ('stickfight', 2, 2, $cpx$lse if(c.at.ty=='k'&&!c.at.cr&&!c.at.ay&&ch.some(e=>e!==c&&!e.dead&&e.tm!==c.tm&&(e.p[2].x-h.x)*c.f>-4&&(e.p[2].x-h.x)*c.f<42&&Math.abs(e.p[2].y-h.y)<45)){c.at.kn=1;c.at.d=.3;c.lg=.6;}}
+    if(c.at&&!c.at.m&&!c.at.h){c.at.m=1;if(!c.gr)p.forEach(q=>{q.px-=c.f*1.3;q.py-=c.at.ay>0?(c.at.ty=='k'?2.6:1.2):0;});}
+  }
+  if(c.at&&c.at.t<.12&&c.gr&&!c.at.rs)h.px=h.x-c.f*(c.lg||0)*c.k;
+  if(c.at){c.at.t+=D;if(c.at.t>=c.at.d||(c.k<.5&&!c.hg))c.at=null;}
+  c.hurt=clamp(1-c.hp/c.max*2.5,0,1);
+  if(c.st){c.st.t+=D;if(c.st.t>.26)c.st=null;}
+  c.lying=c.k>.25&&!c.at&&Math.abs(p[1].y-h.y)<22&&h.y>c.gl-30;
+  if(c.pt>0){
     c.pt-=D;
     if(c.gr&&c.ko<=0&&c.k>.15){
       const cx=(p[0].x+p[1].x*2+h.x*3)/6,vcx=((p[0].x-p[0].px)+(p[1].x-p[1].px)*2+(h.x-h.px)*3)/6,fx=(p[8].x+p[10].x)/2,pof=cx+vcx*10-fx;
@@ -1559,9 +1567,9 @@ on conflict (game_id, part) do update set total = excluded.total, body = exclude
 -- все части на месте и длина сходится → записать файл в игру и очистить буфер
 update public.games g set file_html = s.html, updated_at = now()
   from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'stickfight' and total = 2) s
- where g.id = 'stickfight' and s.n = 2 and char_length(s.html) = 541554;
-delete from public.game_upload where game_id = 'stickfight' and (select char_length(file_html) from public.games where id = 'stickfight') = 541554;
+ where g.id = 'stickfight' and s.n = 2 and char_length(s.html) = 542159;
+delete from public.game_upload where game_id = 'stickfight' and (select char_length(file_html) from public.games where id = 'stickfight') = 542159;
 
 -- итог: «готово», если игра обновлена, иначе сколько частей ещё не хватает
-select case when (select char_length(file_html) from public.games where id = 'stickfight') = 541554 then 'готово: Stick Fight обновлена'
+select case when (select char_length(file_html) from public.games where id = 'stickfight') = 542159 then 'готово: Stick Fight обновлена'
   else 'загружено частей: ' || (select count(*) from public.game_upload where game_id = 'stickfight' and total = 2) || ' из 2' end as status;

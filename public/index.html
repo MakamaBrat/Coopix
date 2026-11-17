@@ -2335,7 +2335,7 @@ function initCharts(root){
       return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(fv_(o))}</b>${plr(fv_(o),F[2])}</div><div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)}</div><div><i class="k kl"></i>${F[0]==="reg"?"игроков всего":"всего"}: <b>${nf(fl_(o))}</b></div>`}},
       ()=>{G.style.display="none";hb&&hb.classList.remove("hl");hb=null})})}
 
-/* ============ club tab: slogan, Help (USDT TRC20), sponsors, chart ============ */
+/* ============ club tab: slogan, Help (USDT TRC20), chart (список спонсоров пока убран) ============ */
 function renderClub(){
   clearInterval(homeT);
   clubEl.innerHTML=`<div class="cl-hero enter" style="--i:.04s">
@@ -2349,8 +2349,7 @@ function renderClub(){
     <div class="lw"><button class="lbtn big" id="mkGame" type="button" style="--lc:#a56bff;width:100%">${IC.plus}Создать игру</button></div>
     <div class="lw bo"><button class="lbtn big" id="helpBtn" type="button" style="--lc:#ff8a3d;width:100%">${IC.heart}Помочь</button></div>
   </div>
-  <section class="sec enter" style="--i:.24s"><h3>Спонсоры<small>${SPONSORS.length}</small></h3>
-    <div class="sl">${SPONSORS.map(n=>`<div class="nw" style="--nc:${n.c}"><div class="nw-in sl-in"><i class="av">${n.name[0]}</i><div><h4>${n.name}</h4><p>${n.msg||""}</p></div></div></div>`).join("")}</div></section>${chartsHTML()}
+  ${chartsHTML()}
   ${SUB_API&&!isAdmin()?"":`<section class="sec enter" style="--i:.36s"><div class="lg-h"><h3>Журнал действий</h3><button class="lg-all" id="lgAll" type="button" role="switch" aria-checked="${FEED.all}">Все действия</button></div><p class="lg-n" id="lgN">${FEED.all?"Все действия игроков подряд.":"Только важное: регистрация, отзыв, первый запуск и загрузка игры, звёзды, заявка, мод."}</p><div class="lg" id="lgList"><p class="empty" style="border:0">Загрузка…</p></div><button class="btn ghost cm-more" id="lgMore" type="button" hidden>Показать ещё</button></section>`}`;
   const chv=clubEl.querySelector("#chA [data-v]");if(chv)chv.textContent="…";
   loadActivity().then(a=>{CAP.series={act:a}}).catch(()=>{CAP.series={act:[[],[],[],[]]}}).then(()=>{if(view===2&&clubEl.isConnected)initCharts(clubEl)});
@@ -3055,7 +3054,7 @@ function gameMode(html,title){window.__gm=1;
   const o=document.createElement("div");o.className="gmv";const f=document.createElement("iframe");
   f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=title||"Игра";f.srcdoc=html;o.append(f);
   document.body.append(o);document.body.classList.add("gamemode");document.body.style.overflow="hidden";
-  const out=()=>location.reload();
+  const out=()=>{try{sessionStorage.setItem("am.back","list")}catch(e){}location.reload()}; /* после игры маркет откроется на списке игр, а не на главной */
   try{if(TGW&&TGW.BackButton){TGW.BackButton.show();TGW.BackButton.onClick(out)}}catch(e){}
   try{history.pushState({gm:1},"")}catch(e){}addEventListener("popstate",out);
   setTimeout(()=>{try{f.focus()}catch(e){}},50)}
@@ -3450,6 +3449,8 @@ async function spotGame(id){
   if(quick&&dg.file&&SUB_API&&!isLocked(dg)){act("visit");flushActs();
     if(await playDirect(dg.id,true)){BOOTED=true;$("#boot").remove();return}}
   const visited=quick&&dg.file&&SUB_API&&!isLocked(dg);
+  let back=false;try{back=sessionStorage.getItem("am.back")==="list";sessionStorage.removeItem("am.back")}catch(e){}
+  if(back&&!dg){view=1;tab=0;sync()} /* вышли из игры: список игр; обычный запуск — главная */
   if(dg){view=1;tab=0;FL.r4=FL.sup=0;SQ="";qIn.value="";sync()} /* ссылка /название-игры: сразу маркет, все игры */
   await render(true);BOOTED=true;if(!visited)act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);

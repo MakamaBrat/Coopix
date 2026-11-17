@@ -101,7 +101,7 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
 .b.dn{background:linear-gradient(#b58cff,#6a3bf0);opacity:1;filter:brightness(1.15)}
 @media (max-height:480px){.b{width:54px;height:54px;font-size:22px}}
 /* ===== вертикальный телефон: игра сверху на всю ширину, под ней своя панель кнопок (как у Game Boy) =====
-   слева движение 2×2 (⬇ 🏃 / ◀ ▶), справа бой 2×2 (▲ 🛡️ / 👊 🦵); размеры от ширины экрана — кнопки крупные и не перекрываются */
+   слева движение ◀ ▶, справа бой (▲ / 👊 🦵); ⬇ и 🗑 маленькие у нижних углов экрана игры; размеры от ширины экрана — кнопки крупные и не перекрываются */
 @media (orientation:portrait) and (pointer:coarse){
   #rot{display:none!important}
   /* экран игры занимает всю свободную высоту между верхними кнопками и панелью; бока обрезаются, камера и так держит игрока по центру */
@@ -117,6 +117,10 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
   #w .b[data-k=p]{right:calc(5vw + var(--s) + var(--g))!important;bottom:var(--bb)!important}
   #w .b[data-k=k]{right:5vw!important;bottom:var(--bb)!important}
   #w .b[data-k=d]{--s:min(12vw,56px);right:5vw!important;top:calc(var(--ct) + var(--ch) - var(--s) - 2vw)!important;bottom:auto!important;opacity:.7}
+  /* без блока и бега; мусорка чуть выше; «присесть» такая же маленькая, слева напротив мусорки */
+  #w .b[data-k=b],#w .b[data-k=n]{display:none!important}
+  #w .b[data-k=d]{top:calc(var(--ct) + var(--ch) - var(--s) - 7vw)!important}
+  #w .b[data-k=c]{--s:min(12vw,56px);left:5vw!important;top:calc(var(--ct) + var(--ch) - var(--s) - 7vw)!important;bottom:auto!important;opacity:.7}
 }
 
 /* ===== кнопки в углу HUD ===== */
@@ -386,6 +390,10 @@ a.ub{text-decoration:none;cursor:pointer}
 @media (max-width:700px){#net .cd{padding:14px 14px 12px}}
 #net{align-items:flex-start;overflow:auto}
 #net .cd{margin:min(4vh,32px) auto 0}
+
+/* меню без лишнего: без голубя, без блока сообщества и подписи внизу; язык — только в главном меню */
+.mm-pg,.mm-com,.mm-ver{display:none!important}
+#mm[data-v="pause"] #blang{display:none}
 </style></head><body><div id="w"><canvas id="c"></canvas></div><div id="rot"><i>📱</i><div>Поверни телефон горизонтально,<br>чтобы играть на весь экран</div><button onclick="document.body.classList.add('nr')">Играть так</button></div>
 <div id="crt" class="crt" hidden></div>
 

@@ -7,7 +7,13 @@ create table if not exists public.game_upload (
 );
 alter table public.game_upload enable row level security;
 revoke all on public.game_upload from anon, authenticated;
-insert into public.game_upload (game_id, part, total, body) values ('unik', 5, 5, $cpx$"], [4, "4"]], total, (v) => set("total", +v), host);
+insert into public.game_upload (game_id, part, total, body) values ('unik', 5, 5, $cpx$" 👑" : "") + "</span>" + (coop ? '<span class="tag">Люди</span>' : "") + "</div>";
+    else if (i < total) h += '<div class="slot bot">' + avatar("", i, 1) + "<span>" + BOTN[i - L.members.length] + "</span>" + (coop ? '<span class="tag t1">Боты</span>' : "") + "</div>";
+    else h += '<div class="slot empty"><div class="av" style="background:#ccc">·</div><span>Свободно</span></div>';
+  }
+  $("slots").innerHTML = h;
+  const set = (k, v) => { L[k] = v; sendLobby(); };
+  seg($("oTotal"), [[2, "2"], [3, "3"], [4, "4"]], total, (v) => set("total", +v), host);
   seg($("oMode"), [["coop", "🤝 Кооп: люди vs боты"], ["ffa", "⚔ Каждый за себя"]], L.mode, (v) => set("mode", v), host);
   seg($("oStack"), [["1", "Вкл"], ["0", "Выкл"]], L.stack ? "1" : "0", (v) => set("stack", v === "1"), host);
   $("bStart").style.display = host ? "" : "none";
@@ -483,9 +489,9 @@ on conflict (game_id, part) do update set total = excluded.total, body = exclude
 -- все части на месте и длина сходится → записать файл в игру и очистить буфер
 update public.games g set file_html = s.html, updated_at = now()
   from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'unik' and total = 5) s
- where g.id = 'unik' and s.n = 5 and char_length(s.html) = 1636436;
-delete from public.game_upload where game_id = 'unik' and (select char_length(file_html) from public.games where id = 'unik') = 1636436;
+ where g.id = 'unik' and s.n = 5 and char_length(s.html) = 1636949;
+delete from public.game_upload where game_id = 'unik' and (select char_length(file_html) from public.games where id = 'unik') = 1636949;
 
 -- итог: «готово», если игра обновлена, иначе сколько частей ещё не хватает
-select case when (select char_length(file_html) from public.games where id = 'unik') = 1636436 then 'готово: UNIX обновлена'
+select case when (select char_length(file_html) from public.games where id = 'unik') = 1636949 then 'готово: UNIX обновлена'
   else 'загружено частей: ' || (select count(*) from public.game_upload where game_id = 'unik' and total = 5) || ' из 5' end as status;

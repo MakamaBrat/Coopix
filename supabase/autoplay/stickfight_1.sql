@@ -110,7 +110,7 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
 .b.dn{background:linear-gradient(#b58cff,#6a3bf0);opacity:1;filter:brightness(1.15)}
 @media (max-height:480px){.b{width:54px;height:54px;font-size:22px}}
 /* ===== вертикальный телефон: игра сверху на всю ширину, под ней своя панель кнопок (как у Game Boy) =====
-   слева движение 2×2 (⬇ 🏃 / ◀ ▶), справа бой 2×2 (▲ 🛡️ / 👊 🦵); размеры от ширины экрана — кнопки крупные и не перекрываются */
+   слева движение ◀ ▶, справа бой (▲ / 👊 🦵); ⬇ и 🗑 маленькие у нижних углов экрана игры; размеры от ширины экрана — кнопки крупные и не перекрываются */
 @media (orientation:portrait) and (pointer:coarse){
   #rot{display:none!important}
   /* экран игры занимает всю свободную высоту между верхними кнопками и панелью; бока обрезаются, камера и так держит игрока по центру */
@@ -126,6 +126,10 @@ canvas{width:min(100%,calc(100dvh*16/9),calc(100vh*16/9));height:auto;max-width:
   #w .b[data-k=p]{right:calc(5vw + var(--s) + var(--g))!important;bottom:var(--bb)!important}
   #w .b[data-k=k]{right:5vw!important;bottom:var(--bb)!important}
   #w .b[data-k=d]{--s:min(12vw,56px);right:5vw!important;top:calc(var(--ct) + var(--ch) - var(--s) - 2vw)!important;bottom:auto!important;opacity:.7}
+  /* без блока и бега; мусорка чуть выше; «присесть» такая же маленькая, слева напротив мусорки */
+  #w .b[data-k=b],#w .b[data-k=n]{display:none!important}
+  #w .b[data-k=d]{top:calc(var(--ct) + var(--ch) - var(--s) - 7vw)!important}
+  #w .b[data-k=c]{--s:min(12vw,56px);left:5vw!important;top:calc(var(--ct) + var(--ch) - var(--s) - 7vw)!important;bottom:auto!important;opacity:.7}
 }
 
 /* ===== кнопки в углу HUD ===== */
@@ -395,6 +399,10 @@ a.ub{text-decoration:none;cursor:pointer}
 @media (max-width:700px){#net .cd{padding:14px 14px 12px}}
 #net{align-items:flex-start;overflow:auto}
 #net .cd{margin:min(4vh,32px) auto 0}
+
+/* меню без лишнего: без голубя, без блока сообщества и подписи внизу; язык — только в главном меню */
+.mm-pg,.mm-com,.mm-ver{display:none!important}
+#mm[data-v="pause"] #blang{display:none}
 </style></head><body><div id="w"><canvas id="c"></canvas></div><div id="rot"><i>📱</i><div>Поверни телефон горизонтально,<br>чтобы играть на весь экран</div><button onclick="document.body.classList.add('nr')">Играть так</button></div>
 <div id="crt" class="crt" hidden></div>
 
@@ -1560,23 +1568,15 @@ function upd(c,ip){
     if(c.at&&!c.at.m&&c.gr){const run=c.gv>.5&&fvx>2.4&&!c.at.cr&&!c.at.ay;
       if(run&&c.at.ty=='p'){Object.assign(c.at,{hv:1,d:.36,rs:fvx});c.lg=1.8;}
       else if(run&&c.at.ty=='k'){Object.assign(c.at,{d:.5,rs:fvx,fk:1});p.forEach(q=>{q.py=q.y+6.5;});c.jc=.25;c.gt=0;}
-      else if(c.at.ty=='k'&&!c.at.cr&&!c.at.ay&&ch.some(e=>e!==c&&!e.dead&&e.tm!==c.tm&&(e.p[2].x-h.x)*c.f>-4&&(e.p[2].x-h.x)*c.f<42&&Math.abs(e.p[2].y-h.y)<45)){c.at.kn=1;c.at.d=.3;c.lg=.6;}}
-    if(c.at&&!c.at.m&&!c.at.h){c.at.m=1;if(!c.gr)p.forEach(q=>{q.px-=c.f*1.3;q.py-=c.at.ay>0?(c.at.ty=='k'?2.6:1.2):0;});}
-  }
-  if(c.at&&c.at.t<.12&&c.gr&&!c.at.rs)h.px=h.x-c.f*(c.lg||0)*c.k;
-  if(c.at){c.at.t+=D;if(c.at.t>=c.at.d||(c.k<.5&&!c.hg))c.at=null;}
-  c.hurt=clamp(1-c.hp/c.max*2.5,0,1);
-  if(c.st){c.st.t+=D;if(c.st.t>.26)c.st=null;}
-  c.lying=c.k>.25&&!c.at&&Math.abs(p[1].y-h.y)<22&&h.y>c.gl-30;
- $cpx$)
+      e$cpx$)
 on conflict (game_id, part) do update set total = excluded.total, body = excluded.body;
 
 -- все части на месте и длина сходится → записать файл в игру и очистить буфер
 update public.games g set file_html = s.html, updated_at = now()
   from (select string_agg(body, '' order by part) as html, count(*) as n from public.game_upload where game_id = 'stickfight' and total = 2) s
- where g.id = 'stickfight' and s.n = 2 and char_length(s.html) = 541554;
-delete from public.game_upload where game_id = 'stickfight' and (select char_length(file_html) from public.games where id = 'stickfight') = 541554;
+ where g.id = 'stickfight' and s.n = 2 and char_length(s.html) = 542159;
+delete from public.game_upload where game_id = 'stickfight' and (select char_length(file_html) from public.games where id = 'stickfight') = 542159;
 
 -- итог: «готово», если игра обновлена, иначе сколько частей ещё не хватает
-select case when (select char_length(file_html) from public.games where id = 'stickfight') = 541554 then 'готово: Stick Fight обновлена'
+select case when (select char_length(file_html) from public.games where id = 'stickfight') = 542159 then 'готово: Stick Fight обновлена'
   else 'загружено частей: ' || (select count(*) from public.game_upload where game_id = 'stickfight' and total = 2) || ' из 2' end as status;
