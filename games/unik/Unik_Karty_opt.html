@@ -404,7 +404,7 @@ input.tx:focus{box-shadow:0 0 0 3px #4cb8ff}
 <!-- ===================== GAME ===================== -->
 <section id="scGame" class="sc">
   <div id="topbar">
-    <button class="btn b-red sm" id="gExit">✕</button>
+    <button class="btn b-red sm" id="gExit" aria-label="Пауза">⏸</button>
     <div id="gInfo"></div>
     <button class="btn b-blue sm" id="gRules">?</button>
   </div>
@@ -874,7 +874,32 @@ function botMove(s) {
   if (S.hand.length === 2 && Math.random() < .82) { S.said = true; G.ev.push({ t: "call", s }); }
   act(s, { a: "play", id: best.id, color: bestColor(S.hand.filter((x) => x.id !== best.id)) });
 }
+/* ---- пауза: ⏸ в углу открывает меню (продолжить, заново, правила, настройки, главное меню).
+   В одиночной игре, пока открыто меню, боты и таймеры ждут; в сетевой партия идёт дальше. ---- */
+let PZ = 0;
+function pauseOpen() {
+  if (!V) return;
+  const solo = role === "solo";
+  if (solo && !PZ) PZ = Date.now();
+  modal('<h2>Пауза</h2><div class="mbt" style="flex-direction:column;align-items:stretch">' +
+    '<button class="ub pr" id="pzGo"><i class="ic">' + ICON.play + '</i>Продолжить</button>' +
+    (solo ? '<button class="ub" id="pzNew"><i class="ic">' + ICON.redo + '</i>Заново</button>' : '') +
+    '<button class="ub" id="pzHelp"><i class="ic">' + ICON.book + '</i>Как играть</button>' +
+    '<button class="ub" id="pzSet"><i class="ic">' + ICON.gear + '</i>Настройки</button>' +
+    '<button class="ub dn" id="pzMenu"><i class="ic">' + ICON.home + '</i>Главное меню</button></div>' +
+    (solo ? '' : '<div class="nst">В сетевой игре партия не останавливается</div>'));
+  $("pzGo").onclick = closeModal;
+  if (solo) $("pzNew").onclick = () => { closeModal(); pauseEnd(); startRound(); };
+  $("pzHelp").onclick = rules;
+  $("pzSet").onclick = openSet;
+  $("pzMenu").onclick = () => { PZ = 0; leave(""); };
+}
+function pauseEnd() {
+  if (!PZ) return; const d = Date.now() - PZ; PZ = 0;
+  if (G) for (const k of ["botAt", "catchAt", "unsafeT", "turnEnd"]) if (G[k]) G[k] += d;
+}
 function hostTick() {
+  if (PZ) { if ($("modal").classList.contains("on") || !$("sp").hidden) return; pauseEnd(); } /* меню паузы закрыто — игра идёт дальше */
   if (!G || G.phase !== "play" || (role !== "host" && role !== "solo")) return;
   const now = Date.now(), S = G.seats[G.turn];
   if (G.unsafe >= 0) {
@@ -1371,7 +1396,7 @@ $("bEmo").onclick = () => $("emoBar").classList.toggle("on");
 $("emoBar").innerHTML = EMOS.map((e) => "<button>" + e + "</button>").join("");
 $("emoBar").onclick = (e) => { const b = e.target.closest("button"); if (b) sendEmo(b.textContent); };
 $("seats").addEventListener("click", (e) => { if (e.target.closest("[data-catch]")) sendAct({ a: "catch" }); });
-$("gExit").onclick = () => { modal('<h2>Выйти из игры?</h2><div class="mbt"><button class="ub dn" id="mY">Выйти</button><button class="ub pr" onclick="closeModal()">Остаться</button></div>'); $("mY").onclick = () => leave(""); };
+$("gExit").onclick = pauseOpen;
 $("gRules").onclick = rules;
 // --- главное меню ---
 $("bPlay").onclick = () => { lsS("vName", myName()); role = "solo"; L = newLobby(""); L.mode = "ffa"; L.total = 4; show("scRoom"); renderRoom(); };
@@ -1428,8 +1453,10 @@ window.addEventListener("beforeunload", () => { if (role === "host") unhost(); }
   $("logoFan").innerHTML = fan.map((k, i) => '<div style="background-image:url(' + IMG[k] + ");transform:rotate(" + ((i - 2) * 16) + 'deg)"></div>').join("");
   $("load").remove();
   fxInit();
-  show("scMenu"); menuStats();
+  menuStats();
   netOpen(); menuUI();
+  /* сразу партия с ботами, без главного меню: меню — в паузе (⏸ → «Главное меню») */
+  $("bPlay").onclick(); startRound();
   requestAnimationFrame(tick);
 })();
 </script>

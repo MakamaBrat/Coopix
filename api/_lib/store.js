@@ -82,6 +82,19 @@ export function supabaseStore(url, serviceKey) {
       ).eq("tg_id", id).select(UCOLS).maybeSingle());
     },
 
+    /** Полное удаление игрока из базы (не бан). Каскадом из users уходят профиль, отзывы, журнал, покупки, подписка.
+        Его заявки, правки, моды, роль модератора и строка бота удаляются явно. Игры в каталоге остаются, но без автора.
+        Платежи «Спасибо автору» (thanks) не трогаем: это учёт оплат. Если игрок зайдёт снова, он зарегистрируется заново. */
+    async deleteUser(id) {
+      const had = ok(await db.from("users").select("tg_id").eq("tg_id", id).maybeSingle());
+      ok(await db.from("games").update({ author_id: null }).eq("author_id", id));
+      for (const [t, col] of [["submissions", "author_id"], ["game_edits", "author_id"], ["game_mods", "author_id"], ["moderators", "tg_id"], ["bot_users", "tg_id"]]) {
+        ok(await db.from(t).delete().eq(col, id));
+      }
+      ok(await db.from("users").delete().eq("tg_id", id));
+      return !!had;
+    },
+
     // ---------- модераторы ----------
     async listMods() { return ok(await db.from("moderators").select("tg_id,note,added_at").order("added_at")) ?? []; },
     async addMod(id, note, by) {

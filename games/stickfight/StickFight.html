@@ -3102,5 +3102,6 @@ function uiTick(n){
 }
 uiTxt();
 
-init();requestAnimationFrame(loop);
+/* сразу бой, без главного меню: меню — в паузе (кнопка в углу или Esc → «Главное меню») */
+init();uiStart();requestAnimationFrame(loop);
 </script></body></html>

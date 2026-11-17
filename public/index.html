@@ -1982,7 +1982,7 @@ async function render(intro){
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
   const anim=keepY==null,nid=newestId(); /* перерисовка того же списка (каталог, счётчики, профиль пришли с сервера) — без повторной анимации появления */
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className=anim?"cardbox enter":"cardbox";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
-    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>openPage(c.m.id,{auto:true}),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>setFav(c.m.id,!DATA.find(x=>x.id===c.m.id).fav,c),
+    const c=new Card(box,m,{onOpen:c=>openPage(c.m.id),onPlay:c=>playDirect(c.m.id),onEdit:c=>canEdit(c.m)&&openEditor(c.m.id),onFav:c=>setFav(c.m.id,!DATA.find(x=>x.id===c.m.id).fav,c),
       onDropCover:(c,url)=>{if(canEdit(c.m))openEditor(c.m.id,url)}});
     if(!canEdit(m)&&c.r.edit){c.r.edit.remove();c.r.edit=null}if(m.access&&m.access!=="public")box.dataset.acc=m.access;
     c.mid=m.id;LIVE.push(c);c.set({...m},anim?{intro:true,delay:250+i*140}:{});
@@ -2754,6 +2754,7 @@ function pageHTML(m,kind){
     <p class="hint2" style="text-align:left">Мод — ваша версия этой игры. Его проверит админ, потом он появится здесь с вашим именем.</p></div></section></div></div>`}
 
 async function openPage(id,opt){
+  if(DEEP_ID&&id===DEEP_ID&&!(opt&&opt.page)){playDirect(id);return} /* игру открыли по ссылке: любой клик по ней запускает саму игру */
   const m=DATA.find(d=>d.id===id);if(!m||PG)return;const me=PG={m,want:!!(opt&&opt.auto),ready:false};pgFocus=document.activeElement;
   const cov=await resolveCover(m.cover);if(PG!==me)return;const tint=m.tint||{h:cov.dom.h,s:cov.dom.s},pal=palette(tint.h,tint.s),kind=kindOf(m);
   /* картинка игры для стандартных мини-игр: большая (кирпичи арканоида режутся из неё) и маленькая 16×16 (ноты, враги, фигуры, звёзды) */
@@ -2894,7 +2895,18 @@ function startGame(){
     if(g.over){endGame();return}PG.raf=requestAnimationFrame(loop)};
   PG.raf=requestAnimationFrame(loop)}
 /* каждый запуск игры = одно действие «play»: растёт счётчик игры, опыт игрока и журнал */
-function countPlay(){const d=DATA.find(x=>x.id===PG.m.id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id)}act("play",PG.m.id);paintPage()}
+function countPlay(id){id=id||PG.m.id;const d=DATA.find(x=>x.id===id);if(d){d.played=(d.played||0)+1;persist();profPlay(d.id)}act("play",id);paintPage()}
+/* сразу сама игра, без страницы (кнопка «Играть» на карточке, игра по ссылке). Как большая кнопка на странице: платная — покупка,
+   есть файл игры — полная игра на весь экран, нет файла — страница с автозапуском мини-игры на «телевизоре». true = игра запущена. */
+let DIRECT=false;
+async function playDirect(id,quiet){
+  const m=DATA.find(d=>d.id===id);if(!m)return false;
+  if(isLocked(m)){buyGame(id);return false}
+  if(!(m.file&&SUB_API)){openPage(id,{auto:true,page:true});return false}
+  if(DIRECT||window.__gm)return false;DIRECT=true;if(!quiet)sfx.tap();
+  countPlay(id);toast("Загружаем игру…",true);
+  try{const j=await hub("gamefile",{q:{id}});if(PG)closePage();gameMode(j.text,m.title);return true}
+  catch(e){toast("Не удалось загрузить игру");return false}finally{DIRECT=false}}
 /* свой плейабл (загружен в админке): маленький HTML прямо в «телевизоре», в изолированном iframe без доступа к маркету */
 const PLAYC={};
 async function playEmbed(){const me=PG;if(!me)return;stopGame();
@@ -3381,14 +3393,20 @@ async function openAdmin(){
   draw()}
 
 /* ============ ссылка на игру: coopix…/unix ============
-   Путь /<id или название игры> открывает маркет на этой игре: экран быстро темнеет, карточка остаётся в «луче» со стрелкой «Вот эта игра», затем обычный вид. */
+   Путь /<id или название игры> открывает маркет на этой игре: экран быстро темнеет, карточка остаётся в «луче» со стрелкой «Вот эта игра», затем обычный вид.
+   После этого клик по этой игре (карточка, «Играть», новинки, профиль) запускает саму игру, а не её страницу.
+   Большая R в конце (/unixR, startapp=unixR) — без подсветки, сразу полная игра; регистрация игрока всё равно проходит (/config). */
 let catP=null;
 const slugOf=s=>String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-z0-9а-я]+/g,"-").replace(/^-+|-+$/g,"");
+let DEEP_ID=null; /* игра, открытая по ссылке: клик по ней и «Играть» запускают саму игру, а не страницу */
 function deepSlug(){let p="";try{p=decodeURIComponent(location.pathname)}catch(e){}p=p.replace(/^\/+|\/+$/g,"");
   /* ссылка из бота t.me/<бот>?startapp=<игра>: Telegram передаёт игру мини-аппу как start_param */
   if(!p){try{const w=window.Telegram&&Telegram.WebApp,sp=(w&&w.initDataUnsafe&&w.initDataUnsafe.start_param)||new URLSearchParams(location.search).get("tgWebAppStartParam")||"";if(/^[A-Za-z0-9_-]{1,64}$/.test(sp))p=sp}catch(e){}}
-  if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return slugOf(p)}
+  if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return p}
 const findDeep=s=>DATA.find(d=>slugOf(d.id)===s)||DATA.find(d=>slugOf(d.title)===s)||DATA.find(d=>slugOf(d.title).replace(/-/g,"")===s.replace(/-/g,""));
+/* ссылка …/unixR (или startapp=unixR): большая R в конце = сразу запустить игру, без подсветки «Вот эта игра» */
+const resolveDeep=raw=>{if(!raw)return null;if(/R$/.test(raw)){const g=raw.length>1&&findDeep(slugOf(raw.slice(0,-1)));if(g)return{g,quick:true}}
+  const g=findDeep(slugOf(raw));return g?{g,quick:false}:null};
 async function spotGame(id){
   const get=()=>{const n=LIVE.find(x=>x.mid===id);return n&&n.host&&n.host.closest(".cardbox")};
   /* на телефоне карточки ещё «въезжают» и над ними догружаются блоки: убираем анимацию появления и доцентровываем, пока раскладка не устоится */
@@ -3425,12 +3443,18 @@ async function spotGame(id){
     /* есть кэш прошлого запуска: показываем его почти сразу, свежий каталог и счётчики приходят следом */
     const cached=restoreCatalog();catP=loadCatalog().then(loadStats);
     await Promise.race([catP,wait(cached?250:3500)])}
-  const dl=deepSlug();if(dl&&!findDeep(dl)&&catP)await Promise.race([catP,wait(4000)]);
-  const dg=dl&&findDeep(dl);if(dg){view=1;tab=0;FL.r4=FL.sup=0;SQ="";qIn.value="";sync()} /* ссылка /название-игры: сразу маркет, все игры */
-  await render(true);BOOTED=true;act("visit");if(SUB_API){flushActs();pullProfile()}
+  const dl=deepSlug();if(dl&&!resolveDeep(dl)&&catP)await Promise.race([catP,wait(4000)]);
+  const dr=resolveDeep(dl),dg=dr&&dr.g,quick=!!(dr&&dr.quick);if(dg)DEEP_ID=dg.id;
+  if(dl){try{history.replaceState(null,"","/"+location.search)}catch(e){}} /* выход из игры перезагружает уже обычный маркет */
+  /* …/играR: игрок уже зарегистрирован запросом /config выше; маркет не рисуем, сразу полная игра */
+  if(quick&&dg.file&&SUB_API&&!isLocked(dg)){act("visit");flushActs();
+    if(await playDirect(dg.id,true)){BOOTED=true;$("#boot").remove();return}}
+  const visited=quick&&dg.file&&SUB_API&&!isLocked(dg);
+  if(dg){view=1;tab=0;FL.r4=FL.sup=0;SQ="";qIn.value="";sync()} /* ссылка /название-игры: сразу маркет, все игры */
+  await render(true);BOOTED=true;if(!visited)act("visit");if(SUB_API){flushActs();pullProfile()}
   $("#boot").classList.add("done");setTimeout(()=>$("#boot").remove(),800);
   requestAnimationFrame(frame);
-  if(dl){try{history.replaceState(null,"","/"+location.search)}catch(e){}if(dg)spotGame(dg.id)}
+  if(dg){if(quick)openPage(dg.id,{auto:true,page:true});else spotGame(dg.id)}
 })();
 })();
 </script>

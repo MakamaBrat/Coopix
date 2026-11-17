@@ -70,6 +70,24 @@ test("бан: нельзя себя, главного и модератора; �
   assert.equal((await ban(String(USER), { banned: "yes" })).status, 400);
 });
 
+test("удаление игрока: стирается из базы без бана, при новом заходе регистрируется заново", async () => {
+  const { store, call, adm } = await world();
+  await call("hub", "POST", init(USER), { query: { r: "track" }, body: { events: [{ type: "visit", t: Date.now() }] } });
+  const del = (id, who = MAIN) => adm("user", "DELETE", who, { query: { id } });
+  assert.equal((await del(String(USER), MOD)).status, 403);
+  assert.equal((await del("1")).status, 400);
+  assert.equal((await del(String(MOD))).status, 400);
+  assert.equal((await del("999")).status, 404);
+  assert.equal((await del(String(USER))).status, 200);
+  assert.equal(store.users.has(USER), false);
+  assert.ok(!store.events.some((e) => e.user_id === USER));
+  assert.equal((await adm("users", "GET", MAIN)).body.total, 2);
+  // не бан: игрок снова заходит и получает доступ как новый
+  const cfg = await call("config", "GET", init(USER));
+  assert.equal(cfg.status, 200);
+  assert.equal(store.users.get(USER).banned, false);
+});
+
 test("забаненный модератор по-прежнему модератор, но главного забанить нельзя даже в базе", async () => {
   const { store, call } = await world();
   store.users.get(MAIN).banned = true;

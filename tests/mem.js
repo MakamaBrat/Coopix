@@ -44,6 +44,16 @@ export function memStore() {
       Object.assign(u, banned ? { banned: true, ban_reason: reason, banned_at: new Date().toISOString(), banned_by: by } : { banned: false, ban_reason: "", banned_at: null, banned_by: null });
       return u;
     },
+    async deleteUser(id) {
+      const had = users.delete(id);
+      mods.delete(id); this.profiles?.delete(id); this.botUsers?.delete(id);
+      for (const g of this.games?.values() ?? []) if (Number(g.author_id) === id) g.author_id = null;
+      const keep = (a, k) => a.filter((x) => Number(x[k]) !== id);
+      for (let i = rows.length - 1; i >= 0; i--) if (Number(rows[i].author_id) === id) rows.splice(i, 1);
+      this.reviews = keep(this.reviews ?? [], "author_id"); this.events = keep(this.events ?? [], "user_id");
+      this.purchases = keep(this.purchases ?? [], "user_id"); this.modList = keep(this.modList ?? [], "author_id"); this.edits = keep(this.edits ?? [], "author_id");
+      return had;
+    },
     async listMods() { return [...mods.values()]; },
     async addMod(id, note) { mods.set(id, { tg_id: id, note, added_at: new Date().toISOString() }); return mods.get(id); },
     async removeMod(id) { mods.delete(id); },

@@ -363,9 +363,20 @@ export function createCore({ store, verify, botToken, adminIds = [], maxAgeSec =
       });
     }
     if (r === "user") {
-      if (m !== "PATCH") return json(405, { error: "method_not_allowed" });
+      if (m !== "PATCH" && m !== "DELETE") return json(405, { error: "method_not_allowed" });
       const id = String(q.id ?? "");
       if (!TG_ID.test(id)) return json(404, { error: "not_found" });
+      // DELETE: полностью стереть игрока из базы (без бана). Зайдёт снова — зарегистрируется как новый.
+      if (m === "DELETE") {
+        const tid = Number(id);
+        if (tid === uid) return json(400, { error: "cannot_delete_self" });
+        const mods = (await store.listMods()).map((x) => Number(x.tg_id));
+        if (adminIds.includes(tid) || mods.includes(tid)) return json(400, { error: "cannot_delete_staff" });
+        const had = await store.deleteUser(tid);
+        forget(tid);
+        if (!had) return json(404, { error: "not_found" });
+        return json(200, { deleted: true, id });
+      }
       const b = parseBody(req.body);
       if (!b || typeof b.banned !== "boolean") return json(400, { error: "bad_json" });
       const tid = Number(id);

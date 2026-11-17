@@ -71,7 +71,7 @@ main{max-width:1120px;margin:0 auto;padding:18px 16px}
 /* пользователи */
 .tools{display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:12px}
 .ut{background:var(--card);border:2px solid var(--line)}
-.ur{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,1.1fr) 108px;gap:12px;align-items:center;padding:12px 14px;border-bottom:2px solid var(--line2)}
+.ur{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,1.1fr) 196px;gap:12px;align-items:center;padding:12px 14px;border-bottom:2px solid var(--line2)}
 .ur:last-child{border-bottom:0}
 .uh{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);background:var(--bg1);padding-top:9px;padding-bottom:9px}
 .ur.ban{background:rgba(255,94,122,.07)}
@@ -82,7 +82,7 @@ main{max-width:1120px;margin:0 auto;padding:18px 16px}
 .cid{background:none;border:0;padding:0;color:var(--dim);cursor:pointer;font-size:13px;text-decoration:underline dotted}.cid:hover{color:#fff}
 .dot{display:inline-block;width:9px;height:9px;margin-right:7px;background:var(--dim)}.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
 .reason{display:block;margin-top:4px;font-size:13px;color:#ff9aa8;word-break:break-word}
-.c-a{text-align:right}
+.c-a{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .more{display:block;width:100%;margin-top:12px}
 
 /* заявки, новости, команда */
@@ -161,7 +161,7 @@ const AVC = ["#a56bff", "#ff5ec4", "#4dd2ff", "#5dff8a", "#ffb23f", "#ff5e7a"];
 const ERR = {
   banned: "Аккаунт заблокирован", forbidden: "Недостаточно прав для этого действия", bad_address: "Неверный адрес: нужен TRON (TRC20), начинается с T, 34 символа",
   bad_news: "Проверьте новость: заголовок обязателен, ссылка только https://", cannot_ban_self: "Нельзя заблокировать самого себя",
-  cannot_ban_staff: "Нельзя заблокировать админа или модератора", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
+  cannot_ban_staff: "Нельзя заблокировать админа или модератора", cannot_delete_self: "Нельзя удалить самого себя", cannot_delete_staff: "Нельзя удалить админа или модератора (сначала уберите его из команды)", not_found: "Не найдено", already_main: "Этот человек уже главный админ",
   bad_id: "Неверный Telegram id (только цифры)", unauthorized: "Откройте панель из Telegram",
   already_published: "Эта заявка уже в маркете", already_done: "Решение по этой правке уже принято", bad_status: "Выберите решение",
   bad_text: "Слишком короткое сообщение", bad_file: "Файл игры: нужен HTML не больше 1,5 МБ",
@@ -271,7 +271,7 @@ async function viewUsers(root) {
       <div class="c-r" data-l="Регистрация">${fmt(u.reg)}</div>
       <div class="c-s" data-l="Активность" title="${fmt(u.seen)}"><span class="dot${on ? " on" : ""}"></span>${on ? "онлайн" : ago(u.seen)}</div>
       <div class="c-t" data-l="Статус">${role}${st}</div>
-      <div class="c-a">${u.role ? "" : u.banned ? `<button class="btn sm ok" data-act="unban" type="button">Разбанить</button>` : `<button class="btn sm bad" data-act="ban" type="button">Забанить</button>`}</div></div>`;
+      <div class="c-a">${u.role ? "" : (u.banned ? `<button class="btn sm ok" data-act="unban" type="button">Разбанить</button>` : `<button class="btn sm bad" data-act="ban" type="button">Забанить</button>`) + ` <button class="btn sm ghost" data-act="del" type="button" title="Стереть игрока из базы">Удалить</button>`}</div></div>`;
   };
 
   const draw = () => {
@@ -297,7 +297,7 @@ async function viewUsers(root) {
     const cp = e.target.closest("[data-copy]"); if (cp) return copy(cp.dataset.copy);
     const b = e.target.closest("[data-act]"); if (!b) return;
     const u = S.rows.find(x => x.id === b.closest(".ur").dataset.id); if (!u) return;
-    b.dataset.act === "ban" ? banDialog(u) : unbanDialog(u);
+    b.dataset.act === "ban" ? banDialog(u) : b.dataset.act === "del" ? delDialog(u) : unbanDialog(u);
   };
 
   const apply = async (u, body, okMsg) => {
@@ -312,6 +312,11 @@ async function viewUsers(root) {
       [{ t: "Отмена", cls: "ghost" }, { t: "Забанить", cls: "bad", fn: c => apply(u, { banned: true, reason: c.$("#br").value.trim() }, "Игрок забанен") }]);
     m.el.addEventListener("click", e => { const c = e.target.closest("[data-r]"); if (c) m.$("#br").value = c.dataset.r; });
   }
+  /* полное удаление из базы (не бан): профиль, отзывы, журнал, покупки, заявки и моды игрока стираются; зайдёт снова — будет новым игроком */
+  const delDialog = u => confirmBox("Удалить игрока из базы?", `<b>${esc(u.name || "Без имени")}</b> ${u.username ? "@" + esc(u.username) : ""} · id ${esc(u.id)}<br><br>Будут стёрты профиль, отзывы, журнал действий, покупки, заявки и моды. Это не бан: если игрок зайдёт снова, он зарегистрируется как новый. Отменить нельзя.`, "Удалить навсегда", "bad", async () => {
+    try { await api("/admin?r=user&id=" + encodeURIComponent(u.id), { method: "DELETE" }); S.rows = S.rows.filter(x => x !== u); S.total = Math.max(0, S.total - 1); toast("Игрок удалён из базы"); draw(); stats(); }
+    catch (e) { toast(errText(e), true); return false; }
+  });
   const unbanDialog = u => confirmBox("Разбанить игрока?", `Вернуть доступ игроку <b>${esc(u.name || u.id)}</b>?`, "Разбанить", "ok", () => apply(u, { banned: false }, "Игрок разбанен"));
 
   stats(); await load();
