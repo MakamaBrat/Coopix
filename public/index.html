@@ -1326,7 +1326,7 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
     <div class="mascot" id="mascot" role="img" aria-label="Coopix the pigeon">
       <canvas class="planet" id="planet" width="72" height="72" aria-hidden="true"></canvas>
       <i class="pshadow"></i>
-      <div class="mjump"><div class="mwrap"><img class="pgn" src="assets/coopix-pigeon.png" alt="" width="480" height="450" decoding="async" draggable="false">
+      <div class="mjump"><div class="mwrap"><img class="pgn" src="assets/coopix-pad.png" alt="" width="480" height="450" decoding="async" draggable="false">
         <i class="glint"></i><i class="sglow"></i><i class="pgeyes"></i></div></div>
     </div>
     <i class="spark" style="left:0;top:3%;--s:20px;--d:.2s" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z"/></svg></i>
@@ -2276,7 +2276,7 @@ const fmtDate=t=>{const d=new Date(t),p=n=>String(n).padStart(2,"0");return p(d.
 /* безопасные значения для style="": фото только JPEG data-URL, цвет только #rrggbb (в том числе то, что пришло с сервера) */
 const PHOTO_RE=/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/,COLOR_RE=/^#[0-9a-f]{6}$/i;
 const safeC=c=>COLOR_RE.test(c||"")?c:AVC[0];
-function avatarBg(P=PROF){return P.photo&&PHOTO_RE.test(P.photo)?`style="background-image:url(${P.photo})"`:`class="pg" style="background-image:url(assets/coopix-pigeon.png)"`}
+function avatarBg(P=PROF){return P.photo&&PHOTO_RE.test(P.photo)?`style="background-image:url(${P.photo})"`:`class="pg" style="background-image:url(assets/coopix-pad.png)"`}
 const mTier=m=>m.xp>=50?3:m.xp>=25?2:1;
 function medalHTML(m,i,P=PROF){const ok=!!P.medals[m.id],v=Math.min(m.v(P),m.need);
   const N=Math.min(m.need,5),f=Math.floor(v/m.need*N),pips=ok||m.need<2?"":`<span class="md-pips">${Array.from({length:N},(_,k)=>`<i class="${k<f?"on":""}"></i>`).join("")}</span>`;
@@ -2375,7 +2375,7 @@ function openProfileEditor(){
     <div class="fld"><span class="lbl">Цвет рамки</span><div class="sw" id="pfSw" role="radiogroup" aria-label="Цвет рамки">${AVC.map(c=>`<button type="button" role="radio" aria-checked="${c===d.color}" data-c="${c}" style="--sc:${c}" aria-label="${c}"></button>`).join("")}</div></div>
   </div>
   <div class="pfoot"><div class="row"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="pfSave">Сохранить</button></div></div>`);
-  const av=$("#pfAv"),draw=()=>{const i=av.querySelector("i");av.style.setProperty("--pc",d.color);i.className=d.photo?"":"pg";i.style.backgroundImage=d.photo?`url(${d.photo})`:"url(assets/coopix-pigeon.png)"};draw();
+  const av=$("#pfAv"),draw=()=>{const i=av.querySelector("i");av.style.setProperty("--pc",d.color);i.className=d.photo?"":"pg";i.style.backgroundImage=d.photo?`url(${d.photo})`:"url(assets/coopix-pad.png)"};draw();
   $("#pfSw").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;d.color=b.dataset.c;panel.querySelectorAll("#pfSw button").forEach(x=>x.setAttribute("aria-checked",x===b));draw();sfx.tap()});
   $("#pfNoPh").addEventListener("click",()=>{d.photo="";draw();sfx.tap()});
   $("#pfFile").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
@@ -2871,7 +2871,7 @@ const cmOf=m=>{if(useSrv(m))return(REV[m.id]||(REV[m.id]={items:[],ok:0})).items
   if(!CM[m.id]){CM[m.id]=(SEED[m.id]||[]).map(([n,r,t,d],i)=>({n,r,t,d:Date.now()-d*864e5-i*36e5}));saveCM()}return CM[m.id]};
 /* аватар автора отзыва: нажатие открывает его профиль (свой отзыв ведёт на вкладку «Профиль») */
 const cmAv=c=>{const A=c.pid?AUTH[c.pid]:null,ph=c.me?PROF.photo:(A&&A.p)||"",ok=PHOTO_RE.test(ph||""),col=c.me?PROF.color:(A&&A.c)||AVC[hue(c.n)%AVC.length];
-  const av=`<div class="pf-av cm-av" ${c.pid&&!c.me?`data-av="${esc(c.pid)}"`:""} style="--pc:${safeC(col)}"><i ${ok?`style="background-image:url(${ph})"`:`style="background-image:url(assets/coopix-pigeon.png);background-size:118%;background-position:50% 30%"`}></i></div>`;
+  const av=`<div class="pf-av cm-av" ${c.pid&&!c.me?`data-av="${esc(c.pid)}"`:""} style="--pc:${safeC(col)}"><i ${ok?`style="background-image:url(${ph})"`:`style="background-image:url(assets/coopix-pad.png);background-size:118%;background-position:50% 30%"`}></i></div>`;
   return c.me||c.pid?`<button type="button" class="cm-avb" data-p="${c.me?"me":esc(c.pid)}" aria-label="Профиль: ${esc(c.me?PROF.name:c.n)}">${av}</button>`:av};
 const ago=t=>{const s=(Date.now()-t)/1e3;return s<60?"только что":s<3600?(s/60|0)+" мин назад":s<86400?(s/3600|0)+" ч назад":(s/86400|0)+" дн назад"};
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
