@@ -156,9 +156,10 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 /* ---------- перехваты: всего и рекорд серии запоминаются (хранятся в сохранении игры, оно переживает перезапуск) ---------- */
 {const RU2={"x.rgTotal":"всего","x.rgBest":"рекорд","x.rgMenu":"Перехватов всего","x.rgMenuBest":"рекорд серии"},EN2={"x.rgTotal":"total","x.rgBest":"best","x.rgMenu":"Total regrabs","x.rgMenuBest":"best streak"};
  for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU2:EN2);
- const st=document.createElement("style");st.textContent="#menu .stat{position:absolute;left:33%;width:36%;top:20%;text-align:center;font-size:2.8vmin;color:#12304f;font-weight:700}@media(orientation:portrait){#menu .stat{left:0;width:100%;top:calc(env(safe-area-inset-top) + 13.6%);font-size:3.6vw}}#cnt{white-space:nowrap}";document.head.appendChild(st);
+ const st=document.createElement("style");st.textContent="#menu .stat{position:absolute;left:33%;width:36%;top:20%;text-align:center;font-size:2.1vmin;color:#12304f;font-weight:600;opacity:.7}@media(orientation:portrait){#menu .stat{left:0;width:100%;top:calc(env(safe-area-inset-top) + 13.6%);font-size:2.9vw}}#cstat{position:absolute;right:19.5%;top:1.2vmin;z-index:3;text-align:right;font-size:1.9vmin;line-height:1.35;color:#fff;font-weight:600;opacity:.75;text-shadow:0 .2vmin .6vmin rgba(0,0,0,.6);pointer-events:none;white-space:nowrap}";document.head.appendChild(st);
  const m=$("menu");if(m){const d=document.createElement("div");d.className="stat";d.id="mStat";m.appendChild(d)}
+ const gm=$("game");if(gm){const d=document.createElement("div");d.id="cstat";gm.appendChild(d)}
  const setStat=()=>{const e=$("mStat");if(e)e.textContent=T("x.rgMenu")+": "+(SAVE.regrabs|0)+"  ·  "+T("x.rgMenuBest")+": "+(SAVE.bestRG|0)};
- const _uc=updCnt;updCnt=function(){_uc();const el=$("cnt");if(!el)return;if(RG>(SAVE.bestRG|0))SAVE.bestRG=RG;el.textContent+="  ·  "+T("x.rgTotal")+" "+(SAVE.regrabs|0)+"  ·  "+T("x.rgBest")+" "+(SAVE.bestRG|0)};
+ const _uc=updCnt;updCnt=function(){_uc();if(RG>(SAVE.bestRG|0))SAVE.bestRG=RG;const el=$("cstat");if(el)el.innerHTML=T("x.rgTotal")+" "+(SAVE.regrabs|0)+"<br>"+T("x.rgBest")+" "+(SAVE.bestRG|0)}; /* основной счётчик #cnt остаётся как в оригинале, «всего/рекорд» — мелко сбоку */
  const _rm=renderMenu;renderMenu=function(){_rm();setStat()};setStat()}
 }
