@@ -1227,11 +1227,15 @@ body.onhome .ts{flex:1 1 0;min-height:0}
 .ns .nw h4{font-size:17px;line-height:1.22;letter-spacing:0}
 .ns .nw p,html .ns .nw p{margin-top:3px;font-size:14px;line-height:1.3;-webkit-line-clamp:4}
 .ns .nw-in{padding:10px 13px 10px}.ns .nw-go{margin-top:4px}
-/* карточки одной высоты (по самой длинной): содержимое короткой новости — по центру карточки, а не прилипшим к верху с пустотой снизу.
-   Стрелка «открыть» — по центру справа, не занимает строку и не толкает текст */
-.ns .nw-in{justify-content:center}
-.ns .nw[role=button] .nw-in{padding-right:42px}
-.ns .nw-go{position:absolute;right:11px;top:50%;margin:-11px 0 0}
+/* карточки одной высоты (по самой длинной). Шапка (тег, дата, стрелка) всегда сверху, под ней разделитель;
+   заголовок и текст — по центру оставшегося места. fitNews() подбирает размер шрифта под каждую новость (--fs):
+   короткая новость крупнее и заполняет карточку, длинная — компактная, но целиком */
+.ns .nw-h{margin-bottom:0;padding-bottom:7px;border-bottom:1px solid color-mix(in srgb,var(--nc) 22%,transparent)}
+.ns .nw-go{position:static;width:20px;height:20px;margin:0 0 0 2px}
+.ns .nw-go svg{width:9px;height:9px}
+.nw-b{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;padding-top:7px}
+html:not(.desk) .ns .nw-b h4{font-size:calc(17px * var(--fs,1));line-height:1.2}
+html:not(.desk) .ns .nw-b p{font-size:calc(14px * var(--fs,1));line-height:1.32;margin-top:calc(3px * var(--fs,1))}
 .nw-tag{white-space:nowrap}
 /* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
 .lbtn,.bigplay,.chip,.tab .ql,.pf-subr .btn,.thx-go{white-space:nowrap}
@@ -2139,8 +2143,8 @@ function renderHome(){
       <div class="ns-wrap">
         <div class="ns" id="ns">${items.map(n=>{const nc=/^#[0-9a-f]{6}$/i.test(n.c)?n.c:"#a56bff",clk=n.ok||n.lk;
           return `<div class="ns-i"><div class="nw" style="--nc:${nc}"${n.ok?` role="button" tabindex="0" data-app="${esc(n.app)}"`:n.lk?` role="button" tabindex="0" data-link="${esc(n.lk)}"`:""}><div class="nw-in">
-          <div class="nw-h"><i class="nw-ic" aria-hidden="true">${newsIcon(n.tag)}</i><span class="nw-tag">${esc(n.tag||"")}</span><time>${esc(n.date||"")}</time></div>
-          <h4>${esc(n.title||"")}</h4><p>${esc(n.text||"")}</p>${clk?`<i class="nw-go" aria-hidden="true">${IC.back}</i>`:""}</div></div></div>`}).join("")}</div>
+          <div class="nw-h"><i class="nw-ic" aria-hidden="true">${newsIcon(n.tag)}</i><span class="nw-tag">${esc(n.tag||"")}</span><time>${esc(n.date||"")}</time>${clk?`<i class="nw-go" aria-hidden="true">${IC.back}</i>`:""}</div>
+          <div class="nw-b"><h4>${esc(n.title||"")}</h4><p>${esc(n.text||"")}</p></div></div></div></div>`}).join("")}</div>
       </div>
       ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
     </section>
@@ -2160,7 +2164,8 @@ function renderHome(){
   ns.addEventListener("scroll",()=>{const i=Math.round(ns.scrollLeft/ns.clientWidth);if(i!==cur){cur=i;dots.forEach((d,j)=>d.setAttribute("aria-current",j===i))}},{passive:true});
   ns.addEventListener("pointerdown",()=>{hold=Date.now()});
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
-  fitHome();requestAnimationFrame(fitHome);document.fonts&&document.fonts.ready.then(fitHome);
+  const fitAll=()=>{fitNews();fitHome()};
+  fitAll();requestAnimationFrame(fitAll);document.fonts&&document.fonts.ready.then(fitAll);
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
 
@@ -2172,7 +2177,17 @@ function fitHome(){const ts=homeEl.querySelector(".ts"),inn=ts&&ts.querySelector
   if(!need||!have)return; /* главная ещё скрыта — посчитаем, когда появится (ResizeObserver ниже) */
   if(have/need<.5){ts.classList.add("tight");need=inn.offsetHeight} /* совсем тесно: прячем предметы и теги, а не сжимаем текст в кашу */
   const s=Math.max(.4,Math.min(1,have/need));inn.style.transform=s<1?`scale(${s.toFixed(3)})`:""}
-addEventListener("resize",()=>requestAnimationFrame(fitHome));
+/* размер текста новости по её длине: все карточки высотой с самую длинную при обычном шрифте,
+   затем каждая короткая новость увеличивает шрифт (до +30%), пока помещается целиком */
+function fitNews(){const ns=homeEl.querySelector("#ns");if(!ns||view!==0)return;
+  const bodies=[...ns.querySelectorAll(".nw-b")];ns.style.height="";bodies.forEach(b=>b.style.setProperty("--fs","1"));
+  if(document.documentElement.classList.contains("desk")||!ns.offsetHeight)return;
+  ns.style.height=ns.offsetHeight+"px"; /* фиксируем высоту, чтобы рост шрифта в одной карточке не растягивал остальные */
+  const fits=b=>b.scrollHeight<=b.clientHeight+1&&[...b.children].every(e=>e.scrollHeight<=e.clientHeight+1);
+  bodies.forEach(b=>{let lo=1,hi=1.3;b.style.setProperty("--fs",hi);if(fits(b))return;
+    for(let i=0;i<6;i++){const m=(lo+hi)/2;b.style.setProperty("--fs",m.toFixed(3));if(fits(b))lo=m;else hi=m}
+    b.style.setProperty("--fs",lo.toFixed(3))})}
+addEventListener("resize",()=>requestAnimationFrame(()=>{fitNews();fitHome()}));
 /* пересчёт при любом изменении места под блоком (вьюпорт Telegram, шрифты, показ главной) */
 if(window.ResizeObserver){let rh=-1;new ResizeObserver(()=>{const ts=homeEl&&homeEl.querySelector(".ts"),h=ts?Math.round(ts.getBoundingClientRect().height):0;if(h!==rh){rh=h;requestAnimationFrame(fitHome)}}).observe(homeEl)}
 
