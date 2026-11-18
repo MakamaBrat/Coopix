@@ -3586,7 +3586,7 @@ function deepSlug(){let p="";try{p=decodeURIComponent(location.pathname)}catch(e
   if(!p||p.includes("/")||/\.html?$/i.test(p))return"";return p}
 const findDeep=s=>DATA.find(d=>slugOf(d.id)===s)||DATA.find(d=>slugOf(d.title)===s)||DATA.find(d=>slugOf(d.title).replace(/-/g,"")===s.replace(/-/g,""));
 /* ссылка …/unixR (или startapp=unixR): большая R в конце = сразу запустить игру, без подсветки «Вот эта игра» */
-const resolveDeep=raw=>{if(!raw)return null;if(/R$/.test(raw)){const g=raw.length>1&&findDeep(slugOf(raw.slice(0,-1)));if(g)return{g,quick:true}}
+const resolveDeep=raw=>{if(!raw)return null;if(/R$/.test(raw)||(/r$/.test(raw)&&!findDeep(slugOf(raw)))){const g=raw.length>1&&findDeep(slugOf(raw.slice(0,-1)));if(g)return{g,quick:true}} /* R на конце: заглавная всегда; строчная r — только если без неё такой игры нет (чтобы snowrider не принимался за snowrideR) */
   const g=findDeep(slugOf(raw));return g?{g,quick:false}:null};
 async function spotGame(id){
   const get=()=>{const n=LIVE.find(x=>x.mid===id);return n&&n.host&&n.host.closest(".cardbox")};
