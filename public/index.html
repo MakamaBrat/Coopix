@@ -676,7 +676,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .home .enter{animation:enter .5s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--i,0s)}
 .ts{position:relative;isolation:isolate;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,1.9vh,18px);text-align:center}
 .ts::before{content:"";position:absolute;z-index:-1;left:-12%;right:-12%;top:2%;bottom:2%;pointer-events:none;background:radial-gradient(closest-side,rgba(138,77,255,.32),transparent)}
-.shelf{position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(58px,min(12.5vh,21vw),106px);margin-bottom:4px}
+.shelf{position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(72px,min(15.5vh,25vw),128px);margin-bottom:4px}
 .gad{position:relative;z-index:1;height:100%;margin:0 -3%;transform:rotate(var(--r,0deg))}
 .gad:nth-child(odd){margin-bottom:8px;height:92%}
 .gad .bob{display:block}
@@ -685,9 +685,9 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .hero-t{font-size:clamp(22px,7.4vw,36px);font-weight:700;line-height:1.08;text-transform:uppercase;letter-spacing:.02em;color:#fff7ee;overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.5)}
 .hero-t em{display:block;margin-top:5px;font-style:normal;color:#d6bcff;text-shadow:0 3px 14px rgba(0,0,0,.35),0 0 22px #8a4dff88}
 .ts .tags{justify-content:center;margin:0;gap:6px}
-.ts .tag{height:28px;padding:0 11px;font-size:15px}
+.ts .tag{height:32px;padding:0 13px;font-size:16px}
 .gow{width:100%;margin-top:2px;filter:drop-shadow(0 0 12px rgba(165,107,255,.55))}
-.gow .bigplay{height:clamp(54px,8vh,64px);font-size:clamp(20px,6vw,26px);font-weight:700;animation:goglow 2.6s ease-in-out infinite;
+.gow .bigplay{height:clamp(58px,9vh,70px);font-size:clamp(22px,6.8vw,29px);font-weight:700;animation:goglow 2.6s ease-in-out infinite;
   /* no block behind the label: plain glowing text + pixel chevron */
   background:none;clip-path:none;color:#fff7ee;gap:10px;text-shadow:0 3px 14px rgba(0,0,0,.35),0 0 22px #8a4dff88}
 .gow .bigplay::after{content:"";width:.5em;height:.5em;border:solid #d6bcff;border-width:.16em .16em 0 0;transform:rotate(45deg);margin-left:-.1em;animation:gonudge 1.3s steps(4) infinite}
@@ -704,15 +704,6 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .ns{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .ns::-webkit-scrollbar{display:none}
 .ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
-/* стрелки поверх карточки: подсказывают, что новостей больше одной; на телефоне едва заметны, видны при наведении/десктопе */
-.ns-nav{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
-  color:#fff;background:rgba(10,6,26,.55);backdrop-filter:blur(2px);opacity:0;transform:translateY(-50%);transition:opacity .2s,background .15s;pointer-events:none}
-.ns-nav svg{width:13px;height:13px}
-.ns-nav.prev{left:6px}.ns-nav.next{right:6px}.ns-nav.next svg{transform:scaleX(-1)}
-.ns-wrap:hover .ns-nav,.ns-nav:focus-visible{opacity:1;pointer-events:auto}
-html.phone .ns-nav{opacity:.45;pointer-events:auto}
-.ns-nav:hover,.ns-nav:focus-visible{background:rgba(165,107,255,.65)}
-.ns-nav:active{transform:translateY(-50%) scale(.9)}
 /* карточка новости: стеклянная панель со свечением в цвете тега (--nc), а не плоский градиент с узкой полосой слева */
 .nw{--nc:#a56bff;position:relative;padding:1.5px;border-radius:20px;transition:transform .12s,filter .2s,box-shadow .2s;
   background:linear-gradient(155deg,color-mix(in srgb,var(--nc) 85%,#fff 8%),color-mix(in srgb,var(--nc) 35%,#2a1a66) 55%,#241848);
@@ -745,7 +736,7 @@ html.phone .ns-nav{opacity:.45;pointer-events:auto}
 .ns .nw-go{width:22px;height:22px;margin-top:6px}
 .ns .nw-go svg{width:10px;height:10px}
 /* новости чуть крупнее новостей на узких экранах: в карточке помещается 3 строки текста */
-.ts .hero-t{font-size:clamp(18px,min(6.66vw,4vh),32.4px)}
+.ts .hero-t{font-size:clamp(25px,8.6vw,41px)}
 .lnks .lbtn{height:48px}
 /* точки-листалки под новостью: активная — вытянутая капсула со свечением, остальные — тусклые кружки */
 .dots{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px}
@@ -753,8 +744,8 @@ html.phone .ns-nav{opacity:.45;pointer-events:auto}
 .dots button[aria-current=true]{width:22px;background:linear-gradient(90deg,#d6bcff,#8a52f5);box-shadow:0 0 10px rgba(165,107,255,.65)}
 /* home tweaks: logo -20% (header height unchanged), hero title -10% */
 body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
-/* средний блок главной (гаджеты + заголовок + кнопка) -10%, освободившееся место отдано новостям */
-.ts{zoom:.9}
+/* .ts: масштаб считает fitHome() в JS (инлайн-стиль перебивает любое правило здесь) — центральный блок растёт,
+   пока не упрётся в новости снизу; стартовый размер под ним задают сами .hero-t/.shelf/.tag/.bigplay выше */
 /* sponsors */
 .sprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
 .sprow::-webkit-scrollbar{display:none}
@@ -1234,7 +1225,7 @@ body.onhome .home{height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - c
 body.onhome .ts{flex:1 1 0;min-height:0}
 .ns{align-items:stretch}.ns-i{display:flex}.ns-i>.nw{flex:1 1 auto;display:flex;border-radius:18px}.ns-i .nw-in{flex:1;min-width:0;border-radius:16px;overflow:hidden}
 .ns .nw h4{font-size:17px;line-height:1.22;letter-spacing:0}
-.ns .nw p{margin-top:3px;font-size:14px;line-height:1.3;-webkit-line-clamp:3}
+.ns .nw p{margin-top:3px;font-size:14px;line-height:1.3;-webkit-line-clamp:2}
 .nw-tag{white-space:nowrap}
 /* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
 .lbtn,.bigplay,.chip,.tab .ql,.pf-subr .btn,.thx-go{white-space:nowrap}
@@ -2144,7 +2135,6 @@ function renderHome(){
           return `<div class="ns-i"><div class="nw" style="--nc:${nc}"${n.ok?` role="button" tabindex="0" data-app="${esc(n.app)}"`:n.lk?` role="button" tabindex="0" data-link="${esc(n.lk)}"`:""}><div class="nw-in">
           <div class="nw-h"><i class="nw-ic" aria-hidden="true">${newsIcon(n.tag)}</i><span class="nw-tag">${esc(n.tag||"")}</span><time>${esc(n.date||"")}</time></div>
           <h4>${esc(n.title||"")}</h4><p>${esc(n.text||"")}</p>${clk?`<i class="nw-go" aria-hidden="true">${IC.back}</i>`:""}</div></div></div>`}).join("")}</div>
-        ${items.length>1?`<button type="button" class="ns-nav prev" id="nsPrev" aria-label="Предыдущая новость">${IC.back}</button><button type="button" class="ns-nav next" id="nsNext" aria-label="Следующая новость">${IC.back}</button>`:""}
       </div>
       ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
     </section>
@@ -2164,9 +2154,6 @@ function renderHome(){
   ns.addEventListener("scroll",()=>{const i=Math.round(ns.scrollLeft/ns.clientWidth);if(i!==cur){cur=i;dots.forEach((d,j)=>d.setAttribute("aria-current",j===i))}},{passive:true});
   ns.addEventListener("pointerdown",()=>{hold=Date.now()});
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
-  const nPrev=$("#nsPrev"),nNext=$("#nsNext");
-  nPrev&&nPrev.addEventListener("click",()=>{sfx.tap();hold=Date.now();go((cur-1+items.length)%items.length)});
-  nNext&&nNext.addEventListener("click",()=>{sfx.tap();hold=Date.now();go((cur+1)%items.length)});
   fitHome();requestAnimationFrame(fitHome);document.fonts&&document.fonts.ready.then(fitHome);
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
@@ -2175,7 +2162,7 @@ function renderHome(){
 function fitHome(){const ts=homeEl.querySelector(".ts");if(!ts||view!==0)return;
   ts.style.zoom="1";const kids=[...ts.children].filter(e=>getComputedStyle(e).position!=="absolute"&&e.offsetHeight);
   const gap=parseFloat(getComputedStyle(ts).rowGap)||0,need=kids.reduce((t,e)=>t+e.offsetHeight,0)+gap*Math.max(0,kids.length-1);
-  const have=ts.getBoundingClientRect().height;ts.style.zoom=String(Math.max(.5,Math.min(.95,have/need)).toFixed(3))}
+  const have=ts.getBoundingClientRect().height;ts.style.zoom=String(Math.max(.5,Math.min(1,have/need)).toFixed(3))}
 addEventListener("resize",()=>requestAnimationFrame(fitHome));
 
 /* ============ профиль: уровень, звание, медали ============ */
