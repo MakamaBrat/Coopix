@@ -152,4 +152,13 @@ let cgT=0,cgSum=0;
 const coinGain=n=>{SAVE.coins+=n;cgSum+=n;const el=$("cgain");if(el){el.textContent="+"+cgSum+" \u{1FA99}";el.classList.remove("on");void el.offsetWidth;el.classList.add("on")}clearTimeout(cgT);cgT=setTimeout(()=>{cgSum=0;persist()},700)};
 const _em=GP.emit;GP.emit=function(s,t){if(this===W&&!RP&&lesson<0){const r=s==="regrab"?(t&&t.same?0:2):s==="flip"?3:s==="giant"?6:s==="halftwist"?1:0;if(r)coinGain(r)}return _em.call(this,s,t)};
 addEventListener("pagehide",()=>persist());document.addEventListener("visibilitychange",()=>{if(document.hidden)persist()});
+
+/* ---------- перехваты: всего и рекорд серии запоминаются (хранятся в сохранении игры, оно переживает перезапуск) ---------- */
+{const RU2={"x.rgTotal":"всего","x.rgBest":"рекорд","x.rgMenu":"Перехватов всего","x.rgMenuBest":"рекорд серии"},EN2={"x.rgTotal":"total","x.rgBest":"best","x.rgMenu":"Total regrabs","x.rgMenuBest":"best streak"};
+ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU2:EN2);
+ const st=document.createElement("style");st.textContent="#menu .stat{position:absolute;left:33%;width:36%;top:20%;text-align:center;font-size:2.8vmin;color:#12304f;font-weight:700}@media(orientation:portrait){#menu .stat{left:0;width:100%;top:calc(env(safe-area-inset-top) + 13.6%);font-size:3.6vw}}#cnt{white-space:nowrap}";document.head.appendChild(st);
+ const m=$("menu");if(m){const d=document.createElement("div");d.className="stat";d.id="mStat";m.appendChild(d)}
+ const setStat=()=>{const e=$("mStat");if(e)e.textContent=T("x.rgMenu")+": "+(SAVE.regrabs|0)+"  ·  "+T("x.rgMenuBest")+": "+(SAVE.bestRG|0)};
+ const _uc=updCnt;updCnt=function(){_uc();const el=$("cnt");if(!el)return;if(RG>(SAVE.bestRG|0))SAVE.bestRG=RG;el.textContent+="  ·  "+T("x.rgTotal")+" "+(SAVE.regrabs|0)+"  ·  "+T("x.rgBest")+" "+(SAVE.bestRG|0)};
+ const _rm=renderMenu;renderMenu=function(){_rm();setStat()};setStat()}
 }
