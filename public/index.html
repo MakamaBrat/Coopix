@@ -61,7 +61,7 @@ html.tg:not(.fs){--tgt:0px;--top:0px}
 html.fs{--tgt:min(calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)), 56px);--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 6px)}
 *{box-sizing:border-box;margin:0}
 html{font-synthesis:none;background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
-body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
+body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;overflow-x:clip;-webkit-tap-highlight-color:transparent;
   padding:var(--top) 0 0}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 :focus-visible{outline:3px solid #fff;outline-offset:3px}
@@ -71,8 +71,8 @@ svg{display:block}
 body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.10) 2px 3px)}
 
-html,body{touch-action:pan-y;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%} /* без прокрутки влево-вправо во всех окнах */
-body{max-width:100vw}
+html,body{touch-action:pan-y;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%} /* без прокрутки влево-вправо во всех окнах */
+html{overflow-x:hidden}body{max-width:100vw;overflow-x:hidden;overflow-x:clip} /* clip: body не становится своей областью прокрутки, на Android (WebView) страницу нельзя сдвинуть пальцем вбок */
 .page,.sheet,.pbody,.menu{overflow-x:hidden;overscroll-behavior-x:none}
 .app{position:relative;z-index:1;width:var(--col);margin:0 auto;padding:6px 0 140px}
 
@@ -712,8 +712,6 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .ns-wrap{position:relative}
 .ns{display:flex;overflow:hidden;scrollbar-width:none;touch-action:pan-y} /* главная без прокрутки влево-вправо: показываем одну (первую) новость */
 .dots{display:none!important}
-@keyframes swl{from{opacity:.4;transform:translateX(34px)}to{opacity:1;transform:none}}@keyframes swr{from{opacity:.4;transform:translateX(-34px)}to{opacity:1;transform:none}}
-.app.swL{animation:swl .28s ease-out}.app.swR{animation:swr .28s ease-out}
 body.onhome,body.onhome .app{touch-action:pan-y;overflow-x:hidden}
 .ns::-webkit-scrollbar{display:none}
 .ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
@@ -2077,19 +2075,8 @@ $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 /* поиск из страницы игры: закрываем страницу, открываем маркет со всеми играми и подставляем запрос */
 function searchFor(q){backClick();setTimeout(()=>{SQ=q;qIn.value=q;if(view!==1||TABS[tab][0]==="favt"){view=1;tab=0;sync();render()}else filterList();scrollTo({top:0,behavior:RM?"auto":"smooth"})},60)}
 /* раздел игр всегда открывается на маркете (все игры); «Избранное» — своей вкладкой */
+addEventListener("scroll",()=>{if(window.scrollX||document.documentElement.scrollLeft||document.body.scrollLeft){scrollTo(0,window.scrollY);document.documentElement.scrollLeft=0;document.body.scrollLeft=0}},{passive:true});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
-/* смахивание влево-вправо переключает четыре вкладки (главная, маркет, клуб, профиль), как нижнее меню.
-   Не срабатывает на карточках игр (у них свайп — «в избранное/купить»), в полях ввода, в горизонтально прокручиваемых блоках и пока открыта страница игры */
-(()=>{let x0=0,y0=0,t0=0,ok=false;const blocked=el=>{for(let n=el;n&&n!==document.body;n=n.parentElement){
-    if(n.matches&&n.matches(".card,input,textarea,select,iframe,canvas,.sheet,.dock,[data-noswipe]"))return true;
-    if(n.scrollWidth>n.clientWidth+4){const ox=getComputedStyle(n).overflowX;if(ox==="auto"||ox==="scroll")return true}}return false};
-  addEventListener("touchstart",e=>{ok=false;if(e.touches.length!==1||PGO||window.__gm||document.body.classList.contains("pgopen")||view<0||view>3||blocked(e.target))return;
-    const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();ok=true},{passive:true});
-  addEventListener("touchend",e=>{if(!ok)return;ok=false;const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
-    if(Date.now()-t0>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.6)return;
-    const to=view+(dx<0?1:-1);if(to<0||to>3)return;sfx.tap();goView(to);
-    if(!RM){const ap=document.querySelector(".app");if(ap){ap.classList.remove("swL","swR");void ap.offsetWidth;ap.classList.add(dx<0?"swL":"swR")}}},{passive:true});
-})();
 function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
