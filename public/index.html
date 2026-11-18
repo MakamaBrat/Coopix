@@ -46,12 +46,14 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
   --bg0:#07040f; --bg1:#0e0820; --ink:#f4ecff; --dim:#9b86d6; --line:#3a2a70; --acc:#a56bff; --acc2:#5b2fd0;
   --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --k:.5; --col:min(100vw - 24px, 500px);
-  /* Telegram mini app: its own insets (fullscreen header buttons) + system insets, one extra gap inside Telegram */
-  --tgt:calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px));
+  /* Telegram mini app: его собственные отступы (плавающая шапка Telegram + вырез экрана).
+     На части клиентов/устройств Telegram завышает эти значения (широкий пустой «прочерк» наверху любого экрана) —
+     сумму ограничиваем потолком 56px: этого хватает и на вырез, и на шапку Telegram, но не раздувает отступ. */
+  --tgt:min(calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)), 56px);
   --top:max(env(safe-area-inset-top,0px),var(--tgt));
   --bot:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));
 }
-html.tg{--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 12px)}
+html.tg{--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 6px)}
 *{box-sizing:border-box;margin:0}
 html{font-synthesis:none;background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
 body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
@@ -2317,7 +2319,7 @@ function curve(xs,ys){const n=xs.length,f=v=>v.toFixed(1);if(n<3)return xs.map((
   const d=[],m=[];for(let i=0;i<n-1;i++)d[i]=(ys[i+1]-ys[i])/(xs[i+1]-xs[i]);m[0]=d[0];m[n-1]=d[n-2];for(let i=1;i<n-1;i++)m[i]=d[i-1]*d[i]<=0?0:(d[i-1]+d[i])/2;
   for(let i=0;i<n-1;i++){if(d[i]===0){m[i]=m[i+1]=0;continue}const a=m[i]/d[i],b=m[i+1]/d[i],q=a*a+b*b;if(q>9){const t=3/Math.sqrt(q);m[i]=t*a*d[i];m[i+1]=t*b*d[i]}}
   let o="M"+f(xs[0])+" "+f(ys[0]);for(let i=0;i<n-1;i++){const h=xs[i+1]-xs[i];o+="C"+f(xs[i]+h/3)+" "+f(ys[i]+m[i]*h/3)+" "+f(xs[i+1]-h/3)+" "+f(ys[i+1]-m[i+1]*h/3)+" "+f(xs[i+1])+" "+f(ys[i+1])}return o}
-const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===1}">${p[0]}</button>`).join("")}</div>`;
+const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===PER.length-1}">${p[0]}</button>`).join("")}</div>`;
 /* фильтр событий: от главных к менее главным; по умолчанию регистрации (выбор запоминается на устройстве) */
 const CHF_L=[["reg","Регистрации",["регистрация","регистрации","регистраций"]],["rev","Отзывы",["отзыв","отзыва","отзывов"]],
   ["play","Первые запуски",["первый запуск","первых запуска","первых запусков"]],["dl","Первые скачивания",["первое скачивание","первых скачивания","первых скачиваний"]],
@@ -2333,7 +2335,7 @@ function chartsHTML(){return `<section class="sec enter" style="--i:.3s"><h3>К�
     <div class="chc-s" data-s></div></div></section>`}
 function initCharts(root){
   let W=CW;const anim=()=>!RM&&Q>0;
-  const wire=(box,draw)=>{let pi=1;const svg=box.querySelector("svg");
+  const wire=(box,draw)=>{let pi=PER.length-1;const svg=box.querySelector("svg"); /* по умолчанию «Всё время», не «7 дней» */
     const run=()=>{W=Math.max(280,Math.round(svg.parentElement.clientWidth)||CW);svg.setAttribute("viewBox",`0 0 ${W} ${W>700?260:HA+20}`);
       box.querySelectorAll("[data-p] button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===pi));box._off&&box._off();draw(pi,svg,box)};
     if(window.ResizeObserver){let lw=0;const ro=new ResizeObserver(()=>{if(!box.isConnected){ro.disconnect();return}const w=Math.round(svg.parentElement.clientWidth);if(lw&&Math.abs(w-lw)>8)run();lw=w});ro.observe(svg.parentElement)}
