@@ -1234,8 +1234,10 @@ body.onhome .ts{flex:1 1 0;min-height:0}
 .ns .nw-go{position:static;width:20px;height:20px;margin:0 0 0 2px}
 .ns .nw-go svg{width:9px;height:9px}
 .nw-b{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;padding-top:7px}
-html:not(.desk) .ns .nw-b h4{font-size:calc(17px * var(--fs,1));line-height:1.2}
-html:not(.desk) .ns .nw-b p{font-size:calc(14px * var(--fs,1));line-height:1.32;margin-top:calc(3px * var(--fs,1))}
+/* заголовок и текст близки по размеру (16/14.5) и растут вместе, шапка чуть крупнее прежнего — без резкого перепада «огромное/мелкое» */
+html:not(.desk) .ns .nw-b h4{font-size:calc(16px * var(--fs,1));line-height:1.22}
+html:not(.desk) .ns .nw-b p{font-size:calc(14.5px * var(--fs,1));line-height:1.34;margin-top:calc(3px * var(--fs,1))}
+html:not(.desk) .ns .nw-tag,html:not(.desk) .ns .nw-h time{font-size:12.5px}
 .nw-tag{white-space:nowrap}
 /* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
 .lbtn,.bigplay,.chip,.tab .ql,.pf-subr .btn,.thx-go{white-space:nowrap}
@@ -2178,13 +2180,13 @@ function fitHome(){const ts=homeEl.querySelector(".ts"),inn=ts&&ts.querySelector
   if(have/need<.5){ts.classList.add("tight");need=inn.offsetHeight} /* совсем тесно: прячем предметы и теги, а не сжимаем текст в кашу */
   const s=Math.max(.4,Math.min(1,have/need));inn.style.transform=s<1?`scale(${s.toFixed(3)})`:""}
 /* размер текста новости по её длине: все карточки высотой с самую длинную при обычном шрифте,
-   затем каждая короткая новость увеличивает шрифт (до +30%), пока помещается целиком */
+   затем каждая короткая новость немного увеличивает шрифт (до +12%), пока помещается целиком */
 function fitNews(){const ns=homeEl.querySelector("#ns");if(!ns||view!==0)return;
   const bodies=[...ns.querySelectorAll(".nw-b")];ns.style.height="";bodies.forEach(b=>b.style.setProperty("--fs","1"));
   if(document.documentElement.classList.contains("desk")||!ns.offsetHeight)return;
   ns.style.height=ns.offsetHeight+"px"; /* фиксируем высоту, чтобы рост шрифта в одной карточке не растягивал остальные */
   const fits=b=>b.scrollHeight<=b.clientHeight+1&&[...b.children].every(e=>e.scrollHeight<=e.clientHeight+1);
-  bodies.forEach(b=>{let lo=1,hi=1.3;b.style.setProperty("--fs",hi);if(fits(b))return;
+  bodies.forEach(b=>{let lo=1,hi=1.12;b.style.setProperty("--fs",hi);if(fits(b))return;
     for(let i=0;i<6;i++){const m=(lo+hi)/2;b.style.setProperty("--fs",m.toFixed(3));if(fits(b))lo=m;else hi=m}
     b.style.setProperty("--fs",lo.toFixed(3))})}
 addEventListener("resize",()=>requestAnimationFrame(()=>{fitNews();fitHome()}));
@@ -3427,7 +3429,16 @@ async function accessInit(){
     const r=await fetch(SUB_API+"/hub?r=config",{headers:sbH()}); /* та же функция Vercel, что и остальные запросы маркета: одна холодная загрузка вместо двух */
     if(r.status===403){let j={};try{j=await r.json()}catch(e){}if(j.error==="banned"){banScreen(j.reason);return false}}
     if(!r.ok)return true;
-    const c=await r.json();
+    const c=await r.json();applyCfg(c);
+    try{localStorage.setItem(CFGK,JSON.stringify(c))}catch(e){} /* следующий запуск покажет маркет сразу с этими настройками */
+  }catch(e){}
+  return true}
+/* настройки с сервера. Запоминаются на устройстве: при следующем запуске главная рисуется сразу по прошлым настройкам,
+   не дожидаясь /config (холодный старт функции Vercel — секунды), а свежие применяются, как только придут */
+const CFGK="am.cfg";
+function cachedCfg(){try{const c=JSON.parse(localStorage.getItem(CFGK)||"null");return c&&typeof c==="object"?c:null}catch(e){return null}}
+function applyCfg(c){
+  try{
     if("role" in c){CFG_ROLE=true;ROLE=c.role||null;if(c.admin)ADMIN_OK=true} /* роль приходит вместе с настройками: /me на старте не нужен */
     if(c.site){/* ссылки «Канал»/«Чатик» и общий выключатель скачивания задаются в админке (вкладки «Сайт» и «Игры») */
       if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.channel||""))LINKS.channel=c.site.channel;if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.chat||""))LINKS.chat=c.site.chat;DL_OFF=c.site.dlOff===true;
@@ -3435,8 +3446,7 @@ async function accessInit(){
       PLAY_WAIT=c.site.playWait===true&&!c.admin;PLAY_WAIT_M=+c.site.playWaitM||30;winter(c.site.winter===true)} /* скачивание только через N часов после регистрации */
     if(Array.isArray(c.news))NEWS.splice(0,NEWS.length,...c.news);
     if(c.wallet&&typeof c.wallet.addr==="string")WALLET.addr=c.wallet.addr;
-  }catch(e){}
-  return true}
+  }catch(e){}}
 const sbView=(t,lbl)=>{const o=document.createElement("div");o.style.cssText="position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column";
   const f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.style.cssText="flex:1;border:0;width:100%;background:#fff";f.srcdoc=t;
   const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=lbl||"Закрыть превью";b.style.cssText="flex:none;width:100%";b.onclick=()=>o.remove();o.append(f,b);document.body.append(o)};
@@ -3562,10 +3572,15 @@ async function spotGame(id){
 (async()=>{
   document.body.classList.toggle("scan",SET.scan);bgResize();
   /* сеть и картинки параллельно: /config (доступ, роль, новости) уходит, пока декодируются спрайты и шрифты */
+  const cc=SUB_API?cachedCfg():null;if(cc)applyCfg(cc); /* прошлые настройки — сразу, свежие догонят */
+  const homeSig=()=>JSON.stringify([NEWS,LINKS.channel,LINKS.chat]),sig0=homeSig();
   const cfgP=accessInit();
   await Promise.all([loadSprites(),document.fonts?document.fonts.ready:0,
     Promise.all([document.fonts.load('600 20px "Montserrat"','Аб Ab'),document.fonts.load('800 36px "Montserrat"','Аб Ab')]).catch(()=>{})]);
-  if(!(await cfgP)){const b=$("#boot");b&&b.remove();return}
+  /* первый запуск (настроек в памяти нет) — ждём сервер; дальше — не дольше 300 мс */
+  if(!(await (cc?Promise.race([cfgP,wait(300).then(()=>true)]):cfgP))){const b=$("#boot");b&&b.remove();return}
+  /* свежие настройки пришли уже после показа: обновляем главную, только если поменялись новости или ссылки (бан cfgP покажет сам) */
+  if(cc)cfgP.then(ok=>{if(ok&&BOOTED&&view===0&&homeSig()!==sig0)renderHome()});
   {const n=ROLE==="main"?"":tgName();if(n)PROF.name=n} /* ник из Telegram сразу, до первого рендера (свой ник главного админа придёт с сервера) */
   profVisit();sync();if(!SUB_API)tgIdentity();
   if(SUB_API){
