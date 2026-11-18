@@ -323,7 +323,9 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
     // --- каталог игр: список, доступ, порядок ---
     if (r === "games") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
-      return json(200, (await store.listGames()).map((g) => ({ ...gameWire(g, 0), authorId: g.author_id == null ? null : String(g.author_id), submission: g.submission })));
+      // owned: покупки этого админа (в том числе тестовые) — магазин у главного админа грузит каталог отсюда, а не из hub?r=games
+      const own = new Set(await store.ownedGames(uid));
+      return json(200, (await store.listGames()).map((g) => ({ ...gameWire(g, 0), owned: own.has(g.id), authorId: g.author_id == null ? null : String(g.author_id), submission: g.submission })));
     }
     if (r === "game") {
       const b = parseBody(req.body);
