@@ -71,6 +71,10 @@ html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjus
 
 /* ---------- header ---------- */
 .top{position:relative;height:clamp(126px,33vw,155px);margin-bottom:6px}
+/* мягкое сиреневое свечение заходит выше шапки, в отступ под вырез экрана/шапку Telegram — пустота над логотипом читается как
+   атмосферный свет, а не как случайно оставленное пустое место */
+.top::before{content:"";position:absolute;left:6%;right:6%;top:-54px;height:150px;z-index:0;pointer-events:none;
+  background:radial-gradient(62% 100% at 50% 100%,rgba(165,107,255,.26),rgba(165,107,255,.08) 55%,transparent 75%)}
 /* games window (Store): header with logo + pigeon shrunk by 40%, centered; the freed height is pulled back with a negative margin */
 body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0;margin-bottom:calc(6px - clamp(126px,33vw,155px)*(1 - var(--ts)))}
 .swoosh{position:absolute;left:-4%;top:-6%;width:78%;height:100%;overflow:visible;pointer-events:none}
@@ -695,45 +699,61 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .home .sec h3{margin-bottom:6px;font-size:16px;font-weight:400;letter-spacing:.08em;color:var(--dim)}
 .home .sec h3 small{font-size:14px}
 /* news slider */
+.ns-wrap{position:relative}
 .ns{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .ns::-webkit-scrollbar{display:none}
 .ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
-.nw{--nc:#a56bff;position:relative;padding:2px;background:linear-gradient(160deg,#5a3fb8,#2a1a66);
-  background:linear-gradient(160deg,color-mix(in srgb,var(--nc) 75%,#2a1a66),#2a1a66);
-  border-radius:20px;transition:transform .12s,filter .2s}
-.nw-in{position:relative;padding:10px 14px 12px 22px;background:linear-gradient(#1b1141,#120a2c);
-  border-radius:17px}
-.nw-in::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--nc)}
+/* стрелки поверх карточки: подсказывают, что новостей больше одной; на телефоне едва заметны, видны при наведении/десктопе */
+.ns-nav{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  color:#fff;background:rgba(10,6,26,.55);backdrop-filter:blur(2px);opacity:0;transform:translateY(-50%);transition:opacity .2s,background .15s;pointer-events:none}
+.ns-nav svg{width:13px;height:13px}
+.ns-nav.prev{left:6px}.ns-nav.next{right:6px}.ns-nav.next svg{transform:scaleX(-1)}
+.ns-wrap:hover .ns-nav,.ns-nav:focus-visible{opacity:1;pointer-events:auto}
+html.phone .ns-nav{opacity:.45;pointer-events:auto}
+.ns-nav:hover,.ns-nav:focus-visible{background:rgba(165,107,255,.65)}
+.ns-nav:active{transform:translateY(-50%) scale(.9)}
+/* карточка новости: стеклянная панель со свечением в цвете тега (--nc), а не плоский градиент с узкой полосой слева */
+.nw{--nc:#a56bff;position:relative;padding:1.5px;border-radius:20px;transition:transform .12s,filter .2s,box-shadow .2s;
+  background:linear-gradient(155deg,color-mix(in srgb,var(--nc) 85%,#fff 8%),color-mix(in srgb,var(--nc) 35%,#2a1a66) 55%,#241848);
+  box-shadow:0 10px 28px -10px color-mix(in srgb,var(--nc) 55%,transparent),0 0 0 1px color-mix(in srgb,var(--nc) 18%,transparent)}
+.nw-in{position:relative;padding:12px 15px 13px;display:flex;flex-direction:column;border-radius:19px;overflow:hidden;
+  background:radial-gradient(130% 160% at 0% 0%,color-mix(in srgb,var(--nc) 20%,transparent),transparent 60%),linear-gradient(165deg,#1e1348,#140c30 65%)}
+.nw-in::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);opacity:.7}
 .nw[role=button]{cursor:pointer}
-.nw[role=button]:hover{filter:brightness(1.12)}.nw[role=button]:active{transform:scale(.985)}
-.nw-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.nw-tag{padding:2px 12px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#140a28;background:var(--nc);border-radius:999px}
-.nw-h time{margin-left:auto;font-size:15px;color:var(--dim)}
-.nw-h svg{width:12px;height:12px;fill:var(--nc)}
-.nw h4{font-size:21px;font-weight:700;line-height:1.1;text-transform:uppercase;color:#fff4ee;text-shadow:0 2px 0 rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nw p{margin-top:4px;font-size:16px;line-height:1.25;color:#e5d9ff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ns .nw-in{padding:7px 12px 8px 19px}
-.ns .nw-in::before{width:6px}
-.ns .nw-h{gap:8px;margin-bottom:3px}
-.ns .nw-tag{padding:1px 10px;font-size:12px}
-.ns .nw-h time{font-size:13px}
-.ns .nw h4{font-size:17px;line-height:1.1}
-.ns .nw p{margin-top:2px;font-size:14px;line-height:1.2;-webkit-line-clamp:2}
-.lnks .lbtn{height:48px}
-.dots{display:flex;justify-content:center;gap:4px;margin-top:0}
-.dots button{width:26px;height:14px;background:linear-gradient(#3a2a70,#3a2a70) center/100% 6px no-repeat;transition:background-color .2s}
-.dots button[aria-current=true]{background:linear-gradient(#b98bff,#b98bff) center/100% 6px no-repeat}
-/* home tweaks: logo -20% (header height unchanged), hero title -10%, news card slightly larger */
-body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
-/* средний блок главной (гаджеты + заголовок + кнопка) -10%, освободившееся место отдано новостям: в карточке влезает 3 строки текста */
-.ts{zoom:.9}
-.ns .nw p{-webkit-line-clamp:3}
+.nw[role=button]:hover{filter:brightness(1.08);box-shadow:0 14px 34px -10px color-mix(in srgb,var(--nc) 65%,transparent),0 0 0 1px color-mix(in srgb,var(--nc) 28%,transparent)}
+.nw[role=button]:active{transform:scale(.985)}
+.nw-h{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.nw-ic{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:9px;color:#140a28;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--nc) 85%,#fff 15%),var(--nc));box-shadow:0 2px 6px -1px color-mix(in srgb,var(--nc) 70%,transparent)}
+.nw-ic svg{width:14px;height:14px}
+.nw-tag{font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:color-mix(in srgb,var(--nc) 55%,#fff 45%);white-space:nowrap}
+.nw-h time{margin-left:auto;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.nw h4{font-size:19px;font-weight:700;line-height:1.22;letter-spacing:-.005em;color:#fff7f0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nw p{margin-top:4px;font-size:15px;line-height:1.3;color:#cabdef;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nw-go{display:grid;place-items:center;align-self:flex-end;flex:none;width:26px;height:26px;margin-top:8px;border-radius:50%;
+  background:color-mix(in srgb,var(--nc) 24%,transparent);color:var(--nc);transition:background .15s}
+.nw-go svg{width:11px;height:11px;transform:scaleX(-1)}
+.nw[role=button]:hover .nw-go{background:var(--nc);color:#140a28}
+.ns .nw-in{padding:10px 13px 11px}
+.ns .nw-h{gap:6px;margin-bottom:4px}
+.ns .nw-ic{width:20px;height:20px;border-radius:8px}
+.ns .nw-ic svg{width:12px;height:12px}
+.ns .nw-tag{font-size:12px}
+.ns .nw-h time{font-size:12px}
+.ns .nw-go{width:22px;height:22px;margin-top:6px}
+.ns .nw-go svg{width:10px;height:10px}
+/* новости чуть крупнее новостей на узких экранах: в карточке помещается 3 строки текста */
 .ts .hero-t{font-size:clamp(18px,min(6.66vw,4vh),32.4px)}
-.ns .nw-in{padding:9px 14px 10px 21px}
-.ns .nw h4{font-size:19px}
-.ns .nw p{font-size:15.5px;margin-top:3px}
-.ns .nw-tag{font-size:13px}
-.ns .nw-h time{font-size:14px}
+.lnks .lbtn{height:48px}
+/* точки-листалки под новостью: активная — вытянутая капсула со свечением, остальные — тусклые кружки */
+.dots{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px}
+.dots button{width:7px;height:7px;border-radius:999px;background:#443a74;transition:width .25s cubic-bezier(.3,.9,.3,1),background .2s,box-shadow .2s}
+.dots button[aria-current=true]{width:22px;background:linear-gradient(90deg,#d6bcff,#8a52f5);box-shadow:0 0 10px rgba(165,107,255,.65)}
+/* home tweaks: logo -20% (header height unchanged), hero title -10% */
+body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
+/* средний блок главной (гаджеты + заголовок + кнопка) -10%, освободившееся место отдано новостям */
+.ts{zoom:.9}
 /* sponsors */
 .sprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
 .sprow::-webkit-scrollbar{display:none}
@@ -984,7 +1004,8 @@ html.desk .shelf{height:clamp(90px,17vh,150px)}
 html.desk .gow{max-width:460px}
 html.desk .gow .bigplay{height:64px;font-size:clamp(22px,3.2vh,30px)}
 html.desk .pn{gap:18px}
-html.desk .ns .nw-in{padding:14px 18px 16px 24px}
+html.desk .ns .nw-in{padding:16px 18px}
+html.desk .ns .nw-ic{width:30px;height:30px;border-radius:11px}html.desk .ns .nw-ic svg{width:17px;height:17px}
 html.desk .ns .nw h4{font-size:23px}
 html.desk .ns .nw p{font-size:17px;-webkit-line-clamp:3}
 html.desk .ns .nw-tag{font-size:14px}html.desk .ns .nw-h time{font-size:15px}
@@ -1005,7 +1026,9 @@ html.desk .gow{max-width:clamp(440px,30vw,580px)}
 html.desk .gow .bigplay{height:clamp(62px,7vh,84px);font-size:clamp(24px,3.4vh,36px)}
 html.desk .pn{gap:clamp(18px,3vh,30px)}
 html.desk .home .sec h3{font-size:clamp(16px,2vh,21px);margin-bottom:10px}
-html.desk .ns .nw-in{padding:clamp(14px,2vh,24px) clamp(18px,1.6vw,30px) clamp(16px,2.2vh,26px) clamp(24px,2vw,34px)}
+html.desk .ns .nw-in{padding:clamp(16px,2.4vh,28px) clamp(18px,1.6vw,30px)}
+html.desk .ns .nw-ic{width:clamp(30px,3.6vh,42px);height:clamp(30px,3.6vh,42px);border-radius:clamp(10px,1.2vh,14px)}
+html.desk .ns .nw-ic svg{width:58%;height:58%}
 html.desk .ns .nw h4{font-size:clamp(23px,3.2vh,34px)}
 html.desk .ns .nw p{font-size:clamp(17px,2.2vh,23px);margin-top:6px}
 html.desk .ns .nw-tag{font-size:clamp(14px,1.7vh,18px)}
@@ -1209,8 +1232,8 @@ body.scan::after{display:none}                 /* ЭЛТ-полоски пове
 body.onhome .home{height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot));min-height:0}
 body.onhome .ts{flex:1 1 0;min-height:0}
 .ns{align-items:stretch}.ns-i{display:flex}.ns-i>.nw{flex:1 1 auto;display:flex;border-radius:18px}.ns-i .nw-in{flex:1;min-width:0;border-radius:16px;overflow:hidden}
-.ns .nw p{-webkit-line-clamp:2}
-.ns .nw h4{font-size:17px;line-height:1.3;letter-spacing:0}
+.ns .nw h4{font-size:17px;line-height:1.22;letter-spacing:0}
+.ns .nw p{margin-top:3px;font-size:14px;line-height:1.3;-webkit-line-clamp:3}
 .nw-tag{white-space:nowrap}
 /* Montserrat шире прежнего шрифта: текст в кнопках не переносится, в тесных местах — мельче */
 .lbtn,.bigplay,.chip,.tab .ql,.pf-subr .btn,.thx-go{white-space:nowrap}
@@ -1382,6 +1405,8 @@ const IC={
  x:`<svg viewBox="0 0 24 24"><path d="M4.6 2.2L12 9.6l7.4-7.4 2.4 2.4L14.4 12l7.4 7.4-2.4 2.4L12 14.4l-7.4 7.4-2.4-2.4L9.6 12 2.2 4.6z"/></svg>`,
  edit:`<svg viewBox="0 0 24 24"><path d="M15.6 3.4l5 5L8.8 20.2 3 21l.8-5.8zM17 2l1.6-1.6 5 5L22 7z" transform="translate(0 1)"/></svg>`
  ,back:`<svg viewBox="0 0 24 24"><path d="M14.4 3L5.4 12l9 9 2.6-2.6L10.6 12l6.4-6.4z"/></svg>`
+ ,bell:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.3a1.7 1.7 0 0 1 1.7 1.7v.5c3 .8 5.1 3.5 5.1 6.7v3.7l2 2.9H3.2l2-2.9V11.2c0-3.2 2.1-5.9 5.1-6.7V4A1.7 1.7 0 0 1 12 2.3z"/><path d="M9.2 19.4a2.8 2.8 0 0 0 5.6 0z"/></svg>`
+ ,bulb:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7.4 7.4 0 0 0-4.3 13.4c.8.6 1.3 1.4 1.3 2.3v.3h6v-.3c0-.9.5-1.7 1.3-2.3A7.4 7.4 0 0 0 12 2z"/><rect x="9.2" y="19.2" width="5.6" height="1.8" rx=".9"/><rect x="9.6" y="21.4" width="4.8" height="1.6" rx=".8"/></svg>`
 };
 function starSvg(on,c1){return `<svg viewBox="0 0 24 24"><path d="${ST}" fill="${on?"#ffc83d":"none"}" stroke="${on?"#a56a00":"#6f55c0"}" stroke-width="${on?1.2:1.8}" stroke-linejoin="miter"/></svg>`}
 
@@ -2093,9 +2118,13 @@ const WALLET={net:"TRON (TRC20)",coin:"USDT",addr:"ВСТАВЬТЕ_АДРЕС_T
 function openLink(u){try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&/^https:\/\/t\.me\//.test(u)&&w.openTelegramLink){w.openTelegramLink(u);return true}}catch(e){}return false}
 function openExt(u){if(openLink(u))return;try{const w=window.Telegram&&Telegram.WebApp;if(w&&w.initData&&w.openLink){w.openLink(u);return}}catch(e){}window.open(u,"_blank","noopener")}
 const HOME_GADS=[["cassette",318,"#ff5ec4","-6deg"],["cd",222,"#5b8cff","4deg"],["floppy",112,"#5dff8a","-3deg"],["handheld",38,"#ffb23f","6deg"]];
+/* значок новости по тегу: своя иконка под частые теги, иначе колокольчик по умолчанию */
+const NEWS_IC={"Новое":"bell",Обновление:"bell",Игра:"play",Релиз:"play",Событие:"star",Совет:"bulb",Акция:"heart"};
+const newsIcon=t=>IC[NEWS_IC[t]]||IC.bell;
 const SPK='<svg viewBox="0 0 24 24"><path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z"/></svg>';
 function renderHome(){
   clearInterval(homeT);
+  const hasNews=NEWS.length>0;
   const items=NEWS.map(n=>({...n,ok:!!n.app&&DATA.some(d=>d.id===n.app),lk:/^https:\/\/[^\s"'<>]+$/i.test(n.link||"")?n.link:""}));
   if(!items.length)items.push({tag:"Coopix",c:"#a56bff",date:"",title:"Новостей пока нет",text:"Загляните позже.",ok:false,lk:""});
   homeEl.innerHTML=`<div class="ts enter">
@@ -2108,9 +2137,14 @@ function renderHome(){
     <div class="gow"><button class="bigplay" id="goMarket" type="button">Перейти в маркет</button></div>
   </div>
   <div class="pn enter" style="--i:.2s">
-    <section class="sec"><h3>Новости</h3>
-      <div class="ns" id="ns">${items.map(n=>`<div class="ns-i"><div class="nw" style="--nc:${/^#[0-9a-f]{6}$/i.test(n.c)?n.c:"#a56bff"}"${n.ok?` role="button" tabindex="0" data-app="${esc(n.app)}"`:n.lk?` role="button" tabindex="0" data-link="${esc(n.lk)}"`:""}><div class="nw-in">
-        <div class="nw-h"><span class="nw-tag">${esc(n.tag||"")}</span><time>${esc(n.date||"")}</time>${n.ok?IC.play:n.lk?IC.send:""}</div><h4>${esc(n.title||"")}</h4><p>${esc(n.text||"")}</p></div></div></div>`).join("")}</div>
+    <section class="sec"><h3>Новости${hasNews?`<small>${items.length}</small>`:""}</h3>
+      <div class="ns-wrap">
+        <div class="ns" id="ns">${items.map(n=>{const nc=/^#[0-9a-f]{6}$/i.test(n.c)?n.c:"#a56bff",clk=n.ok||n.lk;
+          return `<div class="ns-i"><div class="nw" style="--nc:${nc}"${n.ok?` role="button" tabindex="0" data-app="${esc(n.app)}"`:n.lk?` role="button" tabindex="0" data-link="${esc(n.lk)}"`:""}><div class="nw-in">
+          <div class="nw-h"><i class="nw-ic" aria-hidden="true">${newsIcon(n.tag)}</i><span class="nw-tag">${esc(n.tag||"")}</span><time>${esc(n.date||"")}</time></div>
+          <h4>${esc(n.title||"")}</h4><p>${esc(n.text||"")}</p>${clk?`<i class="nw-go" aria-hidden="true">${IC.back}</i>`:""}</div></div></div>`}).join("")}</div>
+        ${items.length>1?`<button type="button" class="ns-nav prev" id="nsPrev" aria-label="Предыдущая новость">${IC.back}</button><button type="button" class="ns-nav next" id="nsNext" aria-label="Следующая новость">${IC.back}</button>`:""}
+      </div>
       ${items.length>1?`<div class="dots" id="dots">${items.map((n,i)=>`<button type="button" aria-label="Новость ${i+1}" aria-current="${i===0}"></button>`).join("")}</div>`:""}
     </section>
     <div class="lnks"><div class="lw"><a class="lbtn" href="${LINKS.channel}" target="_blank" rel="noopener" data-l="channel">${IC.send}Канал</a></div><div class="lw pk"><a class="lbtn" style="--lc:#ff5ec4" href="${LINKS.chat}" target="_blank" rel="noopener" data-l="chat">${IC.chat}Чатик</a></div></div>
@@ -2129,6 +2163,9 @@ function renderHome(){
   ns.addEventListener("scroll",()=>{const i=Math.round(ns.scrollLeft/ns.clientWidth);if(i!==cur){cur=i;dots.forEach((d,j)=>d.setAttribute("aria-current",j===i))}},{passive:true});
   ns.addEventListener("pointerdown",()=>{hold=Date.now()});
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
+  const nPrev=$("#nsPrev"),nNext=$("#nsNext");
+  nPrev&&nPrev.addEventListener("click",()=>{sfx.tap();hold=Date.now();go((cur-1+items.length)%items.length)});
+  nNext&&nNext.addEventListener("click",()=>{sfx.tap();hold=Date.now();go((cur+1)%items.length)});
   fitHome();requestAnimationFrame(fitHome);document.fonts&&document.fonts.ready.then(fitHome);
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((cur+1)%items.length)},5200);
 }
