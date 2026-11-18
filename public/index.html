@@ -28,7 +28,7 @@ w.ready();w.expand();try{window.__lockP&&window.__lockP()}catch(e){}
 /* «Назад» из игры переживает перезагрузку страницы (Telegram её помнит), но обработчика уже нет — кнопка в шапке «залипает»
    и мини-приложение нельзя закрыть. На старте маркета её всегда прячем: в шапке снова «Закрыть». */
 try{w.BackButton&&w.BackButton.hide()}catch(e){}
-try{if(!window.__tgFs&&w.requestFullscreen&&/^(tdesktop|macos|weba|webk|web|unigram)$/.test(w.platform||"")){window.__tgFs=1;document.documentElement.classList.add("fs");w.requestFullscreen()}}catch(e){}try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
+try{if(!window.__tgFs&&w.requestFullscreen&&/^(tdesktop|macos|weba|webk|web|unigram)$/.test(w.platform||"")){window.__tgFs=1;document.documentElement.classList.add("fs");w.requestFullscreen()}}catch(e){}try{if(w.isFullscreen)document.documentElement.classList.add("fs");w.onEvent&&w.onEvent("fullscreenChanged",function(){document.documentElement.classList.toggle("fs",!!w.isFullscreen)})}catch(e){}try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
 if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",function(){window.tgInit()});</script>
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: ретро-маркет приложений. Добавьте обложку, выберите предмет, и вся карточка окрасится в её цвета.">
@@ -56,6 +56,8 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
   --bot:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));
 }
 /* настоящий fullscreen (desktop-клиенты Telegram): свою шапку Telegram рисует поверх контента — здесь резерв нужен, сумму ограничиваем потолком */
+/* внутри Telegram без fullscreen (телефоны) шапка Telegram рисуется НАД мини-приложением: верхний отступ не нужен. Раньше Android (Redmi и др.) подставлял высоту строки состояния из --tg-safe-area-inset-top и сверху оставалась пустая полоса */
+html.tg:not(.fs){--tgt:0px;--top:0px}
 html.fs{--tgt:min(calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)), 56px);--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 6px)}
 *{box-sizing:border-box;margin:0}
 html{font-synthesis:none;background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
@@ -69,7 +71,9 @@ svg{display:block}
 body.scan::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,.0) 0 2px,rgba(0,0,0,.10) 2px 3px)}
 
-html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{touch-action:pan-y;overflow-x:hidden;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%} /* без прокрутки влево-вправо во всех окнах */
+body{max-width:100vw}
+.page,.sheet,.pbody,.menu{overflow-x:hidden;overscroll-behavior-x:none}
 .app{position:relative;z-index:1;width:var(--col);margin:0 auto;padding:6px 0 140px}
 
 /* ---------- header ---------- */
@@ -756,7 +760,7 @@ body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
 /* .ts: масштаб считает fitHome() в JS (инлайн-стиль перебивает любое правило здесь) — центральный блок растёт,
    пока не упрётся в новости снизу; стартовый размер под ним задают сами .hero-t/.shelf/.tag/.bigplay выше */
 /* sponsors */
-.sprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
+.sprow{touch-action:pan-x pan-y;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
 .sprow::-webkit-scrollbar{display:none}
 .spc{--nc:hsl(calc(264 + var(--th)) 100% 71.0%);flex:none;display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 5px;font-size:17px;text-transform:uppercase;color:#fff;text-decoration:none;white-space:nowrap;background:hsl(calc(255 + var(--th)) 62% 10.2%);border:2px solid var(--nc);border-radius:20px;transition:transform .12s,filter .2s}
 .spc:hover{filter:brightness(1.15)}.spc:active{transform:scale(.96)}
@@ -775,7 +779,7 @@ body.onhome .logo{font-size:clamp(22px,min(8.32vw,4.6vh),40.8px)}
 .lw.pk{filter:drop-shadow(0 0 12px rgba(255,94,196,.45))}
 /* short phones: drop extras instead of scrolling */
 @media(max-height:760px){.ts .tags{display:none}.nw p{-webkit-line-clamp:1}.ns .nw p{-webkit-line-clamp:3}.pn{gap:6px}.lbtn,.lnks .lbtn{height:46px}}
-@media(max-height:650px){.shelf{height:52px}}
+@media(max-height:660px){.shelf{height:64px}:root{--hh:clamp(96px,min(33vw,15.5vh),155px)}} /* низкие экраны (Android): носители и надпись крупнее, шапка чуть ниже */
 [data-q="0"] .gow,[data-q="0"] .lw,[data-q="0"] .lw.pk{filter:none}
 [data-q="0"] .gow .bigplay{animation:none}
 [data-q="0"] .gad canvas{filter:drop-shadow(0 6px 6px rgba(0,0,0,.55))}
@@ -1712,19 +1716,20 @@ class Card{
     /* свайп карточки влево — в избранное / из избранного (карточка чуть уезжает и возвращается); после свайпа клик не открывает игру */
     /* свайп влево — в избранное: карточка тянется с «резиной» и лёгким наклоном, справа проявляется ♥ «В избранное»,
        у порога значок наливается цветом и подпрыгивает; после отпускания карточка возвращается пружиной */
-    if(o.onFav){let sx=0,sy=0,dx=0,on=false,swiped=false,armed=false,hint=null,raf=0;const TH=70;
+    if(o.onFav){let sx=0,sy=0,dx=0,t0=0,on=false,swiped=false,armed=false,hint=null,raf=0;const TH=60;
       const mkHint=()=>{if(hint)return hint;hint=document.createElement("div");hint.className="swh";hint.innerHTML=`<i>${IC.favt}</i><b></b>`;host.append(hint);return hint};
       const paint=()=>{raf=0;const pull=dx<0?-dx:0,r=pull<TH?pull:TH+(pull-TH)*.35,t=Math.min(1,pull/TH);
         el.style.transform=`translateX(${-r}px) rotate(${-r*.025}deg)`;const hn=mkHint();hn.style.opacity=Math.min(1,t*1.4);hn.style.setProperty("--t",t);
         hn.querySelector("b").textContent=isLocked(this.m)?"Купить ⭐"+this.m.price:this.m.fav?"Убрать":"В избранное";hn.classList.toggle("buy",isLocked(this.m));const now=pull>=TH;if(now!==armed){armed=now;hn.classList.toggle("on",now);if(now)sfx.tap()}};
-      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none";
+      el.addEventListener("pointerdown",e=>{if(e.button>0)return;on=true;swiped=false;armed=false;sx=e.clientX;sy=e.clientY;dx=0;t0=Date.now();el.style.transition="none";
         /* палец «держится» за карточку до отпускания (иначе свайп обрывался, когда палец выходил за край), а сама карточка на время свайпа — отдельный слой */
         try{el.setPointerCapture(e.pointerId)}catch(_){}el.style.willChange="transform"},{passive:true});
       el.addEventListener("pointermove",e=>{if(!on)return;dx=e.clientX-sx;const dy=e.clientY-sy;
-        if(Math.abs(dy)>Math.abs(dx)*1.2&&Math.abs(dy)>12){on=false;back();return}if(!raf)raf=requestAnimationFrame(paint)},{passive:true});
+        if(Math.abs(dy)>Math.abs(dx)*1.8&&Math.abs(dy)>16){on=false;back();return}if(!raf)raf=requestAnimationFrame(paint)},{passive:true});
       const back=()=>{cancelAnimationFrame(raf);raf=0;el.style.transition="transform .45s cubic-bezier(.2,1.5,.4,1)";el.style.transform="";setTimeout(()=>{if(!on)el.style.willChange=""},480);
         if(hint){const hn=hint;hint=null;hn.style.transition="opacity .25s";hn.style.opacity=0;setTimeout(()=>hn.remove(),280)}setTimeout(()=>el.style.transition="",460)};
-      const end=()=>{if(!on)return;on=false;const go=dx<-TH;back();
+      /* итоговый сдвиг берём из самого pointerup (быстрый взмах мог не успеть дать последний pointermove — из-за этого свайп срабатывал через раз); короткий быстрый взмах тоже засчитывается */
+      const end=e=>{if(!on)return;on=false;if(e&&e.type==="pointerup")dx=e.clientX-sx;const go=dx<-TH||(dx<-34&&Date.now()-t0<300);back();
         if(go){swiped=true;if(isLocked(this.m)){buyGame(this.m.id,this);return}const add=!this.m.fav;o.onFav(this);this.favLook(add);if(add)setTimeout(()=>this.favFx(),120)}};
       el.addEventListener("pointerup",end);el.addEventListener("pointercancel",()=>{if(on){on=false;back()}});el.addEventListener("lostpointercapture",end);
       el.addEventListener("click",e=>{if(swiped){swiped=false;e.stopImmediatePropagation();e.preventDefault()}},true)}
