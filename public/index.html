@@ -1779,11 +1779,11 @@ class Card{
       rc.width=rc.height=R*2;hc.width=hc.height=hR*2;
       /* диск: картинка игры целиком на всей поверхности (от втулки до края), а не узкое кольцо из повёрнутых кусочков — её хорошо видно */
       const c=rc.getContext("2d");c.beginPath();c.arc(R,R,R*.975,0,T);c.moveTo(R+hR*1.02,R);c.arc(R,R,hR*1.02,0,T);c.clip("evenodd");
-      /* фон диска — сильно размытая копия картинки; сама картинка целиком (с надписью) квадратом, чтобы край диска не резал текст */
-      {const t=document.createElement("canvas");t.width=t.height=10;t.getContext("2d").drawImage(art,0,0,10,10);c.imageSmoothingEnabled=true;c.drawImage(t,0,0,2*R,2*R);
-       const sq=2*R*.7,x0=R-sq/2,y0=x0-R*.2,rr=sq*.08,pth=()=>{c.beginPath();if(c.roundRect)c.roundRect(x0,y0,sq,sq,rr);else c.rect(x0,y0,sq,sq)}; /* чуть выше центра: втулка в середине диска не закрывает название */
-       c.save();pth();c.clip();c.drawImage(art,x0,y0,sq,sq);c.restore();pth();c.strokeStyle="rgba(255,255,255,.5)";c.lineWidth=1.5;c.stroke()}
-      const h=hc.getContext("2d");h.beginPath();h.arc(hR,hR,hR,0,T);h.moveTo(hR+hr*1.04,hR);h.arc(hR,hR,hr*1.04,0,T);h.clip("evenodd");h.translate(hR,hR);h.scale(hR*2/256,hR*2/256);h.drawImage(art,-128,-128);
+      /* диск: картинкой обложки (размытой, без надписей) закрашен только ободок, середина остаётся обычным блестящим CD */
+      {const t=document.createElement("canvas");t.width=t.height=28;t.getContext("2d").drawImage(art,0,0,28,28);
+       c.beginPath();c.arc(R,R,R*.975,0,T);c.moveTo(R+R*.8,R);c.arc(R,R,R*.8,0,T);c.clip("evenodd");
+       c.imageSmoothingEnabled=true;try{c.filter="saturate(1.5)"}catch(e){}c.drawImage(t,0,0,2*R,2*R);try{c.filter="none"}catch(e){}c.strokeStyle="rgba(20,20,40,.45)";c.lineWidth=3;c.beginPath();c.arc(R,R,R*.975,0,T);c.stroke();c.beginPath();c.arc(R,R,R*.8,0,T);c.stroke()}
+      const h=hc.getContext("2d");h.beginPath();h.arc(hR,hR,hR,0,T);h.moveTo(hR+hr*1.04,hR);h.arc(hR,hR,hr*1.04,0,T);h.clip("evenodd");h.translate(hR,hR);h.scale(hR*2/256,hR*2/256);/* втулка без картинки */
     }else D.polys.forEach((P,n)=>{
       /* holes: окошко с катушками вырезается из наклейки, чтобы картинка игры занимала всю лицевую сторону кассеты вокруг него */
       const HO=D.holes&&D.holes[n];
