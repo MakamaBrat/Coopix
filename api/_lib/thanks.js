@@ -6,6 +6,7 @@
  * Звёзды приходят на баланс бота проекта и засчитываются автору игры (выплату автору делает админ).
  * Вебхук принимается только с секретным заголовком, который знает Telegram (секрет выводится из токена бота).
  */
+import { itemPrice } from "./items.js";
 import { createHash } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { WIDGET_GAMES } from "./widgets.js";
@@ -18,6 +19,10 @@ export const makePayload = (game, uid, stars) => `th:${game}:${uid}:${stars}`;
 /** Покупка платной игры: by:<игра>:<игрок>:<цена>. Цена сверяется с текущей ценой игры при оплате. */
 const BUY = /^by:([a-z0-9_-]{1,32}):(\d{1,15}):(\d{1,5})$/;
 export const makeBuyPayload = (game, uid, price) => `by:${game}:${uid}:${price}`;
+/** Покупка предмета внутри игры: bi:<игра>:<игрок>:<предмет>:<цена>. Цена сверяется с таблицей ITEM_PRICES при оплате. */
+const BUYI = /^bi:([a-z0-9_-]{1,32}):(\d{1,15}):([a-z0-9_]{1,40}):(\d{1,3})$/;
+export const makeItemPayload = (game, uid, item, price) => `bi:${game}:${uid}:${item}:${price}`;
+export function parseItemBuy(p) { const m = BUYI.exec(String(p ?? "")); return m ? { game: m[1], uid: Number(m[2]), item: m[3], price: Number(m[4]) } : null; }
 export function parseBuy(p) { const m = BUY.exec(String(p ?? "")); return m ? { game: m[1], uid: Number(m[2]), price: Number(m[3]) } : null; }
 export function parsePayload(p) {
   const m = PAYLOAD.exec(String(p ?? ""));
@@ -81,6 +86,15 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
   const ok = { status: 200, body: { ok: true } };
 
   async function preCheckout(q) {
+    const ip = parseItemBuy(q.invoice_payload);
+    if (ip) {
+      let error = "";
+      if (q.currency !== "XTR" || Number(q.from?.id) !== ip.uid || q.total_amount !== ip.price) error = "Счёт устарел. Откройте игру и попробуйте ещё раз.";
+      else if (itemPrice(ip.game, ip.item) !== ip.price || !ip.price) error = "Цена предмета изменилась или он недоступен. Попробуйте ещё раз.";
+      else if ((await store.ownedItems(ip.uid, ip.game)).includes(ip.item)) error = "Этот предмет у вас уже куплен.";
+      await tgApi("answerPreCheckoutQuery", error ? { pre_checkout_query_id: q.id, ok: false, error_message: error } : { pre_checkout_query_id: q.id, ok: true });
+      return;
+    }
     const bp = parseBuy(q.invoice_payload);
     if (bp) {
       let error = "";
@@ -102,7 +116,16 @@ export function createBot({ store, botToken, tgApi, tgPhoto = null, notify, log,
   }
 
   async function paid(msg) {
-    const sp = msg.successful_payment, bp = parseBuy(sp.invoice_payload);
+    const sp = msg.successful_payment, ip = parseItemBuy(sp.invoice_payload), bp = parseBuy(sp.invoice_payload);
+    if (ip) {
+      if (sp.currency !== "XTR") return;
+      const uid = Number(msg.from?.id ?? ip.uid);
+      const row = await store.addPurchase({ user_id: uid, kind: "item", item_id: `${ip.game}:${ip.item}`, currency: "XTR", amount: sp.total_amount, charge_id: String(sp.telegram_payment_charge_id), meta: { game: ip.game, item: ip.item } });
+      if (!row) return; // повтор того же платежа
+      await log(uid, "buy", ip.game, { s: sp.total_amount, i: ip.item }, 0);
+      notify(uid, `Предмет куплен за ⭐ ${sp.total_amount}! Он уже в игре — откройте её и наденьте.`);
+      return;
+    }
     if (bp) {
       if (sp.currency !== "XTR") return;
       const uid = Number(msg.from?.id ?? bp.uid), g = await store.getGame(bp.game);

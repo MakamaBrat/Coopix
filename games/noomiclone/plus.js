@@ -184,4 +184,38 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
     if(!/^(torso|head|thigh)/.test(p)){c.setEnabled(false);return}
     const st=this.st;if(st&&(st.bar===f.barRef||(st.relBar===f.barRef&&st.releaseT<.6)))c.setEnabled(false);else if(NC_DBG)NC_DBG.push(["bar:"+p,1])});
   return r}}
+
+/* ---------- покупки за звёзды Telegram: у каждого предмета своя цена 1–3 ⭐ (таблица совпадает с серверной), оплата идёт через магазин ---------- */
+{const STAR=NC_STAR_PRICES;
+ for(const c in ITEMS)for(const it of ITEMS[c])if(it[3]>0&&STAR[it[0]])it[3]=STAR[it[0]];
+ const RU3={"x.starNote":"Предметы покупаются за звёзды Telegram (⭐ 1–3). После оплаты предмет сразу появляется в игре и остаётся навсегда.","x.onlyTg":"Покупки работают в Coopix Market в Telegram","x.payFail":"Оплата не прошла","x.cancel":"Покупка отменена","x.bought":"Предмет куплен!","x.starsHdr":"за звёзды"},
+  EN3={"x.starNote":"Items are bought with Telegram Stars (⭐ 1–3). After payment the item appears in the game at once and stays forever.","x.onlyTg":"Purchases work inside Coopix Market in Telegram","x.payFail":"Payment failed","x.cancel":"Purchase cancelled","x.bought":"Item purchased!","x.starsHdr":"with Stars"};
+ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU3:EN3);
+ {const st=document.createElement("style");st.textContent="#nctoast{position:fixed;left:50%;bottom:9vmin;transform:translateX(-50%);z-index:60;background:rgba(14,20,34,.92);color:#fff;font-weight:700;font-size:3vmin;padding:1.4vmin 3.2vmin;border-radius:2.6vmin;border:.2vmin solid rgba(255,255,255,.25);opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap}#nctoast.on{opacity:1}";document.head.appendChild(st);
+  const d=document.createElement("div");d.id="nctoast";document.body.appendChild(d)}
+ let toastT=0;const ncToast=t=>{const e=$("nctoast");if(!e)return;e.textContent=t;e.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("on"),2600)};
+ const catOf=id=>{for(const c in ITEMS)if(ITEMS[c].some(x=>x[0]===id))return c};
+ const inMarket=()=>{try{return window.parent&&window.parent!==window}catch(e){return false}};
+ let PEND=null,pendT=0;
+ function buyStar(id,nameKey){if(PEND)return;if(!inMarket()){ncToast(T("x.onlyTg"));return}
+  PEND=id;renderShop();clearTimeout(pendT);pendT=setTimeout(()=>{PEND=null;renderShop()},90000);
+  try{window.parent.postMessage({coopix:"buy",item:id,name:T(nameKey)},"*")}catch(e){PEND=null;renderShop()}}
+ /* ответ магазина: список купленных предметов (с сервера) и итог оплаты */
+ addEventListener("message",e=>{if(e.source!==window.parent||!e.data||e.data.coopix!=="items")return;const d=e.data;let changed=false;
+  for(const id of d.list||[])if(catOf(id)&&!SAVE.owned[id]){SAVE.owned[id]=1;changed=true}
+  if(d.bought&&SAVE.owned[d.bought]){const c=catOf(d.bought);if(c&&changed)SAVE.eq[c]=d.bought}
+  if(PEND&&(d.fail||changed||(d.list||[]).includes(PEND))){clearTimeout(pendT);PEND=null;if(d.fail==="pay"||d.fail==="err")ncToast(T("x.payFail"));else if(d.fail==="cancel")ncToast(T("x.cancel"));else if(d.fail==="tg")ncToast(T("x.onlyTg"))}
+  if(changed){persist();applySettings();if(screen==="shop")renderShop();ncToast(T("x.bought"))}else if(screen==="shop")renderShop()});
+ /* при запуске: что игрок уже купил за звёзды (магазин кладёт список в окно игры) */
+ for(const id of window.__CPX_ITEMS||[])if(catOf(id))SAVE.owned[id]=1;
+ renderShop=function(){$("shTitle").textContent=T(shopMode==="shop"?"menu.store":"menu.skins");$("shCoins").textContent="⭐ "+T("x.starsHdr");
+  const t=$("shBody");t.innerHTML="";const e=document.createElement("div");e.className="cats";
+  for(const a in ITEMS){const i=document.createElement("button");i.className="navy"+(a===shopCat?" on":"");i.textContent=T(catName[a]);i.onclick=()=>{shopCat=a;renderShop()};e.appendChild(i)}t.appendChild(e);
+  const n=document.createElement("div");n.className="grid";
+  ITEMS[shopCat].forEach(([a,i,o,r])=>{const c=SAVE.owned[a],l=SAVE.eq[shopCat]===a;if(shopMode==="skins"&&!c)return;const d=document.createElement("div");d.className="cell";
+   d.innerHTML='<div class="n">'+(o?'<span class="sw" style="background:'+o+'"></span>':"")+T(i)+"</div>";
+   const p=document.createElement("button");p.className="mini"+(l?" alt":"");p.style.width="100%";const pend=PEND===a;
+   p.textContent=l?T("equipped"):c?T("equip"):pend?"…":"⭐ "+r;p.disabled=l||pend;
+   p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
+  t.appendChild(n);const s=document.createElement("div");s.className="card";s.style.marginTop="1.4vh";s.innerHTML="<p>"+T("x.starNote")+"</p>";t.appendChild(s)}}
 }

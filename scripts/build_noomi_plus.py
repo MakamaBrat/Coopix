@@ -1,7 +1,7 @@
 """Собирает games/noomiclone/NoomiClone.html = NoomiClone.base.html + plus.js (новые предметы, переломы, турбины, монеты) + кнопки турбин + хранилище.
 Запуск: python scripts/build_noomi_plus.py            — боевая сборка в games/noomiclone/NoomiClone.html
         python scripts/build_noomi_plus.py --debug PATH — тестовая сборка (с отладочными хуками) по указанному пути"""
-import os, sys
+import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = os.path.join(ROOT, "games", "noomiclone")
 FRAC_V, TURBO_L, TURBO_A = 15, 7.5, 5.5
@@ -20,6 +20,8 @@ BTNS = '<button class="zone tb" id="zTurboL" data-k="turboL">Турбины но
 def build(debug=None):
     s = open(os.path.join(D, "NoomiClone.base.html"), encoding="utf-8", newline="").read()
     js = open(os.path.join(D, "plus.js"), encoding="utf-8").read()
+    prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
+    js = js.replace("NC_STAR_PRICES", json.dumps(prices))
     js = js.replace("NC_FRAC_V", str(FRAC_V)).replace("NC_TURBO_L", str(TURBO_L)).replace("NC_TURBO_A", str(TURBO_A))
     js = js.replace("NC_DBG", "(window.__dbg=window.__dbg||[])" if debug else "null")
     if debug:
@@ -40,7 +42,24 @@ def build(debug=None):
     s = s.replace(a, "/*NOOMI_PLUS_START*/" + js + "/*NOOMI_PLUS_END*/" + a)
     return s
 
+def write_server_prices():
+    prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
+    lines = [
+        "/** Цены предметов внутри игр в звёздах Telegram (1–3 на предмет, назначены случайно один раз). Сервер сверяет цену с этой таблицей, клиенту не верит.",
+        " * Генерируется scripts/build_noomi_plus.py из games/noomiclone/items.json. */",
+        "export const ITEM_PRICES = {",
+        "  noomiclone: {",
+        ",\n".join("    %s: %s" % (k, v) for k, v in prices.items()),
+        "  },",
+        "};",
+        "export const itemPrice = (game, item) => Number(ITEM_PRICES[game]?.[item]) || 0;",
+        "",
+    ]
+    open(os.path.join(ROOT, "api", "_lib", "items.js"), "w", encoding="utf-8", newline="").write("\n".join(lines))
+
+
 if __name__ == "__main__":
+    write_server_prices()
     dbg = None
     if "--debug" in sys.argv:
         dbg = sys.argv[sys.argv.index("--debug") + 1]

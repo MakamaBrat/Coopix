@@ -1,6 +1,7 @@
 import { pidCodec } from "./pid.js";
 import { cleanGame, gameWire, isVisible, toPatch, AUTHOR_FIELDS, IMG_REF } from "./games.js";
-import { STAR_OPTIONS, makePayload, makeBuyPayload } from "./thanks.js";
+import { STAR_OPTIONS, makePayload, makeBuyPayload, makeItemPayload } from "./thanks.js";
+import { itemPrice } from "./items.js";
 import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
 
 /**
@@ -333,6 +334,36 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
 
       // ---------- «Спасибо автору»: счёт в звёздах Telegram ----------
       // покупка платной игры: счёт в звёздах Telegram; после оплаты вебхук бота записывает покупку (thanks.js)
+      // предметы внутри игры (например, скины Noomi Clone) за звёзды Telegram: цена берётся из таблицы ITEM_PRICES, не от клиента
+      if (r === "myitems") {
+        if (m !== "GET") return bad();
+        const gid = String(q.game ?? "");
+        if (!GAME_ID.test(gid)) return json(404, { error: "not_found" });
+        return json(200, { items: await store.ownedItems(uid, gid) });
+      }
+      if (r === "itembuy") {
+        if (m !== "POST") return bad();
+        const b = parseBody(req.body), gid = String(b?.game ?? ""), item = String(b?.item ?? "");
+        const g = GAME_ID.test(gid) ? await store.getGame(gid) : null, price = itemPrice(gid, item);
+        if (!g || !isVisible(g, staff) || !price) return json(404, { error: "not_found" });
+        if ((await store.ownedItems(uid, gid)).includes(item)) return json(409, { error: "owned" });
+        // главный админ «покупает» бесплатно (для тестов), как и игры; сбросить можно в админке
+        if (isMain) {
+          await store.addPurchase({ user_id: uid, kind: "item", item_id: `${gid}:${item}`, currency: "XTR", amount: 0, charge_id: `admin-${uid}-${gid}-${item}-${Date.now()}`, meta: { free: "admin", game: gid, item } });
+          return json(200, { free: true, price });
+        }
+        if (!tgApi) return json(503, { error: "payments_off" });
+        if ((await store.countEvents(uid, Date.now() - 3600e3, "invoice")) >= 60) return json(429, { error: "rate_limited" });
+        await log(uid, "invoice", gid, { s: price, i: item }, 0);
+        const label = clip(String(b?.name ?? item), 28) || item;
+        try {
+          const link = await tgApi("createInvoiceLink", {
+            title: `${label}`.slice(0, 32), description: `Предмет «${label}» в игре «${g.title}»: ⭐ ${price}. Появится в игре сразу после оплаты.`.slice(0, 255),
+            payload: makeItemPayload(gid, uid, item, price), currency: "XTR", prices: [{ label: label.slice(0, 32), amount: price }],
+          });
+          return json(200, { link, price });
+        } catch (e) { console.error("[itembuy]", e?.message); return json(502, { error: "telegram_error" }); }
+      }
       if (r === "buy") {
         if (m !== "POST") return bad();
         const b = parseBody(req.body), id = String(b?.game ?? "");

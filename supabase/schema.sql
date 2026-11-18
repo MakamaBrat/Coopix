@@ -283,6 +283,7 @@ $$;
 --   регистрация (первый заход игрока, вес 10), новый отзыв (не правка), первый запуск и первая загрузка игры игроком;
 --   заходы, избранное, повторные запуски и прочее на график не попадают (они остаются в журнале действий).
 -- Звёзды «спасибо автору» идут отдельной строкой (s) и в действия/очки не входят.
+-- Звёзды за покупки игр добавляет supabase/stars_purchases.sql (заменяет эту функцию; нужна таблица purchases ниже по файлу).
 -- p_n корзин по p_step_sec секунд от p_start; base = очки ключевых действий до начала окна.
 create index if not exists events_first_idx on public.events (user_id, game_id, type, ts) where type in ('play', 'download');
 create or replace function public.activity_series(p_start timestamptz, p_step_sec int, p_n int)
