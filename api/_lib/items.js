@@ -51,7 +51,9 @@ export const ITEM_PRICES = {
     wear_belt: 1,
     wear_boots: 1,
     wear_gloves: 1,
-    wear_pack: 1
+    wear_pack: 1,
+    move_walk: 1,
+    move_run: 1
   },
 };
 export const itemPrice = (game, item) => Number(ITEM_PRICES[game]?.[item]) || 0;

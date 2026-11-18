@@ -48,5 +48,7 @@
  "wear_belt": 1,
  "wear_boots": 1,
  "wear_gloves": 1,
- "wear_pack": 1
+ "wear_pack": 1,
+ "move_walk": 1,
+ "move_run": 1
 }

@@ -11,7 +11,8 @@ ITEMS.wear=[["wear_none","x.none","",0],["wear_gloves","x.gloves","#e04040",250]
 ITEMS.gear=[["gear_none","x.none","",0],["gear_tl","x.tlegs","#ff7a1a",800],["gear_ta","x.tarms","#22d3ee",800],["gear_tb","x.tboth","#ff4fd8",1500]];
 ITEMS.fx=[["fx_none","x.none","",0],["fx_spark","x.spark","#ffe27a",300],["fx_fire","x.fire","#ff7a1a",500],["fx_ice","x.icet","#8fd8ff",500],["fx_rainbow","x.rbt","#ff4fd8",800]];
 ITEMS.spec=[["spec_none","x.nofrac","",0],["spec_frac","x.frac","#9fe8ff",400]];
-Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx",spec:"x.cspec"});
+ITEMS.move=[["move_none","x.none","",0],["move_walk","x.walk","#9be15d",1],["move_run","x.run","#ffb02e",1]];
+Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx",spec:"x.cspec",move:"x.cmove"});
 const RU={"x.cyan":"Бирюзовый","x.lime":"Лайм","x.magenta":"Маджента","x.black":"Чёрный","x.neon":"Неон","x.gold":"Золото",
  "x.helmet":"Каска","x.beanie":"Шапка-бини","x.cowboy":"Ковбойская шляпа","x.viking":"Шлем викинга","x.wizard":"Шляпа мага","x.halo":"Нимб",
  "x.capeblack":"Чёрный плащ","x.capeice":"Ледяной плащ","x.capegold":"Золотой плащ","x.rainbow":"Радужный плащ",
@@ -19,7 +20,7 @@ const RU={"x.cyan":"Бирюзовый","x.lime":"Лайм","x.magenta":"Мад�
  "x.gloves":"Перчатки","x.boots":"Кроссовки","x.pack":"Рюкзак","x.belt":"Пояс чемпиона",
  "x.spark":"Искры","x.fire":"Огненный шлейф","x.icet":"Ледяной шлейф","x.rbt":"Радужный шлейф",
  "x.nofrac":"Без переломов","x.frac":"Переломы + рентген",
- "x.cface":"Лицо","x.cwear":"Экипировка","x.cgear":"Снаряжение","x.tlegs":"Турбины на ноги","x.tarms":"Турбины на руки","x.tboth":"Турбины на руки и ноги","x.turboL":"Турбины ног","x.turboA":"Турбины рук","x.gain":"монет","x.cfx":"Шлейф","x.cspec":"Особое",
+ "x.cmove":"Движение","x.walk":"Походка","x.run":"Бег","x.jump":"Прыжок","x.cface":"Лицо","x.cwear":"Экипировка","x.cgear":"Снаряжение","x.tlegs":"Турбины на ноги","x.tarms":"Турбины на руки","x.tboth":"Турбины на руки и ноги","x.turboL":"Турбины ног","x.turboA":"Турбины рук","x.gain":"монет","x.cfx":"Шлейф","x.cspec":"Особое",
  "x.hurt":"Перелом","x.p.torso":"рёбра","x.p.head":"череп","x.p.armL":"левая рука","x.p.armR":"правая рука","x.p.thighL":"левое бедро","x.p.thighR":"правое бедро","x.p.calfL":"левая голень","x.p.calfR":"правая голень","x.p.footL":"левая стопа","x.p.footR":"правая стопа",
  "x.fracNote":"«Переломы + рентген»: при очень сильных ударах персонаж на секунду показывается как рентген со сломанной костью."};
 const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black","x.neon":"Neon","x.gold":"Gold",
@@ -29,12 +30,12 @@ const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black
  "x.gloves":"Gloves","x.boots":"Sneakers","x.pack":"Backpack","x.belt":"Champion belt",
  "x.spark":"Sparks","x.fire":"Fire trail","x.icet":"Ice trail","x.rbt":"Rainbow trail",
  "x.nofrac":"No fractures","x.frac":"Fractures + X-ray",
- "x.cface":"Face","x.cwear":"Outfit","x.cgear":"Gear","x.tlegs":"Leg turbines","x.tarms":"Arm turbines","x.tboth":"Arm + leg turbines","x.turboL":"Leg turbo","x.turboA":"Arm turbo","x.gain":"coins","x.cfx":"Trail","x.cspec":"Special",
+ "x.cmove":"Movement","x.walk":"Walking","x.run":"Running","x.jump":"Jump","x.cface":"Face","x.cwear":"Outfit","x.cgear":"Gear","x.tlegs":"Leg turbines","x.tarms":"Arm turbines","x.tboth":"Arm + leg turbines","x.turboL":"Leg turbo","x.turboA":"Arm turbo","x.gain":"coins","x.cfx":"Trail","x.cspec":"Special",
  "x.hurt":"Fracture","x.p.torso":"ribs","x.p.head":"skull","x.p.armL":"left arm","x.p.armR":"right arm","x.p.thighL":"left thigh","x.p.thighR":"right thigh","x.p.calfL":"left shin","x.p.calfR":"right shin","x.p.footL":"left foot","x.p.footR":"right foot",
  "x.fracNote":"\"Fractures + X-ray\": on very hard hits the character flashes as an X-ray with a broken bone."};
 for(const L in I18N){Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN)}
-for(const k of ["face_none","wear_none","gear_none","fx_none","spec_none"])SAVE.owned[k]=1;
-SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";SAVE.eq.spec=SAVE.eq.spec||"spec_none";
+for(const k of ["face_none","wear_none","gear_none","fx_none","spec_none","move_none"])SAVE.owned[k]=1;
+SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";SAVE.eq.spec=SAVE.eq.spec||"spec_none";SAVE.eq.move=SAVE.eq.move||"move_none";
 {const st=document.createElement("style");st.textContent=".cats{flex-wrap:wrap}#xrmsg{position:absolute;left:50%;top:15vmin;transform:translateX(-50%);z-index:6;pointer-events:none;color:#fff;font-weight:800;font-size:4.6vmin;text-shadow:0 .3vmin 1.2vmin rgba(0,0,0,.7);background:rgba(190,20,30,.78);padding:.8vmin 2.6vmin;border-radius:2vmin;opacity:0;white-space:nowrap}#xrmsg.on{animation:xrm 2.4s ease-out}@keyframes xrm{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}#xrfx{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(40,140,255,0) 35%,rgba(20,90,200,.55) 100%)}#xrfx.on{animation:xrf 1.6s ease-out}@keyframes xrf{0%{opacity:0}10%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
  const g=$("game");if(g){const m=document.createElement("div");m.id="xrmsg";const f=document.createElement("div");f.id="xrfx";g.append(f,m)}}
 
@@ -216,6 +217,47 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
    d.innerHTML='<div class="n">'+(o?'<span class="sw" style="background:'+o+'"></span>':"")+T(i)+"</div>";
    const p=document.createElement("button");p.className="mini"+(l?" alt":"");p.style.width="100%";const pend=PEND===a;
    p.textContent=l?T("equipped"):c?T("equip"):pend?"…":"⭐ "+r;p.disabled=l||pend;
-   p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
+   p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;if(window.__ncSetItem)window.__ncSetItem(shopCat,a);persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
   t.appendChild(n)}}
+
+/* ---------- походка и бег: куплены — появляется маленькая кнопка режима, и Нуми Клон ходит/бегает по земле, а не валится ---------- */
+{const WALK={phase:0,cool:0,turn:0,grounded:false};
+ let gait=+SAVE.gait||0;const modes=()=>{const m=[0];if(SAVE.owned.move_walk)m.push(1);if(SAVE.owned.move_run)m.push(2);return m};
+ if(!modes().includes(gait))gait=0;
+ const clamp2=(x,a,b)=>Math.max(a,Math.min(b,x));
+ const on=G=>G===W&&gait>0&&!!G.B&&!!G.st&&!G.st.ragdoll&&G.st.mode!=="bar"&&!(G.st.koT>0);
+ {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:17.5%;top:auto;height:14%;width:11%;font-size:5.2vmin;padding:0}#zWL{left:31%}#zWR{left:44%}";document.head.appendChild(st)}
+ let goTxt=null;
+ function updBtns(){const m=modes(),t=$("zWalk"),L=$("zWL"),R=$("zWR"),go=$("zGo");if(!m.includes(gait))gait=0;
+  if(t){t.classList.toggle("on",m.length>1);t.textContent=gait===2?"\u{1F3C3}":gait===1?"\u{1F6B6}":"\u{1F938}";t.title=gait===2?T("x.run"):gait===1?T("x.walk"):""}
+  if(L&&R){L.classList.toggle("on",gait>0);R.classList.toggle("on",gait>0)}
+  if(go){if(goTxt===null)goTxt=go.textContent;go.textContent=gait>0?T("x.jump"):goTxt}}
+ const zw=$("zWalk");if(zw)zw.addEventListener("pointerdown",e=>{e.preventDefault();const m=modes();gait=m[(m.indexOf(gait)+1)%m.length];SAVE.gait=gait;persist();updBtns()});
+ window.__ncSetItem=(cat,id)=>{if(cat!=="move")return;gait=id==="move_walk"?1:id==="move_run"?2:0;SAVE.gait=gait;updBtns()};
+ {const _as3=applySettings;applySettings=function(){_as3();updBtns()};updBtns()}
+ /* без прилипания и без винтов, пока ходим; «Отпустить» = прыжок */
+ {const _wf=GP.weldFeet;GP.weldFeet=function(s){if(on(this))return;return _wf.call(this,s)};
+  const _pr=GP.press;GP.press=function(s){if(on(this)&&(s==="letgo"||s==="twL"||s==="twR")){if(s==="letgo")jump(this);return}return _pr.call(this,s)}}
+ function jump(G){if(!WALK.grounded||WALK.cool>0)return;WALK.cool=.45;for(const k in G.B){const b=G.B[k],v=b.getLinearVelocity();b.setLinearVelocity(V2(v.x,5.4))}}
+ const _lm3=GP.loadMap;
+ GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(on(G))ctl(G,a[0])}catch(e){}return _ws.apply(this,a)};return r};
+ function ctl(G,dt){const B=G.B,J=G.J,st=G.st,tor=B.torso;WALK.cool-=dt;WALK.turn-=dt;
+  for(const wj of G.welds)G.world.destroyJoint(wj);G.welds=[];if(st.mode==="stuck"){st.mode="air";st.stuckSpawn=false}
+  const p=tor.getPosition(),v=tor.getLinearVelocity();let M=0;for(const k in B)M+=B[k].getMass();
+  const gy=G.groundBelow(p.x,p.y+.3),foot=Math.min(B.footL.getPosition().y,B.footR.getPosition().y)-.04,err=gy+1.43-p.y;
+  WALK.grounded=foot-gy<.16&&err>-.6;
+  const dir=(G.inp.twR?1:0)-(G.inp.twL?1:0),f=G.f;
+  if(dir!==0&&dir!==f&&WALK.grounded&&WALK.turn<=0){WALK.turn=.3;G.mirror();return} /* развернуться лицом по ходу */
+  const sp=gait===2?3.8:1.7,moving=dir!==0;
+  if(WALK.grounded){tor.applyForceToCenter(V2(0,clamp2(M*(55*err-12*v.y),0,M*9.81*2)),true);
+   let a=tor.getAngle()%TAU;if(a>Math.PI)a-=TAU;if(a<-Math.PI)a+=TAU;tor.applyTorque(-(30*a+3*tor.getAngularVelocity()),true);
+   const cv=G.com().vx,Fx=clamp2(M*7*((moving?dir*sp:0)-cv),-M*12,M*12);for(const k in B)B[k].applyForceToCenter(V2(Fx*B[k].getMass()/M,0),true)} /* тяга распределена по всем частям тела: не заваливает вперёд */
+  if(moving||Math.abs(v.x)>.35)WALK.phase+=dt*(gait===2?8:4.6);
+  const A=gait===2?36:22,K=gait===2?100:55,mv=moving||Math.abs(v.x)>.35;
+  const set=(n,deg)=>{const j=J[n],ang=j.getJointAngle();j.setMaxMotorTorque(j.maxT*3+.6);j.setMotorSpeed(clamp2(14*(deg*D2R*f-ang),-14,14))};
+  const leg=(side,off)=>{const ph=WALK.phase+off;set("hip"+side,mv?A*Math.sin(ph):0);set("knee"+side,mv?-K*Math.max(0,Math.cos(ph)):-3);set("ank"+side,0)};
+  leg("L",0);leg("R",Math.PI);set("neck",0);
+  const sw=mv?18*Math.sin(WALK.phase):0;set("shL",-138+sw);set("shR",-138-sw)}
+ if(NC_DBG)window.__ncw={setGait:g=>{gait=g;updBtns()},get grounded(){return WALK.grounded}};
+}
 }
