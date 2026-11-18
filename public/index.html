@@ -1953,9 +1953,12 @@ const toastEl=$("#toast");let toastT;
 /* ============ платные игры ============
    Цена в звёздах Telegram задаёт админ. Пока игра не куплена, её нельзя запустить полностью и скачать (это проверяет и сервер);
    мини-тест на «телевизоре» доступен. Покупка: свайп влево или кнопка «Купить» на странице — оплата в Telegram, после неё игра сама в избранном. */
-const isOwned=m=>!!m&&(!!m.owned||isAdmin());
+const isOwned=m=>!!m&&!!m.owned; /* админ тоже «покупает» (бесплатно), чтобы проверять платную игру как игрок */
 const isLocked=m=>!!m&&(+m.price||0)>0&&!isOwned(m);
 async function buyGame(id,card){const d=DATA.find(x=>x.id===id);if(!d)return;const TGW=window.Telegram&&Telegram.WebApp;
+  if(SUB_API&&isAdmin()){sfx.tap();try{await hub("buy",{method:"POST",body:{game:id}})}catch(e){if(e.code!=="owned"){toast("Не удалось купить (админ)");return}}
+    d.owned=true;persist();sfx.play();toast("Админ: «"+d.title+"» куплена бесплатно");setFav(id,true,card);
+    const c=LIVE.find(x=>x.m&&x.m.id===id);if(c){c.set({...d});setTimeout(()=>c.favFx(),150)}if(PG&&PG.m.id===id){PG.m.owned=true;payPaint(PG.m)}setTimeout(loadCatalog,1500);return}
   if(!SUB_API||!TGW||!TGW.initData||!TGW.openInvoice){toast("Покупка доступна в приложении Coopix в Telegram");return}
   sfx.tap();toast("Открываем оплату…",true);
   try{const j=await hub("buy",{method:"POST",body:{game:id}});
@@ -2810,7 +2813,7 @@ const winter=(()=>{let cv=null,raf=0,fl=[],last=0;
 const playWaitLeft=()=>PLAY_WAIT&&MY_REG?Math.max(0,MY_REG+PLAY_WAIT_M*60e3-Date.now()):0; /* сколько мс до открытия игр новичку */
 const dlWaitLeft=()=>DL_WAIT&&MY_REG?Math.max(0,MY_REG+DL_WAIT_H*3600e3-Date.now()):0; /* сколько мс до открытия скачивания новичку */
 const dlBlocked=m=>DL_OFF||(m&&m.dl===false)||dlWaitLeft()>0;
-const dlPaint=m=>{const b=$("#dlbtn");if(b){b.classList.toggle("off",dlBlocked(m));b.setAttribute("aria-disabled",dlBlocked(m))}};
+const dlPaint=m=>{const b=$("#dlbtn");if(b){b.style.display=(DL_OFF||(m&&m.dl===false))?"none":""; /* скачивать нельзя — «Играть» на всю ширину */b.classList.toggle("off",dlBlocked(m));b.setAttribute("aria-disabled",dlBlocked(m))}};
 const nfmt=n=>(+n||0).toLocaleString("ru-RU");
 const plr=(n,a)=>{n=Math.abs(n)%100;const k=n%10;return n>10&&n<20?a[2]:k>1&&k<5?a[1]:k===1?a[0]:a[2]};
 const VERSIONS={retro:"0.3",space:"0.3",toxic:"0.3",blocks:"0.3"};

@@ -174,6 +174,12 @@ export function supabaseStore(url, serviceKey) {
     async getBotDeck(uid) { const r = ok(await db.from("bot_users").select("deck,last_game").eq("tg_id", uid).maybeSingle()); return r ? { deck: r.deck ?? [], last: r.last_game ?? "" } : null; },
     async setBotDeck(uid, deck, last) { ok(await db.from("bot_users").upsert({ tg_id: uid, deck, last_game: last, last_seen: new Date().toISOString() }, { onConflict: "tg_id" })); },
     async ownedGames(uid) { return (ok(await db.from("purchases").select("item_id").eq("user_id", uid).eq("kind", "game").eq("status", "paid")) ?? []).map((r) => r.item_id); },
+    /** тестовые покупки главного админа (charge_id "admin-…") — удалить у него одну игру или все; настоящие платежи не трогаем */
+    async resetAdminPurchases(uid, game = "") {
+      let qy = db.from("purchases").delete().eq("user_id", uid).eq("kind", "game").like("charge_id", "admin-%");
+      if (game) qy = qy.eq("item_id", game);
+      return (ok(await qy.select("id")) ?? []).length;
+    },
     async thanksStats(ids) { return ids.length ? ok(await db.rpc("thanks_stats", { p_ids: ids })) ?? [] : []; },
     /** уменьшенная обложка для карточки бота (отдельно: если колонки ещё нет, обложки маркета не ломаются) */
     async gameThumb(id) { return ok(await db.from("games").select("thumb_img").eq("id", id).maybeSingle())?.thumb_img ?? null; },

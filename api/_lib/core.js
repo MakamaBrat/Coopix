@@ -312,6 +312,14 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
       } catch (e) { return json(502, { error: "telegram_error", detail: String(e?.message ?? "").slice(0, 200) }); }
     }
 
+    // --- тестовые покупки главного админа: сбросить (одну игру или все) ---
+    if (r === "resetbuys") {
+      if (m !== "POST") return json(405, { error: "method_not_allowed" });
+      const game = String(parseBody(req.body)?.game ?? "");
+      if (game && !/^[a-z0-9_-]{1,32}$/.test(game)) return json(400, { error: "bad_game" });
+      return json(200, { removed: await store.resetAdminPurchases(uid, game) });
+    }
+
     // --- каталог игр: список, доступ, порядок ---
     if (r === "games") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });

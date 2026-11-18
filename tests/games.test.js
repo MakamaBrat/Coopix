@@ -281,4 +281,15 @@ test("платная игра: без покупки нельзя скачать
   assert.equal((await w.hub("gamefile", "GET", BOB, { query: { id: game.id } })).status, 200);
   assert.equal((await w.hub("buy", "POST", BOB, { body: { game: game.id } })).body.error, "owned");
   assert.ok(w.sent.some(([c, t]) => c === BOB && /куплена/.test(t)));
+
+  // главный админ покупает бесплатно (для тестов) и может сбросить свои тестовые покупки; чужие настоящие не трогаются
+  assert.equal((await w.hub("gamefile", "GET", MAIN, { query: { id: game.id } })).status, 402);
+  const free = await w.hub("buy", "POST", MAIN, { body: { game: game.id } });
+  assert.equal(free.status, 200); assert.equal(free.body.free, true);
+  assert.equal((await w.hub("games", "GET", MAIN)).body.games.find((x) => x.id === game.id).owned, true);
+  assert.equal((await w.hub("gamefile", "GET", MAIN, { query: { id: game.id } })).status, 200);
+  assert.equal((await w.adm("resetbuys", "POST", MAIN, { body: { game: game.id } })).body.removed, 1);
+  assert.equal((await w.hub("gamefile", "GET", MAIN, { query: { id: game.id } })).status, 402);
+  assert.equal((await w.hub("gamefile", "GET", BOB, { query: { id: game.id } })).status, 200);
+  assert.equal((await w.adm("resetbuys", "POST", MOD, { body: {} })).status, 403);
 });

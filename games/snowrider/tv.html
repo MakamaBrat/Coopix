@@ -1,0 +1,105 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Snow Rider — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#9fd3ff;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
+<script>
+/* Snow Rider — микро-тест для «телевизора» Coopix в духе Hill Climb: едь по снежным холмам, собирай монеты и канистры.
+   ПК: → / D / пробел — газ, ← / A — тормоз и наклон назад. Телефон: правая половина экрана — газ, левая — тормоз.
+   В воздухе газ крутит нос вверх, тормоз — вниз. Приземлился вверх колёсами — конец. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1;
+const Lc=document.createElement("canvas");Lc.width=320;Lc.height=200;const g=Lc.getContext("2d");
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);S=Math.min(W/320,H/200)};
+addEventListener("resize",fit);fit();
+const R=6,L=30;
+/* холмы: плавный старт, дальше выше и круче */
+const gy=X=>{const k=Math.min(1,.35+X/7000),f=Math.min(1,X/260);return 135+f*(Math.sin(X*.011)*38*k+Math.sin(X*.027+1)*22*k+Math.sin(X*.061+2)*8*k)};
+let st="menu",px=0,py=0,s=0,vy=0,a=0,w=0,air=false,pdy=0,fuel=100,coins=0,best=0,dist=0,gas=0,brk=0,wr=0,cam=0,camy=0,why="",P=[],nextP=300,parts=[];
+try{best=+localStorage.getItem("sr.tv")||0}catch(e){}
+const ground=X=>gy(X);
+function reset(){px=40;py=gy(40)-R;s=0;vy=0;a=0;w=0;air=false;pdy=0;fuel=100;coins=0;dist=0;P=[];nextP=300;parts=[];st="play";why="";cam=0;camy=py-110;spawnTo(900)}
+function spawnTo(lim){while(nextP<lim){const r=Math.random();
+  if(r<.18)P.push({x:nextP,t:"fuel"});else{const n=3+(Math.random()*3|0);for(let i=0;i<n;i++)P.push({x:nextP+i*16,t:"coin"})}
+  nextP+=130+Math.random()*90}}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),q=AC.createGain();o.type=t;o.frequency.value=f;q.gain.value=v;q.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(q).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const slope=X=>Math.atan2(gy(X+L)-gy(X),L);
+function crash(m){st="over";why=m;beep(110,.35,"sawtooth",.08);const sc=score();if(sc>best){best=sc;try{localStorage.setItem("sr.tv",best)}catch(e){}}
+  for(let i=0;i<14;i++)parts.push({x:px,y:py,vx:(Math.random()-.5)*4,vy:-Math.random()*3,l:30})}
+const score=()=>(dist|0)+coins*10;
+function step(){if(st!=="play")return;
+  fuel-=gas?.05:.012;
+  if(fuel<=0){fuel=0;if(!air&&Math.abs(s)<.08){crash("БЕНЗИН КОНЧИЛСЯ");return}}
+  const ga=fuel>0?gas:0;
+  if(!air){
+    const t=slope(px);a+=(t-a)*.35;
+    s+=ga*.1-brk*(s>0?.12:-.05)+Math.sin(t)*.16;s*=ga?.996:.992;s=Math.max(-1.4,Math.min(4.6,s));
+    const oy=gy(px);px+=s;const dy=gy(px)-oy;
+    /* трамплин: резкий спад после подъёма — взлетаем */
+    if(s>1.2&&pdy<-.25&&dy-pdy>.3){air=true;vy=pdy;w=0;beep(330,.1,"triangle",.04)}
+    else{py=gy(px)-R;pdy=dy}
+    if(Math.abs(a)>1.9){crash("ПЕРЕВЕРНУЛСЯ");return}
+  }else{
+    vy+=.12;w+=(brk-ga)*.003+(brk||ga?0:(slope(px)-a)*.0025);w*=.99;a+=w;px+=s;py+=vy;
+    const xf=px+L*Math.cos(a),yf=py+L*Math.sin(a);
+    const hit=py+R>=gy(px)||yf+R>=gy(xf);
+    if(hit){const t=slope(px);let d=a-t;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;
+      if(Math.abs(d)>1.25){a=t;crash(Math.abs(d)>2.2?"ПРИЗЕМЛИЛСЯ НА КРЫШУ":"ЖЁСТКАЯ ПОСАДКА");return}
+      air=false;py=gy(px)-R;pdy=0;s=Math.max(s*.9,.4);w=0;beep(180,.06,"square",.04)}
+    if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;
+  }
+  wr+=s*.18;dist=Math.max(dist,(px-40)/10);
+  for(const o of P){if(o.got)continue;const cy=gy(o.x)-18;if(Math.abs(o.x-(px+L/2))<12&&Math.abs(cy-py)<26){o.got=1;
+    if(o.t==="coin"){coins++;beep(900,.06,"square",.04)}else{fuel=Math.min(100,fuel+45);beep(500,.15,"triangle",.06)}}}
+  P=P.filter(o=>o.x>px-200);spawnTo(px+700);
+  cam+=(px-95-cam)*.15;camy+=(py-105-camy)*.1}
+function pt(t,X,Y,sz,col,al,out){g.font="bold "+sz+"px monospace";g.textAlign=al||"left";g.textBaseline="middle";if(out){g.lineWidth=3;g.strokeStyle=out;g.strokeText(t,X,Y)}g.fillStyle=col;g.fillText(t,X,Y)}
+function tree(X,h){const b=gy(X);g.fillStyle="#5b4636";g.fillRect(X-1.5,b-4,3,5);g.fillStyle="#2f6b52";for(let i=0;i<3;i++){const w2=h*(.5-i*.12),y0=b-4-i*h*.3;g.beginPath();g.moveTo(X-w2,y0);g.lineTo(X+w2,y0);g.lineTo(X,y0-h*.45);g.fill()}
+  g.fillStyle="#fff";g.fillRect(X-1,b-4-h*.78,2,2)}
+function draw(){
+  const gr=g.createLinearGradient(0,0,0,200);gr.addColorStop(0,"#5aa7ee");gr.addColorStop(1,"#d9f0ff");g.fillStyle=gr;g.fillRect(0,0,320,200);
+  /* горы вдали */
+  g.fillStyle="#b7d4ee";g.beginPath();g.moveTo(0,200);for(let i=0;i<=320;i+=8){const X=i+cam*.15;g.lineTo(i,95+Math.sin(X*.02)*22+Math.sin(X*.05)*8-camy*.1+ (110*0))}g.lineTo(320,200);g.fill();
+  g.fillStyle="#8fb7de";g.beginPath();g.moveTo(0,200);for(let i=0;i<=320;i+=8){const X=i+cam*.35;g.lineTo(i,125+Math.sin(X*.03+2)*16+Math.sin(X*.08)*5-camy*.2)}g.lineTo(320,200);g.fill();
+  g.save();g.translate(-cam,-camy);
+  /* снег-земля */
+  g.fillStyle="#f4faff";g.beginPath();g.moveTo(cam-4,camy+260);for(let X=cam-4;X<=cam+328;X+=4)g.lineTo(X,gy(X));g.lineTo(cam+328,camy+260);g.fill();
+  g.strokeStyle="#bcd9f2";g.lineWidth=2;g.beginPath();for(let X=cam-4;X<=cam+328;X+=4){const Y=gy(X);X===cam-4?g.moveTo(X,Y+3):g.lineTo(X,Y+3)}g.stroke();
+  g.fillStyle="#dcecfa";g.beginPath();g.moveTo(cam-4,camy+260);for(let X=cam-4;X<=cam+328;X+=4)g.lineTo(X,gy(X)+14);g.lineTo(cam+328,camy+260);g.fill();
+  for(let X=Math.floor((cam-20)/70)*70;X<cam+340;X+=70){const j=Math.abs(Math.sin(X*12.9))*30;if(X>200)tree(X+j,18+Math.abs(Math.sin(X))*10)}
+  for(const o of P){if(o.got)continue;const Y=gy(o.x)-18;
+    if(o.t==="coin"){const q=Math.abs(Math.sin(Date.now()/200+o.x));g.fillStyle="#ffd84a";g.beginPath();g.ellipse(o.x,Y,4*q+1,4.5,0,0,7);g.fill();g.fillStyle="#b8860b";g.fillRect(o.x-.5,Y-2,1,4)}
+    else{g.fillStyle="#e8414a";g.fillRect(o.x-5,Y-6,10,12);g.fillStyle="#fff";g.fillRect(o.x-2,Y-8,4,3);g.fillRect(o.x-3,Y-2,6,4)}}
+  for(const p of parts){g.fillStyle="#fff";g.fillRect(p.x,p.y,2,2);p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.l--}parts=parts.filter(p=>p.l>0);
+  /* машина: заднее колесо в (px,py), переднее — в (px+L,py) в повёрнутой системе */
+  if(st!=="menu"){g.save();g.translate(px,py);g.rotate(a);
+    g.fillStyle="#2a5fd0";g.fillRect(-2,-13,L+4,9);g.fillStyle="#e8414a";g.fillRect(-2,-13,L+4,3);
+    g.fillStyle="#2a5fd0";g.fillRect(5,-22,18,10);g.fillStyle="#cfeaff";g.fillRect(8,-20,12,6);
+    g.fillStyle="#f6d6b4";g.beginPath();g.arc(14,-18,3.2,0,7);g.fill();g.fillStyle="#e8414a";g.beginPath();g.arc(14,-19.5,3.5,Math.PI,0);g.fill();
+    g.fillStyle="#ffe27a";g.fillRect(L+1,-11,3,3);
+    for(const wx of[0,L]){g.fillStyle="#1d2433";g.beginPath();g.arc(wx,0,R,0,7);g.fill();g.fillStyle="#9aa6bd";g.beginPath();g.arc(wx,0,2.4,0,7);g.fill();
+      g.strokeStyle="#9aa6bd";g.lineWidth=1;g.beginPath();g.moveTo(wx+Math.cos(wr)*R*.9,Math.sin(wr)*R*.9);g.lineTo(wx-Math.cos(wr)*R*.9,-Math.sin(wr)*R*.9);g.stroke()}
+    g.restore()}
+  g.restore();
+  /* HUD */
+  if(st!=="menu"){pt("МОНЕТЫ "+coins,8,12,10,"#fff","left","#1a3d7a");pt((dist|0)+" М",312,12,10,"#fff","right","#1a3d7a");
+    g.fillStyle="#1a3d7a";g.fillRect(7,20,62,8);g.fillStyle=fuel>25?"#5be37a":"#e8414a";g.fillRect(8,21,60*fuel/100,6);pt("БЕНЗИН",74,25,8,"#fff","left","#1a3d7a")}
+  if(st!=="play"){g.fillStyle="rgba(10,30,70,.55)";g.fillRect(0,0,320,200);
+    pt("SNOW RIDER",160,58,28,"#ffd84a","center","#a8320c");
+    pt(st==="over"?why+" · "+score()+" ОЧК. · РЕКОРД "+best:"МИНИ-ТЕСТ · ПОКОРИ СНЕЖНЫЕ ХОЛМЫ",160,84,10,"#fff","center","#1a3d7a");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ ЕХАТЬ",160,114,11,"#fff","center","#1a3d7a");
+    pt(TOUCH?"ПРАВО — ГАЗ · ЛЕВО — ТОРМОЗ":"→ ГАЗ · ← ТОРМОЗ · В ВОЗДУХЕ — КРУТИ НОС",160,140,9,"#e6f2ff","center","#1a3d7a");
+    pt("ПОЛНАЯ ВЕРСИЯ — ЗА 5 ЗВЁЗД",160,156,9,"#e6f2ff","center","#1a3d7a")}
+  x.save();x.imageSmoothingEnabled=false;x.fillStyle="#9fd3ff";x.fillRect(0,0,W,H);x.drawImage(Lc,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore()}
+/* управление */
+let TOUCH=matchMedia("(pointer:coarse)").matches;const hold={};
+const upd=()=>{gas=(hold.k_g||hold.p_g)?1:0;brk=(hold.k_b||hold.p_b)?1:0};
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(e.pointerType==="touch")TOUCH=true;if(st!=="play"){reset();return}
+  const r=c.getBoundingClientRect();hold["p"+e.pointerId]=1;if(e.clientX-r.left>r.width/2)hold.p_g=(hold.p_g|0)+1;else hold.p_b=(hold.p_b|0)+1;e._s=1;c["s"+e.pointerId]=e.clientX-r.left>r.width/2?"g":"b";upd()});
+const rel=e=>{const k=c["s"+e.pointerId];if(!k)return;c["s"+e.pointerId]=0;hold["p_"+k]=Math.max(0,(hold["p_"+k]|0)-1);upd()};
+c.addEventListener("pointerup",rel);c.addEventListener("pointercancel",rel);c.addEventListener("pointerleave",rel);
+const KM={ArrowRight:"k_g",KeyD:"k_g",Space:"k_g",ArrowUp:"k_g",ArrowLeft:"k_b",KeyA:"k_b",ArrowDown:"k_b"};
+addEventListener("keydown",e=>{const k=KM[e.code];if(!k&&e.code!=="Enter")return;e.preventDefault();if(st!=="play"){if(!e.repeat)reset();return}if(k){hold[k]=1;upd()}});
+addEventListener("keyup",e=>{const k=KM[e.code];if(k){hold[k]=0;upd()}});
+addEventListener("blur",()=>{for(const k in hold)hold[k]=0;upd()});
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+})();
+</script></body></html>
