@@ -72,10 +72,6 @@ html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjus
 
 /* ---------- header ---------- */
 .top{position:relative;height:clamp(126px,33vw,155px);margin-bottom:6px}
-/* мягкое сиреневое свечение заходит выше шапки, в отступ под вырез экрана/шапку Telegram — пустота над логотипом читается как
-   атмосферный свет, а не как случайно оставленное пустое место */
-.top::before{content:"";position:absolute;left:6%;right:6%;top:-54px;height:150px;z-index:0;pointer-events:none;
-  background:radial-gradient(62% 100% at 50% 100%,rgba(165,107,255,.26),rgba(165,107,255,.08) 55%,transparent 75%)}
 /* games window (Store): header with logo + pigeon shrunk by 40%, centered; the freed height is pulled back with a negative margin */
 body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0;margin-bottom:calc(6px - clamp(126px,33vw,155px)*(1 - var(--ts)))}
 .swoosh{position:absolute;left:-4%;top:-6%;width:78%;height:100%;overflow:visible;pointer-events:none}
