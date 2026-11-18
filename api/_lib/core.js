@@ -103,6 +103,7 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
   const BOT_ID = /^[A-Za-z0-9_]{3,64}$/, BOT_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,64}$/;
   const mask = (t) => "…" + String(t).slice(-4);
   const forget = (id) => { seen.delete(Number(id) + ":market"); seen.delete(Number(id) + ":game"); };
+  let marketBotName = ""; // @username маркет-бота (getMe, один раз): игры внутри маркета открывают по нему «Ещё игры»
   const hub = createHub({ store, botToken, notify, adminIds, tgApi, tgFile, tgDoc });
   const bot = createBot({ store, botToken, tgApi: tgApi ?? (async () => {}), tgPhoto, notify, log: hub.log, weight: WEIGHTS.thank });
 
@@ -140,10 +141,11 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
     // ---- /api/config: новости и адрес доната для сайта ----
     if (route === "config") {
       if (m !== "GET") return json(405, { error: "method_not_allowed" });
+      if (!marketBotName && tgApi) { try { marketBotName = (await tgApi("getMe", {}))?.username || ""; } catch { /* нет связи — клиент возьмёт запасное имя */ } }
       const [news, wallet, site, me] = await Promise.all([store.getSetting("news"), store.getSetting("wallet"), store.getSetting("site"), store.getUser(uid)]);
       // role/admin здесь же: маркету на старте не нужен отдельный запрос /me (минус один круг до сервера)
       // reg + dlWaitH: маркет сам скрывает скачивание у новичков, пока не прошло dlWaitH часов с регистрации (команде не ограничиваем)
-      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, site: { ...siteOf(site?.value), dlWaitH: DL_WAIT_H, playWaitM: PLAY_WAIT_M }, reg: me?.registered_at ? Date.parse(me.registered_at) : null, role, admin: staff });
+      return json(200, { news: news?.value ?? null, wallet: wallet?.value ?? null, site: { ...siteOf(site?.value), dlWaitH: DL_WAIT_H, playWaitM: PLAY_WAIT_M }, reg: me?.registered_at ? Date.parse(me.registered_at) : null, role, admin: staff, bot: marketBotName });
     }
 
     // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----

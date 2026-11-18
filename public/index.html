@@ -2154,6 +2154,7 @@ const NEWS=[
 ];
 /* sponsors + links: edit here. Replace the placeholder t.me URLs with the real channel / chat */
 const SPONSORS=[{name:"Eugene",c:"#ffb23f",msg:"Закинул, для мотивации)"},{name:"Max Black",c:"#4dd2ff",msg:"Мою игру тоже добавь!"}];
+let MARKET_BOT="coopixbot"; /* @username маркет-бота: приходит с сервера в /config */
 const LINKS={channel:"https://t.me/coopixmarket",chat:"https://t.me/coopixchat",pchannel:"https://t.me/+PRIVATE_CHANNEL",pchat:"https://t.me/+PRIVATE_CHAT",boosty:"https://boosty.to/coopix"}; /* pchannel / pchat = closed channel and chat (invite links), boosty = Boosty page */
 /* donation wallet: put your real TRON (TRC20) address here. Until it looks like a valid T... address the Help window shows a "not added yet" note */
 const WALLET={net:"TRON (TRC20)",coin:"USDT",addr:"ВСТАВЬТЕ_АДРЕС_TRON"};
@@ -3227,6 +3228,9 @@ function gameMode(html,title){window.__gm=1;
   const TGW=window.Telegram&&Telegram.WebApp;try{TGW&&TGW.unlockOrientation&&TGW.unlockOrientation()}catch(e){}
   const o=document.createElement("div");o.className="gmv";const f=document.createElement("iframe");
   f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=title||"Игра";f.srcdoc=html;o.append(f);
+  /* игра в изолированном окне сама ссылки открыть не может: «Ещё игры» в ней шлёт сюда сообщение {coopix:"market"}, магазин открывает своего бота */
+  addEventListener("message",e=>{if(e.source!==f.contentWindow||!e.data||e.data.coopix!=="market")return;const url="https://t.me/"+MARKET_BOT+"?startapp";
+    try{if(TGW&&TGW.openTelegramLink){TGW.openTelegramLink(url);return}}catch(x){}try{window.open(url,"_blank","noopener")}catch(x){}});
   document.body.append(o);document.body.classList.add("gamemode");document.body.style.overflow="hidden";
   const out=()=>{try{sessionStorage.setItem("am.back","list")}catch(e){}location.reload()}; /* после игры маркет откроется на списке игр, а не на главной */
   try{if(TGW&&TGW.BackButton){TGW.BackButton.show();TGW.BackButton.onClick(out)}}catch(e){}
@@ -3480,6 +3484,7 @@ const CFGK="am.cfg";
 function cachedCfg(){try{const c=JSON.parse(localStorage.getItem(CFGK)||"null");return c&&typeof c==="object"?c:null}catch(e){return null}}
 function applyCfg(c){
   try{
+    if(/^[A-Za-z0-9_]{3,64}$/.test(c.bot||""))MARKET_BOT=c.bot;
     if("role" in c){CFG_ROLE=true;ROLE=c.role||null;if(c.admin)ADMIN_OK=true} /* роль приходит вместе с настройками: /me на старте не нужен */
     if(c.site){/* ссылки «Канал»/«Чатик» и общий выключатель скачивания задаются в админке (вкладки «Сайт» и «Игры») */
       if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.channel||""))LINKS.channel=c.site.channel;if(/^https:\/\/[^\s"'<>]+$/i.test(c.site.chat||""))LINKS.chat=c.site.chat;DL_OFF=c.site.dlOff===true;
