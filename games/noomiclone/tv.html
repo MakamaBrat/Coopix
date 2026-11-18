@@ -1,0 +1,85 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>NoomiClone — мини-тест</title>
+<style>html,body{margin:0;height:100%;background:#6fb1f0;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
+<script>
+/* NoomiClone — микро-тест для «телевизора» Coopix: раскачайся на турнике, отпусти в нужный момент, перелети и схвати следующий.
+   ПК: → / D / пробел — держать (качать, в воздухе — группировка), ← / A / Z — отпустить.
+   Телефон: правая половина экрана — держать, левая — отпустить. Чем больше перехватов, тем лучше. Упал на землю — конец. */
+(()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1;
+const Lc=document.createElement("canvas");Lc.width=320;Lc.height=200;const g=Lc.getContext("2d");
+const fit=()=>{const d=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);S=Math.min(W/320,H/200)};
+addEventListener("resize",fit);fit();
+const G=.2,L=26,LEG=13,GROUND=186,BW=28;
+let st="menu",bars=[],cur=0,th=0,w=0,px=0,py=0,vx=0,vy=0,phi=0,wb=0,air=false,hold=0,score=0,best=0,cam=0,wr=0,why="",ph=[0,0],parts=[],flash=0;
+try{best=+localStorage.getItem("nc.tv")||0}catch(e){}
+const mk=i=>{const p=bars[i-1];return{x:(p?p.x:40)+56+Math.random()*16,y:48+Math.random()*30}};
+function reset(){bars=[{x:70,y:62}];for(let i=1;i<9;i++)bars.push(mk(i));cur=0;th=-.95;w=0;air=false;score=0;hold=0;wr=0;parts=[];flash=0;cam=0;st="play";why="";place()}
+function place(){const b=bars[cur];px=b.x+L*Math.sin(th);py=b.y+L*Math.cos(th);phi=th}
+let AC=null;function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),q=AC.createGain();o.type=t;o.frequency.value=f;q.gain.value=v;q.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(q).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function release(){if(st!=="play"||air)return;air=true;vx=L*w*Math.cos(th);vy=-L*w*Math.sin(th);wb=w;beep(300,.08,"triangle",.04)}
+function crash(m){st="over";why=m;beep(110,.35,"sawtooth",.08);if(score>best){best=score;try{localStorage.setItem("nc.tv",best)}catch(e){}}
+  for(let i=0;i<12;i++)parts.push({x:px,y:Math.min(py,GROUND),vx:(Math.random()-.5)*3,vy:-Math.random()*2.5,l:30})}
+const hands=()=>[px-L*Math.sin(phi),py-L*Math.cos(phi)];
+function step(){if(st!=="play")return;
+  if(!air){
+    if(hold)w+=(w<0?-1:1)*.0045;w+=-(G/L)*Math.sin(th);w*=.9986;th+=w;place();wr=0}
+  else{
+    ph=hands();vy+=G;px+=vx;py+=vy;if(hold)wb+=(wb<0?-1:1)*.0035;phi+=wb;
+    const h=hands();
+    for(let j=cur+1;j<Math.min(bars.length,cur+4);j++){const b=bars[j];let hit=false;
+      for(let k=1;k<=4;k++){const hx=ph[0]+(h[0]-ph[0])*k/4,hy=ph[1]+(h[1]-ph[1])*k/4;if(Math.abs(hx-b.x)<BW/2+2&&Math.abs(hy-b.y)<5){hit=true;break}}
+      if(hit){cur=j;th=phi;w=(vx*Math.cos(phi)-vy*Math.sin(phi))/L;w=Math.max(-.22,Math.min(.22,w));air=false;score++;flash=14;beep(700+score*18,.09,"square",.045);
+        while(bars.length<cur+8)bars.push(mk(bars.length));break}}
+    const fx=px+LEG*Math.sin(phi),fy=py+LEG*Math.cos(phi);
+    if(air&&(fy>=GROUND||py>=GROUND-3)){crash("УПАЛ");return}
+    if(air&&px<bars[cur].x-60){crash("УЛЕТЕЛ НАЗАД");return}}
+  cam+=(px-110-cam)*.12;if(flash>0)flash--}
+function pt(t,X,Y,sz,col,al,out){g.font="bold "+sz+"px monospace";g.textAlign=al||"left";g.textBaseline="middle";if(out){g.lineWidth=3;g.strokeStyle=out;g.strokeText(t,X,Y)}g.fillStyle=col;g.fillText(t,X,Y)}
+function line(a,b,wd,col){g.strokeStyle=col;g.lineWidth=wd;g.lineCap="round";g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()}
+function figure(){const hd=hands(),u=[Math.sin(phi),Math.cos(phi)],P=[px,py],tk=air&&hold;
+  const rot=(v,a)=>[v[0]*Math.cos(a)-v[1]*Math.sin(a),v[0]*Math.sin(a)+v[1]*Math.cos(a)];
+  const sh=[hd[0]+u[0]*7,hd[1]+u[1]*7],dk="#2c2c33",lt="#4a4a55";
+  line(hd,[sh[0]-u[1]*0,sh[1]+u[0]*0],2.4,lt); /* руки на перекладине */
+  if(tk){const K=[P[0]+u[0]*LEG*.55,P[1]+u[1]*LEG*.55],d2=rot(u,1.9),F=[K[0]+d2[0]*LEG*.5,K[1]+d2[1]*LEG*.5];line(P,K,4.4,dk);line(K,F,4.2,dk)}
+  else{const F=[P[0]+u[0]*LEG,P[1]+u[1]*LEG];line(P,F,4.6,dk);line([F[0]-u[0]*2,F[1]-u[1]*2],[F[0]+u[1]*3,F[1]-u[0]*3],3,"#1c1c22")}
+  line(sh,P,6.4,dk);
+  const hc=[hd[0]+u[0]*10,hd[1]+u[1]*10];g.fillStyle="#4a4a56";g.beginPath();g.arc(hc[0],hc[1],4.6,0,7);g.fill();g.fillStyle="rgba(255,255,255,.25)";g.beginPath();g.arc(hc[0]-1.2,hc[1]-1.4,1.6,0,7);g.fill();
+  g.fillStyle="#6a6a76";g.fillRect(hd[0]-2.2,hd[1]-1.8,4.4,3.6)}
+const clouds=[[20,30,26],[120,50,32],[210,24,22],[300,62,30],[400,36,28]];
+function draw(){
+  const sk=g.createLinearGradient(0,0,0,GROUND);sk.addColorStop(0,"#5aa7ee");sk.addColorStop(1,"#d9f0ff");g.fillStyle=sk;g.fillRect(0,0,320,200);
+  g.fillStyle="rgba(255,255,255,.9)";for(const q of clouds){const X=((q[0]-cam*.2)%420+420)%420-50;g.beginPath();g.ellipse(X,q[1],q[2],q[2]*.35,0,0,7);g.ellipse(X+q[2]*.5,q[1]-3,q[2]*.55,q[2]*.3,0,0,7);g.fill()}
+  g.fillStyle="#e0574a";g.fillRect(0,GROUND,320,200-GROUND);g.fillStyle="#b9413a";for(let X=-((cam*1)%24);X<330;X+=24)g.fillRect(X,GROUND+3,12,2);
+  g.save();g.translate(-cam,0);
+  bars.forEach((b,i)=>{if(b.x<cam-40||b.x>cam+360)return;const post=b.x+BW/2;
+    g.fillStyle="#b89a76";g.fillRect(post-2.5,b.y,5,GROUND-b.y);g.fillStyle="#9a7f5e";g.fillRect(post+1,b.y,1.5,GROUND-b.y);
+    line([b.x-BW/2,b.y],[post,b.y],2.6,i===cur?"#cfd8e6":i===cur+1?"#ffe27a":"#9aa6b8");g.fillStyle="#7d8798";g.fillRect(post-3.5,b.y-1.5,7,3)});
+  for(const p of parts){g.fillStyle="#2c2c33";g.fillRect(p.x,p.y,2,2);p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.l--}parts=parts.filter(p=>p.l>0);
+  if(st!=="menu")figure();
+  g.restore();
+  if(st!=="menu"){g.fillStyle="rgba(20,40,80,.6)";g.beginPath();g.roundRect?g.roundRect(104,5,112,14,7):g.rect(104,5,112,14);g.fill();
+    pt(score+" ПЕРЕХВАТОВ",160,12.5,9,flash>0?"#ffe27a":"#fff","center");pt("РЕКОРД "+best,312,12,8,"#fff","right","#1a3d7a")}
+  if(st==="play"&&score===0&&!air)pt("ДЕРЖИ — КАЧАЙСЯ, ОТПУСТИ — ЛЕТИ",160,100,8,"#fff","center","#1a3d7a");
+  if(st!=="play"){g.fillStyle="rgba(10,30,70,.5)";g.fillRect(0,0,320,200);
+    pt("NOOMICLONE",160,52,26,"#ff4a3a","center","#5a0808");
+    pt(st==="over"?why+" · "+score+" ПЕРЕХВАТОВ · РЕКОРД "+best:"МИНИ-ТЕСТ · ПЕРЕЛЕТАЙ МЕЖДУ ТУРНИКАМИ",160,78,10,"#fff","center","#1a3d7a");
+    if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ НАЧАТЬ",160,106,11,"#fff","center","#1a3d7a");
+    pt(TOUCH?"ПРАВО — КАЧАТЬ / ГРУППИРОВКА · ЛЕВО — ОТПУСТИТЬ":"→ ДЕРЖАТЬ (КАЧАТЬ, ГРУППИРОВКА) · ← ОТПУСТИТЬ",160,132,8,"#e6f2ff","center","#1a3d7a");
+    pt("ПОЛНАЯ ВЕРСИЯ — «ИГРАТЬ»",160,148,9,"#e6f2ff","center","#1a3d7a")}
+  x.save();x.imageSmoothingEnabled=false;x.fillStyle="#6fb1f0";x.fillRect(0,0,W,H);x.drawImage(Lc,(W-320*S)/2,(H-200*S)/2,320*S,200*S);x.restore()}
+/* управление */
+let TOUCH=matchMedia("(pointer:coarse)").matches;const hs={};
+const upd=()=>{hold=(hs.k||hs.p)?1:0};
+c.addEventListener("pointerdown",e=>{e.preventDefault();if(e.pointerType==="touch")TOUCH=true;if(st!=="play"){reset();return}
+  const r=c.getBoundingClientRect(),right=e.clientX-r.left>r.width/2;c["s"+e.pointerId]=right?"h":"r";if(right){hs.p=(hs.p|0)+1;upd()}else release()});
+const up=e=>{if(c["s"+e.pointerId]==="h"){hs.p=Math.max(0,(hs.p|0)-1);upd()}c["s"+e.pointerId]=0};
+c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);c.addEventListener("pointerleave",up);
+const HK={ArrowRight:1,KeyD:1,Space:1,ArrowUp:1},RK={ArrowLeft:1,KeyA:1,KeyZ:1,ArrowDown:1};
+addEventListener("keydown",e=>{const hk=HK[e.code],rk=RK[e.code];if(!hk&&!rk&&e.code!=="Enter")return;e.preventDefault();if(st!=="play"){if(!e.repeat)reset();return}if(hk){hs.k=1;upd()}if(rk&&!e.repeat)release()});
+addEventListener("keyup",e=>{if(HK[e.code]){hs.k=0;upd()}});
+addEventListener("blur",()=>{hs.k=0;hs.p=0;upd()});
+let acc=0,last=performance.now();(function loop(t){requestAnimationFrame(loop);acc+=Math.min(100,t-last);last=t;while(acc>=16.7){step();acc-=16.7}draw()})(last);
+/*TESTHOOK*/
+})();
+</script></body></html>
