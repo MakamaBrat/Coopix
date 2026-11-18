@@ -286,6 +286,10 @@ export function supabaseStore(url, serviceKey) {
       if (before) q = q.lt("id", before);
       return ok(await q) ?? [];
     },
+    async firstRegTs() {
+      const r = ok(await db.from("users").select("registered_at").order("registered_at", { ascending: true }).limit(1));
+      return r?.[0] ? Date.parse(r[0].registered_at) : null;
+    },
     async firstEventTs() {
       const r = ok(await db.from("events").select("ts").order("ts", { ascending: true }).limit(1));
       return r?.[0] ? Date.parse(r[0].ts) : null;

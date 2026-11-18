@@ -157,8 +157,12 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
   async function activity(q) {
     const nowS = Math.floor(Date.now() / 1000);
     const off = -int(q.tz, -840, 840) * 60; // JS getTimezoneOffset() = UTC − местное, в минутах
-    const first = await store.firstEventTs();
-    const allStep = Math.max(3600, Math.ceil(Math.max(nowS - Math.floor((first ?? Date.now()) / 1000), 1) / 40 / 3600) * 3600);
+    // «Всё»: окно начинается с самого раннего из событий и регистраций (игроки могли зайти до начала журнала событий)
+    const f1 = await store.firstEventTs(), f2 = store.firstRegTs ? await store.firstRegTs() : null;
+    const first = [f1, f2].filter((v) => v != null).sort((a, b) => a - b)[0] ?? null;
+    // 40 вёдер; правая граница округляется вверх до «круглого» времени, поэтому шаг считаем с запасом в одно ведро (span / 39),
+    // иначе окно начиналось позже первой регистрации и «за всё время» показывало меньше, чем «за месяц»
+    const allStep = Math.max(3600, Math.ceil(Math.max(nowS - Math.floor((first ?? Date.now()) / 1000), 1) / 39 / 3600) * 3600);
     const plan = [[24, 3600], [28, 6 * 3600], [30, 86400], [40, allStep]];
     const series = await Promise.all(plan.map(async ([n, step]) => {
       const end = Math.ceil((nowS + off) / step) * step - off; // правая граница последнего ведра: на «круглом» местном времени
