@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
 <script>try{var _t=localStorage.getItem("coopix.th");if(_t)document.documentElement.style.setProperty("--th",_t)}catch(e){}
-try{var _u=new URLSearchParams(location.search).get("cards");if(["classic","cover","poster","tiles"].indexOf(_u)>=0)localStorage.setItem("am.cards",_u);var _c=localStorage.getItem("am.cards")||"tiles";document.documentElement.classList.toggle("cvt",_c==="tiles");document.documentElement.classList.toggle("cvc",_c==="cover"||_c==="poster");document.documentElement.classList.toggle("cvp",_c==="poster")}catch(e){}</script>
+try{var _u=new URLSearchParams(location.search).get("cards");if(_u==="classic"||_u==="tiles")localStorage.setItem("am.cards",_u);document.documentElement.classList.toggle("cvt",(localStorage.getItem("am.cards")||"tiles")!=="classic")}catch(e){}</script>
 <meta name="screen-orientation" content="portrait">
 <meta name="x5-orientation" content="portrait">
 <script>/* layout mode: phone = always portrait (lock + "rotate back" cover), PC/tablet landscape (>=900px) = horizontal windows (html.desk) */
@@ -1303,46 +1303,8 @@ html:not(.desk) .ns .nw-tag,html:not(.desk) .ns .nw-h time{font-size:12.5px}
   text-shadow:none;filter:drop-shadow(0 4px 18px hsl(calc(262 + var(--th)) 100% 67.6% / .55))}
 .logo span+span{font-weight:800;letter-spacing:.02em;text-transform:uppercase;font-size:.5em;margin-left:.08em;margin-top:.25em}
 
-/* ===== режим карточек «обложка»: вместо носителя большая эффектная обложка. Быстро вернуть старый вид: кнопка ▦ в строке поиска или ?cards=classic ===== */
-html.cvc .slot.item,html.cvc .floor,html.cvc .halo,html.cvc .slot.case>canvas,html.cvc .slot.case .gl{display:none!important}
-html.cvc .slot.case{left:22px!important;top:8px!important;width:204px!important;height:204px!important;z-index:3;transform:rotate(-3.5deg);transition:transform .4s cubic-bezier(.2,.9,.2,1)}
-html.cvc .card:hover .slot.case,html.cvc .cardbox:focus-within .slot.case{transform:rotate(-1deg) translateY(-5px) scale(1.045)}
-html.cvc .slot.case::before{content:"";position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(closest-side,var(--c1),transparent 74%);opacity:.5;z-index:-1}
-html.cvc .slot.case::after{content:"";position:absolute;inset:0;border-radius:26px;z-index:4;pointer-events:none;border:3px solid var(--c1);box-shadow:0 14px 26px rgba(0,0,0,.55)}
-html.cvc .cover{transform:scale(.797)!important;transform-origin:0 0;clip-path:none!important;border-radius:32px;background:#1a1030}
-html.cvc .cover::after{box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),inset 0 -40px 50px -20px rgba(0,0,0,.45)}
-html.cvc .info{left:268px!important}
-html.cvc .title{width:430px}
-html.cvc .cardbox .shell-in::before{background:radial-gradient(90% 130% at 12% 55%,color-mix(in srgb,var(--c1) 46%,transparent),transparent 66%),linear-gradient(100deg,color-mix(in srgb,var(--c2) 70%,hsl(calc(256 + var(--th)) 52% 5.7%)),hsl(calc(256 + var(--th)) 52% 5.7%) 70%)}
-#cst{margin-left:auto}#cst svg{width:22px;height:22px}html.cvc #cst{color:hsl(calc(263 + var(--th)) 100% 86.9%)}
-
-/* ===== вид «постер»: обложка выходит за рамку карточки, крупный заголовок, цветной тег, круглая кнопка ▶ ===== */
-html.cvp .shell{top:22px;bottom:22px;border-radius:36px}
-html.cvp .card::before{inset:22px 3px}
-html.cvp .slot.case{left:14px!important;top:0!important;width:222px!important;height:222px!important;transform:rotate(-4deg)}
-html.cvp .cover{transform:scale(.867)!important;clip-path:none!important;border-radius:35px}
-html.cvp .slot.case::after{border-radius:34px;border-width:4px}
-html.cvp .card:hover .slot.case,html.cvp .cardbox:focus-within .slot.case{transform:rotate(-1.5deg) translateY(-6px) scale(1.05)}
-html.cvp .info{left:272px!important}
-html.cvp .title{top:50px;width:430px;font-size:44px;font-weight:800;color:#fff;text-shadow:0 0 22px var(--glow),0 3px 0 rgba(0,0,0,.4)}
-html.cvp .stars{top:108px}
-html.cvp .pill{top:152px;height:34px;padding:0 20px;font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#150a2a;border:0;background:linear-gradient(100deg,color-mix(in srgb,var(--c1) 88%,#fff),var(--c1))}
-html.cvp .play{left:772px;top:60px;width:104px;height:104px;border-radius:50%}
-html.cvp .play::before{border-radius:50%}
-html.cvp .play svg{width:46px;height:46px;margin-left:7px}
-html.cvp .ptag{top:30px}
-html.cvp .stripes{bottom:30px}
-html.cvp .cardbox{margin-bottom:calc(-16px*var(--k,.45))}
-
-/* постер: заголовок, звёзды и тег в одну «шапку», ниже короткое описание игры */
-.desc{display:none}
-html.cvp .desc{display:-webkit-box;position:absolute;left:0;top:142px;width:440px;margin:0;font-size:20px;line-height:25px;font-weight:500;color:rgba(255,255,255,.66);-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-html.cvp .title{top:30px}
-html.cvp .stars{top:88px}
-html.cvp .pill{top:92px;left:232px;height:30px;font-size:17px;padding:0 16px}
-html.cvp .info{top:0}
-html.cvp .info:has(.desc:empty){transform:translateY(26px)}
-
+.tab.vw{color:hsl(calc(256 + var(--th)) 100% 80.6%)}.tab.vw svg{width:46%;max-width:34px;fill:currentColor}
+.tab.vw[aria-checked=true]{color:hsl(calc(263 + var(--th)) 100% 86.9%);background:linear-gradient(160deg,hsl(calc(264 + var(--th)) 70% 36%),hsl(calc(256 + var(--th)) 60% 20%))}
 /* ===== вид «плитки и баннеры»: ровная сетка; плитка — квадрат, баннер — две плитки в ширину той же высоты; без тяжёлых эффектов ===== */
 #list.tiles{display:grid;grid-template-columns:repeat(var(--cols,2),1fr);grid-auto-rows:var(--tw,170px);gap:12px;grid-auto-flow:dense}
 #list.tiles>.cardbox{margin:0;min-width:0;height:100%}#list.tiles>.cardbox.wide{grid-column:span 2}#list.tiles>.cardbox:has(.card.add){grid-column:1/-1;height:auto}
@@ -1404,7 +1366,7 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
   </header>
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
-  <label class="sbar" id="sbar"><span class="si" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 2.1-2.1-5.4-5.4A8 8 0 0 0 10 2zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg></span><input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="Поиск игр" aria-label="Поиск игр"><button class="sx" id="cst" type="button" aria-label="Стиль карточек: обложки или классика" title="Вид карточек: обложки / классика"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button><button class="sx" id="qx" type="button" hidden aria-label="Clear search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l7 7 7-7 2 2-7 7 7 7-2 2-7-7-7 7-2-2 7-7-7-7z"/></svg></button></label>
+  <label class="sbar" id="sbar"><span class="si" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 2.1-2.1-5.4-5.4A8 8 0 0 0 10 2zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg></span><input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="Поиск игр" aria-label="Поиск игр"><button class="sx" id="qx" type="button" hidden aria-label="Clear search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l7 7 7-7 2 2-7 7 7 7-2 2-7-7-7 7-2-2 7-7-7-7z"/></svg></button></label>
   <div class="fbar" id="fbar" role="toolbar" aria-label="Сортировка и фильтры"></div>
   <section class="list" id="list" aria-live="polite"></section>
   <section class="home" id="home" lang="ru"></section>
@@ -1765,14 +1727,14 @@ class Card{
       <div class="slot item"><div class="hv"><div class="bob"><canvas></canvas><div class="cdw"><canvas></canvas></div><div class="cdw"><canvas></canvas></div><div class="shine"></div><div class="gl"></div><div class="noise"></div></div></div></div>
       <div class="slot case"><canvas></canvas><div class="cover"><canvas class="a" width="512" height="512"></canvas><canvas class="b" width="512" height="512"></canvas></div><div class="gl"></div></div>
       <canvas class="pt" width="453" height="110"></canvas>
-      <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span><p class="desc"></p></div>
+      <div class="info"><h3 class="title"></h3><div class="stars" role="group" aria-label="Rating"></div><span class="pill"></span></div>
       <button class="play" aria-label="Launch">${IC.play}</button>
       ${o.preview?"":`<button class="edit" aria-label="Edit">${IC.edit}</button>`}
     </div>`;
     host.append(el);
     const q=s=>el.querySelector(s);
     this.r={fx:q(".fx"),item:q(".slot.item"),itemC:q(".slot.item canvas"),shine:q(".shine"),cse:q(".slot.case"),cseC:q(".slot.case>canvas"),cover:q(".cover"),ca:q(".cover .a"),cb:q(".cover .b"),
-      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),noise:q(".noise"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),desc:q(".desc"),play:q(".play"),edit:q(".edit"),fav:q(".fav")};
+      halo:q(".halo"),floor:q(".floor"),pt:q(".pt"),glI:q(".item .gl"),noise:q(".noise"),glC:q(".case .gl"),title:q(".title"),stars:q(".stars"),pill:q(".pill"),play:q(".play"),edit:q(".edit"),fav:q(".fav")};
     this.fx=null;this.fxMode=-1;this.texDirty=true;if(o.preview&&FXON()){this.fxMode=modeFor(m);this.fx=makeFx(this.r.fx,this.fxMode)}
     this.resize();CARDS.add(this);
     if(!o.preview){this.io=new IntersectionObserver(e=>{this.vis=e[0].isIntersecting;this.el.classList.toggle("off",!this.vis);this.syncFx();this.cdRun()},{rootMargin:"160px"});
@@ -1950,7 +1912,7 @@ class Card{
     /* платная игра: золотая рамка и ценник; купленная — пометка «куплено» */
     {const pd=(+m.price||0)>0,own=pd&&isOwned(m);this.el.classList.toggle("paid",pd);this.el.classList.toggle("owned",own);let tg=this.el.querySelector(".ptag");
       if(pd){if(!tg){tg=document.createElement("b");tg.className="ptag";this.el.querySelector(".stage").append(tg)}tg.textContent=own?"":"⭐ "+m.price;tg.title=own?"Куплено":"";tg.setAttribute("aria-label",own?"Куплено":"Цена: "+m.price+" звёзд")}else if(tg)tg.remove()}
-    this.r.title.textContent=m.title||"Без названия";fitTitle(this.r.title);this.r.pill.textContent=m.genre;this.r.desc.textContent=String(m.desc||"").replace(/\s+/g," ").trim().slice(0,150);this.setStars();
+    this.r.title.textContent=m.title||"Без названия";fitTitle(this.r.title);this.r.pill.textContent=m.genre;this.setStars();
     if(this.r.fav){this.r.fav.setAttribute("aria-pressed",!!m.fav);this.r.fav.setAttribute("aria-label",m.fav?"Remove from favorites":"Add to favorites")}
     if(this.o&&this.o.onFav)this.favLook(!!m.fav);
     if(first){
@@ -2123,6 +2085,11 @@ addEventListener("pointerdown",()=>{if(!MUS.unlocked){MUS.unlocked=true;setTimeo
 document.addEventListener("visibilitychange",()=>musicSync());
 /* последняя кнопка в ряду: переключатель «лёгкая версия / обычная» в один клик (настройки остались в профиле).
    Запоминается на устройстве, как и всё про качество: следующий запуск в той же версии. */
+/* вторая кнопка в ряду: вид списка игр — «плитки и баннеры» (сетка ▦) или «классика» (список ☰); выбор запоминается */
+const VW_TILES=()=>document.documentElement.classList.contains("cvt");
+const VWI=on=>on?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3zm0 6h18v4H3zm0 6h18v4H3z"/></svg>';
+function syncVw(){const b=document.querySelector(".tab.vw");if(!b)return;const on=VW_TILES();b.setAttribute("aria-checked",on);b.innerHTML=VWI(on);b.title=on?"Плитки и баннеры · нажмите для классического списка":"Классический список · нажмите для плиток"}
+function toggleView(){const H=document.documentElement,on=!H.classList.contains("cvt");H.classList.toggle("cvt",on);try{localStorage.setItem("am.cards",on?"tiles":"classic")}catch(x){}syncVw();toast(on?"Список: плитки и баннеры":"Список: классика");if(view===1)render()}
 const QSW='<svg viewBox="0 0 36 22" aria-hidden="true"><rect class="tr" x="1.5" y="3.5" width="33" height="15" rx="7.5"/><circle class="kn" cx="10" cy="11" r="5.5"/></svg><span class="ql">лайт</span>';
 function syncQsw(){const b=document.querySelector(".tab.qsw");if(!b)return;const on=Q===0;b.setAttribute("aria-checked",on);b.title=on?"Лёгкая версия включена · нажмите для обычной":"Обычная версия · нажмите для лёгкой"}
 function toggleLite(){const lite=Q!==0;
@@ -2132,11 +2099,12 @@ const DOCK=[["home","Home",()=>true],["bag","Store",()=>true],["trophy","Communi
 let tab=0,view=0;const listEl=$("#list"),homeEl=$("#home"),clubEl=$("#club"),profEl=$("#prof");let LIVE=[],homeT=0; /* view: 0 front page, 1 store, 2 top rated, 2 club, (3 profile = settings) */
 $("#tabs").innerHTML=TABS.map((t,i)=>t[2]===null
   ?`<div class="tabcell"><button class="tab qsw" type="button" role="switch" aria-checked="${Q===0}" aria-label="${t[1]}" data-i="${i}">${QSW}</button></div>`
+  :t[0]==="grid"?`<div class="tabcell"><button class="tab vw" type="button" role="switch" aria-checked="${VW_TILES()}" aria-label="Вид списка: плитки или классика" data-i="${i}"></button></div>`
   :t[2]==="sound"?`<div class="tabcell"><button class="tab snd" type="button" role="switch" aria-checked="${!!SET.sound}" aria-label="${t[1]}" data-i="${i}">${SNDI(SET.sound)}</button></div>`
-  :`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");syncQsw();
+  :`<div class="tabcell"><button class="tab" role="tab" aria-selected="${i===tab}" aria-label="${t[1]}" data-i="${i}">${IC[t[0]]}</button><i class="notch"></i></div>`).join("");syncQsw();syncVw();
 $("#dock").innerHTML=DOCK.map((t,i)=>`<button aria-label="${t[1]}" aria-current="${i===view}" data-i="${i}">${IC[t[0]]}</button>`).join("");
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;const i=+b.dataset.i;sfx.tap();
-  if(TABS[i][2]===null){toggleLite();return}if(TABS[i][2]==="sound"){toggleSound();return}tab=i;view=1;sync();render()});
+  if(TABS[i][2]===null){toggleLite();return}if(TABS[i][2]==="sound"){toggleSound();return}if(TABS[i][0]==="grid"){toggleView();return}tab=i;view=1;sync();render()});
 $("#dock").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;sfx.tap();
   goView(i)});
 /* поиск из страницы игры: закрываем страницу, открываем маркет со всеми играми и подставляем запрос */
@@ -2144,16 +2112,12 @@ function searchFor(q){backClick();setTimeout(()=>{SQ=q;qIn.value=q;if(view!==1||
 /* раздел игр всегда открывается на маркете (все игры); «Избранное» — своей вкладкой */
 addEventListener("scroll",()=>{if(window.scrollX||document.documentElement.scrollLeft||document.body.scrollLeft){scrollTo(0,window.scrollY);document.documentElement.scrollLeft=0;document.body.scrollLeft=0}},{passive:true});
 function goView(i){view=i;tab=0;sync();render();scrollTo({top:0,behavior:RM?"auto":"smooth"})}
-function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd"))b.setAttribute("aria-selected",i===tab&&view===1)});
+function sync(){document.querySelectorAll(".tab").forEach((b,i)=>{if(!b.classList.contains("qsw")&&!b.classList.contains("snd")&&!b.classList.contains("vw"))b.setAttribute("aria-selected",i===tab&&view===1)});
   document.querySelectorAll("#dock button").forEach((b,i)=>b.setAttribute("aria-current",i===view));document.body.classList.toggle("onhome",view===0);document.body.classList.toggle("onclub",view===2);document.body.classList.toggle("onprof",view===3)}
 
 /* search: hides cards instead of rebuilding them, so typing never restarts the card animations */
 let SQ="";const qIn=$("#q"),qX=$("#qx");
-{const cb=$("#cst");if(cb){const H=document.documentElement,paint=()=>cb.setAttribute("aria-pressed",H.classList.contains("cvt")?"true":"false");paint();
-  /* вид списка по кругу: плитки+баннеры → классика → постер → обложка; у плиток и классики разная вёрстка, поэтому список перерисовывается */
-  cb.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const cur=H.classList.contains("cvt")?"tiles":H.classList.contains("cvp")?"poster":H.classList.contains("cvc")?"cover":"classic",nx={tiles:"classic",classic:"poster",poster:"cover",cover:"tiles"}[cur];
-    H.classList.toggle("cvt",nx==="tiles");H.classList.toggle("cvc",nx==="cover"||nx==="poster");H.classList.toggle("cvp",nx==="poster");try{localStorage.setItem("am.cards",nx)}catch(x){}paint();
-    toast({tiles:"Список: плитки и баннеры",classic:"Список: классика",poster:"Список: постер",cover:"Список: обложка"}[nx]);if(view===1)render()})}}
+
 function filterList(){
   const k=SQ.trim().toLowerCase(),boxes=[...listEl.querySelectorAll(".cardbox")];let shown=0,tagged=0;
   /* «#тег» — точное совпадение тега, «автор: имя» — только игры этого автора (так ищут клики по тегу и автору на странице игры) */
