@@ -1343,26 +1343,31 @@ html.cvp .pill{top:92px;left:232px;height:30px;font-size:17px;padding:0 16px}
 html.cvp .info{top:0}
 html.cvp .info:has(.desc:empty){transform:translateY(26px)}
 
-/* ===== вид «плитки и баннеры»: сетка в 2 колонки; квадратные плитки и широкие баннеры вперемешку; без тяжёлых эффектов ===== */
-#list.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;align-items:start;grid-auto-flow:dense}
-#list.tiles>.cardbox{margin:0;min-width:0}#list.tiles>.cardbox.wide{grid-column:span 2}#list.tiles>.cardbox:has(.card.add){grid-column:1/-1}
-.tile{--c:#a56bff;position:relative;display:block;aspect-ratio:1;border-radius:22px;overflow:hidden;background:#120a28;border:2px solid color-mix(in srgb,var(--c) 70%,#000);box-shadow:0 10px 22px -12px var(--c);cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:pan-y;transition:transform .15s}
-.tile.wide{aspect-ratio:1.6;border-radius:26px}
+/* ===== вид «плитки и баннеры»: ровная сетка; плитка — квадрат, баннер — две плитки в ширину той же высоты; без тяжёлых эффектов ===== */
+#list.tiles{display:grid;grid-template-columns:repeat(var(--cols,2),1fr);grid-auto-rows:var(--tw,170px);gap:12px;grid-auto-flow:dense}
+#list.tiles>.cardbox{margin:0;min-width:0;height:100%}#list.tiles>.cardbox.wide{grid-column:span 2}#list.tiles>.cardbox:has(.card.add){grid-column:1/-1;height:auto}
+.tile{--c:#a56bff;position:relative;display:block;width:100%;height:100%;border-radius:22px;overflow:hidden;background:#140a30;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 12px 22px -16px var(--c);cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:pan-y;transition:transform .15s}
 .tile:active{transform:scale(.98)}
-.tile>canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 48%,rgba(8,4,22,.94))}
-.tile.wide::after{background:linear-gradient(90deg,rgba(8,4,22,.82),rgba(8,4,22,.3) 55%,transparent),linear-gradient(0deg,rgba(8,4,22,.7),transparent 50%)}
-.tchip{position:absolute;left:10px;top:10px;z-index:2;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:4px 10px;color:#150a2a;background:var(--c)}
-.ttr{position:absolute;right:8px;top:8px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.tprice{font-size:12px;font-weight:800;background:#ffcf3f;color:#2a1800;border-radius:8px;padding:3px 8px}
-.tprice.own{width:26px;height:26px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#150a2a}.tprice.own::before{content:"";width:12px;height:12px;background:#150a2a;clip-path:polygon(10% 54%,26% 38%,42% 54%,76% 18%,92% 34%,42% 86%)}
-.tprice[hidden]{display:none}
-.tfav{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:17px;line-height:1;color:#fff;background:rgba(10,5,30,.55)}.tfav[aria-pressed=true]{color:var(--c)}
-.ttb{position:absolute;left:10px;right:10px;bottom:10px;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
-.ttt{min-width:0}.ttt h3{font-size:15px;font-weight:800;line-height:1.15;color:#fff;text-shadow:0 2px 8px #000;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.tile.wide .ttb{left:16px;right:14px;bottom:14px}.tile.wide .ttt h3{font-size:24px;margin-bottom:2px}.tile.wide .tst{font-size:14px}.tile.wide .tplay{width:46px;height:46px}.tile.wide .tchip{left:16px;top:14px}
-.tst{font-size:12px;letter-spacing:2px;color:#ffcf3f;margin-top:3px}
-.tplay{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--c);box-shadow:0 6px 14px -4px var(--c)}.tplay svg{width:18px;height:18px;fill:#150a2a;margin-left:2px}
+.tcv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#140a30}
+.tcv.px{image-rendering:pixelated}
+.tile::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(180deg,rgba(8,4,22,.45),transparent 28%,transparent 46%,rgba(8,4,22,.92));box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.tchip{position:absolute;left:10px;top:10px;z-index:2;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:4px 9px;color:#150a2a;background:var(--c)}
+.tfav{position:absolute;right:8px;top:8px;z-index:3;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:16px;line-height:1;color:#fff;background:rgba(12,6,32,.5)}.tfav[aria-pressed=true]{color:var(--c)}
+.ttb{position:absolute;left:12px;right:56px;bottom:12px;z-index:2;min-width:0}
+.ttb h3{font-size:15px;font-weight:800;line-height:1.12;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tmeta{display:flex;align-items:center;gap:6px;margin-top:5px;min-height:18px}
+.trate{font-size:12px;font-weight:700;color:#ffd24a}.trate[hidden]{display:none}
+.tprice{font-size:11px;font-weight:800;background:#ffcf3f;color:#2a1800;border-radius:7px;padding:2px 7px}.tprice[hidden]{display:none}
+.tprice.own{width:20px;height:20px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--c)}.tprice.own::before{content:"";width:10px;height:10px;background:#150a2a;clip-path:polygon(10% 54%,26% 38%,42% 54%,76% 18%,92% 34%,42% 86%)}
+.tplay{position:absolute;right:10px;bottom:10px;z-index:3;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--c);box-shadow:0 6px 14px -5px var(--c)}.tplay svg{width:17px;height:17px;fill:#150a2a;margin-left:2px}
+/* баннер: слева текст на цветном фоне, справа квадратная обложка во всю высоту (без обрезки и растяжения), плавный переход между ними */
+.tile.wide{background:linear-gradient(100deg,color-mix(in srgb,var(--c) 42%,#140a30),#0f0827 78%)}
+.tile.wide .tcv{left:auto;right:0;width:auto;height:100%;aspect-ratio:1/1;border-radius:0 22px 22px 0}
+.tile.wide::after{background:linear-gradient(90deg,#0f0827 0,#0f0827 calc(100% - var(--tw,170px) + 4px),rgba(15,8,39,0) calc(100% - var(--tw,170px) + 64px)),linear-gradient(180deg,rgba(8,4,22,.4),transparent 26%)}
+.tile.wide .ttb{left:16px;right:auto;width:calc(100% - var(--tw,170px) - 4px);bottom:auto;top:50%;transform:translateY(-50%)}
+.tile.wide .ttb h3{font-size:22px;line-height:1.1;-webkit-line-clamp:3;margin-bottom:2px}
+.tile.wide .tchip{left:16px;top:14px}
+.tile.wide .tplay{right:auto;left:16px;bottom:14px;width:40px;height:40px}
 .cardbox[data-acc]>.tile{outline:2px dashed #ffd23f;outline-offset:-6px}
 </style>
 </head>
@@ -2171,8 +2176,8 @@ const tileWide=id=>{let h=2166136261;for(const ch of String(id)){h^=ch.charCodeA
 class TileCard{
   constructor(host,m){this.host=host;this.m=null;this.mid=m.id;this.ref=null;this.wide=tileWide(m.id);
     const el=this.el=document.createElement("article");el.className="tile"+(this.wide?" wide":"");el.tabIndex=0;el.setAttribute("role","button");
-    el.innerHTML='<canvas width="'+(this.wide?640:320)+'" height="'+(this.wide?400:320)+'"></canvas><span class="tchip"></span><div class="ttr"><b class="tprice"></b><button class="tfav" type="button"></button></div><div class="ttb"><div class="ttt"><h3></h3><div class="tst"></div></div><button class="tplay" type="button" aria-label="Играть"></button></div>';
-    host.append(el);if(this.wide)host.classList.add("wide");const q=s=>el.querySelector(s);this.r={cv:q("canvas"),chip:q(".tchip"),price:q(".tprice"),fav:q(".tfav"),title:q("h3"),st:q(".tst"),play:q(".tplay")};
+    el.innerHTML='<img class="tcv" alt="" decoding="async" draggable="false"><span class="tchip"></span><button class="tfav" type="button"></button><div class="ttb"><h3></h3><div class="tmeta"><span class="trate"></span><b class="tprice"></b></div></div><button class="tplay" type="button" aria-label="Играть"></button>';
+    host.append(el);if(this.wide)host.classList.add("wide");const q=s=>el.querySelector(s);this.r={cv:q(".tcv"),chip:q(".tchip"),price:q(".tprice"),fav:q(".tfav"),title:q("h3"),rate:q(".trate"),play:q(".tplay")};
     this.r.play.innerHTML=IC.play;
     el.addEventListener("click",()=>openPage(this.m.id));el.addEventListener("keydown",e=>{if(e.target===el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openPage(this.m.id)}});
     this.r.play.addEventListener("click",e=>{e.stopPropagation();playDirect(this.m.id)});
@@ -2181,13 +2186,16 @@ class TileCard{
     this.r.title.textContent=m.title||"Без названия";this.r.chip.textContent=m.genre||"";
     this.r.price.hidden=!pd;this.r.price.textContent=own?"":"⭐ "+m.price;this.r.price.classList.toggle("own",own);this.r.price.setAttribute("aria-label",own?"Куплено":"Цена: "+m.price+" звёзд");
     this.favLook(!!m.fav);this.setStars();
-    if(this.ref!==m.cover){this.ref=m.cover;const ref=m.cover,cov=await resolveCover(ref);if(this.ref!==ref)return;const t=m.tint||cov.dom,pal=palette(t.h,t.s);
-      this.el.style.setProperty("--c",rgb(pal.A));const cv=this.r.cv,c=cv.getContext("2d");c.imageSmoothingEnabled=true;
-      if(this.wide){const sh=256*cv.height/cv.width;c.drawImage(cov.canvas,0,(256-sh)*.3,256,sh,0,0,cv.width,cv.height)}else c.drawImage(cov.canvas,0,0,cv.width,cv.height)}}
+    if(this.ref!==m.cover){this.ref=m.cover;const ref=m.cover;
+      /* картинка целиком, в исходном размере (не уменьшенная копия для карточек): браузер сам аккуратно масштабирует */
+      this.r.cv.classList.toggle("px",ref.startsWith("b:"));this.r.cv.src=ref.startsWith("b:")?coverSrc(ref.slice(2)):ref;
+      const cov=await resolveCover(ref);if(this.ref!==ref)return;const t=m.tint||cov.dom,pal=palette(t.h,t.s);this.el.style.setProperty("--c",rgb(pal.A))}}
   favLook(on){this.r.fav.textContent=on?"♥":"♡";this.r.fav.setAttribute("aria-pressed",!!on);this.r.fav.setAttribute("aria-label",on?"Убрать из избранного":"В избранное")}
-  setStars(){const g=gstat(this.m),n=Math.round(g.rating);this.r.st.textContent="★★★★★".slice(0,n)+"☆☆☆☆☆".slice(0,5-n);this.r.st.title=g.rated||g.favs?"Рейтинг "+fmtRate(g.rating)+" из 5":"Оценок пока нет"}
+  setStars(){const g=gstat(this.m);this.r.rate.textContent=g.rated||g.favs?"★ "+fmtRate(g.rating):"";this.r.rate.hidden=!(g.rated||g.favs);this.r.rate.title=g.rated||g.favs?"Рейтинг "+fmtRate(g.rating)+" из 5":"Оценок пока нет"}
   favFx(){}resize(){}destroy(){this.el.remove()}
 }
+/* размер ячейки сетки считаем сами: плитка и баннер одной высоты, поэтому ряды ровные (баннер = две плитки в ширину) */
+function tileMetrics(){const w=listEl.clientWidth;if(!w)return;const gap=12,cols=Math.max(2,Math.floor((w+gap)/(168+gap))),tw=(w-gap*(cols-1))/cols;listEl.style.setProperty("--cols",cols);listEl.style.setProperty("--tw",tw.toFixed(2)+"px")}
 async function render(intro){
   musicSync();
   /* перерисовка того же списка (свежие цифры с сервера, избранное и т. п.) не прыгает наверх: держим высоту и возвращаем прокрутку */
@@ -2207,7 +2215,7 @@ async function render(intro){
   const rows=sortRows(DATA.filter(f).filter(passF));drawFbar();
   if(!rows.length&&(FL.r4||FL.sup)&&DATA.filter(f).length){const p=document.createElement("div");p.className="empty";p.innerHTML='Нет игр под этот фильтр.<br><button class="btn ghost" type="button" data-fx>Сбросить фильтры</button>';listEl.append(p);p.querySelector("[data-fx]").onclick=()=>{FL.r4=FL.sup=0;saveFL();sfx.tap();render()}}
   else if(!rows.length&&emptyMsg()){const p=document.createElement("p");p.className="empty";p.textContent=emptyMsg();listEl.append(p)}
-  const tilesOn=document.documentElement.classList.contains("cvt");listEl.classList.toggle("tiles",tilesOn);
+  const tilesOn=document.documentElement.classList.contains("cvt");listEl.classList.toggle("tiles",tilesOn);if(tilesOn)tileMetrics();
   const anim=keepY==null,nid=newestId(); /* перерисовка того же списка (каталог, счётчики, профиль пришли с сервера) — без повторной анимации появления */
   rows.forEach((m,i)=>{const box=document.createElement("div");box.className=anim?"cardbox enter":"cardbox";box.style.setProperty("--i",(i*.09)+"s");listEl.append(box);box.dataset.s=(m.title+" "+tagsOf(m).join(" ")+" "+(m.genre||"")+" "+(m.author||"")).toLowerCase();box.dataset.t="|"+tagsOf(m).concat(m.genre||[]).join("|").toLowerCase()+"|";box.dataset.a=(m.author||"").toLowerCase();
     if(tilesOn){const tc=new TileCard(box,m);if(m.access&&m.access!=="public")box.dataset.acc=m.access;tc.mid=m.id;LIVE.push(tc);tc.set({...m});return}
@@ -2669,7 +2677,7 @@ function addCard(){
   el.addEventListener("dragover",e=>e.preventDefault());el.addEventListener("drop",async e=>{e.preventDefault();const f=[...e.dataTransfer.files].find(f=>f.type.startsWith("image/"));if(f){go(await fileToCover(f))}})}
 let RT,LW=innerWidth,LH=innerHeight;
 addEventListener("resize",()=>{clearTimeout(RT);RT=setTimeout(()=>{const wc=innerWidth!==LW,hc=Math.abs(innerHeight-LH)>120;LW=innerWidth;LH=innerHeight;
-  if(wc||hc)bgResize();if(!wc)return;LIVE.forEach(c=>c.resize());document.querySelectorAll(".card.add").forEach(el=>el.parentElement.style.setProperty("--k",el.parentElement.clientWidth/905));PV&&PV.resize()},140)});
+  if(wc||hc)bgResize();if(!wc)return;if(listEl.classList.contains("tiles"))tileMetrics();LIVE.forEach(c=>c.resize());document.querySelectorAll(".card.add").forEach(el=>el.parentElement.style.setProperty("--k",el.parentElement.clientWidth/905));PV&&PV.resize()},140)});
 
 async function launch(c){
   const d=DATA.find(x=>x.id===c.m.id);if(d){d.played=(d.played||0)+1;persist()}
