@@ -711,7 +711,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 /* news slider */
 .ns-wrap{position:relative}
 .ns{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y} /* новости листаются рукой и сами */
-body.onhome,body.onhome .app{touch-action:pan-y;overflow-x:hidden}
+body.onhome{touch-action:pan-y} /* без overflow на .app: он обрезал свечения и орбиту у края колонки жёсткой линией (на широких экранах); горизонтальную прокрутку и так закрывают html/body */
 .ns::-webkit-scrollbar{display:none}
 .ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
 /* карточка новости: стеклянная панель со свечением в цвете тега (--nc), а не плоский градиент с узкой полосой слева */
