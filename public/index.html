@@ -1219,7 +1219,8 @@ body.scan::after{display:none}                 /* ЭЛТ-полоски пове
 /* главная: ровно один экран без прокрутки; новости одинаковой высоты, без наложений */
 body.onhome .home{height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot));min-height:0}
 html.winter body.onhome .home{height:calc(var(--vh) - var(--top) - 6px - var(--hh) - 4px - clamp(58px,15vw,74px) - 20px - var(--bot) - 22px)}
-body.onhome .ts{flex:1 1 0;min-height:0;overflow:clip}
+body.onhome .ts{flex:1 1 0;min-height:0}
+.ts-in{flex:none;width:100%;display:flex;flex-direction:column;align-items:center;gap:inherit;transform-origin:50% 50%}
 .ts.tight .shelf,.ts.tight .tags{display:none}
 .ns{align-items:stretch}.ns-i{display:flex}.ns-i>.nw{flex:1 1 auto;display:flex;border-radius:18px}.ns-i .nw-in{flex:1;min-width:0;border-radius:16px;overflow:hidden}
 /* новость целиком: заголовок до 2 строк, текст до 4 — все карточки одной высоты (по самой длинной) */
@@ -2123,10 +2124,10 @@ function renderHome(){
     <i class="spark" style="left:2%;top:6%;--s:20px;--d:.2s" aria-hidden="true">${SPK}</i>
     <i class="spark" style="right:4%;top:26%;--s:14px;--d:1.1s;color:#7fb2ff" aria-hidden="true">${SPK}</i>
     <i class="spark" style="left:8%;bottom:20%;--s:16px;--d:1.7s;color:#fff" aria-hidden="true">${SPK}</i>
-    <div class="shelf" aria-hidden="true">${HOME_GADS.map((g,i)=>`<div class="gad" style="--r:${g[3]};--g:${g[2]}88"><div class="bob" style="--bd:${-i*1.2}s"><canvas></canvas></div></div>`).join("")}<i class="floor"></i></div>
+    <div class="ts-in"><div class="shelf" aria-hidden="true">${HOME_GADS.map((g,i)=>`<div class="gad" style="--r:${g[3]};--g:${g[2]}88"><div class="bob" style="--bd:${-i*1.2}s"><canvas></canvas></div></div>`).join("")}<i class="floor"></i></div>
     <h2 class="hero-t">Быстрые офлайн игры <em>с Мультиплеером</em></h2>
     <div class="tags"><span class="tag">Быстро</span><span class="tag">Офлайн</span><span class="tag">Мультиплеер</span></div>
-    <div class="gow"><button class="bigplay" id="goMarket" type="button">Перейти в маркет</button></div>
+    <div class="gow"><button class="bigplay" id="goMarket" type="button">Перейти в маркет</button></div></div>
   </div>
   <div class="pn enter" style="--i:.2s">
     <section class="sec"><h3>Новости${hasNews?`<small>${items.length}</small>`:""}</h3>
@@ -2159,15 +2160,13 @@ function renderHome(){
 }
 
 /* главная всегда в один экран: средний блок (предметы, заголовок, кнопка) уменьшается ровно настолько, чтобы влезть над новостями */
-function fitHome(){const ts=homeEl.querySelector(".ts");if(!ts||view!==0)return;
-  const old=ts.style.zoom;ts.style.zoom="1";ts.classList.remove("tight");
-  const meas=()=>{const kids=[...ts.children].filter(e=>getComputedStyle(e).position!=="absolute"&&e.offsetHeight);
-    const gap=parseFloat(getComputedStyle(ts).rowGap)||0;return kids.reduce((t,e)=>t+e.offsetHeight,0)+gap*Math.max(0,kids.length-1)};
-  let need=meas();const have=ts.getBoundingClientRect().height;
-  /* главная ещё скрыта (0×0): не ставим масштаб наугад, иначе заголовок остаётся в полный размер и наезжает на новости */
-  if(!need||!have){ts.style.zoom=old;return}
-  if(have/need<.5){ts.classList.add("tight");need=meas()} /* совсем тесно: прячем предметы и теги, а не сжимаем текст в кашу */
-  ts.style.zoom=String(Math.max(.4,Math.min(1,have/need)).toFixed(3))}
+/* transform, а не zoom: zoom в WebView Telegram на iOS считается иначе, и блок вылезал за край (обрезались предметы и кнопка).
+   transform не меняет разметку, поэтому высота блока меряется честно, а масштаб одинаков во всех браузерах */
+function fitHome(){const ts=homeEl.querySelector(".ts"),inn=ts&&ts.querySelector(".ts-in");if(!inn||view!==0)return;
+  ts.classList.remove("tight");let need=inn.offsetHeight;const have=ts.clientHeight;
+  if(!need||!have)return; /* главная ещё скрыта — посчитаем, когда появится (ResizeObserver ниже) */
+  if(have/need<.5){ts.classList.add("tight");need=inn.offsetHeight} /* совсем тесно: прячем предметы и теги, а не сжимаем текст в кашу */
+  const s=Math.max(.4,Math.min(1,have/need));inn.style.transform=s<1?`scale(${s.toFixed(3)})`:""}
 addEventListener("resize",()=>requestAnimationFrame(fitHome));
 /* пересчёт при любом изменении места под блоком (вьюпорт Telegram, шрифты, показ главной) */
 if(window.ResizeObserver){let rh=-1;new ResizeObserver(()=>{const ts=homeEl&&homeEl.querySelector(".ts"),h=ts?Math.round(ts.getBoundingClientRect().height):0;if(h!==rh){rh=h;requestAnimationFrame(fitHome)}}).observe(homeEl)}
