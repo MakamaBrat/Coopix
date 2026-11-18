@@ -710,8 +710,7 @@ body.onhome .home{display:flex;flex-direction:column;gap:12px;
 .home .sec h3 small{font-size:14px}
 /* news slider */
 .ns-wrap{position:relative}
-.ns{display:flex;overflow:hidden;scrollbar-width:none;touch-action:pan-y} /* главная без прокрутки влево-вправо: показываем одну (первую) новость */
-.dots{display:none!important}
+.ns{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y} /* новости листаются рукой и сами */
 body.onhome,body.onhome .app{touch-action:pan-y;overflow-x:hidden}
 .ns::-webkit-scrollbar{display:none}
 .ns-i{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
@@ -2209,6 +2208,8 @@ function renderHome(){
   dots.forEach((d,i)=>d.addEventListener("click",()=>{hold=Date.now();go(i)}));
   const fitAll=()=>{fitNews();fitHome()};
   fitAll();requestAnimationFrame(fitAll);document.fonts&&document.fonts.ready.then(fitAll);
+  /* само листает каждые 5 секунд; если новости трогали (касание, клик, точки) — пауза 9 секунд */
+  if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((Math.round(ns.scrollLeft/ns.clientWidth)+1)%items.length)},5000); /* текущий слайд берём из реальной прокрутки, а не из события */
 }
 
 /* главная всегда в один экран: средний блок (предметы, заголовок, кнопка) уменьшается ровно настолько, чтобы влезть над новостями */
