@@ -1,4 +1,4 @@
-"""Публикует Noomi Clone в магазин: бесплатная, скачивание разрешено, с мини-игрой для «телевизора» (tv.html).
+"""Публикует Noomi Clone в магазин: бесплатная, скачивание запрещено, с мини-игрой для «телевизора» (tv.html).
 Запуск: python scripts/publish_noomiclone.py   (нужен .env.txt, как для upload_games.py). Повторный запуск обновляет игру."""
 import base64, hashlib, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +19,7 @@ row = {
     "item": "floppy", "cover": "img:" + hashlib.sha256(cover.encode()).hexdigest()[:12], "cover_img": cover,
     "shot_img": jpg("shot.jpg"), "access": "public", "sort": 6,
     "play_kind": "auto", "play_html": rd("tv.html"), "file_html": rd("NoomiClone.html"),
-    "dl_off": False, "price": 0,
+    "dl_off": True, "price": 0,
 }
 url, key = env()
 st, out = req("POST", f"{url}/rest/v1/games", key, row)
