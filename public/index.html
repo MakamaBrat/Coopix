@@ -3079,7 +3079,7 @@ async function playDirect(id,quiet){
   if(!(m.file&&SUB_API)){openPage(id,{auto:true,page:true});return false}
   if(DIRECT||window.__gm)return false;DIRECT=true;if(!quiet)sfx.tap();
   countPlay(id);toast("Загружаем игру…",true);
-  try{const j=await hub("gamefile",{q:{id}});if(PG)closePage();gameMode(j.text,m.title);return true}
+  try{const j=await hub("gamefile",{q:{id}});if(PG)closePage();gameMode(j.text,m.title,id,await loadGameSave(id));return true}
   catch(e){toast("Не удалось загрузить игру");return false}finally{DIRECT=false}}
 /* свой плейабл (загружен в админке): маленький HTML прямо в «телевизоре», в изолированном iframe без доступа к маркету */
 const PLAYC={};
@@ -3220,16 +3220,33 @@ async function edStatus(id){const el=$("#edst");if(!el)return;
 /* игра игрока (HTML-файл): открываем в изолированном iframe, запуск считается как «Играли» */
 /* запуск игры: магазин закрывается целиком (карточки, фоны, музыка, цикл отрисовки), на экране только игра — все ресурсы ей.
    Кнопки «Закрыть» нет: выход — «Назад» в Telegram или в браузере, магазин загружается заново. Во время игры можно повернуть экран. */
-function gameMode(html,title){window.__gm=1;
+/* ===== сохранения игр: игра работает в изолированном окне без своего localStorage, поэтому магазин хранит её данные сам ===
+   локально (localStorage магазина) и, пока влезает в 4 КБ, в облаке Telegram (CloudStorage) — прогресс не пропадает после выхода и на другом устройстве */
+const GSK=id=>"am.gs."+id;
+function gsLocal(id){try{const o=JSON.parse(localStorage.getItem(GSK(id))||"{}");return o&&typeof o==="object"?o:{}}catch(e){return{}}}
+function gsCloudGet(id){return new Promise(res=>{try{const cs=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.CloudStorage;if(!cs||!cs.getItem){res(null);return}
+  const t=setTimeout(()=>res(null),1500);cs.getItem("gs_"+id,(err,v)=>{clearTimeout(t);try{res(err||!v?null:JSON.parse(v))}catch(e){res(null)}})}catch(e){res(null)}})}
+async function loadGameSave(id){const l=gsLocal(id);if(Object.keys(l).length)return l;const c=await gsCloudGet(id);return c&&typeof c==="object"?c:{}}
+let GST=0;
+function gsPut(id,data){const o=gsLocal(id);for(const k in data){if(data[k]===null)delete o[k];else o[k]=String(data[k])}
+  try{localStorage.setItem(GSK(id),JSON.stringify(o))}catch(e){}
+  clearTimeout(GST);GST=setTimeout(()=>{try{const cs=window.Telegram&&Telegram.WebApp&&Telegram.WebApp.CloudStorage;if(!cs||!cs.setItem)return;
+    const ks=Object.keys(o).filter(k=>o[k].length<=3000).sort((a,b)=>o[a].length-o[b].length),pick={};let n=2;for(const k of ks){n+=k.length+o[k].length+8;if(n>3900)break;pick[k]=o[k]}
+    cs.setItem("gs_"+id,JSON.stringify(pick),()=>{})}catch(e){}},2500)}
+function withSave(html,saved){const inj="<script>window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+"<\/script>";
+  return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj):inj+html}
+function gameMode(html,title,gid,saved){window.__gm=1;
   try{MUS.el&&MUS.el.pause();MUS.unlocked=false}catch(e){}
   try{LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML=""}catch(e){}
   const de=document.documentElement;de.classList.remove("rotate");
   try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}
   const TGW=window.Telegram&&Telegram.WebApp;try{TGW&&TGW.unlockOrientation&&TGW.unlockOrientation()}catch(e){}
   const o=document.createElement("div");o.className="gmv";const f=document.createElement("iframe");
-  f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=title||"Игра";f.srcdoc=html;o.append(f);
+  f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=title||"Игра";f.srcdoc=gid?withSave(html,saved):html;o.append(f);
   /* игра в изолированном окне сама ссылки открыть не может: «Ещё игры» в ней шлёт сюда сообщение {coopix:"market"}, магазин открывает своего бота */
-  addEventListener("message",e=>{if(e.source!==f.contentWindow||!e.data||e.data.coopix!=="market")return;const url="https://t.me/"+MARKET_BOT+"?startapp";
+  addEventListener("message",e=>{if(e.source!==f.contentWindow||!e.data)return;
+    if(e.data.coopix==="save"&&gid&&e.data.data&&typeof e.data.data==="object"){gsPut(gid,e.data.data);return}
+    if(e.data.coopix!=="market")return;const url="https://t.me/"+MARKET_BOT+"?startapp";
     try{if(TGW&&TGW.openTelegramLink){TGW.openTelegramLink(url);return}}catch(x){}try{window.open(url,"_blank","noopener")}catch(x){}});
   document.body.append(o);document.body.classList.add("gamemode");document.body.style.overflow="hidden";
   const out=()=>{try{sessionStorage.setItem("am.back","list")}catch(e){}location.reload()}; /* после игры маркет откроется на списке игр, а не на главной */
@@ -3237,7 +3254,7 @@ function gameMode(html,title){window.__gm=1;
   try{history.pushState({gm:1},"")}catch(e){}addEventListener("popstate",out);
   setTimeout(()=>{try{f.focus()}catch(e){}},50)}
 async function playFile(){const me=PG;if(!me)return;if(isLocked(me.m)){buyGame(me.m.id);return}countPlay();toast("Загружаем игру…",true);
-  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;gameMode(j.text,me.m.title)}catch(e){toast("Не удалось загрузить игру")}}
+  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;gameMode(j.text,me.m.title,me.m.id,await loadGameSave(me.m.id))}catch(e){toast("Не удалось загрузить игру")}}
 const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
 const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */
 const AUTH={};             /* pid -> { n, c, hp, p, f }: имя, цвет, фото авторов (фото подгружается лениво) */
