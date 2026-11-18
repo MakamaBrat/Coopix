@@ -27,7 +27,7 @@ w.ready();w.expand();try{window.__lockP&&window.__lockP()}catch(e){}
 /* «Назад» из игры переживает перезагрузку страницы (Telegram её помнит), но обработчика уже нет — кнопка в шапке «залипает»
    и мини-приложение нельзя закрыть. На старте маркета её всегда прячем: в шапке снова «Закрыть». */
 try{w.BackButton&&w.BackButton.hide()}catch(e){}
-try{if(!window.__tgFs&&w.requestFullscreen&&/^(tdesktop|macos|weba|webk|web|unigram)$/.test(w.platform||"")){window.__tgFs=1;w.requestFullscreen()}}catch(e){}try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
+try{if(!window.__tgFs&&w.requestFullscreen&&/^(tdesktop|macos|weba|webk|web|unigram)$/.test(w.platform||"")){window.__tgFs=1;document.documentElement.classList.add("fs");w.requestFullscreen()}}catch(e){}try{w.disableVerticalSwipes&&w.disableVerticalSwipes()}catch(e){}try{w.setHeaderColor("#07040f");w.setBackgroundColor("#07040f")}catch(e){}}catch(e){}};
 if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",function(){window.tgInit()});</script>
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: ретро-маркет приложений. Добавьте обложку, выберите предмет, и вся карточка окрасится в её цвета.">
@@ -46,14 +46,15 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
   --bg0:#07040f; --bg1:#0e0820; --ink:#f4ecff; --dim:#9b86d6; --line:#3a2a70; --acc:#a56bff; --acc2:#5b2fd0;
   --font:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --k:.5; --col:min(100vw - 24px, 500px);
-  /* Telegram mini app: его собственные отступы (плавающая шапка Telegram + вырез экрана).
-     На части клиентов/устройств Telegram завышает эти значения (широкий пустой «прочерк» наверху любого экрана) —
-     сумму ограничиваем потолком 56px: этого хватает и на вырез, и на шапку Telegram, но не раздувает отступ. */
-  --tgt:min(calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)), 56px);
+  /* Telegram mini app: на телефоне (без настоящего fullscreen — requestFullscreen мы зовём только на десктопных клиентах, класс html.fs)
+     шапка Telegram рисуется НАД вебвью, а не поверх него — ему достаточно места под вырез экрана, --tg-content-safe-area-inset-top
+     (резерв под плавающую шапку) тут не нужен и его не добавляем, иначе наверху остаётся пустая полоса ни для чего. */
+  --tgt:var(--tg-safe-area-inset-top,0px);
   --top:max(env(safe-area-inset-top,0px),var(--tgt));
   --bot:max(env(safe-area-inset-bottom,0px),var(--tg-safe-area-inset-bottom,0px));
 }
-html.tg{--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 6px)}
+/* настоящий fullscreen (desktop-клиенты Telegram): свою шапку Telegram рисует поверх контента — здесь резерв нужен, сумму ограничиваем потолком */
+html.fs{--tgt:min(calc(var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)), 56px);--top:calc(max(env(safe-area-inset-top,0px),var(--tgt)) + 6px)}
 *{box-sizing:border-box;margin:0}
 html{font-synthesis:none;background:var(--bg0);color-scheme:dark;-webkit-text-size-adjust:100%}
 body{font-family:var(--font);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
