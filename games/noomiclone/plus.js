@@ -208,7 +208,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
   if(changed){persist();applySettings();if(screen==="shop")renderShop();ncToast(T("x.bought"))}else if(screen==="shop")renderShop()});
  /* при запуске: что игрок уже купил за звёзды (магазин кладёт список в окно игры) */
  for(const id of window.__CPX_ITEMS||[])if(catOf(id))SAVE.owned[id]=1;
- renderShop=function(){$("shTitle").textContent=T(shopMode==="shop"?"menu.store":"menu.skins");$("shCoins").textContent="⭐ "+T("x.starsHdr");
+ renderShop=function(){$("shTitle").textContent=T(shopMode==="shop"?"menu.store":"menu.skins");$("shCoins").textContent="";
   const t=$("shBody");t.innerHTML="";const e=document.createElement("div");e.className="cats";
   for(const a in ITEMS){const i=document.createElement("button");i.className="navy"+(a===shopCat?" on":"");i.textContent=T(catName[a]);i.onclick=()=>{shopCat=a;renderShop()};e.appendChild(i)}t.appendChild(e);
   const n=document.createElement("div");n.className="grid";
@@ -217,5 +217,5 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
    const p=document.createElement("button");p.className="mini"+(l?" alt":"");p.style.width="100%";const pend=PEND===a;
    p.textContent=l?T("equipped"):c?T("equip"):pend?"…":"⭐ "+r;p.disabled=l||pend;
    p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
-  t.appendChild(n);const s=document.createElement("div");s.className="card";s.style.marginTop="1.4vh";s.innerHTML="<p>"+T("x.starNote")+"</p>";t.appendChild(s)}}
+  t.appendChild(n)}}
 }
