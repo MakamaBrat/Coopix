@@ -154,12 +154,34 @@ const _em=GP.emit;GP.emit=function(s,t){if(this===W&&!RP&&lesson<0){const r=s===
 addEventListener("pagehide",()=>persist());document.addEventListener("visibilitychange",()=>{if(document.hidden)persist()});
 
 /* ---------- перехваты: всего и рекорд серии запоминаются (хранятся в сохранении игры, оно переживает перезапуск) ---------- */
-{const RU2={"x.rgTotal":"всего","x.rgBest":"рекорд","x.rgMenu":"Перехватов всего","x.rgMenuBest":"рекорд серии"},EN2={"x.rgTotal":"total","x.rgBest":"best","x.rgMenu":"Total regrabs","x.rgMenuBest":"best streak"};
+{const RU2={"x.rgTotal":"Перехватов всего","x.rgBest":"Рекорд серии","x.rgTotalS":"перехватов","x.rgBestS":"рекорд серии"},EN2={"x.rgTotal":"Total regrabs","x.rgBest":"Best streak","x.rgTotalS":"regrabs","x.rgBestS":"best streak"};
  for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU2:EN2);
- const st=document.createElement("style");st.textContent="#menu .stat{position:absolute;left:33%;width:36%;top:20%;text-align:center;font-size:2.1vmin;color:#12304f;font-weight:600;opacity:.7}@media(orientation:portrait){#menu .stat{left:0;width:100%;top:calc(env(safe-area-inset-top) + 13.6%);font-size:2.9vw}}#cstat{position:absolute;right:19.5%;top:1.2vmin;z-index:3;text-align:right;font-size:1.9vmin;line-height:1.35;color:#fff;font-weight:600;opacity:.75;text-shadow:0 .2vmin .6vmin rgba(0,0,0,.6);pointer-events:none;white-space:nowrap}";document.head.appendChild(st);
+ const st=document.createElement("style");st.textContent=
+  ".sbadge{display:inline-flex;align-items:center;gap:.9vmin;height:5.2vmin;padding:0 2.2vmin;border-radius:2.8vmin;background:linear-gradient(180deg,rgba(30,48,82,.62),rgba(12,20,38,.62));border:.2vmin solid rgba(255,255,255,.2);box-shadow:0 .4vmin 1.2vmin rgba(0,0,0,.28),inset 0 .15vmin 0 rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:2.5vmin;line-height:1;white-space:nowrap}"+
+  ".sbadge i{font-style:normal;font-size:2.5vmin}.sbadge b{font-weight:800;letter-spacing:.05vmin}.sbadge small{font-size:1.7vmin;font-weight:600;opacity:.72;letter-spacing:.05vmin}.sbadge.gold{color:#ffe27a;border-color:rgba(255,226,122,.4)}"+
+  "#cstat{position:absolute;z-index:3;display:flex;align-items:center;gap:1.2vmin;pointer-events:none;left:calc(50% + var(--cw,100px)/2 + 1.6vmin);top:var(--ct,2vmin);height:var(--ch,6vmin)}"+
+  "#menu .stat{position:absolute;left:33%;width:36%;top:19.6%;display:flex;justify-content:center;gap:1.4vmin}"+
+  "@media(orientation:portrait){.sbadge{height:7.2vw;padding:0 3vw;border-radius:3.8vw;gap:1.4vw;font-size:3.7vw;border-width:.3vw}.sbadge i{font-size:3.7vw}.sbadge small{font-size:2.6vw}"+
+  "#cstat{left:50%;transform:translateX(-50%);top:calc(var(--ct,2vmin) + var(--ch,6vmin) + 1.6vw);height:auto;gap:2vw}"+
+  "#menu .stat{left:0;width:100%;top:calc(env(safe-area-inset-top) + 13.4%);gap:2.4vw}}";document.head.appendChild(st);
  const m=$("menu");if(m){const d=document.createElement("div");d.className="stat";d.id="mStat";m.appendChild(d)}
  const gm=$("game");if(gm){const d=document.createElement("div");d.id="cstat";gm.appendChild(d)}
- const setStat=()=>{const e=$("mStat");if(e)e.textContent=T("x.rgMenu")+": "+(SAVE.regrabs|0)+"  ·  "+T("x.rgMenuBest")+": "+(SAVE.bestRG|0)};
- const _uc=updCnt;updCnt=function(){_uc();if(RG>(SAVE.bestRG|0))SAVE.bestRG=RG;const el=$("cstat");if(el)el.innerHTML=T("x.rgTotal")+" "+(SAVE.regrabs|0)+"<br>"+T("x.rgBest")+" "+(SAVE.bestRG|0)}; /* основной счётчик #cnt остаётся как в оригинале, «всего/рекорд» — мелко сбоку */
+ const badges=(full)=>{const n=SAVE.regrabs|0,b=SAVE.bestRG|0;return '<span class="sbadge" title="'+T("x.rgTotal")+'"><i>\u{1F504}</i><b>'+n+'</b>'+(full?'<small>'+T("x.rgTotalS")+'</small>':'')+'</span><span class="sbadge gold" title="'+T("x.rgBest")+'"><i>\u{1F3C6}</i><b>'+b+'</b>'+(full?'<small>'+T("x.rgBestS")+'</small>':'')+'</span>'};
+ const setStat=()=>{const e=$("mStat");if(e)e.innerHTML=badges(true)};
+ /* плашки рядом со счётчиком: справа от него (горизонт) или под ним по центру (вертикаль) — положение считаем по настоящему размеру #cnt */
+ const place=()=>{const c=$("cnt"),e=$("cstat"),g=$("game");if(!c||!e||!g||!c.offsetWidth)return;const r=c.getBoundingClientRect(),pr=g.getBoundingClientRect();e.style.setProperty("--cw",c.offsetWidth+"px");e.style.setProperty("--ct",(r.top-pr.top)+"px");e.style.setProperty("--ch",r.height+"px")};
+ addEventListener("resize",()=>requestAnimationFrame(place));
+ const _uc=updCnt;updCnt=function(){_uc();if(RG>(SAVE.bestRG|0))SAVE.bestRG=RG;const e=$("cstat");if(e)e.innerHTML=badges(false);place()}; /* основной счётчик #cnt остаётся как в оригинале */
  const _rm=renderMenu;renderMenu=function(){_rm();setStat()};setStat()}
+
+/* ---------- турбники теперь не проходятся животом: перекладина — твёрдая для туловища, головы и бёдер ----------
+   (у кистей, рук, голеней и стоп столкновения выключены, чтобы хваты за перекладину работали как раньше; пока висишь на ней и
+   0,6 с после отпускания она тоже не мешает) */
+{const _lm2=GP.loadMap;
+ GP.loadMap=function(s){const r=_lm2.call(this,s);
+  for(const b of this.bars||[]){const fx=b.body.createFixture(pl.Circle(b.local,.045),{friction:.35,restitution:.05,filterCategoryBits:CAT_WORLD,filterMaskBits:CAT_BODY});fx.barRef=b}
+  this.world.on("pre-solve",c=>{const a=c.getFixtureA(),b=c.getFixtureB(),f=a.barRef?a:b.barRef?b:null;if(!f)return;const o=(f===a?b:a).getBody(),p=o.part||"";
+    if(!/^(torso|head|thigh)/.test(p)){c.setEnabled(false);return}
+    const st=this.st;if(st&&(st.bar===f.barRef||(st.relBar===f.barRef&&st.releaseT<.6)))c.setEnabled(false);else if(NC_DBG)NC_DBG.push(["bar:"+p,1])});
+  return r}}
 }
