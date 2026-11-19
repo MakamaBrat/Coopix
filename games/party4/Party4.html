@@ -146,10 +146,15 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 .inp:focus{outline:none;border-color:var(--gold);box-shadow:inset 0 3px 8px #000a,0 0 16px #ffb04a55}
 .hero{display:block;margin:0 auto 6px;max-width:min(88%,400px);max-height:190px;object-fit:contain;animation:floaty 4s ease-in-out infinite;filter:drop-shadow(0 8px 16px #000c)}
 /*TOASTTOP*/
-#toast{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-24px);background:var(--wood);color:var(--cream);border:2px solid var(--gold2);padding:6px 14px;border-radius:12px;font-weight:800;font-size:13px;line-height:1.25;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:86vw;text-align:center;box-shadow:0 3px 10px #000a}
+#toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-24px);background:var(--wood);color:var(--cream);border:2px solid var(--gold2);padding:6px 14px;border-radius:12px;font-weight:800;font-size:13px;line-height:1.25;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:86vw;text-align:center;box-shadow:0 3px 10px #000a}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #modal{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,#000a,#000e);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:50}
 #modal.show{display:flex;animation:fadeIn .25s}
+/*KB*/
+#modal.kb{align-items:flex-start;padding:48px 8px 0}
+#modal.kb .sheet{border-radius:22px;border-bottom:3px solid #8a5a22;padding:12px 14px;max-height:100%;animation:none}
+#modal.kb .sheet>h3,#modal.kb .sheet .pics,#modal.kb .sheet .hint{display:none}
+#modal.kb .sheet #prev{transform:scale(.7);transform-origin:center top;height:70px}
 .sheet{width:100%;max-width:540px;border-radius:28px 28px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;border:3px solid #8a5a22;border-bottom:0;background:var(--wood);box-shadow:0 -10px 50px #000c;animation:sheetUp .4s cubic-bezier(.2,.9,.3,1.05)}
 #prev{display:flex;justify-content:center}
 .emojis{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
@@ -823,7 +828,15 @@ function editorHtml() {
   ${E.id ? '<button class="btn danger wide" data-a="pdel">🗑 Удалить друга</button>' : ''}</div>`;
 }
 function openModal(h) { $('#modal').innerHTML = h; $('#modal').classList.add('show'); }
-function closeModal() { $('#modal').classList.remove('show'); $('#modal').innerHTML = ''; E = null; }
+function closeModal() { const m = $('#modal'); m.classList.remove('show', 'kb'); m.style.height = m.style.top = m.style.bottom = ''; m.innerHTML = ''; E = null; }
+/*KB*/
+{ const vv = window.visualViewport;
+  const kbFit = () => { const m = $('#modal'); if (!m.classList.contains('kb')) { m.style.height = m.style.top = m.style.bottom = ''; return; } m.style.top = (vv ? vv.offsetTop : 0) + 'px'; m.style.bottom = 'auto'; m.style.height = (vv ? vv.height : innerHeight) + 'px'; };
+  let kbT = 0;
+  document.addEventListener('focusin', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); $('#modal').classList.add('kb'); kbFit(); setTimeout(kbFit, 250); setTimeout(kbFit, 600); });
+  document.addEventListener('focusout', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); kbT = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches('#modal input')) return; $('#modal').classList.remove('kb'); kbFit(); }, 350); });
+  if (vv) { vv.addEventListener('resize', kbFit); vv.addEventListener('scroll', kbFit); }
+}
 function openEditor(id) {
   const p = id && S.players.find(x => x.id === id);
   E = p ? { id: p.id, name: p.name, img: p.img || '', emoji: p.emoji || '', pic: p.pic || '' } : { id: '', name: '', img: '', emoji: '', pic: pick(PORTRAITS) };
