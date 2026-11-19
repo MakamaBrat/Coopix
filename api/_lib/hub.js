@@ -21,7 +21,8 @@ export const CLIENT_EVENTS = ["visit", "open", "play", "download", "fav", "unfav
 const NEEDS_GAME = new Set(["open", "play", "download", "fav", "unfav"]);
 /** Не чаще раза в N мс на игрока (и на игру): защита от накрутки нажатием в цикле. */
 const COOLDOWN = { visit: 30 * 60e3, open: 3e3, play: 3e3, download: 3e3, fav: 1e3, unfav: 1e3, card: 3e3 };
-export const HOURLY_EVENTS = 300;   // любых действий в час от одного игрока
+const RETURN_GAP = 4 * 3600e3; // «вернулся»: прошлый заход был больше 4 часов назад (график заходов для главного админа)
+export const HOURLY_EVENTS = 300;  // любых действий в час от одного игрока
 export const REVIEWS_PER_DAY = 30;  // записей отзыва (новых и правок) в сутки
 export const POSTS_PER_HOUR = 10;   // сохранений поста в час
 export const REVIEWS_MAX = 300;     // сколько последних отзывов игры отдаём
@@ -182,17 +183,21 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
    */
   async function addVisits(series) {
     const from = Math.min(...series.map((s) => s.t0));
-    const ev = await store.visitEvents(from);
+    // запас в 4 часа назад: для «вернулся» нужно знать, был ли заход в предыдущие 4 часа
+    const ev = (await store.visitEvents(from - RETURN_GAP)).sort((a, b) => a.ts - b.ts);
     const reg = await store.regTimes([...new Set(ev.map((e) => e.uid))]);
     const isNew = (e) => { const r = reg.get(e.uid); return r != null && e.ts - r < 15 * 60e3; };
+    // вернувшийся = не новый и прошлый заход был больше 4 часов назад (или его нет в журнале: игрок давно не появлялся)
+    const prev = new Map(), isRet = new Set();
+    for (const e of ev) { const p = prev.get(e.uid); if (!isNew(e) && (p == null || e.ts - p > RETURN_GAP)) isRet.add(e); prev.set(e.uid, e.ts); }
     for (const s of series) {
-      const rows = Array.from({ length: s.rows.length }, () => [0, 0]), ms = s.step * 1000;
+      const rows = Array.from({ length: s.rows.length }, () => [0, 0]), ret = Array(s.rows.length).fill(0), ms = s.step * 1000;
       for (const e of ev) {
         const i = Math.floor((e.ts - s.t0) / ms);
-        if (i >= 0 && i < rows.length) rows[i][isNew(e) ? 1 : 0]++;
+        if (i >= 0 && i < rows.length) { rows[i][isNew(e) ? 1 : 0]++; if (isRet.has(e)) ret[i]++; }
       }
       const total = await store.visitCountBefore(s.t0), nw = Math.min(total, await store.regCountBefore(s.t0));
-      s.visits = { base: [Math.max(0, total - nw), nw], rows };
+      s.visits = { base: [Math.max(0, total - nw), nw], rows, ret };
     }
   }
 

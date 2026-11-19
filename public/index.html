@@ -2484,8 +2484,9 @@ const chPer=()=>`<div class="chc-p" data-p>${PER.map((p,i)=>`<button type="butto
 const CHF_L=[["reg","Регистрации",["регистрация","регистрации","регистраций"]],["rev","Отзывы",["отзыв","отзыва","отзывов"]],
   ["play","Первые запуски",["первый запуск","первых запуска","первых запусков"]],["dl","Первые скачивания",["первое скачивание","первых скачивания","первых скачиваний"]],
   ["all","Все",["событие","события","событий"]],
-  ["vis","Заходы",["заход","захода","заходов"]]]; /* «Заходы» (вернувшиеся и новые игроки) видит только главный админ */
-const chfL=()=>ROLE==="main"?CHF_L:CHF_L.filter(x=>x[0]!=="vis");
+  ["vis","Заходы",["заход","захода","заходов"]],
+  ["ret","Вернулись (4ч+)",["возврат","возврата","возвратов"]]]; /* «Заходы» и «Вернулись» (зашёл снова больше чем через 4 часа) видит только главный админ */
+const chfL=()=>ROLE==="main"?CHF_L:CHF_L.filter(x=>x[0]!=="vis"&&x[0]!=="ret");
 let CHF=store.get("am.chf","reg");if(!CHF_L.some(x=>x[0]===CHF))CHF="reg";
 const chFil=()=>`<div class="chc-f" data-f role="radiogroup" aria-label="Какие события показать">${chfL().map(([k,l])=>`<button type="button" class="chip" role="radio" data-f="${k}" aria-checked="${k===CHF}">${l}</button>`).join("")}</div>`;
 const chBody=(h,label,goal)=>`<div class="chc-v" data-v></div><div class="chc-d" data-d></div>${goal?'<div class="chc-g" data-g></div>':""}${chPer()}${chFil()}<div class="chw"><svg viewBox="0 0 ${CW} ${h}" role="img" tabindex="0" aria-label="${label}"></svg><div class="chc-tip" data-tip role="status" aria-live="polite"></div></div>`;
@@ -2537,7 +2538,7 @@ function initCharts(root){
   const PLA=["событие","события","событий"],PLS=["звезда","звезды","звёзд"],PLO=["очко","очка","очков"];
   wire(root.querySelector("#chA"),(pi,svg,box)=>{
     const H=svg.viewBox.baseVal.height||HA,dt=getAct(pi),n=dt.length;if(n<2){empty(box,svg,H);return}
-    if(CHF==="vis"&&ROLE!=="main")CHF="reg";const F=CHF_L.find(x=>x[0]===CHF)||CHF_L[0],fv_=o=>F[0]==="all"?o.a:(o.k?o.k[F[0]]:0),fl_=o=>F[0]==="all"?o.res:(o.cum?o.cum[F[0]]:0);
+    if((CHF==="vis"||CHF==="ret")&&ROLE!=="main")CHF="reg";const F=CHF_L.find(x=>x[0]===CHF)||CHF_L[0],fv_=o=>F[0]==="all"?o.a:(o.k?o.k[F[0]]:0),fl_=o=>F[0]==="all"?o.res:(o.cum?o.cum[F[0]]:0);
     const narrow=W<420,pl=2,pr=narrow?40:50,lT=12,lB=Math.round(H*.48),aT=lB+30,sY=H-30,aB=sY-15,xB=H-4,
       acts=dt.map(fv_),stars=dt.map(o=>o.s||0),rv=dt.map(fl_),mxA=Math.max(...acts),mxS=Math.max(...stars),
       sa=nscale(0,Math.max(mxA,4),1),sc=scaleOf(rv),lo=sc.lo,hi=sc.hi,
@@ -2575,7 +2576,8 @@ function initCharts(root){
     box.querySelector("[data-v]").innerHTML=`${nf(tot)}<small>${plr(tot,F[2])} ${perT}</small>`;
     delta(box.querySelector("[data-d]"),tot,"спасибо, что вы с нами!");
     const vN=dt.reduce((t,o)=>t+o.vv.n,0),vR=dt.reduce((t,o)=>t+o.vv.r,0);
-    box.querySelector("[data-s]").innerHTML=F[0]==="vis"?`<div><b>${nf(fl_(last))}</b><span>заходов всего</span></div><div><b>${nf(vN)} · ${nf(vR)}</b><span>новых · вернувшихся ${perT}</span></div>`:`<div><b>${nf(fl_(last))}</b><span>${F[0]==="reg"?"игроков всего":F[0]==="all"?"рост сообщества":"всего за всё время"}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)}</span></div>`;
+    const visTot=dt.reduce((t,o)=>t+o.k.vis,0);
+    box.querySelector("[data-s]").innerHTML=F[0]==="ret"?`<div><b>${nf(tot)}</b><span>возвратов ${perT}</span></div><div><b>${nf(visTot)}</b><span>всего заходов ${perT}</span></div>`:F[0]==="vis"?`<div><b>${nf(fl_(last))}</b><span>заходов всего</span></div><div><b>${nf(vN)} · ${nf(vR)}</b><span>новых · вернувшихся ${perT}</span></div>`:`<div><b>${nf(fl_(last))}</b><span>${F[0]==="reg"?"игроков всего":F[0]==="all"?"рост сообщества":"всего за всё время"}</span></div><div class="gold"><b>${goldIc}${nf(totS)}</b><span>${plr(totS,PLS)}</span></div>`;
     attach(box,svg,n,pl+slot/2,pr+slot/2,i=>{const o=dt[i],x=xs[i].toFixed(1);G.style.display="";gl.setAttribute("x1",x);gl.setAttribute("x2",x);gc.setAttribute("cx",x);gc.setAttribute("cy",ys[i].toFixed(1));
       hb&&hb.classList.remove("hl");hb=svg.querySelector(`.bar[data-i="${i}"]`);hb&&hb.classList.add("hl");
       return{x:xs[i],html:`<span class="tt">${o.tf||o.t}</span><div><i class="k kb"></i><b>${nf(fv_(o))}</b>${plr(fv_(o),F[2])}</div>${F[0]==="vis"?`<div><i class="k kn"></i>новых: <b>${nf(o.vv.n)}</b> · вернувшихся: <b>${nf(o.vv.r)}</b></div>`:""}<div><i class="k ks"></i><b>${nf(o.s||0)}</b>${plr(o.s||0,PLS)}</div><div><i class="k kl"></i>${F[0]==="reg"?"игроков всего":"всего"}: <b>${nf(fl_(o))}</b></div>`}},
@@ -3514,10 +3516,10 @@ const tl=(t,step)=>{const d=new Date(t),hm=pad2(d.getHours())+":"+pad2(d.getMinu
 const tlf=(t,step)=>{const d=new Date(t);return step<86400?pad2(d.getDate())+"."+pad2(d.getMonth()+1)+" "+pad2(d.getHours())+":"+pad2(d.getMinutes()):tl(t,step)};
 /* ряд графика: a ключевые действия, w очки, s звёзды, дальше по видам (регистрации, отзывы, первые запуски, первые скачивания);
    k = сколько за отрезок, cum = сколько всего к концу отрезка (для линии по выбранному фильтру) */
-const toPts=s=>{let res=s.base;const c=(s.bases||[0,0,0,0]).slice(),V=s.visits,vb=V&&V.base?V.base.map(Number):[0,0];let vcum=(vb[0]||0)+(vb[1]||0);
+const toPts=s=>{let res=s.base;const c=(s.bases||[0,0,0,0]).slice(),V=s.visits,vb=V&&V.base?V.base.map(Number):[0,0];let vcum=(vb[0]||0)+(vb[1]||0),rcum=0;
   return s.rows.map(([a,w,st,r1,r2,r3,r4],i)=>{res+=w;const k={reg:+r1||0,rev:+r2||0,play:+r3||0,dl:+r4||0};c[0]+=k.reg;c[1]+=k.rev;c[2]+=k.play;c[3]+=k.dl;
-    const vr=V&&V.rows&&V.rows[i]?V.rows[i]:[0,0],vv={r:+vr[0]||0,n:+vr[1]||0};k.vis=vv.r+vv.n;vcum+=k.vis;
-    const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,k,vv,cum:{reg:c[0],rev:c[1],play:c[2],dl:c[3],vis:vcum},cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
+    const vr=V&&V.rows&&V.rows[i]?V.rows[i]:[0,0],vv={r:+vr[0]||0,n:+vr[1]||0};k.vis=vv.r+vv.n;vcum+=k.vis;k.ret=V&&V.ret?+V.ret[i]||0:0;rcum+=k.ret;
+    const ts=s.t0+i*s.step*1000;return{a,s:+st||0,res,k,vv,cum:{reg:c[0],rev:c[1],play:c[2],dl:c[3],vis:vcum,ret:rcum},cap:res*CAP.price,t:tl(ts,s.step),tf:tlf(ts,s.step),ts}})};
 const rateText=()=>"игра = "+WEIGHTS.play+" · скачивание = "+WEIGHTS.download+" · отзыв = "+WEIGHTS.review+" · пост = "+WEIGHTS.post+" · своя карточка = "+WEIGHTS.card+" "+CAP.res;
 /* демо без сервера: те же ключевые действия, что и на сервере (регистрация, новый отзыв, первый запуск и первая загрузка игры) */
 function keyActs(){const seen=new Set(),out=[{t:PROF.reg||Date.now(),type:"register"}];
