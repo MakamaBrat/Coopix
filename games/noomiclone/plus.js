@@ -131,16 +131,23 @@ GP.loadMap=function(s){const r=_lm.call(this,s);this.world.on("begin-contact",c=
   const m=$("xrmsg"),f=$("xrfx");if(m){m.textContent="\u{1F9B4} "+T("x.hurt")+": "+PARTRU(p);m.classList.remove("on");void m.offsetWidth;m.classList.add("on")}if(f){f.classList.remove("on");void f.offsetWidth;f.classList.add("on")}
   crack();try{FX.shake=Math.max(FX.shake||0,.5)}catch(e){}});return r};
 
+const effOf=G=>(G.play&&G.rcfg)?G.rcfg:{tb:SAVE.eq.gear,gt:window.__ncGait?window.__ncGait():0};
+/* повторы: турбины и ходьба тоже воспроизводятся — их кнопки пишутся в маску ввода, а снаряжение и режим — в конфиг повтора */
+RKEYS.push("turboL","turboA");
+{const _ac=GP.applyCfg;GP.applyCfg=function(c){_ac.call(this,c);if(c.tb!==undefined)this.rcfg={tb:c.tb,gt:c.gt|0}};
+ const _ps=GP.playStart;GP.playStart=function(...a){this.rcfg={tb:"gear_none",gt:0};return _ps.apply(this,a)}; /* старые повторы: без турбин и ходьбы */
+ const _sp=GP.spawn;GP.spawn=function(s){this.tFuel=1;this.wk=null;return _sp.call(this,s)}; /* топливо и шаг ходьбы с нуля при каждом старте — запись и воспроизведение идут одинаково */
+ const _cf=cfgOf;cfgOf=function(){return Object.assign(_cf(),{tb:SAVE.eq.gear,gt:window.__ncGait?window.__ncGait():0})}}
 /* ---------- турбины: физика и кнопки ---------- */
 const TURBO_F_LEG=NC_TURBO_L,TURBO_F_ARM=NC_TURBO_A;
-GP.applyTurbo=function(dt){const g=SAVE.eq.gear,hasL=g==="gear_tl"||g==="gear_tb",hasA=g==="gear_ta"||g==="gear_tb";this.tOn={legs:false,arms:false};
+GP.applyTurbo=function(dt){const g=effOf(this).tb,hasL=g==="gear_tl"||g==="gear_tb",hasA=g==="gear_ta"||g==="gear_tb";this.tOn={legs:false,arms:false};
   if(this.tFuel==null)this.tFuel=1;const B=this.B,inp=this.inp;if(!B||!this.st||(!hasL&&!hasA)){this.tFuel=Math.min(1,this.tFuel+dt*.3);return}
   const uL=hasL&&inp.turboL,uA=hasA&&inp.turboA,use=(uL||uA)&&this.tFuel>0;
   this.tFuel=use?Math.max(0,this.tFuel-dt*((uL?.2:0)+(uA?.2:0)+.12)):Math.min(1,this.tFuel+dt*.25);
   if(!use)return;this.tOn={legs:!!uL,arms:!!uA};
   const push=(p,sign,F)=>{const b=B[p],c=PARTS[p],pt=b.getWorldPoint(V2(0,sign*c.hl)),d=b.getWorldVector(V2(0,-sign));b.applyForce(V2(d.x*F,d.y*F),pt,true)};
   if(uL){push("calfL",-1,TURBO_F_LEG);push("calfR",-1,TURBO_F_LEG)}if(uA){push("armL",1,TURBO_F_ARM);push("armR",1,TURBO_F_ARM)}};
-const _stp=GP.step;GP.step=function(s){if(this===W)this.applyTurbo(s);return _stp.call(this,s)};
+/* тяга применяется внутри world.step (см. ниже, в обёртке мира): после разбора записанных нажатий этого шага — так запись и повтор совпадают */
 setTimeout(()=>{keyMap.t="turboL";keyMap.y="turboA"},0); /* keyMap объявлен ниже по скрипту */
 {const st=document.createElement("style");st.textContent=".zone.tb{display:none}.zone.tb.on{display:block}#zTurboL,#zTurboA{bottom:1.2%;top:auto;height:15%;width:16.5%;font-size:2.7vmin;font-weight:800;color:#2a1000;background:linear-gradient(to top,rgba(255,150,40,.85) calc(var(--f,1)*100%),#ffffff52 0)}#zTurboL{left:30%}#zTurboA{left:47.5%;background:linear-gradient(to top,rgba(34,211,238,.85) calc(var(--f,1)*100%),#ffffff52 0)}.zone.tb.down{filter:brightness(1.35)}#cgain{position:absolute;right:2%;top:9vmin;z-index:6;color:#ffd24a;font-weight:800;font-size:3.6vmin;text-shadow:0 .3vmin 1vmin rgba(0,0,0,.7);pointer-events:none;opacity:0}#cgain.on{animation:cg 1.4s ease-out}@keyframes cg{0%{opacity:0;transform:translateY(1vmin)}15%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
  const g=$("game");if(g){const c=document.createElement("div");c.id="cgain";g.appendChild(c)}}
@@ -221,27 +228,28 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
   t.appendChild(n)}}
 
 /* ---------- походка и бег: куплены — появляется маленькая кнопка режима, и Нуми Клон ходит/бегает по земле, а не валится ---------- */
-{const WALK={phase:0,cool:0,turn:0,grounded:false};
+{const WK=G=>G.wk||(G.wk={phase:0,cool:0,turn:0,grounded:false});
  let gait=+SAVE.gait||0;const modes=()=>{const m=[0];if(SAVE.owned.move_walk)m.push(1);if(SAVE.owned.move_run)m.push(2);return m};
  if(!modes().includes(gait))gait=0;
  const clamp2=(x,a,b)=>Math.max(a,Math.min(b,x));
- const on=G=>G===W&&gait>0&&!!G.B&&!!G.st&&!G.st.ragdoll&&G.st.mode!=="bar"&&!(G.st.koT>0);
- {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:17.5%;top:auto;height:14%;width:11%;font-size:5.2vmin;padding:0}#zWL{left:31%}#zWR{left:44%}";document.head.appendChild(st)}
+ window.__ncGait=()=>gait;
+ const on=G=>G===W&&effOf(G).gt>0&&!!G.B&&!!G.st&&!G.st.ragdoll&&G.st.mode!=="bar"&&!(G.st.koT>0);
+ {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:20.5%;top:auto;height:14%;width:11%;font-size:5.2vmin;padding:0}#zWL{left:31%}#zWR{left:44%}";document.head.appendChild(st)}
  let goTxt=null;
  function updBtns(){const m=modes(),t=$("zWalk"),L=$("zWL"),R=$("zWR"),go=$("zGo");if(!m.includes(gait))gait=0;
   if(t){t.classList.toggle("on",m.length>1);t.textContent=gait===2?"\u{1F3C3}":gait===1?"\u{1F6B6}":"\u{1F938}";t.title=gait===2?T("x.run"):gait===1?T("x.walk"):""}
   if(L&&R){L.classList.toggle("on",gait>0);R.classList.toggle("on",gait>0)}
   if(go){if(goTxt===null)goTxt=go.textContent;go.textContent=gait>0?T("x.jump"):goTxt}}
- const zw=$("zWalk");if(zw)zw.addEventListener("pointerdown",e=>{e.preventDefault();const m=modes();gait=m[(m.indexOf(gait)+1)%m.length];SAVE.gait=gait;persist();updBtns()});
- window.__ncSetItem=(cat,id)=>{if(cat!=="move")return;gait=id==="move_walk"?1:id==="move_run"?2:0;SAVE.gait=gait;updBtns()};
+ const zw=$("zWalk");if(zw)zw.addEventListener("pointerdown",e=>{e.preventDefault();const m=modes();gait=m[(m.indexOf(gait)+1)%m.length];SAVE.gait=gait;persist();updBtns();if(W.rec)W.recCfg(cfgOf())});
+ window.__ncSetItem=(cat,id)=>{if(cat!=="move")return;gait=id==="move_walk"?1:id==="move_run"?2:0;SAVE.gait=gait;updBtns();if(W.rec)W.recCfg(cfgOf())};
  {const _as3=applySettings;applySettings=function(){_as3();updBtns()};updBtns()}
  /* без прилипания и без винтов, пока ходим; «Отпустить» = прыжок */
  {const _wf=GP.weldFeet;GP.weldFeet=function(s){if(on(this))return;return _wf.call(this,s)};
   const _pr=GP.press;GP.press=function(s){if(on(this)&&(s==="letgo"||s==="twL"||s==="twR")){if(s==="letgo")jump(this);return}return _pr.call(this,s)}}
- function jump(G){if(!WALK.grounded||WALK.cool>0)return;WALK.cool=.45;for(const k in G.B){const b=G.B[k],v=b.getLinearVelocity();b.setLinearVelocity(V2(v.x,5.4))}}
+ function jump(G){const WALK=WK(G);if(!WALK.grounded||WALK.cool>0)return;WALK.cool=.45;for(const k in G.B){const b=G.B[k],v=b.getLinearVelocity();b.setLinearVelocity(V2(v.x,5.4))}}
  const _lm3=GP.loadMap;
- GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(on(G))ctl(G,a[0])}catch(e){}return _ws.apply(this,a)};return r};
- function ctl(G,dt){const B=G.B,J=G.J,st=G.st,tor=B.torso;WALK.cool-=dt;WALK.turn-=dt;
+ GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(on(G))ctl(G,a[0])}}catch(e){}return _ws.apply(this,a)};return r};
+ function ctl(G,dt){const B=G.B,J=G.J,st=G.st,tor=B.torso,WALK=WK(G),gait=effOf(G).gt;WALK.cool-=dt;WALK.turn-=dt;
   for(const wj of G.welds)G.world.destroyJoint(wj);G.welds=[];if(st.mode==="stuck"){st.mode="air";st.stuckSpawn=false}
   const p=tor.getPosition(),v=tor.getLinearVelocity();let M=0;for(const k in B)M+=B[k].getMass();
   const gy=G.groundBelow(p.x,p.y+.3),foot=Math.min(B.footL.getPosition().y,B.footR.getPosition().y)-.04,err=gy+1.43-p.y;
@@ -258,6 +266,10 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
   const leg=(side,off)=>{const ph=WALK.phase+off;set("hip"+side,mv?A*Math.sin(ph):0);set("knee"+side,mv?-K*Math.max(0,Math.cos(ph)):-3);set("ank"+side,0)};
   leg("L",0);leg("R",Math.PI);set("neck",0);
   const sw=mv?18*Math.sin(WALK.phase):0;set("shL",-138+sw);set("shR",-138-sw)}
- if(NC_DBG)window.__ncw={setGait:g=>{gait=g;updBtns()},get grounded(){return WALK.grounded}};
+ if(NC_DBG)window.__ncw={setGait:g=>{gait=g;updBtns()},get grounded(){return WK(W).grounded}};
 }
+
+/* пока открыта пауза или меню, мои элементы поверх игры (счётчики, кнопки турбин и ходьбы, сообщения) скрыты — иначе закрывают кнопки выхода */
+{const st=document.createElement("style");st.textContent="body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}";document.head.appendChild(st);
+ const _show=show;show=function(t){_show(t);document.body.classList.toggle("ncp",t!=="game")};setTimeout(()=>document.body.classList.toggle("ncp",screen!=="game"),0)}
 }

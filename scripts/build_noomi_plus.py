@@ -27,6 +27,10 @@ def build(debug=None):
     if debug:
         js = js.rstrip()[:-1] + "\nwindow.__nc={get W(){return W},SAVE,persist,show:x=>show(x),startGame:i=>startGame(i),look,applySettings,renderShop,setKey,get FX(){return FX},FRAC:()=>FRAC_V_DBG};\n}\n"
         js = js.replace("FRAC_V_DBG", str(FRAC_V))
+    vp = os.path.join(D, "vice.js")
+    if os.path.exists(vp):
+        assets = open(os.path.join(D, "vice_assets.json"), encoding="utf-8").read()
+        js = js + "\n" + open(vp, encoding="utf-8").read().replace("NC_VICE_ASSETS", assets)
     # 1) кнопки турбин
     a = '<button class="zone" id="zArch" data-k="arch">'
     assert s.count(a) == 1
