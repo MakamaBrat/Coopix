@@ -56,6 +56,7 @@ const tgName = (u) => clip(u?.first_name || u?.username || "", 16) || "Игро�
 
 export function createHub({ store, botToken, notify = () => {}, adminIds = [], tgApi = null, tgFile = null, tgDoc = null }) {
   const sentAt = new Map(); // uid -> время последней отправки файла ботом (не чаще раза в 15 с)
+  const fileAt = new Map(); // uid -> время последнего файла из игры (повтор и т.п., не чаще раза в 3 с)
   // платная игра: полный файл только у купивших, автора и персонала
   const locked = async (g, uid, staff, isMain = false) => +g.price > 0 && (!staff || isMain) && !(g.author_id != null && Number(g.author_id) === uid) && !(await store.ownedGames(uid)).includes(g.id);
   let botUser = ""; // @username бота (getMe, один раз) — для ссылки в подписи к файлу
@@ -259,6 +260,27 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const name = (String(g.title).replace(/[^\wа-яё -]+/gi, "").trim().replace(/\s+/g, "-") || "game") + ".html";
         try { await tgDoc(uid, name, html, caption); }
         catch (e) { sentAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed", bot: botUser || "" }); }
+        return json(200, { ok: true, bot: botUser || "" });
+      }
+      // файл из игры (например, повтор Noomi Clone): окно игры скачивать не умеет, поэтому бот присылает файл в личку
+      if (r === "savefile") {
+        if (m !== "POST") return bad();
+        if (!tgDoc) return json(503, { error: "bot_off" });
+        const b = parseBody(req.body);
+        const game = String(b?.game ?? ""), data = typeof b?.data === "string" ? b.data : "";
+        let name = clip(b?.name, 80).replace(/[^\wА-Яа-яЁёІіЇїЄє.\- ]+/g, "_").replace(/^[._ -]+/, "");
+        if (!name) name = "file";
+        if (!/\.(json|txt)$/i.test(name)) name += ".json";
+        if (!GAME_ID.test(game) || !data || data.length > 400000) return json(400, { error: "bad_file" });
+        const g = await store.getGame(game);
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const now = Date.now();
+        if (now - (fileAt.get(uid) ?? 0) < 3e3) return json(429, { error: "too_fast" });
+        fileAt.set(uid, now);
+        if (!botUser && tgApi) { try { botUser = (await tgApi("getMe", {}))?.username || ""; } catch { /* без ссылки на бота */ } }
+        const caption = [`💾 ${g.title}: ${name}`, "Файл сохранён из игры. Его можно переслать другу или открыть в игре через «Загрузить».", botUser ? `🤖 https://t.me/${botUser}` : ""].filter(Boolean).join("\n").slice(0, 1000);
+        try { await tgDoc(uid, name, data, caption); }
+        catch (e) { fileAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed", bot: botUser || "" }); }
         return json(200, { ok: true, bot: botUser || "" });
       }
       // плейабл (маленький HTML для «телевизора» на странице игры): только если игра видна этому игроку

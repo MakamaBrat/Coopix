@@ -82,6 +82,22 @@ test("«Скачать» в Telegram: бот присылает файл в ли
   assert.equal((await w.hub("sendgame", "POST", ANN, { query: { id: game.id } })).body.error, "dl_off");
 });
 
+test("файл из игры (повтор): бот присылает его в личку; чужие и скрытые игры, пустые и слишком большие данные отклоняются", async () => {
+  const w = await world();
+  const { game } = await published(w, "staff");
+  const send = (who, body) => w.hub("savefile", "POST", who, { body });
+  assert.equal((await send(BOB, { game: game.id, name: "noomi_test.json", data: "{}" })).status, 404); // скрыта от игроков
+  await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { access: "public" } });
+  assert.equal((await w.hub("savefile", "GET", BOB)).status, 405);
+  assert.equal((await send(BOB, { game: game.id, name: "x", data: "" })).status, 400);
+  assert.equal((await send(BOB, { game: "bad id!", name: "x", data: "{}" })).status, 400);
+  assert.equal((await send(BOB, { game: game.id, name: "x", data: "a".repeat(400001) })).status, 400);
+  assert.equal((await send(BOB, { game: game.id, name: "../повтор 1", data: '{"a":1}' })).status, 200);
+  const doc = w.tg.filter((x) => x[0] === "doc").pop();
+  assert.equal(doc[1], BOB); assert.match(doc[2], /\.json$/); assert.ok(!/[\/\\]/.test(doc[2]));
+  assert.equal((await send(BOB, { game: game.id, name: "ещё", data: "{}" })).status, 429); // не чаще раза в 3 с
+});
+
 test("файл игры отдаётся только если игра видна; mine ставится автору", async () => {
   const w = await world();
   const { game } = await published(w, "staff");

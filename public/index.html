@@ -3308,6 +3308,15 @@ function gsPut(id,data){const o=gsLocal(id);for(const k in data){if(data[k]===nu
     cs.setItem("gs_"+id,JSON.stringify(pick),()=>{})}catch(e){}},2500)}
 /* предметы внутри игры, купленные за звёзды (список с сервера): игра получает их при запуске и после покупки */
 async function loadGameItems(id){try{return(await hub("myitems",{q:{game:id}})).items||[]}catch(e){return[]}}
+/* файл из игры (повтор Noomi Clone и т.п.): окно игры скачивать не умеет. В Telegram файл присылает бот в личку, в обычном браузере скачиваем сами */
+async function gameSaveFile(gid,name,data,frame){
+  const send=m=>{try{frame.contentWindow.postMessage(m,"*")}catch(e){}};
+  const local=()=>{try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=name;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);return true}catch(e){return false}};
+  const inTg=!!(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData);
+  if(SUB_API&&inTg){
+    try{await hub("savefile",{method:"POST",body:{game:gid,name,data}});send({coopix:"filedone",ok:true,via:"bot"});return}
+    catch(e){if(e.status===409||e.code==="open_bot"){send({coopix:"filedone",ok:false,err:"open_bot"});return}}}
+  send({coopix:"filedone",ok:local(),via:"download",err:"fail"})}
 async function gameBuyItem(gid,item,name,frame){
   const TGW=window.Telegram&&Telegram.WebApp,send=m=>{try{frame.contentWindow.postMessage(m,"*")}catch(e){}};
   const done=async bought=>send({coopix:"items",list:await loadGameItems(gid),bought});
@@ -3329,6 +3338,7 @@ function gameMode(html,title,gid,saved,items){window.__gm=1;
   /* игра в изолированном окне сама ссылки открыть не может: «Ещё игры» в ней шлёт сюда сообщение {coopix:"market"}, магазин открывает своего бота */
   addEventListener("message",e=>{if(e.source!==f.contentWindow||!e.data)return;
     if(e.data.coopix==="save"&&gid&&e.data.data&&typeof e.data.data==="object"){gsPut(gid,e.data.data);return}
+    if(e.data.coopix==="file"&&gid&&typeof e.data.name==="string"&&typeof e.data.data==="string"){gameSaveFile(gid,e.data.name.slice(0,80),e.data.data,f);return}
     if(e.data.coopix==="buy"&&gid&&typeof e.data.item==="string"){gameBuyItem(gid,e.data.item.slice(0,40),String(e.data.name||"").slice(0,40),f);return}
     if(e.data.coopix!=="market")return;const url="https://t.me/"+MARKET_BOT+"?startapp";
     try{if(TGW&&TGW.openTelegramLink){TGW.openTelegramLink(url);return}}catch(x){}try{window.open(url,"_blank","noopener")}catch(x){}});
