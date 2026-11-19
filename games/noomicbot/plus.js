@@ -10,9 +10,9 @@ ITEMS.face=[["face_none","x.none","",0],["face_sun","x.sun","#111111",200],["fac
 ITEMS.wear=[["wear_none","x.none","",0],["wear_gloves","x.gloves","#e04040",250],["wear_boots","x.boots","#f59e0b",250],["wear_pack","x.pack","#3b82f6",300],["wear_belt","x.belt","#ffc61a",450]];
 ITEMS.gear=[["gear_none","x.none","",0],["gear_tl","x.tlegs","#ff7a1a",800],["gear_ta","x.tarms","#22d3ee",800],["gear_tb","x.tboth","#ff4fd8",1500]];
 ITEMS.fx=[["fx_none","x.none","",0],["fx_spark","x.spark","#ffe27a",300],["fx_fire","x.fire","#ff7a1a",500],["fx_ice","x.icet","#8fd8ff",500],["fx_rainbow","x.rbt","#ff4fd8",800]];
-ITEMS.spec=[["spec_none","x.nofrac","",0],["spec_frac","x.frac","#9fe8ff",400]];
+/* переломы + рентген теперь включены у всех (раньше были предметом «Особое») */
 
-Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx",spec:"x.cspec"});
+Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx"});
 const RU={"x.cyan":"Бирюзовый","x.lime":"Лайм","x.magenta":"Маджента","x.black":"Чёрный","x.neon":"Неон","x.gold":"Золото",
  "x.helmet":"Каска","x.beanie":"Шапка-бини","x.cowboy":"Ковбойская шляпа","x.viking":"Шлем викинга","x.wizard":"Шляпа мага","x.halo":"Нимб",
  "x.capeblack":"Чёрный плащ","x.capeice":"Ледяной плащ","x.capegold":"Золотой плащ","x.rainbow":"Радужный плащ",
@@ -34,14 +34,14 @@ const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black
  "x.hurt":"Fracture","x.p.torso":"ribs","x.p.head":"skull","x.p.armL":"left arm","x.p.armR":"right arm","x.p.thighL":"left thigh","x.p.thighR":"right thigh","x.p.calfL":"left shin","x.p.calfR":"right shin","x.p.footL":"left foot","x.p.footR":"right foot",
  "x.fracNote":"\"Fractures + X-ray\": on very hard hits the character flashes as an X-ray with a broken bone."};
 for(const L in I18N){Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN)}
-for(const k of ["face_none","wear_none","gear_none","fx_none","spec_none"])SAVE.owned[k]=1;
-SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";SAVE.eq.spec=SAVE.eq.spec||"spec_none";
+for(const k of ["face_none","wear_none","gear_none","fx_none"])SAVE.owned[k]=1;
+SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";
 {const st=document.createElement("style");st.textContent=".cats{flex-wrap:wrap}#xrmsg{position:absolute;left:50%;top:15vmin;transform:translateX(-50%);z-index:6;pointer-events:none;color:#fff;font-weight:800;font-size:4.6vmin;text-shadow:0 .3vmin 1.2vmin rgba(0,0,0,.7);background:rgba(190,20,30,.78);padding:.8vmin 2.6vmin;border-radius:2vmin;opacity:0;white-space:nowrap}#xrmsg.on{animation:xrm 2.4s ease-out}@keyframes xrm{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}#xrfx{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(40,140,255,0) 35%,rgba(20,90,200,.55) 100%)}#xrfx.on{animation:xrf 1.6s ease-out}@keyframes xrf{0%{opacity:0}10%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
  const g=$("game");if(g){const m=document.createElement("div");m.id="xrmsg";const f=document.createElement("div");f.id="xrfx";g.append(f,m)}}
 
 /* ---------- look(): новые поля ---------- */
 const _look=look;
-look=function(){const r=_look();const e=SAVE.eq;r.capeId=e.cape;r.face=e.face;r.faceCol=(findItem(e.face)||[])[2];r.wear=e.wear;r.wearCol=(findItem(e.wear)||[])[2];r.gear=e.gear;r.gearCol=(findItem(e.gear)||[])[2];r.fx=e.fx;r.fxCol=(findItem(e.fx)||[])[2];r.spec=e.spec;return r};
+look=function(){const r=_look();const e=SAVE.eq;r.capeId=e.cape;r.face=e.face;r.faceCol=(findItem(e.face)||[])[2];r.wear=e.wear;r.wearCol=(findItem(e.wear)||[])[2];r.gear=e.gear;r.gearCol=(findItem(e.gear)||[])[2];r.fx=e.fx;r.fxCol=(findItem(e.fx)||[])[2];return r};
 
 /* ---------- 3D: шляпы, лицо, снаряжение, шлейф ---------- */
 const NEWHATS=["hat_helmet","hat_beanie","hat_cowboy","hat_viking","hat_wizard","hat_halo"];
@@ -108,7 +108,7 @@ View3D.prototype.poseNoomi=function(t){_pn.call(this,t);if(!this.noomi||!t.B)ret
       const col=fx==="fx_rainbow"?new T3.Color().setHSL(((now/700)+i*.06)%1,.95,.55):new T3.Color(fx==="fx_fire"?(i<6?"#ffd24a":i<12?"#ff7a1a":"#c4261a"):fx==="fx_ice"?(i<8?"#e8f8ff":"#6ec1ff"):(i%2?"#ffe27a":"#ffffff"));m.material.color.copy(col);m.material.opacity=a*.85})}
   else if(this.trail){this.trail.L.forEach(m=>m.visible=false);this.trail.h.length=0}
   /* рентген */
-  const xr=t.xr;let lv=0;if(xr&&look.spec==="spec_frac"){const a=(now-xr.t)/1000;lv=a<.12?a/.12:a<1.9?1:Math.max(0,1-(a-1.9)/.5)}
+  const xr=t.xr;let lv=0;if(xr){const a=(now-xr.t)/1000;lv=a<.12?a/.12:a<1.9?1:Math.max(0,1-(a-1.9)/.5)}
   if(lv>0.01){if(!this.bones)this.buildBones();this.noomiMat.transparent=this.headMat.transparent=true}
   if(this.bones||this.noomiMat.opacity<1){const o=1-.72*lv;this.noomiMat.opacity=this.headMat.opacity=o;const em=lv*.9;this.noomiMat.emissive.setRGB(.1*em,.5*em,.9*em);this.headMat.emissive.setRGB(.1*em,.5*em,.9*em);
     if(this.bones){this.boneMat.opacity=lv;this.boneRed.opacity=lv;for(const p in this.bones){const r=this.bones[p],on=lv>.01;r.g.visible=on;if(!on)continue;const br=t.frac&&t.frac[p]&&now-t.frac[p]<9000;
@@ -122,7 +122,7 @@ const PARTRU=p=>T("x.p."+p);
 const crack=()=>{if(!SAVE.set.snd)return;try{const A=window.__nc_ac||(window.__nc_ac=new(window.AudioContext||window.webkitAudioContext)),n=A.sampleRate*.35,b=A.createBuffer(1,n,A.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)*(i<n*.06?1:.5);const s=A.createBufferSource();s.buffer=b;const f=A.createBiquadFilter();f.type="lowpass";f.frequency.value=1800;const g=A.createGain();g.gain.value=.5;s.connect(f);f.connect(g);g.connect(A.destination);s.start()}catch(e){}};
 const FRAC_V=NC_FRAC_V;
 const _lm=GP.loadMap;
-GP.loadMap=function(s){const r=_lm.call(this,s);this.world.on("begin-contact",c=>{if(this!==W||SAVE.eq.spec!=="spec_frac"||!this.st)return;const A=c.getFixtureA().getBody(),B=c.getFixtureB().getBody(),pa=A.part,pb=B.part;if(!!pa===!!pb)return;const body=pa?A:B,other=pa?B:A,p=pa||pb;
+GP.loadMap=function(s){const r=_lm.call(this,s);this.world.on("begin-contact",c=>{if(this!==W||!this.st)return;const A=c.getFixtureA().getBody(),B=c.getFixtureB().getBody(),pa=A.part,pb=B.part;if(!!pa===!!pb)return;const body=pa?A:B,other=pa?B:A,p=pa||pb;
   /* скорость сближения с препятствием до удара (по нормали, если известна) */
   const v=body.getLinearVelocity(),w2=other.getLinearVelocity();let sp=Math.hypot(v.x-w2.x,v.y-w2.y);
   try{const m=c.getWorldManifold(null);if(m&&m.normal)sp=Math.abs((v.x-w2.x)*m.normal.x+(v.y-w2.y)*m.normal.y)}catch(e){}

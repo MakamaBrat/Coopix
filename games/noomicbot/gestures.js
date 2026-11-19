@@ -105,9 +105,9 @@ RKEYS.push("g1","g2","g3","g4");
 
 /* ---------- кнопки в игре и клавиши 1–4 ---------- */
 {const st=document.createElement("style");st.textContent=
- "#gbar{position:absolute;left:50%;transform:translateX(-50%);bottom:11.5%;display:flex;gap:1.6vmin;z-index:4}.zone.gb{position:relative;width:9.4vmin;height:9.4vmin;border-radius:50%;font-size:5.2vmin;padding:0;border:.3vmin solid rgba(255,255,255,.55);background:#10162455}.zone.gb.off{display:none}.zone.gb i{position:absolute;right:.4vmin;bottom:.1vmin;font-style:normal;font-size:1.9vmin;font-weight:800;opacity:.85}"+
+ "#gbar{position:absolute;left:calc(env(safe-area-inset-left) + 17.6%);bottom:2.4%;display:flex;flex-direction:column;gap:1.2vmin;z-index:4}.zone.gb{position:relative;width:8vmin;height:8vmin;border-radius:50%;font-size:4.4vmin;padding:0;border:.25vmin solid rgba(255,255,255,.5);background:#10162440}.zone.gb.off{display:none}.zone.gb i{position:absolute;right:.4vmin;bottom:.1vmin;font-style:normal;font-size:1.9vmin;font-weight:800;opacity:.85}"+
  "body.ncp #gbar{display:none!important}"+
- "@media(orientation:portrait){#gbar{bottom:calc(var(--sbm,44px) + 44.5%);gap:2.4vw}.zone.gb{width:13vw;height:13vw;font-size:7vw;border-width:.5vw}.zone.gb i{font-size:3vw}}";
+ "@media(orientation:portrait){#gbar{left:2%;bottom:calc(var(--sbm,44px) + 39%);gap:2vw}.zone.gb{width:12vw;height:12vw;font-size:6.2vw;border-width:.4vw}.zone.gb i{font-size:2.8vw}}";
  document.head.appendChild(st);
  const g=$("game");if(g){const bar=document.createElement("div");bar.id="gbar";for(let i=0;i<NS;i++){const b=document.createElement("button");b.className="zone gb";b.dataset.k="g"+(i+1);b.id="zG"+(i+1);bar.appendChild(b)}g.appendChild(bar)}}
 function updGb(){for(let i=0;i<NS;i++){const b=$("zG"+(i+1));if(!b)continue;const g=byId[SAVE.gest[i]];b.classList.toggle("off",!g);b.innerHTML=g?g.ic+"<i>"+(i+1)+"</i>":"";b.title=g?(["ru","uk","be"].includes(LANG)?g.ru:g.en):""}}

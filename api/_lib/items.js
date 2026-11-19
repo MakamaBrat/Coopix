@@ -77,7 +77,6 @@ export const ITEM_PRICES = {
     sky_night: 1,
     sky_space: 1,
     sky_sunset: 1,
-    spec_frac: 1,
     wear_belt: 1,
     wear_boots: 1,
     wear_gloves: 1,

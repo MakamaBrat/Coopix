@@ -15,7 +15,7 @@ cover = jpg("cover.jpg")
 row = {
     "id": "noomicbot", "title": "Noomic Bot", "tags": ["Sport", "Physics"],
     "description": "Физический симулятор гимнаста: раскачивайся на турнике, отпускай в нужный момент, летай между снарядами и хватайся за следующий.\nУправляй прогибом, группировкой и винтами. На «телевизоре» доступна мини-версия, полная игра с картами, заданиями и конструктором карт.",
-    "changes": "Первая версия", "version": "2.5.8", "author_name": "Coopix",
+    "changes": "Первая версия", "version": "1.0", "author_name": "Coopix",
     "item": "floppy", "cover": "img:" + hashlib.sha256(cover.encode()).hexdigest()[:12], "cover_img": cover,
     "shot_img": jpg("shot.jpg"), "access": "public", "sort": 6,
     "play_kind": "auto", "play_html": rd("tv.html"), "file_html": rd("NoomicBot.html"),
