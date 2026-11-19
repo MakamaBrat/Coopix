@@ -37,7 +37,7 @@ window.__LITE=l;document.documentElement.classList.toggle('lite',l)})();
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:#04050c}
 html,body{margin:0;color:var(--cream);font-family:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
-body{-webkit-user-select:none;user-select:none;overflow-x:hidden;overscroll-behavior-y:contain;
+body{-webkit-user-select:none;user-select:none;overflow-x:hidden;overscroll-behavior:none;
   --sky1:#050818;--sky2:#0d1342;--sky3:#2b1b4c;--t1:#161d4e;--t2:#0b1030;--t3:#05060f}
 body[data-mood=night]{--sky1:#02030c;--sky2:#060a24;--sky3:#140e30;--t1:#0b1030;--t2:#070a20;--t3:#030409}
 body[data-mood=day]{--sky1:#2c3f86;--sky2:#c0668a;--sky3:#ffb978;--t1:#4b2a60;--t2:#2d1a42;--t3:#150b22}
@@ -401,7 +401,7 @@ body.is-home #decor{display:none}
 }
 /*FIT_PATCH*/
 @media (max-width:899px){
-  .hgrid{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 14px calc(var(--dk) + 92px)}
+  .hgrid{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 14px calc(env(safe-area-inset-bottom) + 28px)}
   .hcol.right{order:2}.hcol.left{order:3}
   .hlogo{width:min(62%,calc(var(--vh)*34))}
   .hero2{width:min(56vw,calc(var(--vh)*24));margin-top:-22px}
@@ -450,7 +450,7 @@ html.lite #scene::after{background:radial-gradient(ellipse at 50% 42%,transparen
   .gcard .go{position:absolute;top:8px;right:8px;width:30px;height:30px;border-width:2px}
   .gcard .go svg{width:12px;height:12px}
   .hp{margin-top:18px;padding:32px 10px 10px}
-  .hp-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hp-list{display:grid;grid-template-columns:1fr;gap:6px}
   .hrow{height:50px;margin:0;padding:0 6px 0 6px;gap:8px;border-radius:12px}
   .hrow .av{--s:34px}
   .hrow .nm{font-size:15px}
@@ -512,6 +512,22 @@ h1{font-size:26px}h2{font-size:21px}h3{font-size:18px}
 /* общие тексты */
 .hint{font-size:12.5px}
 .win p,.win .mut{font-size:14.5px;line-height:1.5}
+/*OVS*/
+html,body{overscroll-behavior:none}
+.hrow .nm{font-size:16px!important}
+/*HLINKS*/
+.hlinks{display:flex;gap:8px;margin-top:8px}.hlinks button{flex:1;height:40px;border-radius:12px;border:1px solid #6b4a24;background:#1a0f07;color:#f2d9ae;font:800 14px "Nunito",sans-serif;cursor:pointer}.hlinks button:active{transform:scale(.97)}
+body.is-home #app{padding-bottom:24px}
+/*BOMB2*/
+#bview.bmrun{display:flex;flex-direction:column;align-items:center;gap:14px;background:none;padding:0;border-radius:0}
+.bm-topic{width:100%;max-width:420px;text-align:center;padding:14px 18px 16px;border-radius:22px;background:linear-gradient(135deg,#ff7a2e,#c8281c);box-shadow:0 12px 30px rgba(255,80,30,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.bm-topic span{display:block;font:900 12px "Nunito",sans-serif;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.bm-topic b{display:block;margin-top:4px;font:900 clamp(22px,7vw,30px)/1.15 "Nunito",sans-serif;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.bm-stage{position:relative;width:min(74vw,300px);aspect-ratio:1;display:grid;place-items:center}
+.bm-ring{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,110,40,calc(.18 + var(--heat,0)*.55)),rgba(255,60,20,0) 66%);border:2px dashed rgba(255,170,90,.35);animation:spinSlow 18s linear infinite}
+.bm-stage .bomb.big{position:relative;width:70%;height:auto;aspect-ratio:200/220;margin:0}
+.bm-tip{color:#ecd5b0;font:700 15px/1.4 "Nunito",sans-serif;text-align:center;max-width:320px}
+.bm-skip{margin-top:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
 </head>
@@ -922,10 +938,10 @@ VIEWS.home = () => {
     ? `<div class="hp-list">${ps.map((p, i) => `<div class="hrow ${p.on === false ? 'off' : ''}" style="--k:${i}" data-a="toggle" data-id="${p.id}">${avatar(p, 42)}<div class="nm">${esc(p.name)}</div><div class="st">★ ${total(p)}</div><button class="dots" data-a="pedit" data-id="${p.id}" aria-label="Изменить">${IC.dots}</button></div>`).join('')}</div>`
     : `<div class="empty">Добавь друзей — имя и фото — и поехали!</div>`;
   const sparks = [[14, 16, 20, 0], [80, 12, 16, 1.1], [86, 40, 14, .6], [8, 46, 14, 1.8], [50, 6, 12, 2.2]].map(s => `<svg class="spk" viewBox="0 0 20 20" style="left:${s[0]}%;top:${s[1]}%;--s:${s[2]}px;animation-delay:${s[3]}s">${STAR}</svg>`).join('');
-  return `<div id="bot"><button class="rb" data-a="menu" aria-label="Меню">${IC.menu}<span>Меню</span></button><button class="rb" data-a="score" aria-label="Таблица очков">${IC.crown}<span>Очки</span></button></div>
+  return `
   <div class="hgrid">
     <div class="hcenter"><img class="hlogo" src="${IM['logo.webp']}" alt="Boards Games"><div class="hero2"><div class="beams"></div><img class="scene" src="${IM['hero.webp']}" alt=""><div class="glow"></div><img class="flame" src="${IM['flame_c.webp']}" alt=""><canvas id="embers"></canvas>${sparks}</div></div>
-    <div class="hcol left"><div class="hp"><div class="plank">Игроки <small>${on}/${ps.length}</small></div>${list}<button class="addb" data-a="padd">＋ Добавить игрока</button></div><p class="hnote">Нажми на друга — он сядет за стол или выйдет из игры</p></div>
+    <div class="hcol left"><div class="hp"><div class="plank">Игроки <small>${on}/${ps.length}</small></div>${list}<button class="addb" data-a="padd">＋ Добавить игрока</button><div class="hlinks"><button type="button" data-a="score">🏆 Таблица очков</button><button type="button" data-a="menu">⚙ Настройки</button></div></div><p class="hnote">Нажми на друга — он сядет за стол или выйдет из игры</p></div>
     <div class="hcol right"><div class="gcards">${['bottle', 'spy', 'mafia', 'bomb', 'elias', 'croc'].map((g, i) => `<button class="gcard" style="--k:${i};--ac:${GACC[g]}" data-a="start" data-g="${g}"><div class="gl"><img src="${GLOGO[g]}" alt=""></div><div class="gi2"><b>${GAMES.find(x => x.id === g).name}</b><small><span class="gd">${GDESC[g]} · </span>от ${GAMES.find(x => x.id === g).min} игроков</small></div><span class="go">${IC.play}</span></button>`).join('')}</div></div>
   </div>`;
 };
@@ -980,6 +996,8 @@ function editorHtml() {
   <div class="row gap"><button class="btn ghost" style="flex:1" data-a="mclose">Отмена</button><button class="btn" style="flex:1" data-a="psave">Сохранить</button></div>
   ${E.id ? '<button class="btn danger wide" data-a="pdel">🗑 Удалить друга</button>' : ''}</div>`;
 }
+let ASK = null;
+function ask(t, fn) { ASK = fn; openModal(`<div class="sheet"><h3 class="center" style="margin:4px 0 16px">${esc(t)}</h3><div class="row gap"><button class="btn ghost" style="flex:1" data-a="ask_no">Отмена</button><button class="btn" style="flex:1" data-a="ask_yes">Да</button></div></div>`); }
 function openModal(h) { $('#modal').innerHTML = h; $('#modal').classList.add('show'); }
 function closeModal() { const m = $('#modal'); m.classList.remove('show', 'kb'); m.style.height = m.style.top = m.style.bottom = ''; m.innerHTML = ''; E = null; }
 /*KB*/
@@ -1242,11 +1260,11 @@ VIEWS.bomb = () => {
     <b style="color:var(--cream);font-size:17px">Длина фитиля</b><div class="seg">${Object.entries(FUSES).map(([k, v]) => `<button class="${f === k ? 'on' : ''}" data-a="bm_fuse" data-f="${k}">${v[2]}</button>`).join('')}</div></section>
     <button class="btn big" data-a="bm_go">💣 Поджечь! (${players().length} игр.)</button></div></div>`;
   }
-  if (ph === 'run') return `<div id="bview" class="center">
-    <section class="win" style="margin-bottom:4px;padding:14px"><div class="mut small">Тема</div><div style="font-size:26px;font-family:var(--hf);margin-top:4px;color:var(--cream)">${esc(G.topic)}</div></section>
-    <div class="bomb big" id="bomb" data-e="e0">${bombSVG('e0')}</div>
-    <p class="mut" style="margin:6px 0 0;font-size:16px;font-weight:700">Передавайте телефон из рук в руки<br>и называйте слова на тему 🔥</p>
-    <button class="btn sm ghost" style="margin-top:14px" data-a="bm_topic">↻ Другая тема</button></div>`;
+  if (ph === 'run') return `<div id="bview" class="bmrun">
+    <div class="bm-topic"><span>Тема</span><b>${esc(G.topic)}</b></div>
+    <div class="bm-stage"><div class="bm-ring"></div><div class="bomb big" id="bomb" data-e="e0">${bombSVG('e0')}</div></div>
+    <div class="bm-tip">Передавайте телефон по кругу и называйте слова на тему. Взорвётся в любой момент!</div>
+    <button class="btn sm ghost bm-skip" data-a="bm_topic">↻ Другая тема</button></div>`;
   if (ph === 'who') return `<div class="center pad boom"><div class="flashov"></div><div class="boomwrap"><i class="rg"></i><i class="rg"></i><i class="rg"></i><div class="bm">${boomSVG()}</div></div><h1 style="color:var(--bad);font-size:46px">БАХ!</h1>
     <h2 style="margin-top:4px">У кого взорвалась бомба?</h2><p class="mut" style="margin:4px 0">Нажми на того, кто держал телефон</p>${playerGrid(G.ps, null, 'bm_who')}</div>`;
   if (ph === 'boom') { const l = P(G.ps[G.hi]), others = G.ps.filter(id => id !== G.ps[G.hi]).map(P); return `<div class="center pad">
@@ -1427,7 +1445,10 @@ AFTER.elias = AFTER.croc = () => {
 
 /* ================= обработчики действий ================= */
 const A = {
-  back() { if (midGame() && !confirm('Выйти из игры? Прогресс раунда пропадёт.')) return; go('home'); },
+  /* окно игры в магазине не умеет confirm(): спрашиваем своим окном */
+  ask_yes() { const f = ASK; ASK = null; closeModal(); if (f) f(); else render(); },
+  ask_no() { ASK = null; closeModal(); render(); },
+  back() { if (midGame()) { ask('Выйти из игры? Прогресс раунда пропадёт.', () => go('home')); return; } go('home'); },
   snd() { S.sound = !S.sound; save(); render(); if (S.sound) beep(660, .08); },
   menu() { openModal(menuHtml()); },
   mui_snd() { S.sound = !S.sound; save(); openModal(menuHtml()); if (S.sound) beep(660, .08); },
@@ -1451,10 +1472,10 @@ const A = {
     else S.players.push({ id: uid(), name, img: E.img, emoji: E.emoji, pic: E.pic, on: true, scores: {} });
     save(); closeModal(); render(); chime();
   },
-  pdel() { if (!confirm('Удалить друга вместе с его очками?')) return; S.players = S.players.filter(p => p.id !== E.id); save(); closeModal(); render(); },
+  pdel() { const id = E.id; ask('Удалить друга вместе с его очками?', () => { S.players = S.players.filter(p => p.id !== id); save(); render(); }); },
   adjust(d) { openModal(adjustHtml(d.id)); },
   adj(d) { addScore(d.id, d.g, +d.d); openModal(adjustHtml(d.id)); $('.sheet').style.animation = 'none'; },
-  resetscore() { if (!confirm('Обнулить очки всех игроков?')) return; S.players.forEach(p => p.scores = {}); save(); closeModal(); render(); },
+  resetscore() { ask('Обнулить очки всех игроков?', () => { S.players.forEach(p => p.scores = {}); save(); render(); }); },
   d_show() { G.rev = true; render(); },
   d_hide() { G.rev = false; G.di++; if (G.di >= G.order.length) G.after(); else render(); },
   /* бутылочка */
@@ -1478,8 +1499,8 @@ const A = {
   spy_min(d) { setcv('spyMin', Math.max(1, Math.min(30, cv('spyMin', 8) + +d.d))); render(); },
   spy_n(d) { const n = players().length; setcv('spyN', Math.max(1, Math.min(Math.max(1, Math.floor(n / 3)), cv('spyN', 1) + +d.d))); render(); },
   spy_go() { spyStart(); },
-  s_vote() { if (confirm('Перейти к голосованию?')) { G.phase = 'vote'; render(); } },
-  s_acc(d) { if (!confirm('Обвинить игрока ' + P(d.id).name + '?')) return; G.acc = d.id; G.outcome = G.spies.includes(d.id) ? 'town' : 'spy'; G.phase = 'result'; render(); },
+  s_vote() { ask('Перейти к голосованию?', () => { G.phase = 'vote'; render(); }); },
+  s_acc(d) { ask('Обвинить игрока ' + P(d.id).name + '?', () => { G.acc = d.id; G.outcome = G.spies.includes(d.id) ? 'town' : 'spy'; G.phase = 'result'; render(); }); },
   s_flip() { G.outcome = G.outcome === 'town' ? 'spy' : 'town'; render(); },
   s_again() { spyScore(); spyStart(); }, s_home() { spyScore(); go('home'); },
   /* мафия */
