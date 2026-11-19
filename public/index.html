@@ -3307,7 +3307,14 @@ function gsPut(id,data){const o=gsLocal(id);for(const k in data){if(data[k]===nu
     const ks=Object.keys(o).filter(k=>o[k].length<=3000).sort((a,b)=>o[a].length-o[b].length),pick={};let n=2;for(const k of ks){n+=k.length+o[k].length+8;if(n>3900)break;pick[k]=o[k]}
     cs.setItem("gs_"+id,JSON.stringify(pick),()=>{})}catch(e){}},2500)}
 /* предметы внутри игры, купленные за звёзды (список с сервера): игра получает их при запуске и после покупки */
-async function loadGameItems(id){try{return(await hub("myitems",{q:{game:id}})).items||[]}catch(e){return[]}}
+/* заодно подтягиваем сохранённые на сервере перехваты и рекорд серии игрока: игра получает их при запуске (window.__CPX_STATS) */
+let GSTATS=null;
+async function loadGameItems(id){const[it,st]=await Promise.all([hub("myitems",{q:{game:id}}).catch(()=>null),hub("mystats",{q:{game:id}}).catch(()=>null)]);
+  GSTATS=st&&typeof st==="object"&&!Array.isArray(st)?st:null;return(it&&it.items)||[]}
+function statsInj(){if(!GSTATS)return"";const s={regrabs:+GSTATS.regrabs||0,best:+GSTATS.best||0};GSTATS=null;return"<script>window.__CPX_STATS="+JSON.stringify(s)+";<"+"/script>"}
+/* игра присылает {coopix:"stats",regrabs,best}: сервер копит (числа не уменьшаются) и отвечает сохранёнными значениями */
+async function gameStatPut(gid,msg,frame){const send=m=>{try{frame.contentWindow.postMessage(Object.assign({coopix:"stats"},m),"*")}catch(e){}};
+  try{const j=await hub("statput",{method:"POST",body:{game:gid,regrabs:Math.trunc(+msg.regrabs)||0,best:Math.trunc(+msg.best)||0}});send({ok:true,regrabs:j.regrabs,best:j.best})}catch(e){send({ok:false})}}
 /* файл из игры (повтор Noomic Bot и т.п.): окно игры скачивать не умеет. В Telegram файл присылает бот в личку, в обычном браузере скачиваем сами */
 async function gameSaveFile(gid,name,data,frame){
   const send=m=>{try{frame.contentWindow.postMessage(m,"*")}catch(e){}};
@@ -3325,9 +3332,29 @@ async function gameBuyItem(gid,item,name,frame){
     if(!TGW||!TGW.openInvoice){send({coopix:"items",list:[],fail:"tg"});return}
     TGW.openInvoice(j.link,st=>{if(st==="paid"){toast("Предмет куплен!");setTimeout(()=>done(item),1200);setTimeout(()=>done(item),4500)}else{send({coopix:"items",list:[],fail:st==="failed"?"pay":"cancel"})}})}
   catch(e){if(e.code==="owned"){await done(item);return}send({coopix:"items",list:[],fail:"err"});toast("Не удалось открыть оплату, попробуйте ещё раз")}}
-function withSave(html,saved,items){let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
+/* карты игроков (конструктор игры): облачные слоты и ссылка «поделиться». Игра шлёт {coopix:"maps",op,rid,…}, магазин ходит на сервер и отвечает тем же rid */
+let MAPLINK=null; /* карта из ссылки t.me/<бот>?startapp=map_<id>: игра получает её при запуске (window.__CPX_MAP) и добавляет себе */
+function mapLinkInj(){if(!MAPLINK||!MAPLINK.code)return"";const m={id:MAPLINK.id,name:MAPLINK.name,code:MAPLINK.code,by:MAPLINK.by||"",mine:!!MAPLINK.mine};MAPLINK=null;
+  return"<script>window.__CPX_MAP="+JSON.stringify(m).replace(/</g,"\\u003c")+";<"+"/script>"}
+function mapShare(id,text){
+  const url="https://t.me/"+MARKET_BOT+"?startapp=map_"+id,TGW=window.Telegram&&Telegram.WebApp,
+    link="https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text);
+  try{if(TGW&&TGW.openTelegramLink){TGW.openTelegramLink(link);return}}catch(e){}
+  try{window.open(link,"_blank","noopener")}catch(e){}}
+async function gameMaps(gid,msg,frame){
+  const send=m=>{try{frame.contentWindow.postMessage(Object.assign({coopix:"maps",op:msg.op,rid:msg.rid},m),"*")}catch(e){}};
+  const id=String(msg.id||"").slice(0,20);
+  try{
+    if(msg.op==="list"){const j=await hub("mymaps",{q:{game:gid}});send({ok:true,items:j.items||[],max:j.max||3});return}
+    if(msg.op==="put"){const j=await hub("mapput",{method:"POST",body:{game:gid,id:id||undefined,code:String(msg.code||"").slice(0,30000)}});send({ok:true,item:j});return}
+    if(msg.op==="del"){await hub("mapdel",{method:"DELETE",q:{id}});send({ok:true});return}
+    if(msg.op==="get"){const j=await hub("mapget",{q:{id}});send({ok:true,item:j});return}
+    if(msg.op==="share"){mapShare(id,String(msg.text||"").slice(0,120));send({ok:true});return}
+    send({ok:false,err:"bad_op"})}
+  catch(e){send({ok:false,err:(e&&e.code)||(e&&e.status===429?"rate_limit":"err")})}}
+function withSave(html,saved,items){const mapInj=mapLinkInj()+statsInj();let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
   const inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+";window.__CPX_ITEMS="+JSON.stringify(items||[]).replace(/</g,"\\u003c")+"<\/script>";
-  return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj):inj+html}
+  return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj+mapInj):inj+mapInj+html}
 function gameMode(html,title,gid,saved,items){window.__gm=1;
   try{MUS.el&&MUS.el.pause();MUS.unlocked=false}catch(e){}
   try{LIVE.forEach(c=>c.destroy());LIVE=[];listEl.innerHTML=""}catch(e){}
@@ -3341,6 +3368,8 @@ function gameMode(html,title,gid,saved,items){window.__gm=1;
     if(e.data.coopix==="save"&&gid&&e.data.data&&typeof e.data.data==="object"){gsPut(gid,e.data.data);return}
     if(e.data.coopix==="file"&&gid&&typeof e.data.name==="string"&&typeof e.data.data==="string"){gameSaveFile(gid,e.data.name.slice(0,80),e.data.data,f);return}
     if(e.data.coopix==="buy"&&gid&&typeof e.data.item==="string"){gameBuyItem(gid,e.data.item.slice(0,40),String(e.data.name||"").slice(0,40),f);return}
+    if(e.data.coopix==="maps"&&gid&&typeof e.data.op==="string"){gameMaps(gid,e.data,f);return}
+    if(e.data.coopix==="stats"&&gid){gameStatPut(gid,e.data,f);return}
     if(e.data.coopix!=="market")return;const url="https://t.me/"+MARKET_BOT+"?startapp";
     try{if(TGW&&TGW.openTelegramLink){TGW.openTelegramLink(url);return}}catch(x){}try{window.open(url,"_blank","noopener")}catch(x){}});
   document.body.append(o);document.body.classList.add("gamemode");document.body.style.overflow="hidden";
@@ -3749,7 +3778,11 @@ async function spotGame(id){
     /* есть кэш прошлого запуска: показываем его почти сразу, свежий каталог и счётчики приходят следом */
     const cached=restoreCatalog();catP=loadCatalog().then(loadStats);
     await Promise.race([catP,wait(cached?250:3500)])}
-  const dl=deepSlug();if(dl&&!resolveDeep(dl)&&catP)await Promise.race([catP,wait(4000)]);
+  /* ссылка на карту игрока t.me/<бот>?startapp=map_<id>: открываем её игру сразу в полную, а игра получит карту (window.__CPX_MAP) */
+  let mp="";try{const w=window.Telegram&&Telegram.WebApp,sp=(w&&w.initDataUnsafe&&w.initDataUnsafe.start_param)||new URLSearchParams(location.search).get("tgWebAppStartParam")||"",mm=/^map_([a-f0-9]{12})$/.exec(sp);if(mm)mp=mm[1]}catch(e){}
+  if(mp&&SUB_API){let seen="";try{seen=sessionStorage.getItem("am.mapdone")||""}catch(e){}
+    if(seen!==mp){try{MAPLINK=await hub("mapget",{q:{id:mp}});try{sessionStorage.setItem("am.mapdone",mp)}catch(e){}}catch(e){setTimeout(()=>toast("Карта по ссылке не найдена или удалена"),2500)}}} /* после выхода из игры маркет перезагружается: второй раз ту же карту не запускаем */
+  const dl=MAPLINK&&MAPLINK.game?MAPLINK.game+"R":deepSlug();if(dl&&!resolveDeep(dl)&&catP)await Promise.race([catP,wait(4000)]);
   const dr=resolveDeep(dl),dg=dr&&dr.g,quick=!!(dr&&dr.quick);if(dg)DEEP_ID=dg.id;
   if(dl){try{history.replaceState(null,"","/"+location.search)}catch(e){}} /* выход из игры перезагружает уже обычный маркет */
   /* …/играR: игрок уже зарегистрирован запросом /config выше; маркет не рисуем, сразу полная игра */

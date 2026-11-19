@@ -113,7 +113,7 @@ export function supabaseStore(url, serviceKey) {
     async deleteUser(id) {
       const had = ok(await db.from("users").select("tg_id").eq("tg_id", id).maybeSingle());
       ok(await db.from("games").update({ author_id: null }).eq("author_id", id));
-      for (const [t, col] of [["submissions", "author_id"], ["game_edits", "author_id"], ["game_mods", "author_id"], ["moderators", "tg_id"], ["bot_users", "tg_id"]]) {
+      for (const [t, col] of [["submissions", "author_id"], ["game_edits", "author_id"], ["game_mods", "author_id"], ["game_maps", "author_id"], ["game_stats", "user_id"], ["moderators", "tg_id"], ["bot_users", "tg_id"]]) {
         ok(await db.from(t).delete().eq(col, id));
       }
       ok(await db.from("users").delete().eq("tg_id", id));
@@ -156,6 +156,15 @@ export function supabaseStore(url, serviceKey) {
     async createGameMod(row) { return ok(await db.from("game_mods").insert(row).select(MOD_COLS).maybeSingle()); },
     async updateGameMod(id, p) { return ok(await db.from("game_mods").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id).select(MOD_COLS).maybeSingle()); },
     async deleteGameMod(id) { ok(await db.from("game_mods").delete().eq("id", id)); },
+    // карты игроков (конструктор): облачные слоты и ссылка «поделиться»; код карты отдаём только getGameMap
+    async listGameMaps({ authorId, gameId }) { return ok(await db.from("game_maps").select("id,game_id,author_id,name,pieces,created_at,updated_at").eq("author_id", authorId).eq("game_id", gameId).order("created_at", { ascending: true }).limit(20)) ?? []; },
+    async getGameMap(id) { return ok(await db.from("game_maps").select("id,game_id,author_id,name,pieces,code,created_at,updated_at").eq("id", id).maybeSingle()); },
+    async createGameMap(row) { return ok(await db.from("game_maps").insert(row).select("id,game_id,author_id,name,pieces,created_at,updated_at").maybeSingle()); },
+    async updateGameMap(id, p) { return ok(await db.from("game_maps").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id).select("id,game_id,author_id,name,pieces,created_at,updated_at").maybeSingle()); },
+    async deleteGameMap(id) { ok(await db.from("game_maps").delete().eq("id", id)); },
+    // перехваты и рекорд серии игрока в игре (одна строка на пару игрок—игра)
+    async getGameStats(uid, gid) { return ok(await db.from("game_stats").select("regrabs,best_streak,updated_at").eq("user_id", uid).eq("game_id", gid).maybeSingle()); },
+    async putGameStats(row) { return ok(await db.from("game_stats").upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: "user_id,game_id" }).select("regrabs,best_streak,updated_at").maybeSingle()); },
     /** Запись платежа «спасибо». charge_id уникален: повтор вебхука вернёт null. */
     async addThanks(row) {
       const { data, error } = await db.from("thanks").insert(row).select("id").maybeSingle();

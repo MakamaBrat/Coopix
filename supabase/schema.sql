@@ -577,3 +577,36 @@ create table if not exists public.user_bots (
 create index if not exists user_bots_bot_idx on public.user_bots (bot_id, user_id);
 alter table public.user_bots enable row level security;
 revoke all on public.user_bots from anon, authenticated;
+
+
+-- ============ Карты игроков из конструктора (Noomic Bot): 3 слота на игрока и игру, ссылка «поделиться» ============
+-- Размер: код карты до ~24 КБ (обычно 1,5–13 КБ), у игрока не больше 3 карт на игру.
+create table if not exists public.game_maps (
+  id         text primary key check (id ~ '^[a-f0-9]{12}$'),
+  game_id    text   not null references public.games(id) on delete cascade,
+  author_id  bigint not null references public.users(tg_id) on delete cascade,
+  name       text   not null check (char_length(name) between 1 and 40),
+  code       text   not null check (char_length(code) <= 24000),   -- "NC1-" + base64(JSON): формат кода карты из игры
+  pieces     integer not null check (pieces between 1 and 400),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists game_maps_author_idx on public.game_maps (author_id, game_id, created_at);
+-- как и всё остальное: доступ только у сервера (service_role)
+alter table public.game_maps enable row level security;
+revoke all on public.game_maps from anon, authenticated;
+
+
+-- ============ Перехваты и рекорд серии игрока по каждой игре ============
+create table if not exists public.game_stats (
+  user_id     bigint not null references public.users(tg_id) on delete cascade,
+  game_id     text   not null references public.games(id) on delete cascade,
+  regrabs     bigint  not null default 0 check (regrabs >= 0),      -- перехватов за всё время
+  best_streak integer not null default 0 check (best_streak >= 0),  -- рекорд серии перехватов за один заход
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, game_id)
+);
+create index if not exists game_stats_game_idx on public.game_stats (game_id, best_streak desc);
+-- как и всё остальное: доступ только у сервера (service_role)
+alter table public.game_stats enable row level security;
+revoke all on public.game_stats from anon, authenticated;

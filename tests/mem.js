@@ -68,7 +68,7 @@ export function memStore() {
       const keep = (a, k) => a.filter((x) => Number(x[k]) !== id);
       for (let i = rows.length - 1; i >= 0; i--) if (Number(rows[i].author_id) === id) rows.splice(i, 1);
       this.reviews = keep(this.reviews ?? [], "author_id"); this.events = keep(this.events ?? [], "user_id");
-      this.purchases = keep(this.purchases ?? [], "user_id"); this.modList = keep(this.modList ?? [], "author_id"); this.edits = keep(this.edits ?? [], "author_id");
+      this.purchases = keep(this.purchases ?? [], "user_id"); this.modList = keep(this.modList ?? [], "author_id"); this.mapList = keep(this.mapList ?? [], "author_id"); this.statList = keep(this.statList ?? [], "user_id"); this.edits = keep(this.edits ?? [], "author_id");
       return had;
     },
     async listMods() { return [...mods.values()]; },
@@ -92,6 +92,15 @@ export function memStore() {
     async createGameMod(row) { const x = { id: crypto.randomUUID(), status: "new", comment: "", ...row, created_at: new Date(Date.now() + this.modList.length).toISOString(), updated_at: new Date().toISOString() }; this.modList.push(x); const { file_html, ...r } = x; return { ...r }; },
     async updateGameMod(id, p) { const x = this.modList.find((y) => y.id === id); Object.assign(x, p); const { file_html, ...r } = x; return { ...r }; },
     async deleteGameMod(id) { this.modList = this.modList.filter((y) => y.id !== id); },
+    mapList: [],
+    async listGameMaps({ authorId, gameId }) { return this.mapList.filter((x) => Number(x.author_id) === Number(authorId) && x.game_id === gameId).map(({ code, ...x }) => ({ ...x })); },
+    async getGameMap(id) { const x = this.mapList.find((y) => y.id === id); return x ? { ...x } : null; },
+    async createGameMap(row) { const x = { ...row, created_at: new Date(Date.now() + this.mapList.length).toISOString(), updated_at: new Date().toISOString() }; this.mapList.push(x); const { code, ...r } = x; return { ...r }; },
+    async updateGameMap(id, p) { const x = this.mapList.find((y) => y.id === id); Object.assign(x, p, { updated_at: new Date().toISOString() }); const { code, ...r } = x; return { ...r }; },
+    async deleteGameMap(id) { this.mapList = this.mapList.filter((y) => y.id !== id); },
+    statList: [],
+    async getGameStats(uid, gid) { const x = this.statList.find((y) => Number(y.user_id) === Number(uid) && y.game_id === gid); return x ? { ...x } : null; },
+    async putGameStats(row) { const i = this.statList.findIndex((y) => Number(y.user_id) === Number(row.user_id) && y.game_id === row.game_id); const x = { ...row, updated_at: new Date().toISOString() }; if (i >= 0) this.statList[i] = x; else this.statList.push(x); return { ...x }; },
     thanks: [],
     purchases: [],
     async addPurchase(row) { if (this.purchases.some((t) => t.charge_id === row.charge_id)) return null; const t = { id: crypto.randomUUID(), status: "paid", ...row }; this.purchases.push(t); return { id: t.id }; },

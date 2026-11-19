@@ -3,6 +3,9 @@ import { cleanGame, gameWire, isVisible, toPatch, AUTHOR_FIELDS, IMG_REF } from 
 import { STAR_OPTIONS, makePayload, makeBuyPayload, makeItemPayload } from "./thanks.js";
 import { itemPrice } from "./items.js";
 import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
+import { cleanMapCode, mapWire, MAP_ID, MAPS_PER_GAME, MAP_PUTS_PER_MIN } from "./maps.js";
+import { mergeGameStats, statsWire, STATS_PUTS_PER_MIN } from "./stats.js";
+import { randomBytes } from "node:crypto";
 
 /**
  * Данные сообщества: отзывы и рейтинг, профили с постом, счётчики игр, журнал действий и график активности.
@@ -67,6 +70,8 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
    * Фото профиля Telegram через бота (браузер не может обработать картинку с t.me на canvas).
    * Наименьший размер от 128 px, только JPEG до 200 КБ. tgFile(path) -> Buffer.
    */
+  const statPutAt = new Map(); // записи перехватов за последнюю минуту по игрокам
+  const mapPutAt = new Map();// записи карт за последнюю минуту по игрокам (защита от цикла запросов, в пределах экземпляра функции)
   const tgPhotoAt = new Map(); // не чаще раза в 10 с на игрока в пределах одного экземпляра функции
   async function tgPhoto(uid) {
     if (!tgApi || !tgFile) return json(200, { photo: "" });
@@ -379,6 +384,70 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
       if (r === "mymods") {
         if (m !== "GET") return bad();
         return json(200, { items: (await store.listGameMods({ authorId: uid })).slice(0, 30).map((x) => modWire(x, { uid, pid: (a) => pid.encode(Number(a)) })) });
+      }
+
+      // ---------- карты игроков (конструктор): 3 облачных слота на игру и ссылка «поделиться» ----------
+      if (r === "mymaps") {
+        if (m !== "GET") return bad();
+        const gid = String(q.game ?? "");
+        if (!GAME_ID.test(gid)) return json(404, { error: "not_found" });
+        return json(200, { items: (await store.listGameMaps({ authorId: uid, gameId: gid })).map(mapWire), max: MAPS_PER_GAME });
+      }
+      if (r === "mapget") {
+        if (m !== "GET") return bad();
+        const id = String(q.id ?? "");
+        const row = MAP_ID.test(id) ? await store.getGameMap(id) : null;
+        const g = row ? await store.getGame(row.game_id) : null;
+        if (!row || !g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const u = await store.getUser(row.author_id).catch(() => null);
+        return json(200, { ...mapWire(row), game: row.game_id, code: row.code, mine: Number(row.author_id) === uid, by: tgName(u) });
+      }
+      if (r === "mapput" && m === "POST") {
+        const b = parseBody(req.body), gid = String(b?.game ?? "");
+        const g = GAME_ID.test(gid) ? await store.getGame(gid) : null;
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const now = Date.now(), hist = (mapPutAt.get(uid) ?? []).filter((t) => t > now - 60e3);
+        if (hist.length >= MAP_PUTS_PER_MIN) return json(429, { error: "rate_limit" });
+        const c = cleanMapCode(b?.code);
+        if (c.error) return json(c.error === "too_big" ? 413 : 400, { error: c.error });
+        hist.push(now); mapPutAt.set(uid, hist);
+        const id = b?.id == null ? "" : String(b.id);
+        if (id) { // правка своей карты
+          const row = MAP_ID.test(id) ? await store.getGameMap(id) : null;
+          if (!row || Number(row.author_id) !== uid || row.game_id !== gid) return json(404, { error: "not_found" });
+          return json(200, mapWire(await store.updateGameMap(id, { name: c.name, code: c.code, pieces: c.pieces })));
+        }
+        if ((await store.listGameMaps({ authorId: uid, gameId: gid })).length >= MAPS_PER_GAME) return json(409, { error: "limit" });
+        const row = await store.createGameMap({ id: randomBytes(6).toString("hex"), game_id: gid, author_id: uid, name: c.name, code: c.code, pieces: c.pieces });
+        return json(201, mapWire(row));
+      }
+      if (r === "mapdel" && m === "DELETE") {
+        const id = String(q.id ?? "");
+        const row = MAP_ID.test(id) ? await store.getGameMap(id) : null;
+        if (!row || Number(row.author_id) !== uid) return json(404, { error: "not_found" });
+        await store.deleteGameMap(id);
+        return json(200, { ok: true });
+      }
+
+      // ---------- перехваты и рекорд серии игрока в игре (хранятся на сервере, пишутся только при росте) ----------
+      if (r === "mystats") {
+        if (m !== "GET") return bad();
+        const gid = String(q.game ?? "");
+        if (!GAME_ID.test(gid)) return json(404, { error: "not_found" });
+        return json(200, statsWire(await store.getGameStats(uid, gid)));
+      }
+      if (r === "statput" && m === "POST") {
+        const b = parseBody(req.body), gid = String(b?.game ?? "");
+        const g = GAME_ID.test(gid) ? await store.getGame(gid) : null;
+        if (!g || !isVisible(g, staff)) return json(404, { error: "not_found" });
+        const now = Date.now(), hist = (statPutAt.get(uid) ?? []).filter((t) => t > now - 60e3);
+        if (hist.length >= STATS_PUTS_PER_MIN) return json(429, { error: "rate_limit" });
+        hist.push(now); statPutAt.set(uid, hist);
+        if (statPutAt.size > 5000) statPutAt.clear();
+        const cur = await store.getGameStats(uid, gid), next = mergeGameStats(cur, { regrabs: b?.regrabs, best: b?.best }, now);
+        if (!cur && !next.regrabs && !next.best_streak) return json(200, statsWire(null)); // нечего хранить
+        if (cur && next.regrabs === Number(cur.regrabs) && next.best_streak === Number(cur.best_streak)) return json(200, statsWire(cur)); // не выросло — в базу не пишем
+        return json(200, statsWire(await store.putGameStats({ user_id: uid, game_id: gid, ...next })));
       }
 
       // ---------- «Спасибо автору»: счёт в звёздах Telegram ----------

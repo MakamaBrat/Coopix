@@ -45,6 +45,12 @@ def build(debug=None):
     gp = os.path.join(D, "gestures.js")
     if os.path.exists(gp):
         js = js + "\n" + open(gp, encoding="utf-8").read()
+    stp = os.path.join(D, "stats.js")
+    if os.path.exists(stp):
+        js = js + "\n" + open(stp, encoding="utf-8").read()
+    mp = os.path.join(D, "maps.js")
+    if os.path.exists(mp):
+        js = js + "\n" + open(mp, encoding="utf-8").read()
     sp = os.path.join(D, "skins.js")
     if os.path.exists(sp):
         js = js + "\n" + open(sp, encoding="utf-8").read().replace("NC_SKINS", skins_json()).replace("NC_SKDBG", "true" if debug else "false")
