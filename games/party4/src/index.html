@@ -43,7 +43,7 @@ svg{display:block}
 #scene canvas{position:absolute;inset:0;width:100%;height:100%}
 #scene .milky{position:absolute;left:-25%;top:-6%;width:150%;height:62%;background:radial-gradient(ellipse 50% 16% at 52% 50%,rgba(140,115,240,.2),transparent 72%),radial-gradient(ellipse 34% 9% at 40% 53%,rgba(255,170,210,.12),transparent 72%),radial-gradient(ellipse 64% 26% at 50% 50%,rgba(90,80,200,.12),transparent 72%);transform:rotate(-22deg);filter:blur(46px);animation:drift 70s ease-in-out infinite alternate}
 #scene .fl{position:absolute;left:-7%;right:-7%;bottom:-2px;height:68vh;transform:translate3d(calc(var(--px)*var(--k)*1px),calc(var(--py)*var(--k)*.3px),0);will-change:transform}
-#scene .fl svg{width:100%;height:100%}
+#scene .fl svg{width:100%;height:100%;overflow:visible}
 #scene .fl.b svg{filter:drop-shadow(0 -1.5px 0 rgba(255,170,90,.16))}
 #scene .fl.a svg{filter:drop-shadow(0 -1px 0 rgba(150,140,255,.12))}
 #scene .fl.a{--k:-10;height:60vh}
@@ -145,8 +145,9 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 .inp{width:100%;height:52px;border-radius:14px;border:2px solid #6d4416;background:#110a05;color:var(--cream);padding:0 16px;font-size:18px;margin:12px 0;font-family:inherit;font-weight:800;box-shadow:inset 0 3px 8px #000a}
 .inp:focus{outline:none;border-color:var(--gold);box-shadow:inset 0 3px 8px #000a,0 0 16px #ffb04a55}
 .hero{display:block;margin:0 auto 6px;max-width:min(88%,400px);max-height:190px;object-fit:contain;animation:floaty 4s ease-in-out infinite;filter:drop-shadow(0 8px 16px #000c)}
-#toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(30px);background:var(--wood);color:var(--cream);border:2px solid var(--gold2);padding:12px 20px;border-radius:14px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center;box-shadow:0 10px 30px #000c}
-#toast.show{opacity:1;transform:translateX(-50%)}
+/*TOASTTOP*/
+#toast{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-24px);background:var(--wood);color:var(--cream);border:2px solid var(--gold2);padding:6px 14px;border-radius:12px;font-weight:800;font-size:13px;line-height:1.25;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:86vw;text-align:center;box-shadow:0 3px 10px #000a}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #modal{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,#000a,#000e);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:50}
 #modal.show{display:flex;animation:fadeIn .25s}
 .sheet{width:100%;max-width:540px;border-radius:28px 28px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;border:3px solid #8a5a22;border-bottom:0;background:var(--wood);box-shadow:0 -10px 50px #000c;animation:sheetUp .4s cubic-bezier(.2,.9,.3,1.05)}
@@ -164,8 +165,6 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 /* ================= ГЛАВНЫЙ ЭКРАН ================= */
 #app.home{position:relative;z-index:2;min-height:calc(var(--vh)*100);overflow-x:clip}
 .hgrid{position:relative;max-width:540px;margin:0 auto;padding:calc(66px + env(safe-area-inset-top)) 16px 56px;display:flex;flex-direction:column;align-items:center}
-.hbar{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 16px;z-index:6;pointer-events:none}
-.hbar .rb{pointer-events:auto;width:56px;height:56px}
 .hcenter{position:relative;width:100%;display:flex;flex-direction:column;align-items:center}
 .hlogo{position:relative;z-index:3;width:min(90%,430px);height:auto;display:block;animation:logoIn 1s cubic-bezier(.2,.9,.3,1.1) both,floaty 5s 1s ease-in-out infinite;filter:drop-shadow(0 8px 22px #000d)}
 .hero2{position:relative;z-index:1;width:min(88vw,420px);aspect-ratio:1;margin-top:-34px}
@@ -199,8 +198,9 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 .gcard::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--mx,30%) var(--my,50%),rgba(255,226,160,.26),transparent 55%);opacity:0;transition:opacity .25s;pointer-events:none}
 .gcard:hover{border-color:var(--gold);box-shadow:inset 0 0 0 1px #d7a55a,inset 0 0 0 4px #140a04,0 18px 38px #000d,0 0 30px rgba(var(--ac),.4)}
 .gcard:hover::before{opacity:1}.gcard:active{transform:scale(.97)}
-.gl{flex:0 0 44%;height:78px;display:grid;place-items:center}
-.gl img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px #000b)}
+/*CARDS*/
+.gl{position:relative;flex:0 0 38%;height:72px}
+.gl img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px #000b)}
 .gi2{flex:1;min-width:0}.gi2 b{display:block;font-family:var(--hf);font-weight:400;font-size:23px;color:var(--gold);text-shadow:0 2px 0 #140a04;letter-spacing:.4px}
 .gi2 small{display:block;color:var(--mut);font-size:13px;margin-top:2px;line-height:1.25;font-weight:700}
 .go{flex:none;width:44px;height:44px;border-radius:50%;border:3px solid #d29a3a;display:grid;place-items:center;color:var(--gold);background:radial-gradient(circle at 50% 30%,#4a2e16,#140a05);transition:transform .2s,box-shadow .2s}
@@ -209,10 +209,11 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 .hnote{margin:12px 0 0;text-align:center;font-size:12px;color:var(--mut);font-weight:700}
 
 /* ================= ВНУТРЕННИЕ ЭКРАНЫ ================= */
-#app.inner{overflow-x:clip;position:relative;z-index:2;width:100%;max-width:560px;margin:0 auto;min-height:calc(var(--vh)*100);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
-#top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 12px;background:linear-gradient(#04050cf0 55%,transparent)}
-#top .plank{font-size:21px}
-.inner #view{flex:1;padding:14px 14px 100px}
+#app.inner{overflow-x:clip;position:relative;z-index:2;width:100%;max-width:560px;margin:0 auto;min-height:calc(var(--vh)*100);display:flex;flex-direction:column;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+/*BOTBAR*/
+#bot{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:8px 14px calc(8px + env(safe-area-inset-bottom));pointer-events:none}
+#bot .rb{pointer-events:auto;width:48px;height:48px}
+.inner #view{flex:1;padding:calc(14px + env(safe-area-inset-top)) 14px 12px}
 #decor{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;z-index:1}
 body.is-home #decor{display:none}
 #decor .lanw{position:absolute;right:16px;bottom:-6px;width:46px;height:90px}
@@ -299,7 +300,7 @@ body.is-home #decor{display:none}
 /* ================= ДЕСКТОП ================= */
 @media (min-width:900px){
   .hgrid{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px 44px;align-items:center;align-content:center;padding:84px 40px 40px;min-height:calc(var(--vh)*100)}
-  .hbar{padding:26px 48px}
+  #bot{padding:14px 48px calc(14px + env(safe-area-inset-bottom))}
   .hcenter{grid-column:1;grid-row:1/3}
   .hcol.left{grid-column:2;grid-row:1;align-self:end}
   .hcol.right{grid-column:2;grid-row:2;align-self:start}
@@ -308,8 +309,6 @@ body.is-home #decor{display:none}
   .gcards{margin-top:0;gap:14px}.gl{height:84px}
   .hrow{height:60px}.hrow .av{--s:44px}
   #app.inner{max-width:900px}#app.inner.wide{max-width:1240px}
-  #top{padding:calc(20px + env(safe-area-inset-top)) 28px 16px;background:none}
-  #top .plank{font-size:26px;padding:10px 40px}
   .rb{width:58px;height:58px}.rb svg{width:28px;height:28px}
   .inner #view{padding:18px 28px 100px}
   .win{padding:26px 30px}.btn.big{min-height:70px;font-size:26px;max-width:560px;margin-left:auto;margin-right:auto;display:flex}
@@ -346,13 +345,14 @@ body.is-home #decor{display:none}
 }
 /*FIT_PATCH*/
 @media (max-width:899px){
-  .hgrid{display:flex;flex-direction:column;padding:calc(58px + env(safe-area-inset-top)) 14px 28px}
+  .hgrid{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
   .hcol.right{order:2}.hcol.left{order:3}
   .hlogo{width:min(62%,calc(var(--vh)*34))}
   .hero2{width:min(56vw,calc(var(--vh)*24));margin-top:-22px}
-  .hbar .rb{width:46px;height:46px}
-  .gcards{margin-top:6px;gap:8px}.gl{height:min(58px,calc(var(--vh)*8.4))}
-  .gcard{padding:6px 12px 6px 10px}
+  #bot .rb{width:44px;height:44px}
+  .gcards{margin-top:8px;gap:8px}.gl{height:64px;flex-basis:36%}
+  .gcard{padding:8px 12px 8px 10px;gap:10px;min-height:84px}
+  .gi2 b{font-size:21px}.gi2 small{font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .hp{margin-top:20px}.hp-list{max-height:none;overflow:visible}
   .inner #view{padding:10px 14px 18px}
 }
@@ -558,7 +558,7 @@ function pcard(p, w = 180) {
   const f = face(p);
   return `<div class="pc" style="--w:${w}px"><div class="pc-ph" style="${f.css}">${f.txt}</div><img src="img/card.png" alt=""><div class="pc-nm">${esc(p.name)}</div><div class="pc-st">★ ${total(p)}</div></div>`;
 }
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2400); }
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2000); }
 
 /* ================= звук ================= */
 let AC;
@@ -706,19 +706,18 @@ function go(r, g) {
   render(); window.scrollTo(0, 0);
 }
 function topbar() {
-  const ic = isGame(route) ? gi(route, 30) : '';
-  return `<div id="top"><button class="rb" data-a="back" aria-label="Назад">${IC.back}</button><div class="plank">${ic}${TITLES[route]}${route === 'score' ? ` <small class="mut">(${S.players.length})</small>` : ''}</div><button class="rb" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
+  return `<div id="bot"><button class="rb" data-a="back" aria-label="Назад">${IC.back}</button><button class="rb" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
 }
 function render() {
   const home = route === 'home';
   $('#app').className = home ? 'home' : 'inner' + (route === 'bottle' ? ' wide' : '');
   document.body.classList.toggle('is-home', home);
-  $('#app').innerHTML = (home ? '' : topbar()) + `<main id="view">${VIEWS[route]()}</main>`;
+  $('#app').innerHTML = (home ? '' : topbar()) + `<main id="view">${route === 'players' || route === 'score' ? `<h2 class="center" style="margin:0 0 12px">${TITLES[route]}${route === 'score' ? ` <small class="mut">(${S.players.length})</small>` : ''}</h2>` : ''}${VIEWS[route]()}</main>`;
   const key = route + ':' + (G.phase || '') + ':' + (G.di || 0) + ':' + (G.rev ? 1 : 0) + ':' + (G.si || 0) + ':' + (G.round || 0) + (G.res ? 'r' : '') + (G.acc || '');
   const v = $('#view'); v.classList.toggle('still', key === lastKey && !home); lastKey = key;
   [...v.children].forEach((c, i) => c.style.setProperty('--i', i));
   if (AFTER[route]) AFTER[route]();
-  fitView();
+  fitView(); fitLater(160); setTimeout(fitView, 520); /* картинки и шрифты догружаются и меняют высоту — подгоняем ещё раз */
 }
 /*FIT_PATCH*/
 function fitView() {
@@ -726,7 +725,8 @@ function fitView() {
   if (route === 'home' || route === 'players' || route === 'score' || innerWidth >= 900) { if (v.style.zoom) v.style.zoom = ''; return; }
   if (v.style.zoom) v.style.zoom = '';
   const top = v.getBoundingClientRect().top + scrollY, pb = parseFloat(getComputedStyle(v).paddingBottom) || 0;
-  const h = v.scrollHeight - pb + 14, avail = innerHeight - top - 6;
+  const reserve = parseFloat(getComputedStyle($('#app')).paddingBottom) || 0;
+  const h = v.scrollHeight - pb + 14, avail = innerHeight - top - reserve - 6;
   if (h > avail) {
     let k = Math.max(.6, avail / h); v.style.zoom = k.toFixed(3);
     /* после уменьшения строки переносятся иначе: проверяем и подтягиваем ещё раз */
@@ -763,7 +763,7 @@ VIEWS.home = () => {
     ? `<div class="hp-list">${ps.map((p, i) => `<div class="hrow ${p.on === false ? 'off' : ''}" style="--k:${i}" data-a="toggle" data-id="${p.id}">${avatar(p, 42)}<div class="nm">${esc(p.name)}</div><div class="st">★ ${total(p)}</div><button class="dots" data-a="pedit" data-id="${p.id}" aria-label="Изменить">${IC.dots}</button></div>`).join('')}</div>`
     : `<div class="empty">Добавь друзей — имя и фото — и поехали!</div>`;
   const sparks = [[14, 16, 20, 0], [80, 12, 16, 1.1], [86, 40, 14, .6], [8, 46, 14, 1.8], [50, 6, 12, 2.2]].map(s => `<svg class="spk" viewBox="0 0 20 20" style="left:${s[0]}%;top:${s[1]}%;--s:${s[2]}px;animation-delay:${s[3]}s">${STAR}</svg>`).join('');
-  return `<div class="hbar"><button class="rb" data-a="menu" aria-label="Меню">${IC.menu}</button><button class="rb" data-a="score" aria-label="Таблица очков">${IC.crown}</button></div>
+  return `<div id="bot"><button class="rb" data-a="menu" aria-label="Меню">${IC.menu}</button><button class="rb" data-a="score" aria-label="Таблица очков">${IC.crown}</button></div>
   <div class="hgrid">
     <div class="hcenter"><img class="hlogo" src="img/logo.webp" alt="Boards Games"><div class="hero2"><div class="beams"></div><img class="scene" src="img/hero.webp" alt=""><div class="glow"></div><img class="flame" src="img/flame_c.webp" alt=""><canvas id="embers"></canvas>${sparks}</div></div>
     <div class="hcol left"><div class="hp"><div class="plank">Игроки <small>${on}/${ps.length}</small></div>${list}<button class="addb" data-a="padd">＋ Добавить игрока</button></div><p class="hnote">Нажми на друга — он сядет за стол или выйдет из игры</p></div>
@@ -816,11 +816,7 @@ let E = null;
 function editorHtml() {
   return `<div class="sheet"><h3 class="center">${E.id ? 'Редактировать' : 'Новый друг'}</h3>
   <div class="center" id="prev">${avatar(E, 96)}</div>
-  <div class="row gap wrap" style="justify-content:center;margin-top:12px">
-    <label class="btn sm">📷 Своё фото<input type="file" accept="image/*" id="file" hidden></label>
-  </div>
-  <div class="hint center" style="margin-top:10px">или выбери героя</div>
-  <div class="pics">${PORTRAITS.map(n => `<button data-a="pic" data-p="${n}" class="${E.pic === n ? 'on' : ''}" style="background-image:url('${sp(n)}')"></button>`).join('')}</div>
+  <div class="pics" style="margin-top:12px">${PORTRAITS.map(n => `<button data-a="pic" data-p="${n}" class="${E.pic === n ? 'on' : ''}" style="background-image:url('${sp(n)}')"></button>`).join('')}</div>
   <input class="inp" id="pname" maxlength="16" placeholder="Имя" autocomplete="off" value="${esc(E.name)}">
   <div class="row gap"><button class="btn ghost" style="flex:1" data-a="mclose">Отмена</button><button class="btn" style="flex:1" data-a="psave">Сохранить</button></div>
   ${E.id ? '<button class="btn danger wide" data-a="pdel">🗑 Удалить друга</button>' : ''}</div>`;
