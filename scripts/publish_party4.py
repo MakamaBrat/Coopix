@@ -35,12 +35,12 @@ def build():
         html = html.replace(a, b)
     table = imgs.pop("table.webp")
     rep("url(img/table.webp)", f"url({table})")
-    rep('src="img/card.png"', "src=\"${IM['card.png']}\"")
-    rep('src="img/logo.webp"', "src=\"${IM['logo.webp']}\"")
-    rep('src="img/hero.webp"', "src=\"${IM['hero.webp']}\"")
-    rep('src="img/flame_c.webp"', "src=\"${IM['flame_c.webp']}\"")
-    imgs.pop("card.png", None); imgs["card.png"] = data_uri("card.png")
-    imgs = {k: v for k, v in imgs.items() if k.startswith("s/") or k in ("card.png", "logo.webp", "hero.webp", "flame_c.webp")}
+    for k in list(imgs):
+        if k.startswith("s/"):
+            continue
+        n = html.count('src="img/%s"' % k) + html.count("'img/%s'" % k)
+        assert n >= 1, ("картинка не используется", k)
+        html = html.replace('src="img/%s"' % k, "src=\"${IM['%s']}\"" % k).replace("'img/%s'" % k, "IM['%s']" % k)
     rep("const sp = n => `img/s/${n}.webp`;", "const IM = " + json.dumps(imgs, separators=(",", ":")) + ";\nconst sp = n => IM['s/' + n + '.webp'];")
     # в изолированном окне магазина нет своего localStorage: подключаем то же «хранилище через магазин», что у Noomi Clone (иначе друзья и очки пропадают после перезапуска)
     from build_noomi_plus import SHIM
