@@ -297,6 +297,39 @@ export function supabaseStore(url, serviceKey) {
       return r?.[0] ? Date.parse(r[0].ts) : null;
     },
 
+    // ---------- заходы в маркет (только для графика главного админа; без новых SQL-функций) ----------
+    /** события type=visit начиная с startMs -> [{ ts (мс), uid }], не больше 50 000 */
+    async visitEvents(startMs) {
+      const out = [], since = new Date(startMs).toISOString();
+      for (let from = 0; from < 50000; from += 1000) {
+        const r = ok(await db.from("events").select("ts,user_id").eq("type", "visit").gte("ts", since).order("ts", { ascending: true }).range(from, from + 999)) ?? [];
+        for (const x of r) out.push({ ts: Date.parse(x.ts), uid: Number(x.user_id) });
+        if (r.length < 1000) break;
+      }
+      return out;
+    },
+    /** сколько заходов было до startMs */
+    async visitCountBefore(startMs) {
+      const r = await db.from("events").select("id", { count: "exact", head: true }).eq("type", "visit").lt("ts", new Date(startMs).toISOString());
+      if (r.error) throw new Error(r.error.message);
+      return r.count ?? 0;
+    },
+    /** время регистрации игроков: Map(uid -> мс) */
+    async regTimes(ids) {
+      const m = new Map();
+      for (let i = 0; i < ids.length; i += 150) {
+        const r = ok(await db.from("users").select("tg_id,registered_at").in("tg_id", ids.slice(i, i + 150))) ?? [];
+        for (const x of r) m.set(Number(x.tg_id), Date.parse(x.registered_at));
+      }
+      return m;
+    },
+    /** сколько игроков зарегистрировалось до момента */
+    async regCountBefore(ms) {
+      const r = await db.from("users").select("tg_id", { count: "exact", head: true }).lt("registered_at", new Date(ms).toISOString());
+      if (r.error) throw new Error(r.error.message);
+      return r.count ?? 0;
+    },
+
     // ---------- статистика (SQL-функции из schema.sql) ----------
     async gameStats(ids) {
       if (!ids.length) return [];

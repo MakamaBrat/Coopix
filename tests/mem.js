@@ -155,6 +155,10 @@ export function memStore() {
       return a.length ? Math.max(...a) : null;
     },
     async listEvents({ limit, before, key }) { return this.events.filter((e) => (!before || e.id < before) && (!key || String(e.meta?.k) === "1")).sort((a, b) => b.id - a.id).slice(0, limit).map((e) => ({ ...e })); },
+    async visitEvents(startMs) { return this.events.filter((e) => e.type === "visit" && Date.parse(e.ts) >= startMs).map((e) => ({ ts: Date.parse(e.ts), uid: e.user_id })).sort((a, b) => a.ts - b.ts); },
+    async visitCountBefore(startMs) { return this.events.filter((e) => e.type === "visit" && Date.parse(e.ts) < startMs).length; },
+    async regTimes(ids) { const m = new Map(); for (const id of ids) { const u = users.get(id); if (u) m.set(id, Date.parse(u.registered_at)); } return m; },
+    async regCountBefore(ms) { return [...users.values()].filter((u) => Date.parse(u.registered_at) < ms).length; },
     async firstEventTs() { return this.events.length ? Math.min(...this.events.map((e) => Date.parse(e.ts))) : null; },
     async gameStats(ids) {
       return ids.map((g) => {
