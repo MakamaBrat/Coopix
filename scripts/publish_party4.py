@@ -10,16 +10,16 @@ from upload_games import env, req, ROOT
 D = os.path.join(ROOT, "games", "party4")
 SRC = os.path.join(D, "src")
 # максимальная сторона картинки (экономим вес файла игры): крупные оформительские картинки уменьшаем
-MAXSIDE = {"hero.webp": 960, "logo.webp": 760, "table.webp": 900, "card.png": 520}
+MAXSIDE = {"hero.webp": 600, "logo.webp": 520, "table.webp": 640, "card.png": 360, "flame_c.webp": 300}
 
 def data_uri(rel):
     im = Image.open(os.path.join(SRC, "img", rel))
-    k = MAXSIDE.get(rel)
+    k = MAXSIDE.get(rel, 380 if rel.endswith("_logo.webp") else None)
     if k and max(im.size) > k:
         s = k / max(im.size)
         im = im.resize((round(im.size[0] * s), round(im.size[1] * s)), Image.LANCZOS)
     buf = io.BytesIO()
-    im.save(buf, "WEBP", quality=82, method=6, alpha_quality=92)
+    im.save(buf, "WEBP", quality=70, method=6, alpha_quality=80)
     return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
 
 def build():
