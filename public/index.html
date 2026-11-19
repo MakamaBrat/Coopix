@@ -3325,7 +3325,8 @@ async function gameBuyItem(gid,item,name,frame){
     if(!TGW||!TGW.openInvoice){send({coopix:"items",list:[],fail:"tg"});return}
     TGW.openInvoice(j.link,st=>{if(st==="paid"){toast("Предмет куплен!");setTimeout(()=>done(item),1200);setTimeout(()=>done(item),4500)}else{send({coopix:"items",list:[],fail:st==="failed"?"pay":"cancel"})}})}
   catch(e){if(e.code==="owned"){await done(item);return}send({coopix:"items",list:[],fail:"err"});toast("Не удалось открыть оплату, попробуйте ещё раз")}}
-function withSave(html,saved,items){const inj="<script>window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+";window.__CPX_ITEMS="+JSON.stringify(items||[]).replace(/</g,"\\u003c")+"<\/script>";
+function withSave(html,saved,items){let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
+  const inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+";window.__CPX_ITEMS="+JSON.stringify(items||[]).replace(/</g,"\\u003c")+"<\/script>";
   return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj):inj+html}
 function gameMode(html,title,gid,saved,items){window.__gm=1;
   try{MUS.el&&MUS.el.pause();MUS.unlocked=false}catch(e){}
