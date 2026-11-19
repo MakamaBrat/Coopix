@@ -15,7 +15,7 @@ Object.defineProperty(shim,"length",{get:function(){return Object.keys(D).length
 try{Object.defineProperty(window,"localStorage",{get:function(){return shim},configurable:true})}catch(e){}
 addEventListener("pagehide",flush);document.addEventListener("visibilitychange",function(){if(document.hidden)flush()});})();</script>
 """
-BTNS = '<button class="zone tb" id="zTurboL" data-k="turboL">Турбины ног</button><button class="zone tb" id="zTurboA" data-k="turboA">Турбины рук</button><button class="zone wk" id="zWalk">&#129336;</button><button class="zone wk" id="zWL" data-k="twL">&#9664;</button><button class="zone wk" id="zWR" data-k="twR">&#9654;</button>\n'
+BTNS = '<button class="exitb" id="zExit"></button><button class="zone tb" id="zTurboL" data-k="turboL">Турбины ног</button><button class="zone tb" id="zTurboA" data-k="turboA">Турбины рук</button><button class="zone wk" id="zWalk">&#129336;</button><button class="zone wk" id="zWL" data-k="twL">&#9664;</button><button class="zone wk" id="zWR" data-k="twR">&#9654;</button>\n'
 
 def build(debug=None):
     s = open(os.path.join(D, "NoomiClone.base.html"), encoding="utf-8", newline="").read()
