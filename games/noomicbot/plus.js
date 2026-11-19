@@ -1,5 +1,5 @@
-/* NoomiClone+: новые предметы и кастомизация, переломы за монеты с рентгеном костей при сильных ударах.
-   Вставляется в основной скрипт игры скриптом scripts/build_noomi_plus.py (между маркерами NOOMI_PLUS), поэтому видит ITEMS, SAVE, PARTS, View3D, Game, W, FX и т.д. */
+/* Noomic Bot+: новые предметы и кастомизация, переломы за монеты с рентгеном костей при сильных ударах.
+   Вставляется в основной скрипт игры скриптом scripts/build_noomic_plus.py (между маркерами NOOMI_PLUS), поэтому видит ITEMS, SAVE, PARTS, View3D, Game, W, FX и т.д. */
 {
 /* ---------- новые предметы магазина ---------- */
 const add=(c,l)=>{(ITEMS[c]=ITEMS[c]||[]).push(...l)};
@@ -11,8 +11,8 @@ ITEMS.wear=[["wear_none","x.none","",0],["wear_gloves","x.gloves","#e04040",250]
 ITEMS.gear=[["gear_none","x.none","",0],["gear_tl","x.tlegs","#ff7a1a",800],["gear_ta","x.tarms","#22d3ee",800],["gear_tb","x.tboth","#ff4fd8",1500]];
 ITEMS.fx=[["fx_none","x.none","",0],["fx_spark","x.spark","#ffe27a",300],["fx_fire","x.fire","#ff7a1a",500],["fx_ice","x.icet","#8fd8ff",500],["fx_rainbow","x.rbt","#ff4fd8",800]];
 ITEMS.spec=[["spec_none","x.nofrac","",0],["spec_frac","x.frac","#9fe8ff",400]];
-ITEMS.move=[["move_none","x.none","",0],["move_walk","x.walk","#9be15d",1],["move_run","x.run","#ffb02e",1]];
-Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx",spec:"x.cspec",move:"x.cmove"});
+
+Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx",spec:"x.cspec"});
 const RU={"x.cyan":"Бирюзовый","x.lime":"Лайм","x.magenta":"Маджента","x.black":"Чёрный","x.neon":"Неон","x.gold":"Золото",
  "x.helmet":"Каска","x.beanie":"Шапка-бини","x.cowboy":"Ковбойская шляпа","x.viking":"Шлем викинга","x.wizard":"Шляпа мага","x.halo":"Нимб",
  "x.capeblack":"Чёрный плащ","x.capeice":"Ледяной плащ","x.capegold":"Золотой плащ","x.rainbow":"Радужный плащ",
@@ -20,7 +20,7 @@ const RU={"x.cyan":"Бирюзовый","x.lime":"Лайм","x.magenta":"Мад�
  "x.gloves":"Перчатки","x.boots":"Кроссовки","x.pack":"Рюкзак","x.belt":"Пояс чемпиона",
  "x.spark":"Искры","x.fire":"Огненный шлейф","x.icet":"Ледяной шлейф","x.rbt":"Радужный шлейф",
  "x.nofrac":"Без переломов","x.frac":"Переломы + рентген",
- "x.cmove":"Движение","x.walk":"Походка","x.run":"Бег","x.jump":"Прыжок","x.cface":"Лицо","x.cwear":"Экипировка","x.cgear":"Снаряжение","x.tlegs":"Турбины на ноги","x.tarms":"Турбины на руки","x.tboth":"Турбины на руки и ноги","x.turboL":"Турбины ног","x.turboA":"Турбины рук","x.gain":"монет","x.cfx":"Шлейф","x.cspec":"Особое",
+ "x.cface":"Лицо","x.cwear":"Экипировка","x.cgear":"Снаряжение","x.tlegs":"Турбины на ноги","x.tarms":"Турбины на руки","x.tboth":"Турбины на руки и ноги","x.turboL":"Турбины ног","x.turboA":"Турбины рук","x.gain":"монет","x.cfx":"Шлейф","x.cspec":"Особое",
  "x.hurt":"Перелом","x.p.torso":"рёбра","x.p.head":"череп","x.p.armL":"левая рука","x.p.armR":"правая рука","x.p.thighL":"левое бедро","x.p.thighR":"правое бедро","x.p.calfL":"левая голень","x.p.calfR":"правая голень","x.p.footL":"левая стопа","x.p.footR":"правая стопа",
  "x.fracNote":"«Переломы + рентген»: при очень сильных ударах персонаж на секунду показывается как рентген со сломанной костью."};
 const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black","x.neon":"Neon","x.gold":"Gold",
@@ -30,12 +30,12 @@ const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black
  "x.gloves":"Gloves","x.boots":"Sneakers","x.pack":"Backpack","x.belt":"Champion belt",
  "x.spark":"Sparks","x.fire":"Fire trail","x.icet":"Ice trail","x.rbt":"Rainbow trail",
  "x.nofrac":"No fractures","x.frac":"Fractures + X-ray",
- "x.cmove":"Movement","x.walk":"Walking","x.run":"Running","x.jump":"Jump","x.cface":"Face","x.cwear":"Outfit","x.cgear":"Gear","x.tlegs":"Leg turbines","x.tarms":"Arm turbines","x.tboth":"Arm + leg turbines","x.turboL":"Leg turbo","x.turboA":"Arm turbo","x.gain":"coins","x.cfx":"Trail","x.cspec":"Special",
+ "x.cface":"Face","x.cwear":"Outfit","x.cgear":"Gear","x.tlegs":"Leg turbines","x.tarms":"Arm turbines","x.tboth":"Arm + leg turbines","x.turboL":"Leg turbo","x.turboA":"Arm turbo","x.gain":"coins","x.cfx":"Trail","x.cspec":"Special",
  "x.hurt":"Fracture","x.p.torso":"ribs","x.p.head":"skull","x.p.armL":"left arm","x.p.armR":"right arm","x.p.thighL":"left thigh","x.p.thighR":"right thigh","x.p.calfL":"left shin","x.p.calfR":"right shin","x.p.footL":"left foot","x.p.footR":"right foot",
  "x.fracNote":"\"Fractures + X-ray\": on very hard hits the character flashes as an X-ray with a broken bone."};
 for(const L in I18N){Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN)}
-for(const k of ["face_none","wear_none","gear_none","fx_none","spec_none","move_none"])SAVE.owned[k]=1;
-SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";SAVE.eq.spec=SAVE.eq.spec||"spec_none";SAVE.eq.move=SAVE.eq.move||"move_none";
+for(const k of ["face_none","wear_none","gear_none","fx_none","spec_none"])SAVE.owned[k]=1;
+SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";SAVE.eq.spec=SAVE.eq.spec||"spec_none";
 {const st=document.createElement("style");st.textContent=".cats{flex-wrap:wrap}#xrmsg{position:absolute;left:50%;top:15vmin;transform:translateX(-50%);z-index:6;pointer-events:none;color:#fff;font-weight:800;font-size:4.6vmin;text-shadow:0 .3vmin 1.2vmin rgba(0,0,0,.7);background:rgba(190,20,30,.78);padding:.8vmin 2.6vmin;border-radius:2vmin;opacity:0;white-space:nowrap}#xrmsg.on{animation:xrm 2.4s ease-out}@keyframes xrm{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}#xrfx{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(40,140,255,0) 35%,rgba(20,90,200,.55) 100%)}#xrfx.on{animation:xrf 1.6s ease-out}@keyframes xrf{0%{opacity:0}10%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
  const g=$("game");if(g){const m=document.createElement("div");m.id="xrmsg";const f=document.createElement("div");f.id="xrfx";g.append(f,m)}}
 
@@ -131,13 +131,13 @@ GP.loadMap=function(s){const r=_lm.call(this,s);this.world.on("begin-contact",c=
   const m=$("xrmsg"),f=$("xrfx");if(m){m.textContent="\u{1F9B4} "+T("x.hurt")+": "+PARTRU(p);m.classList.remove("on");void m.offsetWidth;m.classList.add("on")}if(f){f.classList.remove("on");void f.offsetWidth;f.classList.add("on")}
   crack();try{FX.shake=Math.max(FX.shake||0,.5)}catch(e){}});return r};
 
-const effOf=G=>(G.play&&G.rcfg)?G.rcfg:{tb:SAVE.eq.gear,gt:window.__ncGait?window.__ncGait():0};
-/* повторы: турбины и ходьба тоже воспроизводятся — их кнопки пишутся в маску ввода, а снаряжение и режим — в конфиг повтора */
+const effOf=G=>(G.play&&G.rcfg)?G.rcfg:{tb:SAVE.eq.gear};
+/* повторы: турбины тоже воспроизводятся — их кнопки пишутся в маску ввода, а снаряжение и режим — в конфиг повтора */
 RKEYS.push("turboL","turboA");
-{const _ac=GP.applyCfg;GP.applyCfg=function(c){_ac.call(this,c);if(c.tb!==undefined)this.rcfg={tb:c.tb,gt:c.gt|0}};
- const _ps=GP.playStart;GP.playStart=function(...a){this.rcfg={tb:"gear_none",gt:0};return _ps.apply(this,a)}; /* старые повторы: без турбин и ходьбы */
- const _sp=GP.spawn;GP.spawn=function(s){this.tFuel=1;this.wk=null;return _sp.call(this,s)}; /* топливо и шаг ходьбы с нуля при каждом старте — запись и воспроизведение идут одинаково */
- const _cf=cfgOf;cfgOf=function(){return Object.assign(_cf(),{tb:SAVE.eq.gear,gt:window.__ncGait?window.__ncGait():0})}}
+{const _ac=GP.applyCfg;GP.applyCfg=function(c){_ac.call(this,c);if(c.tb!==undefined)this.rcfg={tb:c.tb}};
+ const _ps=GP.playStart;GP.playStart=function(...a){this.rcfg={tb:"gear_none"};return _ps.apply(this,a)}; /* старые повторы: без турбин */
+ const _sp=GP.spawn;GP.spawn=function(s){this.tFuel=1;return _sp.call(this,s)}; /* топливо с нуля при каждом старте — запись и воспроизведение идут одинаково */
+ const _cf=cfgOf;cfgOf=function(){return Object.assign(_cf(),{tb:SAVE.eq.gear})}}
 /* ---------- турбины: физика и кнопки ---------- */
 const TURBO_F_LEG=NC_TURBO_L,TURBO_F_ARM=NC_TURBO_A;
 GP.applyTurbo=function(dt){const g=effOf(this).tb,hasL=g==="gear_tl"||g==="gear_tb",hasA=g==="gear_ta"||g==="gear_tb";this.tOn={legs:false,arms:false};
@@ -196,15 +196,17 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 /* ---------- покупки за звёзды Telegram: у каждого предмета своя цена 1–3 ⭐ (таблица совпадает с серверной), оплата идёт через магазин ---------- */
 {const STAR=NC_STAR_PRICES;
  for(const c in ITEMS)for(const it of ITEMS[c])if(it[3]>0&&STAR[it[0]])it[3]=STAR[it[0]];
- const RU3={"x.starNote":"Предметы покупаются за звёзды Telegram (⭐ 1–3). После оплаты предмет сразу появляется в игре и остаётся навсегда.","x.onlyTg":"Покупки работают в Coopix Market в Telegram","x.payFail":"Оплата не прошла","x.cancel":"Покупка отменена","x.bought":"Предмет куплен!","x.starsHdr":"за звёзды"},
-  EN3={"x.starNote":"Items are bought with Telegram Stars (⭐ 1–3). After payment the item appears in the game at once and stays forever.","x.onlyTg":"Purchases work inside Coopix Market in Telegram","x.payFail":"Payment failed","x.cancel":"Purchase cancelled","x.bought":"Item purchased!","x.starsHdr":"with Stars"};
+ const RU3={"x.starNote":"Предметы покупаются за звёзды Telegram (⭐ 1–10). После оплаты предмет сразу появляется в игре и остаётся навсегда.","x.onlyTg":"Покупки работают в Coopix Market в Telegram","x.payFail":"Оплата не прошла","x.cancel":"Покупка отменена","x.bought":"Предмет куплен!","x.starsHdr":"за звёзды"},
+  EN3={"x.starNote":"Items are bought with Telegram Stars (⭐ 1–10). After payment the item appears in the game at once and stays forever.","x.onlyTg":"Purchases work inside Coopix Market in Telegram","x.payFail":"Payment failed","x.cancel":"Purchase cancelled","x.bought":"Item purchased!","x.starsHdr":"with Stars"};
  for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU3:EN3);
  {const st=document.createElement("style");st.textContent="#nctoast{position:fixed;left:50%;bottom:9vmin;transform:translateX(-50%);z-index:60;background:rgba(14,20,34,.92);color:#fff;font-weight:700;font-size:3vmin;padding:1.4vmin 3.2vmin;border-radius:2.6vmin;border:.2vmin solid rgba(255,255,255,.25);opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap}#nctoast.on{opacity:1}";document.head.appendChild(st);
   const d=document.createElement("div");d.id="nctoast";document.body.appendChild(d)}
  let toastT=0;const ncToast=t=>{const e=$("nctoast");if(!e)return;e.textContent=t;e.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("on"),2600)};
- const catOf=id=>{for(const c in ITEMS)if(ITEMS[c].some(x=>x[0]===id))return c};
+ const catOf=id=>{for(const c in ITEMS)if(ITEMS[c].some(x=>x[0]===id))return c;if(/^(sk|ge)_[a-z0-9_]+$/.test(id)&&STAR[id])return "paid"}; /* скины (sk_…) и жесты (ge_…) — тоже покупки за звёзды, но живут не в магазине предметов, а на экране «Скины» */
  const inMarket=()=>{try{return window.parent&&window.parent!==window}catch(e){return false}};
  let PEND=null,pendT=0;
+ /* для экрана «Скины»: оплата, цена, «идёт оплата» и обратные вызовы (их ставят skins.js и gestures.js) */
+ const PAY=window.__ncPay={price:id=>+STAR[id]||0,buy:(id,nameKey)=>buyStar(id,nameKey),pending:()=>PEND,toast:ncToast,owned:id=>!!SAVE.owned[id],onOwned:null,refresh:null};
  function buyStar(id,nameKey){if(PEND)return;if(!inMarket()){ncToast(T("x.onlyTg"));return}
   PEND=id;renderShop();clearTimeout(pendT);pendT=setTimeout(()=>{PEND=null;renderShop()},90000);
   try{window.parent.postMessage({coopix:"buy",item:id,name:T(nameKey)},"*")}catch(e){PEND=null;renderShop()}}
@@ -213,7 +215,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
   for(const id of d.list||[])if(catOf(id)&&!SAVE.owned[id]){SAVE.owned[id]=1;changed=true}
   if(d.bought&&SAVE.owned[d.bought]){const c=catOf(d.bought);if(c&&changed)SAVE.eq[c]=d.bought}
   if(PEND&&(d.fail||changed||(d.list||[]).includes(PEND))){clearTimeout(pendT);PEND=null;if(d.fail==="pay"||d.fail==="err")ncToast(T("x.payFail"));else if(d.fail==="cancel")ncToast(T("x.cancel"));else if(d.fail==="tg")ncToast(T("x.onlyTg"))}
-  if(changed){persist();applySettings();if(screen==="shop")renderShop();ncToast(T("x.bought"))}else if(screen==="shop")renderShop()});
+  if(changed){persist();if(PAY.onOwned)PAY.onOwned(d.bought);applySettings();if(screen==="shop")renderShop();ncToast(T("x.bought"))}else if(screen==="shop")renderShop();if(PAY.refresh)PAY.refresh()});
  /* при запуске: что игрок уже купил за звёзды (магазин кладёт список в окно игры) */
  for(const id of window.__CPX_ITEMS||[])if(catOf(id))SAVE.owned[id]=1;
  renderShop=function(){$("shTitle").textContent=T(shopMode==="shop"?"menu.store":"menu.skins");$("shCoins").textContent="";
@@ -227,47 +229,9 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
    p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;if(window.__ncSetItem)window.__ncSetItem(shopCat,a);persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
   t.appendChild(n)}}
 
-/* ---------- походка и бег: куплены — появляется маленькая кнопка режима, и Нуми Клон ходит/бегает по земле, а не валится ---------- */
-{const WK=G=>G.wk||(G.wk={phase:0,cool:0,turn:0,grounded:false});
- let gait=+SAVE.gait||0;const modes=()=>{const m=[0];if(SAVE.owned.move_walk)m.push(1);if(SAVE.owned.move_run)m.push(2);return m};
- if(!modes().includes(gait))gait=0;
- const clamp2=(x,a,b)=>Math.max(a,Math.min(b,x));
- window.__ncGait=()=>gait;
- const on=G=>G===W&&effOf(G).gt>0&&!!G.B&&!!G.st&&!G.st.ragdoll&&G.st.mode!=="bar"&&!(G.st.koT>0);
- {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:13.5%;top:auto;height:8.5%;width:7%;font-size:3.5vmin;padding:0;opacity:.85}#zWL{left:34.5%}#zWR{left:42%}";document.head.appendChild(st)}
- let goTxt=null;
- function updBtns(){const m=modes(),t=$("zWalk"),L=$("zWL"),R=$("zWR"),go=$("zGo");if(!m.includes(gait))gait=0;
-  if(t){t.classList.toggle("on",m.length>1);t.textContent=gait===2?"\u{1F3C3}":gait===1?"\u{1F6B6}":"\u{1F938}";t.title=gait===2?T("x.run"):gait===1?T("x.walk"):""}
-  if(L&&R){L.classList.toggle("on",gait>0);R.classList.toggle("on",gait>0)}
-  if(go){if(goTxt===null)goTxt=go.textContent;go.textContent=gait>0?T("x.jump"):goTxt}}
- const zw=$("zWalk");if(zw)zw.addEventListener("pointerdown",e=>{e.preventDefault();const m=modes();gait=m[(m.indexOf(gait)+1)%m.length];SAVE.gait=gait;persist();updBtns();if(W.rec)W.recCfg(cfgOf())});
- window.__ncSetItem=(cat,id)=>{if(cat!=="move")return;gait=id==="move_walk"?1:id==="move_run"?2:0;SAVE.gait=gait;updBtns();if(W.rec)W.recCfg(cfgOf())};
- {const _as3=applySettings;applySettings=function(){_as3();updBtns()};updBtns()}
- /* без прилипания и без винтов, пока ходим; «Отпустить» = прыжок */
- {const _wf=GP.weldFeet;GP.weldFeet=function(s){if(on(this))return;return _wf.call(this,s)};
-  const _pr=GP.press;GP.press=function(s){if(on(this)&&(s==="letgo"||s==="twL"||s==="twR")){if(s==="letgo")jump(this);return}return _pr.call(this,s)}}
- function jump(G){const WALK=WK(G);if(!WALK.grounded||WALK.cool>0)return;WALK.cool=.45;for(const k in G.B){const b=G.B[k],v=b.getLinearVelocity();b.setLinearVelocity(V2(v.x,5.4))}}
- const _lm3=GP.loadMap;
- GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(on(G))ctl(G,a[0])}}catch(e){}return _ws.apply(this,a)};return r};
- function ctl(G,dt){const B=G.B,J=G.J,st=G.st,tor=B.torso,WALK=WK(G),gait=effOf(G).gt;WALK.cool-=dt;WALK.turn-=dt;
-  for(const wj of G.welds)G.world.destroyJoint(wj);G.welds=[];if(st.mode==="stuck"){st.mode="air";st.stuckSpawn=false}
-  const p=tor.getPosition(),v=tor.getLinearVelocity();let M=0;for(const k in B)M+=B[k].getMass();
-  const gy=G.groundBelow(p.x,p.y+.3),foot=Math.min(B.footL.getPosition().y,B.footR.getPosition().y)-.04,err=gy+1.43-p.y;
-  WALK.grounded=foot-gy<.16&&err>-.6;
-  const dir=(G.inp.twR?1:0)-(G.inp.twL?1:0),f=G.f;
-  if(dir!==0&&dir!==f&&WALK.grounded&&WALK.turn<=0){WALK.turn=.3;G.mirror();return} /* развернуться лицом по ходу */
-  const sp=gait===2?3.8:1.7,moving=dir!==0;
-  if(WALK.grounded){tor.applyForceToCenter(V2(0,clamp2(M*(55*err-12*v.y),0,M*9.81*2)),true);
-   let a=tor.getAngle()%TAU;if(a>Math.PI)a-=TAU;if(a<-Math.PI)a+=TAU;tor.applyTorque(-(30*a+3*tor.getAngularVelocity()),true);
-   const cv=G.com().vx,Fx=clamp2(M*7*((moving?dir*sp:0)-cv),-M*12,M*12);for(const k in B)B[k].applyForceToCenter(V2(Fx*B[k].getMass()/M,0),true)} /* тяга распределена по всем частям тела: не заваливает вперёд */
-  if(moving||Math.abs(v.x)>.35)WALK.phase+=dt*(gait===2?8:4.6);
-  const A=gait===2?36:22,K=gait===2?100:55,mv=moving||Math.abs(v.x)>.35;
-  const set=(n,deg)=>{const j=J[n],ang=j.getJointAngle();j.setMaxMotorTorque(j.maxT*3+.6);j.setMotorSpeed(clamp2(14*(deg*D2R*f-ang),-14,14))};
-  const leg=(side,off)=>{const ph=WALK.phase+off;set("hip"+side,mv?A*Math.sin(ph):0);set("knee"+side,mv?-K*Math.max(0,Math.cos(ph)):-3);set("ank"+side,0)};
-  leg("L",0);leg("R",Math.PI);set("neck",0);
-  const sw=mv?18*Math.sin(WALK.phase):0;set("shL",-138+sw);set("shR",-138-sw)}
- if(NC_DBG)window.__ncw={setGait:g=>{gait=g;updBtns()},get grounded(){return WK(W).grounded}};
-}
+/* ---------- шаг физики: турбины и сцены Vice применяются прямо внутри world.step (после разбора нажатий этого шага — запись и повтор совпадают) ---------- */
+{const _lm3=GP.loadMap;
+ GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(G.gestStep)G.gestStep(a[0])}}catch(e){}return _ws.apply(this,a)};return r}}
 
 /* ---------- выход в меню из паузы: понятная подпись и отступ сверху (в Telegram там своя кнопка закрытия — их легко перепутать) ---------- */
 {const RU4={"x.exit":"В меню"},EN4={"x.exit":"Menu"};for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU4:EN4);
@@ -282,6 +246,6 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  addEventListener("message",e=>{const d=e.data;if(!d||d.coopix!=="filedone")return;if(d.ok)flash(T(d.via==="bot"?"x.fileBot":"rp.saved",""),"#7dffb2",2400);else flash(T(d.err==="open_bot"?"x.fileBotOff":"x.fileFail"),"#ffb4a8",3200)})}
 
 /* пока открыта пауза или меню, мои элементы поверх игры (счётчики, кнопки турбин и ходьбы, сообщения) скрыты — иначе закрывают кнопки выхода */
-{const st=document.createElement("style");st.textContent=":root{--sbm:max(env(safe-area-inset-bottom),44px)}body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}@media(orientation:portrait){.zone{font-size:3.4vw}#zGo{bottom:calc(var(--sbm) + 24.7%);width:28.8%;height:11.7%}#zStick{bottom:calc(var(--sbm) + 12.7%);width:28.8%;height:11.7%}#zReset{bottom:calc(var(--sbm) + 1.2%);width:19.2%;height:11.2%}#zMenu{left:21.7%;bottom:calc(var(--sbm) + 1.2%);width:8.8%;height:11.2%;font-size:5.6vw}#zArch{bottom:calc(var(--sbm) + 24.7%);width:28.8%;height:11.7%}#zTuck{bottom:calc(var(--sbm) + 12.7%);width:28.8%;height:11.7%}#zStr{bottom:calc(var(--sbm) + 1.2%);width:28.8%;height:11.2%}#adv .zone{left:40.9%;width:18.2%;font-size:2.8vw}#zPike{bottom:calc(var(--sbm) + 27.8%);height:8.6%}#zTl{bottom:calc(var(--sbm) + 18.8%);height:8.6%}#zTr{bottom:calc(var(--sbm) + 10%);height:8.6%}#zRag{bottom:calc(var(--sbm) + 1.2%);height:8.5%}#zWL,#zWR,#zTurboL,#zTurboA{top:auto;bottom:calc(var(--sbm) + 37.9%);height:5%;width:14%;font-size:2.5vw}#zWL{left:1.5%}#zWR{left:16.5%}#zTurboL{left:70.5%}#zTurboA{left:85%;width:13.5%}#zWalk{top:auto;bottom:calc(var(--sbm) + 37.9%);left:40%;width:10vw;height:10vw;font-size:5vw}}";document.head.appendChild(st);
+{const st=document.createElement("style");st.textContent=":root{--sbm:max(env(safe-area-inset-bottom),44px)}body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb{display:none!important}@media(orientation:portrait){.zone{font-size:3.4vw}#zGo{bottom:calc(var(--sbm) + 24.7%);width:28.8%;height:11.7%}#zStick{bottom:calc(var(--sbm) + 12.7%);width:28.8%;height:11.7%}#zReset{bottom:calc(var(--sbm) + 1.2%);width:19.2%;height:11.2%}#zMenu{left:21.7%;bottom:calc(var(--sbm) + 1.2%);width:8.8%;height:11.2%;font-size:5.6vw}#zArch{bottom:calc(var(--sbm) + 24.7%);width:28.8%;height:11.7%}#zTuck{bottom:calc(var(--sbm) + 12.7%);width:28.8%;height:11.7%}#zStr{bottom:calc(var(--sbm) + 1.2%);width:28.8%;height:11.2%}#adv .zone{left:40.9%;width:18.2%;font-size:2.8vw}#zPike{bottom:calc(var(--sbm) + 27.8%);height:8.6%}#zTl{bottom:calc(var(--sbm) + 18.8%);height:8.6%}#zTr{bottom:calc(var(--sbm) + 10%);height:8.6%}#zRag{bottom:calc(var(--sbm) + 1.2%);height:8.5%}#zTurboL,#zTurboA{top:auto;bottom:calc(var(--sbm) + 37.9%);height:5%;width:14%;font-size:2.5vw}#zTurboL{left:70.5%}#zTurboA{left:85%;width:13.5%}}";document.head.appendChild(st);
  const _show=show;show=function(t){_show(t);document.body.classList.toggle("ncp",t!=="game")};setTimeout(()=>document.body.classList.toggle("ncp",screen!=="game"),0)}
 }

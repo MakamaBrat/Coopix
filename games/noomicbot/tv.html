@@ -1,9 +1,9 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>NoomiClone — мини-тест</title>
+<title>Noomic Bot — мини-тест</title>
 <style>html,body{margin:0;height:100%;background:#6fb1f0;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
 canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
 <script>
-/* NoomiClone — микро-тест для «телевизора» Coopix: раскачайся на турнике, отпусти в нужный момент, перелети и схвати следующий.
+/* Noomic Bot — микро-тест для «телевизора» Coopix: раскачайся на турнике, отпусти в нужный момент, перелети и схвати следующий.
    ПК: → / D / пробел — держать (качать, в воздухе — группировка), ← / A / Z — отпустить.
    Телефон: правая половина экрана — держать, левая — отпустить. Чем больше перехватов, тем лучше. Упал на землю — конец. */
 (()=>{const c=document.getElementById("c"),x=c.getContext("2d");let W=0,H=0,S=1;
@@ -62,7 +62,7 @@ function draw(){
     pt(score+" ПЕРЕХВАТОВ",160,12.5,9,flash>0?"#ffe27a":"#fff","center");pt("РЕКОРД "+best,312,12,8,"#fff","right","#1a3d7a")}
   if(st==="play"&&score===0&&!air)pt("ДЕРЖИ — КАЧАЙСЯ, ОТПУСТИ — ЛЕТИ",160,100,8,"#fff","center","#1a3d7a");
   if(st!=="play"){g.fillStyle="rgba(10,30,70,.5)";g.fillRect(0,0,320,200);
-    pt("NOOMICLONE",160,52,26,"#ff4a3a","center","#5a0808");
+    pt("NOOMIC BOT",160,52,26,"#ff4a3a","center","#5a0808");
     pt(st==="over"?why+" · "+score+" ПЕРЕХВАТОВ · РЕКОРД "+best:"МИНИ-ТЕСТ · ПЕРЕЛЕТАЙ МЕЖДУ ТУРНИКАМИ",160,78,10,"#fff","center","#1a3d7a");
     if((Date.now()/500|0)%2===0)pt("НАЖМИТЕ, ЧТОБЫ НАЧАТЬ",160,106,11,"#fff","center","#1a3d7a");
     pt(TOUCH?"ПРАВО — КАЧАТЬ / ГРУППИРОВКА · ЛЕВО — ОТПУСТИТЬ":"→ ДЕРЖАТЬ (КАЧАТЬ, ГРУППИРОВКА) · ← ОТПУСТИТЬ",160,132,8,"#e6f2ff","center","#1a3d7a");

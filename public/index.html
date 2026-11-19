@@ -3308,7 +3308,7 @@ function gsPut(id,data){const o=gsLocal(id);for(const k in data){if(data[k]===nu
     cs.setItem("gs_"+id,JSON.stringify(pick),()=>{})}catch(e){}},2500)}
 /* предметы внутри игры, купленные за звёзды (список с сервера): игра получает их при запуске и после покупки */
 async function loadGameItems(id){try{return(await hub("myitems",{q:{game:id}})).items||[]}catch(e){return[]}}
-/* файл из игры (повтор Noomi Clone и т.п.): окно игры скачивать не умеет. В Telegram файл присылает бот в личку, в обычном браузере скачиваем сами */
+/* файл из игры (повтор Noomic Bot и т.п.): окно игры скачивать не умеет. В Telegram файл присылает бот в личку, в обычном браузере скачиваем сами */
 async function gameSaveFile(gid,name,data,frame){
   const send=m=>{try{frame.contentWindow.postMessage(m,"*")}catch(e){}};
   const local=()=>{try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=name;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);return true}catch(e){return false}};

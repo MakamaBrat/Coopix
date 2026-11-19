@@ -1,13 +1,15 @@
-/* NoomiClone: скины персонажа (текстуры 64×64 в формате майнкрафта).
-   Вставляется в основной скрипт игры скриптом scripts/build_noomi_plus.py после plus.js и vice.js (видит View3D, PARTS, SAVE, look, show, T, I18N и т.д.).
-   Файлы скинов лежат в games/noomiclone/skins/ (s01.png … + skins.json с названиями), сборка кладёт их в игру как data-URI вместо NC_SKINS.
+/* Noomic Bot: скины персонажа (текстуры 64×64 в формате майнкрафта).
+   Вставляется в основной скрипт игры скриптом scripts/build_noomic_plus.py после plus.js и vice.js (видит View3D, PARTS, SAVE, look, show, T, I18N и т.д.).
+   Файлы скинов лежат в games/noomicbot/skins/ (s01.png … + skins.json с названиями), сборка кладёт их в игру как data-URI вместо NC_SKINS.
    Как это работает: у каждой части тела куклы (физика та же — капсулы) в 3D добавляется блочная модель с UV из скина, а стандартные капсулы прячутся.
    Скин выбирается на экране «Скины» (живое 3D-превью), id хранится в SAVE.skin. Старый «Гардероб» (купленные предметы) — кнопка на том же экране. */
 {
 const SK=NC_SKINS,byId={};for(const s of SK)byId[s.id]=s;
-const RU={"sk.std":"Стандартный","sk.ward":"Гардероб","sk.hint":"Нажмите на скин — персонаж сразу его наденет. Превью можно вращать пальцем."},
- EN={"sk.std":"Default","sk.ward":"Wardrobe","sk.hint":"Tap a skin to put it on. Drag the preview to rotate."};
+const RU={"sk.std":"Стандартный","sk.ward":"Гардероб","sk.hint":"Нажмите на скин, чтобы примерить. Купленные надеваются сразу. Превью можно вращать пальцем.","sk.buy":"Купить","sk.noMarket":"Покупки работают в Coopix Market в Telegram"},
+ EN={"sk.std":"Default","sk.ward":"Wardrobe","sk.hint":"Tap a skin to try it on. Owned skins are worn at once. Drag the preview to rotate.","sk.buy":"Buy","sk.noMarket":"Purchases work inside Coopix Market in Telegram"};
 for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN);
+for(const L in I18N){const ru=["ru","uk","be"].includes(L);for(const s of SK)I18N[L]["sk.n."+s.id]=ru?"Скин «"+s.ru+"»":"Skin: "+s.en} /* подпись в счёте на оплату */
+const PAY=window.__ncPay,payId=id=>"sk_"+id,own=id=>!id||(PAY?PAY.owned(payId(id)):true),price=id=>PAY?PAY.price(payId(id)):0;
 const nameOf=s=>["ru","uk","be"].includes(LANG)?s.ru:s.en;
 
 /* ---------- атлас скина: приводим к 64×64, как делает майнкрафт ---------- */
@@ -105,7 +107,7 @@ function applySkin(V,id){
  clearSkin(V);putSkin(V,id,a)}
 const _slS=View3D.prototype.setLook;
 View3D.prototype.setLook=function(t,i){_slS.call(this,t,i);if(this.noomi)applySkin(this,t.skin)};
-const _lookS=look;look=function(){const r=_lookS();r.skin=SAVE.skin||"";return r};
+const _lookS=look;look=function(){const r=_lookS();r.skin=own(SAVE.skin)?SAVE.skin||"":"";return r};
 
 /* каждый кадр: лицо вперёд по ходу, зеркальные левая/правая стороны, подгонка вещей под квадратную голову, рентген */
 const _pnS=View3D.prototype.poseNoomi;
@@ -124,6 +126,8 @@ View3D.prototype.poseNoomi=function(t){_pnS.call(this,t);const R=this.skinRig;if
 {const css=document.createElement("style");css.textContent=
 "#skins .bd{overflow:hidden}#skWrap{display:flex;gap:2vmin;height:100%}"+
 "#skPv{position:relative;flex:0 0 40%;background:#1b2b4b;border-radius:2vmin;overflow:hidden}#skC{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}"+
+"#skBuy{position:absolute;left:50%;transform:translateX(-50%);bottom:7.6vmin;height:7.6vmin;padding:0 4vmin;border-radius:3.8vmin;border:0;background:#c20f0f;color:#fff;font-weight:800;font-size:3.2vmin;font-family:inherit;white-space:nowrap;display:none;box-shadow:0 .5vmin 1.6vmin rgba(0,0,0,.45)}#skBuy.show{display:block}#skBuy[disabled]{background:#3a4a6c;color:#8a98b8}"+
+".skc .pr{position:absolute;right:.7vmin;top:.5vmin;background:#10203a;color:#ffd24a;border-radius:1.2vmin;font-size:2vmin;font-weight:800;padding:.2vmin .9vmin;line-height:1.3}.skc.lock canvas,.skc.lock .gi{opacity:.5}.skc.on.lock::after{display:none}"+
 "#skNm{position:absolute;left:0;right:0;bottom:1.4vmin;text-align:center;font-weight:800;font-size:3.2vmin;text-shadow:0 .3vmin 1vmin rgba(0,0,0,.7);pointer-events:none}"+
 "#skHint{position:absolute;left:0;right:0;top:1.2vmin;text-align:center;font-size:2vmin;color:#9fb4d8;pointer-events:none;padding:0 2vmin}"+
 "#skGrid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1.4vmin;align-content:start;overflow-y:auto;touch-action:pan-y;padding-right:.6vmin}#skGrid *{touch-action:pan-y}"+
@@ -131,10 +135,14 @@ View3D.prototype.poseNoomi=function(t){_pnS.call(this,t);const R=this.skinRig;if
 ".skc.on{border-color:#ffd24a;background:#2f4678}.skc.on::after{content:\"\\2713\";position:absolute;right:.8vmin;top:.2vmin;color:#ffd24a;font-weight:900;font-size:3vmin}"+
 ".skc canvas{width:60%;aspect-ratio:1/2;image-rendering:pixelated}.skc span{font-size:2.2vmin;font-weight:700;text-align:center;line-height:1.1}"+
 "#skWard{position:absolute;right:4.9%;bottom:3.4%;height:8.6vmin;padding:0 3vmin;font-size:3.1vmin;border-radius:1.8vmin}"+
-"@media(orientation:portrait){#skWrap{flex-direction:column;gap:2.4vw}#skPv{flex:0 0 46%}#skGrid{grid-template-columns:repeat(3,1fr);gap:2.4vw}.skc{border-radius:3vw;padding:2vw;gap:1.4vw;border-width:.8vw}.skc.on::after{font-size:5vw;right:2vw}.skc span{font-size:3.4vw}.skc canvas{width:44%}#skNm{font-size:6vw;bottom:2vw}#skHint{font-size:3.2vw;top:2vw}#skWard{right:4%;bottom:calc(env(safe-area-inset-bottom) + 2.4%);height:13vw;font-size:4.8vw;padding:0 4vw;border-radius:3vw}}";
+"#skTabs{display:flex;gap:1.2vmin}#skTabs button{height:6.4vmin;padding:0 3vmin;font-size:2.8vmin;border-radius:3.2vmin;border:0;color:#fff;background:#243557;font-weight:700;font-family:inherit}#skTabs button.on{background:#c20f0f}"+
+"#skRight{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}#skRight #skGrid{flex:1;min-height:0}"+
+"#skSlots{display:none;gap:1.2vmin;margin-bottom:1.4vmin}#skSlots.show{display:flex}#skSlots button{flex:1;position:relative;height:9vmin;border-radius:1.6vmin;border:.5vmin solid transparent;background:#243557;color:#fff;font-size:5vmin;font-family:inherit;display:flex;align-items:center;justify-content:center}#skSlots button.on{border-color:#ffd24a;background:#2f4678}#skSlots button i{position:absolute;left:1vmin;top:.4vmin;font-style:normal;font-size:2vmin;font-weight:800;color:#9fb4d8}#skSlots button.em{font-size:2vmin;color:#7f93b8}"+
+".skc .gi{font-size:7vmin;line-height:1.1}.skc .gn{position:absolute;left:.8vmin;top:.6vmin;display:flex;gap:.4vmin}.skc .gn b{background:#ffd24a;color:#10203a;border-radius:1vmin;font-size:2vmin;min-width:3vmin;height:3vmin;display:flex;align-items:center;justify-content:center}"+
+"@media(orientation:portrait){#skWrap{flex-direction:column;gap:2.4vw}#skPv{flex:0 0 46%}#skGrid{grid-template-columns:repeat(3,1fr);gap:2.4vw}.skc{border-radius:3vw;padding:2vw;gap:1.4vw;border-width:.8vw}.skc.on::after{font-size:5vw;right:2vw}.skc span{font-size:3.4vw}.skc canvas{width:44%}#skNm{font-size:6vw;bottom:2vw}#skHint{font-size:3.2vw;top:2vw}#skBuy{bottom:calc(env(safe-area-inset-bottom) + 0px + 11vw);height:11vw;padding:0 6vw;border-radius:5.5vw;font-size:4.6vw}.skc .pr{font-size:3.2vw;border-radius:2vw;padding:.3vw 1.6vw;right:1.4vw;top:1.2vw}#skWard{right:4%;bottom:calc(env(safe-area-inset-bottom) + 2.4%);height:13vw;font-size:4.8vw;padding:0 4vw;border-radius:3vw}#skTabs{gap:2vw}#skTabs button{height:10vw;font-size:4vw;padding:0 4vw;border-radius:5vw}#skSlots{gap:2vw;margin-bottom:2vw}#skSlots button{height:14vw;font-size:7vw;border-radius:3vw;border-width:.8vw}#skSlots button i{font-size:3vw}#skSlots button.em{font-size:3.2vw}.skc .gi{font-size:11vw}.skc .gn b{font-size:3vw;min-width:5vw;height:5vw;border-radius:1.4vw}}";
  document.head.appendChild(css);
  const s=document.createElement("div");s.className="screen sc2";s.id="skins";
- s.innerHTML='<div class="hd"><span id="skTitle"></span></div><div class="bd"><div id="skWrap"><div id="skPv"><canvas id="skC"></canvas><div id="skHint"></div><div id="skNm"></div></div><div id="skGrid"></div></div></div><button class="navy bk" id="skBack"></button><button class="navy" id="skWard"></button>';
+ s.innerHTML='<div class="hd"><span id="skTitle"></span><div id="skTabs"><button data-t="sk"></button><button data-t="ge"></button></div></div><div class="bd"><div id="skWrap"><div id="skPv"><canvas id="skC"></canvas><div id="skHint"></div><button id="skBuy"></button><div id="skNm"></div></div><div id="skRight"><div id="skSlots"></div><div id="skGrid"></div></div></div></div><button class="navy bk" id="skBack"></button><button class="navy" id="skWard"></button>';
  $("app").appendChild(s)}
 
 let SKV=null,SKF=null,raf=0,yaw=34,drag=null,lastInt=0,lastT=0,cards=[];
@@ -147,7 +155,14 @@ function ensureView(){if(SKV||SKV===false)return SKV;
 /* «поддельная» игра: расставляет части куклы в спокойную стойку с чуть опущенными руками */
 function fake(){const B={};for(const p of PN)B[p]={x:PARTS[p].c[0],y:PARTS[p].c[1],a:0,getPosition(){return{x:this.x,y:this.y}},getAngle(){return this.a},getLinearVelocity(){return{x:0,y:0}}};
  return{B,st:{tw:0},f:1,M:null,com(){return{x:0,y:-1.5,vx:0,vy:0}}}}
-function pose(F,tm){const s=tm/1000;
+let tab="sk",slot=0,gPlay=null,pvSkin=SAVE.skin||"";
+const GX=()=>window.__ncGest;
+function pose(F,tm){const s=tm/1000,GE=GX();
+ if(GE){let id=null,t=0,hop=0;
+  if(tab==="ge"&&gPlay){const g=GE.byId[gPlay.id];t=(tm-gPlay.t0)/1000;if(g){if(t>g.dur+.7){gPlay.t0=tm;t=0}id=gPlay.id}}
+  const r=GE.anglesAt(id,t),a=r.a;hop=r.hop;
+  if(!id){/* спокойная стойка: руки слегка покачиваются */a.shL+=Math.sin(s*1.7)*5;a.shR+=Math.sin(s*1.7+1.2)*5}
+  GE.fk(F.B,a,hop);F.B.head.y+=Math.sin(s*2.2)*.006;return}
  for(const p of["armL","armR"]){const sgn=p==="armL"?1:-1,th=(-168+Math.sin(s*1.7+(sgn>0?0:1.2))*5)*Math.PI/180,A=[0,-.78],C=PARTS[p].c,dx=C[0]-A[0],dy=C[1]-A[1],b=F.B[p];
   b.x=A[0]+dx*Math.cos(th)-dy*Math.sin(th);b.y=A[1]+dx*Math.sin(th)+dy*Math.cos(th);b.a=th}
  const bob=Math.sin(s*2.2)*.006;for(const p of["head"])F.B[p].y=PARTS[p].c[1]+bob}
@@ -155,10 +170,10 @@ function colorHex(){return(findItem(SAVE.eq.col)||[])[2]}
 function drawPv(tm){const V=ensureView();if(!V)return;const c=$("skC"),r=c.getBoundingClientRect();if(r.width<10)return;
  const dpr=Math.min(2,window.devicePixelRatio||1);if(c.dataset.w!==Math.round(r.width)+"x"+Math.round(r.height)){c.dataset.w=Math.round(r.width)+"x"+Math.round(r.height);V.resize(r.width,r.height,dpr);const cm=V.camera;cm.clearViewOffset();cm.fov=32;cm.updateProjectionMatrix()}
  const dt=Math.min(.05,(tm-lastT)/1000);lastT=tm;if(!drag&&tm-lastInt>2200)yaw+=dt*16;
- if(!SKF)SKF=fake();pose(SKF,tm);V.setLook(look(),colorHex());
+ if(!SKF)SKF=fake();pose(SKF,tm);{const lk=look();if(tab==="sk")lk.skin=pvSkin;V.setLook(lk,colorHex())}
  /* камера: по высоте в кадр помещается кукла вместе с подставкой, по ширине — размах рук */
  const asp=r.width/r.height,Hv=Math.max(3.6,1.8/asp);
- V.render(SKF,{noMap:true,cx:0,cy:-1.42,D:Hv/(2*Math.tan(16*Math.PI/180)),yaw,pitch:-7,sky:"day",shadow:true})}
+ V.render(SKF,{noMap:true,cx:0,cy:tab==="ge"?-1.18:-1.42,D:Hv/(2*Math.tan(16*Math.PI/180)),yaw,pitch:-7,sky:"day",shadow:true})}
 function loop(tm){if(screen!=="skins"){raf=0;return}drawPv(tm);raf=requestAnimationFrame(loop)}
 
 /* карточки */
@@ -168,15 +183,41 @@ function thumb(cv,a,slim,col){const x=cv.getContext("2d");x.clearRect(0,0,16,32)
  const A=a.cv,aw=slim?3:4,d=(sx,sy,sw,sh,dx,dy)=>x.drawImage(A,sx,sy,sw,sh,dx,dy,sw,sh);
  d(8,8,8,8,4,0);d(20,20,8,12,4,8);d(44,20,aw,12,4-aw,8);d(36,52,aw,12,12,8);d(4,20,4,12,4,20);d(20,52,4,12,8,20);
  d(40,8,8,8,4,0);d(20,36,8,12,4,8);d(44,36,aw,12,4-aw,8);d(52,52,aw,12,12,8);d(4,36,4,12,4,20);d(4,52,4,12,8,20)}
-function renderGrid(){const g=$("skGrid");g.innerHTML="";cards=[];const cur=SAVE.skin||"";
- const mk=(id,label)=>{const b=document.createElement("button");b.className="skc"+(cur===id?" on":"");b.innerHTML='<canvas width="16" height="32"></canvas><span></span>';b.querySelector("span").textContent=label;
-  b.onclick=()=>{SAVE.skin=id;persist();applySettings();lastInt=performance.now();renderGrid();updName()};g.appendChild(b);cards.push({id,cv:b.querySelector("canvas")})};
+function renderGrid(){if(tab==="ge")return renderGest();$("skSlots").classList.remove("show");const g=$("skGrid");g.innerHTML="";cards=[];const cur=SAVE.skin||"";
+ const mk=(id,label)=>{const b=document.createElement("button"),pr=id?price(id):0,lock=!own(id);b.className="skc"+(pvSkin===id?" on":"")+(lock?" lock":"");b.innerHTML='<canvas width="16" height="32"></canvas><span></span>'+(lock&&pr?'<div class="pr">⭐ '+pr+'</div>':"");b.querySelector("span").textContent=label;
+  /* примерка: превью показывает скин; купленный ещё и надевается */
+  b.onclick=()=>{pvSkin=id;if(own(id)){SAVE.skin=id;persist();applySettings()}lastInt=performance.now();renderGrid();updName();updBuy()};g.appendChild(b);cards.push({id,cv:b.querySelector("canvas")})};
  mk("",T("sk.std"));for(const s of SK)mk(s.id,nameOf(s));paintThumbs()}
 function paintThumbs(){for(const c of cards){if(!c.id){thumb(c.cv,null,false,colorHex());continue}const a=atlas(c.id);if(a)thumb(c.cv,a,a.slim)}}
-function updName(){const s=byId[SAVE.skin||""];$("skNm").textContent=s?nameOf(s):T("sk.std")}
-function openSkins(){$("skTitle").textContent=T("menu.skins");$("skBack").textContent="\u2039 "+T("back");$("skWard").textContent="\u{1F455} "+T("sk.ward");$("skHint").textContent=T("sk.hint");
- renderGrid();updName();show("skins")}
+function updName(){if(tab==="ge"){const g=gPlay&&GX()&&GX().byId[gPlay.id];$("skNm").textContent=g?g.ic+" "+GX().name(g):"";return}const s=byId[pvSkin||""];$("skNm").textContent=s?nameOf(s):T("sk.std")}
+/* кнопка «Купить» в превью: для непокупного скина или жеста */
+function buyTarget(){if(tab==="ge"){const GE=GX(),g=gPlay&&GE&&GE.byId[gPlay.id];return g&&!GE.owned(g.id)&&GE.price(g.id)?{id:g.id,nk:"ge.n."+g.id,pr:GE.price(g.id)}:null}return pvSkin&&!own(pvSkin)&&price(pvSkin)?{id:payId(pvSkin),nk:"sk.n."+pvSkin,pr:price(pvSkin)}:null}
+function updBuy(){const t=buyTarget(),b=$("skBuy");b.classList.toggle("show",!!t);if(!t)return;const pend=PAY&&PAY.pending()===t.id;b.textContent=pend?"…":"⭐ "+t.pr+" · "+T("sk.buy");b.disabled=!!pend}
+$("skBuy").onclick=()=>{const t=buyTarget();if(!t||!PAY)return;PAY.buy(t.id,t.nk);setTimeout(updBuy,60)};
+/* вкладка «Жесты»: 4 слота и список жестов */
+function renderGest(){const GE=GX(),g=$("skGrid"),sl=$("skSlots");if(!GE){g.innerHTML="";return}cards=[];sl.classList.add("show");sl.innerHTML="";g.innerHTML="";
+ const cur=GE.slots();
+ for(let i=0;i<GE.NS;i++){const b=document.createElement("button"),gg=GE.byId[cur[i]];b.className=(slot===i?"on":"")+(gg?"":" em");b.innerHTML="<i>"+(i+1)+"</i>"+(gg?gg.ic:T("ge.empty"));
+  b.onclick=()=>{slot=i;if(gg)gPlay={id:gg.id,t0:performance.now()};renderGest();updName();updBuy()};sl.appendChild(b)}
+ for(const gg of GE.list){const b=document.createElement("button"),at=[],ow=GE.owned(gg.id),pr=GE.price(gg.id);cur.forEach((x,i)=>{if(x===gg.id)at.push(i+1)});
+  b.className="skc"+(gPlay&&gPlay.id===gg.id?" on":"")+(ow?"":" lock");
+  b.innerHTML='<div class="gn">'+at.map(n=>"<b>"+n+"</b>").join("")+'</div><div class="gi">'+gg.ic+"</div><span></span>"+(!ow&&pr?'<div class="pr">⭐ '+pr+'</div>':"");b.querySelector("span").textContent=GE.name(gg);
+  b.onclick=()=>{/* превью играет жест; купленный встаёт в выбранный слот (из других слотов убираем) */
+   gPlay={id:gg.id,t0:performance.now()};lastInt=performance.now();
+   if(ow){for(let i=0;i<GE.NS;i++)if(cur[i]===gg.id&&i!==slot)GE.setSlot(i,"");GE.setSlot(slot,gg.id)}
+   renderGest();updName();updBuy()};
+  g.appendChild(b)}}
+function setTab(t){tab=t;document.querySelectorAll("#skTabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+ $("skHint").textContent=t==="ge"?T("ge.hint"):T("sk.hint");$("skWard").style.display=t==="ge"?"none":"";
+ if(t==="ge"&&!gPlay){const GE=GX(),cur=GE?GE.slots():[],i=cur.findIndex(x=>x);if(i>=0){slot=i;gPlay={id:cur[i],t0:performance.now()}}}
+ renderGrid();updName();updBuy()}
+function openSkins(){$("skTitle").textContent=T("menu.skins");document.querySelector("#skTabs [data-t=sk]").textContent=T("ge.tabSk");document.querySelector("#skTabs [data-t=ge]").textContent=T("ge.tabGe");$("skBack").textContent="\u2039 "+T("back");$("skWard").textContent="\u{1F455} "+T("sk.ward");$("skHint").textContent=T("sk.hint");
+ pvSkin=SAVE.skin||"";setTab(tab);show("skins")}
 $("skBack").onclick=()=>show("menu");
+if(PAY){/* после оплаты: надеть скин / поставить жест в слот и обновить экран */
+ PAY.onOwned=id=>{if(!id)return;if(id.startsWith("sk_")){const sid=id.slice(3);if(byId[sid]){SAVE.skin=sid;pvSkin=sid}}else if(id.startsWith("ge_")){const GE=GX();if(GE&&GE.byId[id]){const cur=GE.slots();let i=cur[slot]?cur.findIndex(x=>!x):slot;if(i<0)i=slot;GE.setSlot(i,id);slot=i;gPlay={id,t0:performance.now()}}}};
+ PAY.refresh=()=>{if(screen==="skins"){renderGrid();updName();updBuy()}}}
+document.querySelectorAll("#skTabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 $("skWard").onclick=()=>{shopMode="skins";renderShop();show("shop")};
 /* после загрузки картинок — перерисовать миниатюры */
 for(const s of SK){const a=atlas(s.id);if(a)continue;const t=setInterval(()=>{const x=ATL[s.id];if(x&&(x.ready||x.bad)){clearInterval(t);if(screen==="skins")paintThumbs()}},120)}
@@ -190,9 +231,12 @@ setTimeout(()=>{$("mSkins").onclick=openSkins},0);
 addEventListener("resize",()=>{if(screen==="skins"){const c=$("skC");c.dataset.w=""}});
 /* на всякий случай: хранилище не знает про скин — по умолчанию «стандартный» */
 if(typeof SAVE.skin!=="string")SAVE.skin="";
-if(SAVE.skin&&!byId[SAVE.skin])SAVE.skin="";
+if(SAVE.skin&&(!byId[SAVE.skin]||!own(SAVE.skin)))SAVE.skin=""; /* скины платные: надетым может быть только купленный */
 if(NC_SKDBG)window.__ncSkins={list:SK.map(s=>s.id),set(id){SAVE.skin=id;persist();applySettings()},atlas:id=>ATL[id],open:openSkins,
  /* для отладки: снимок превью выбранного скина с заданным углом камеры (data-URL) */
+ snapG(gid,t,yawDeg,w,h){const V=ensureView();if(!V)return null;V.resize(w,h,1);const cm=V.camera;cm.clearViewOffset();cm.fov=32;cm.updateProjectionMatrix();
+  const ot=tab,og=gPlay;tab="ge";gPlay={id:gid,t0:0};if(!SKF)SKF=fake();pose(SKF,t*1000);V.setLook(look(),colorHex());const asp=w/h,Hv=Math.max(3.6,1.8/asp);
+  V.render(SKF,{noMap:true,cx:0,cy:-1.42,D:Hv/(2*Math.tan(16*Math.PI/180)),yaw:yawDeg,pitch:-7,sky:"day",shadow:true});const u=$("skC").toDataURL("image/png");tab=ot;gPlay=og;$("skC").dataset.w="";return u},
  snap(id,yawDeg,w,h){const V=ensureView();if(!V)return null;const old=SAVE.skin;SAVE.skin=id;V.resize(w,h,1);const cm=V.camera;cm.clearViewOffset();cm.fov=32;cm.updateProjectionMatrix();
   if(!SKF)SKF=fake();pose(SKF,1234);V.setLook(look(),colorHex());const asp=w/h,Hv=Math.max(3.6,1.8/asp);
   V.render(SKF,{noMap:true,cx:0,cy:-1.42,D:Hv/(2*Math.tan(16*Math.PI/180)),yaw:yawDeg,pitch:-7,sky:"day",shadow:true});const u=$("skC").toDataURL("image/png");SAVE.skin=old;$("skC").dataset.w="";return u}};

@@ -1,7 +1,7 @@
-/** Цены предметов внутри игр в звёздах Telegram (1–3 на предмет, назначены случайно один раз). Сервер сверяет цену с этой таблицей, клиенту не верит.
- * Генерируется scripts/build_noomi_plus.py из games/noomiclone/items.json. */
+/** Цены предметов внутри игр в звёздах Telegram (1–10 на предмет, задаются в games/noomicbot/items.json). Сервер сверяет цену с этой таблицей, клиенту не верит.
+ * Генерируется scripts/build_noomic_plus.py из games/noomicbot/items.json. */
 export const ITEM_PRICES = {
-  noomiclone: {
+  noomicbot: {
     cape_black: 1,
     cape_flame: 1,
     cape_gold: 1,
@@ -31,6 +31,16 @@ export const ITEM_PRICES = {
     fx_ice: 1,
     fx_rainbow: 1,
     fx_spark: 1,
+    ge_angel: 2,
+    ge_bow: 1,
+    ge_dance: 10,
+    ge_joy: 10,
+    ge_mill: 5,
+    ge_runner: 5,
+    ge_star: 5,
+    ge_super: 2,
+    ge_victory: 2,
+    ge_wave: 1,
     gear_ta: 1,
     gear_tb: 1,
     gear_tl: 1,
@@ -44,6 +54,26 @@ export const ITEM_PRICES = {
     hat_top: 1,
     hat_viking: 1,
     hat_wizard: 1,
+    sk_s01: 1,
+    sk_s02: 1,
+    sk_s03: 2,
+    sk_s04: 5,
+    sk_s05: 2,
+    sk_s06: 5,
+    sk_s07: 10,
+    sk_s08: 5,
+    sk_s09: 5,
+    sk_s10: 10,
+    sk_s11: 5,
+    sk_s12: 10,
+    sk_s13: 2,
+    sk_s14: 2,
+    sk_s15: 1,
+    sk_s16: 5,
+    sk_s17: 1,
+    sk_s18: 10,
+    sk_s19: 2,
+    sk_s20: 1,
     sky_night: 1,
     sky_space: 1,
     sky_sunset: 1,
@@ -51,9 +81,7 @@ export const ITEM_PRICES = {
     wear_belt: 1,
     wear_boots: 1,
     wear_gloves: 1,
-    wear_pack: 1,
-    move_walk: 1,
-    move_run: 1
+    wear_pack: 1
   },
 };
 export const itemPrice = (game, item) => Number(ITEM_PRICES[game]?.[item]) || 0;

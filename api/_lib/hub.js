@@ -262,7 +262,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         catch (e) { sentAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed", bot: botUser || "" }); }
         return json(200, { ok: true, bot: botUser || "" });
       }
-      // файл из игры (например, повтор Noomi Clone): окно игры скачивать не умеет, поэтому бот присылает файл в личку
+      // файл из игры (например, повтор Noomic Bot): окно игры скачивать не умеет, поэтому бот присылает файл в личку
       if (r === "savefile") {
         if (m !== "POST") return bad();
         if (!tgDoc) return json(503, { error: "bot_off" });
@@ -383,7 +383,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
 
       // ---------- «Спасибо автору»: счёт в звёздах Telegram ----------
       // покупка платной игры: счёт в звёздах Telegram; после оплаты вебхук бота записывает покупку (thanks.js)
-      // предметы внутри игры (например, скины Noomi Clone) за звёзды Telegram: цена берётся из таблицы ITEM_PRICES, не от клиента
+      // предметы внутри игры (например, скины Noomic Bot) за звёзды Telegram: цена берётся из таблицы ITEM_PRICES, не от клиента
       if (r === "myitems") {
         if (m !== "GET") return bad();
         const gid = String(q.game ?? "");

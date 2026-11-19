@@ -42,8 +42,8 @@ def build():
         assert n >= 1, ("картинка не используется", k)
         html = html.replace('src="img/%s"' % k, "src=\"${IM['%s']}\"" % k).replace("'img/%s'" % k, "IM['%s']" % k)
     rep("const sp = n => `img/s/${n}.webp`;", "const IM = " + json.dumps(imgs, separators=(",", ":")) + ";\nconst sp = n => IM['s/' + n + '.webp'];")
-    # в изолированном окне магазина нет своего localStorage: подключаем то же «хранилище через магазин», что у Noomi Clone (иначе друзья и очки пропадают после перезапуска)
-    from build_noomi_plus import SHIM
+    # в изолированном окне магазина нет своего localStorage: подключаем то же «хранилище через магазин», что у Noomic Bot (иначе друзья и очки пропадают после перезапуска)
+    from build_noomic_plus import SHIM
     meta = '<meta charset="utf-8">'
     assert html.count(meta) == 1
     html = html.replace(meta, meta + chr(10) + SHIM, 1)

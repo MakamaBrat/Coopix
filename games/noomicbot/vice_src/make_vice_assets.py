@@ -1,5 +1,5 @@
-"""Вырезает спрайты из присланных листов (ref*.webp) и собирает games/noomiclone/vice_assets.json
-(имя -> data:image/webp;base64 + размеры). Запуск: python games/noomiclone/vice_src/make_vice_assets.py"""
+"""Вырезает спрайты из присланных листов (ref*.webp) и собирает games/noomicbot/vice_assets.json
+(имя -> data:image/webp;base64 + размеры). Запуск: python games/noomicbot/vice_src/make_vice_assets.py"""
 import base64, io, json, os
 import numpy as np
 from PIL import Image, ImageFilter

@@ -1,9 +1,9 @@
-"""Собирает games/noomiclone/NoomiClone.html = NoomiClone.base.html + plus.js (новые предметы, переломы, турбины, монеты) + кнопки турбин + хранилище.
-Запуск: python scripts/build_noomi_plus.py            — боевая сборка в games/noomiclone/NoomiClone.html
-        python scripts/build_noomi_plus.py --debug PATH — тестовая сборка (с отладочными хуками) по указанному пути"""
+"""Собирает games/noomicbot/NoomicBot.html = NoomicBot.base.html + plus.js (новые предметы, переломы, турбины, монеты) + кнопки турбин + жесты + скины + хранилище.
+Запуск: python scripts/build_noomic_plus.py            — боевая сборка в games/noomicbot/NoomicBot.html
+        python scripts/build_noomic_plus.py --debug PATH — тестовая сборка (с отладочными хуками) по указанному пути"""
 import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-D = os.path.join(ROOT, "games", "noomiclone")
+D = os.path.join(ROOT, "games", "noomicbot")
 FRAC_V, TURBO_L, TURBO_A = 15, 9, 6.6
 
 SHIM = """<script>(function(){var D=window.__CPX_SAVE;try{window.localStorage.getItem("__t");return}catch(e){}
@@ -15,10 +15,10 @@ Object.defineProperty(shim,"length",{get:function(){return Object.keys(D).length
 try{Object.defineProperty(window,"localStorage",{get:function(){return shim},configurable:true})}catch(e){}
 addEventListener("pagehide",flush);document.addEventListener("visibilitychange",function(){if(document.hidden)flush()});})();</script>
 """
-BTNS = '<button class="zone tb" id="zTurboL" data-k="turboL">Турбины ног</button><button class="zone tb" id="zTurboA" data-k="turboA">Турбины рук</button><button class="zone wk" id="zWalk">&#129336;</button><button class="zone wk" id="zWL" data-k="twL">&#9664;</button><button class="zone wk" id="zWR" data-k="twR">&#9654;</button>\n'
+BTNS = '<button class="zone tb" id="zTurboL" data-k="turboL">Турбины ног</button><button class="zone tb" id="zTurboA" data-k="turboA">Турбины рук</button>\n'
 
 def skins_json():
-    """Скины персонажа: games/noomiclone/skins/skins.json (id + названия) и файлы <id>.png → список с data-URI."""
+    """Скины персонажа: games/noomicbot/skins/skins.json (id + названия) и файлы <id>.png → список с data-URI."""
     import base64
     meta = json.load(open(os.path.join(D, "skins", "skins.json"), encoding="utf-8"))
     out = []
@@ -29,7 +29,7 @@ def skins_json():
 
 
 def build(debug=None):
-    s = open(os.path.join(D, "NoomiClone.base.html"), encoding="utf-8", newline="").read()
+    s = open(os.path.join(D, "NoomicBot.base.html"), encoding="utf-8", newline="").read()
     js = open(os.path.join(D, "plus.js"), encoding="utf-8").read()
     prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
     js = js.replace("NC_STAR_PRICES", json.dumps(prices))
@@ -42,6 +42,9 @@ def build(debug=None):
     if os.path.exists(vp):
         assets = open(os.path.join(D, "vice_assets.json"), encoding="utf-8").read()
         js = js + "\n" + open(vp, encoding="utf-8").read().replace("NC_VICE_ASSETS", assets)
+    gp = os.path.join(D, "gestures.js")
+    if os.path.exists(gp):
+        js = js + "\n" + open(gp, encoding="utf-8").read()
     sp = os.path.join(D, "skins.js")
     if os.path.exists(sp):
         js = js + "\n" + open(sp, encoding="utf-8").read().replace("NC_SKINS", skins_json()).replace("NC_SKDBG", "true" if debug else "false")
@@ -63,10 +66,10 @@ def build(debug=None):
 def write_server_prices():
     prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
     lines = [
-        "/** Цены предметов внутри игр в звёздах Telegram (1–3 на предмет, назначены случайно один раз). Сервер сверяет цену с этой таблицей, клиенту не верит.",
-        " * Генерируется scripts/build_noomi_plus.py из games/noomiclone/items.json. */",
+        "/** Цены предметов внутри игр в звёздах Telegram (1–10 на предмет, задаются в games/noomicbot/items.json). Сервер сверяет цену с этой таблицей, клиенту не верит.",
+        " * Генерируется scripts/build_noomic_plus.py из games/noomicbot/items.json. */",
         "export const ITEM_PRICES = {",
-        "  noomiclone: {",
+        "  noomicbot: {",
         ",\n".join("    %s: %s" % (k, v) for k, v in prices.items()),
         "  },",
         "};",
@@ -82,6 +85,6 @@ if __name__ == "__main__":
     if "--debug" in sys.argv:
         dbg = sys.argv[sys.argv.index("--debug") + 1]
     out = build(bool(dbg))
-    path = dbg or os.path.join(D, "NoomiClone.html")
+    path = dbg or os.path.join(D, "NoomicBot.html")
     open(path, "w", encoding="utf-8", newline="").write(out)
     print("OK", path, len(out))
