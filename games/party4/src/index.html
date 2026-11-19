@@ -459,6 +459,19 @@ html.lite #scene::after{background:radial-gradient(ellipse at 50% 42%,transparen
   .rtog{display:block;margin:0 0 8px;padding:4px 0;background:none;border:0;color:var(--gold);font:800 14px var(--hf),sans-serif;letter-spacing:.3px;cursor:pointer}
   .split .r .btn.big{width:100%;min-height:60px;font-size:21px}
 }
+/*POLISH*/
+/* экраны игр: «Назад» слева и звук справа — сразу под кнопками Telegram */
+#bot.top{top:calc(env(safe-area-inset-top) + 58px);bottom:auto;left:12px;right:12px;transform:none;width:auto;max-width:none;justify-content:space-between;padding:0;background:none;border:0;box-shadow:none;pointer-events:none}
+#bot.top .rb{pointer-events:auto;height:44px;min-width:44px;padding:0 14px;font-size:16px;box-shadow:inset 0 1px 0 #ffd98a55,0 4px 12px #000a}
+#bot.top .rb.ico{width:44px;padding:0}
+#app.inner{padding-bottom:calc(env(safe-area-inset-bottom) + 14px)!important}
+.inner #view{padding-top:calc(env(safe-area-inset-top) + 112px)!important}
+/* поля не вылезают за края */
+.hp-list>.hrow{min-width:0}
+.prow .nm{min-width:0}
+.prow .sub{flex-wrap:wrap;gap:3px 9px}
+/* фонарь в углу убран: на телефоне он только закрывал интерфейс */
+#decor .lanw{display:none}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
 </head>
@@ -588,16 +601,27 @@ function bottleSVG() {
   return `<svg viewBox="0 0 60 150"><rect x="22" y="1" width="16" height="10" rx="2.500" fill="#d9a35a" stroke="#7a4a10"/><path d="M24 10h12v6h-1v24c0 7 12 15 12 31v68c0 6-4 10-10 10H23c-6 0-10-4-10-10V71c0-16 12-24 12-31V16h-1z" fill="url(#gGlass)" stroke="#5a3208" stroke-width="2" stroke-linejoin="round"/><rect x="14" y="88" width="32" height="38" rx="3" fill="url(#gWax)" stroke="#8a5a1c"/><path d="M30 118c-10-7-11-14-6-16 3-1 5 1 6 4 1-3 3-5 6-4 5 2 4 9-6 16z" fill="#d6283e"/><path d="M19 74v58" stroke="#fff" stroke-opacity=".38" stroke-width="3" stroke-linecap="round"/><path d="M27 20v18" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 function lightsSVG() {
-  let b = ''; const xs = [50, 150, 250, 350];
-  xs.forEach((x, i) => { b += `<circle cx="${x}" cy="38" r="22" fill="#ffb02a" opacity=".3"/><circle cx="${x}" cy="38" r="8" fill="url(#gBulb)" stroke="#8a5a10"/><rect x="${x - 3.5}" y="26" width="7" height="7" rx="1.5" fill="#6a4a20"/>`; });
-  return `<svg class="lights" viewBox="0 0 400 70"><path d="M0 6Q50 54 100 8Q150 54 200 8Q250 54 300 8Q350 54 400 6" fill="none" stroke="#9a7440" stroke-width="2.5"/>${b}</svg>`;
+  const xs = [40, 120, 200, 280, 360], cols = ['#ffd36a', '#ff9a5a', '#fff1b0', '#ffb03a', '#ffd36a'];
+  let b = '';
+  xs.forEach((x, i) => { const y = 30 + (i % 2) * 6; b += `<circle cx="${x}" cy="${y + 12}" r="20" fill="url(#lgGlow)"/><rect x="${x - 3}" y="${y - 2}" width="6" height="6" rx="1.5" fill="#5a3c1a"/><ellipse cx="${x}" cy="${y + 11}" rx="6" ry="8.5" fill="${cols[i]}"/><ellipse cx="${x - 2}" cy="${y + 8}" rx="2" ry="3" fill="#fff" opacity=".75"/>`; });
+  return `<svg class="lights" viewBox="0 0 400 70"><defs><radialGradient id="lgGlow"><stop offset="0" stop-color="#ffc35a" stop-opacity=".55"/><stop offset="1" stop-color="#ffc35a" stop-opacity="0"/></radialGradient></defs><path d="M0 8Q40 46 80 30T160 30T240 30T320 30T400 8" fill="none" stroke="#6b4a24" stroke-width="2"/>${b}</svg>`;
 }
 function candlesSVG() {
-  const c = (x, h) => `<rect x="${x}" y="${88 - h}" width="16" height="${h}" rx="3" fill="url(#gWax)" stroke="#a8782a"/><path d="M${x + 8} ${74 - h}c-6-8-5-14 0-20 5 6 6 12 0 20z" fill="#ffc83a" style="transform-origin:${x + 8}px ${74 - h}px;animation:flame 1.2s infinite"/><ellipse cx="${x + 8}" cy="${88 - h - 2}" rx="14" ry="10" fill="#ffb02a" opacity=".22"/>`;
-  return `<svg class="cand" viewBox="0 0 80 100"><ellipse cx="40" cy="92" rx="36" ry="8" fill="#6a4020" stroke="#2a1608"/>${c(14, 40)}${c(44, 28)}</svg>`;
+  const c = (x, h, w) => { const top = 92 - h, cx = x + w / 2;
+    return `<ellipse cx="${cx}" cy="${top - 4}" rx="${w * 1.2}" ry="${w * 1.2}" fill="url(#cdGlow)"/>`
+      + `<rect x="${x}" y="${top}" width="${w}" height="${h}" rx="${w * .22}" fill="url(#cdWax)"/>`
+      + `<path d="M${x} ${top + 3}q${w * .25} 5 ${w * .45} 0q${w * .2} 7 ${w * .55} 1v-4h-${w}z" fill="#fff6dc" opacity=".55"/>`
+      + `<path d="M${cx} ${top}v-4" stroke="#3a2412" stroke-width="1.6" stroke-linecap="round"/>`
+      + `<g style="transform-origin:${cx}px ${top - 3}px;animation:flame 1.3s ease-in-out infinite"><path d="M${cx} ${top - 22}c-6 7-7 13-4 17 1 2 3 2.5 4 2.5s3-.5 4-2.5c3-4 2-10-4-17z" fill="url(#cdFlame)"/><path d="M${cx} ${top - 13}c-2.5 3-3 6-1.5 8 .5.7 1 .9 1.5.9s1-.2 1.5-.9c1.5-2 1-5-1.5-8z" fill="#fffbe6"/></g>`; };
+  return `<svg class="cand" viewBox="0 0 80 100"><defs>`
+    + `<linearGradient id="cdWax" x1="0" x2="1"><stop offset="0" stop-color="#e9c98e"/><stop offset=".45" stop-color="#fff3d2"/><stop offset="1" stop-color="#cfa462"/></linearGradient>`
+    + `<linearGradient id="cdFlame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff7a1a"/><stop offset=".5" stop-color="#ffb43a"/><stop offset="1" stop-color="#ffe9a0" stop-opacity=".6"/></linearGradient>`
+    + `<radialGradient id="cdGlow"><stop offset="0" stop-color="#ffb84a" stop-opacity=".45"/><stop offset="1" stop-color="#ffb84a" stop-opacity="0"/></radialGradient></defs>`
+    + `<ellipse cx="40" cy="94" rx="34" ry="5" fill="#000" opacity=".35"/><ellipse cx="40" cy="92" rx="30" ry="5.5" fill="#7a4e26"/><ellipse cx="40" cy="90.5" rx="30" ry="4" fill="#9a6a38"/>`
+    + `${c(16, 46, 15)}${c(46, 32, 13)}</svg>`;
 }
 function lanternSVG() {
-  return `<svg viewBox="0 0 46 90"><path d="M23 0v14" stroke="#3a2a14" stroke-width="3"/><path d="M10 18h26l-3-6H13z" fill="#5a4020" stroke="#2a1a08"/><rect x="11" y="18" width="24" height="42" rx="5" fill="#ffc83a" fill-opacity=".85" stroke="#4a3412" stroke-width="3"/><path d="M23 28c-7 8-5 14 0 20 5-6 7-12 0-20z" fill="#fff3b8"/><path d="M11 18v42M35 18v42M23 18v42" stroke="#4a3412" stroke-width="2"/><rect x="9" y="60" width="28" height="7" rx="2" fill="#5a4020" stroke="#2a1a08"/></svg>`;
+  return `<svg viewBox="0 0 46 90"><defs><radialGradient id="lnGlow" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#fff2c0"/><stop offset=".55" stop-color="#ffbf4a"/><stop offset="1" stop-color="#d07a1a"/></radialGradient></defs><path d="M23 0v12" stroke="#3a2a14" stroke-width="2.5" stroke-linecap="round"/><circle cx="23" cy="13" r="3.5" fill="none" stroke="#5a4020" stroke-width="2"/><path d="M9 20h28l-4-5H13z" fill="#6a4a24"/><rect x="11" y="20" width="24" height="40" rx="6" fill="url(#lnGlow)"/><path d="M14 22v36M32 22v36" stroke="#4a3412" stroke-width="2.4" stroke-linecap="round"/><rect x="8" y="60" width="30" height="7" rx="3" fill="#6a4a24"/></svg>`;
 }
 const TARGET = '<svg class="tg" viewBox="0 0 100 100"><g fill="none" stroke="#ffd36a" stroke-width="2" stroke-linecap="round"><circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="22"/><circle cx="50" cy="50" r="3" fill="#ffd36a"/><path d="M50 6V30M50 70V94M6 50H30M70 50H94"/></g></svg>';
 
@@ -790,7 +814,7 @@ function go(r, g) {
   render(); window.scrollTo(0, 0);
 }
 function topbar() {
-  return `<div id="bot"><button class="rb" data-a="back" aria-label="Назад">${IC.back}<span>Назад</span></button><button class="rb ico" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
+  return `<div id="bot" class="top"><button class="rb" data-a="back" aria-label="Назад">${IC.back}<span>Назад</span></button><button class="rb ico" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
 }
 function render() {
   const home = route === 'home';
@@ -800,6 +824,7 @@ function render() {
   const key = route + ':' + (G.phase || '') + ':' + (G.di || 0) + ':' + (G.rev ? 1 : 0) + ':' + (G.si || 0) + ':' + (G.round || 0) + (G.res ? 'r' : '') + (G.acc || '');
   const v = $('#view'); v.classList.toggle('still', key === lastKey && !home); lastKey = key;
   [...v.children].forEach((c, i) => c.style.setProperty('--i', i));
+  { const bt = document.querySelector('#view #bot'); if (bt) $('#app').appendChild(bt); }
   if (AFTER[route]) AFTER[route]();
   enhanceRules();
   fitView(); fitLater(160); setTimeout(fitView, 520); /* картинки и шрифты догружаются и меняют высоту — подгоняем ещё раз */
