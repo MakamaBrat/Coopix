@@ -3365,7 +3365,9 @@ function paintPage(){
   $("#pgRate").textContent=g.rated||g.favs?fmtRate(g.rating)+" · "+[g.rated?g.rated+" "+plr(g.rated,["оценка","оценки","оценок"]):"",g.favs?g.favs+" в избранном":""].filter(Boolean).join(" · "):"нет оценок";
   /* только разные игроки: один игрок не считается дважды */
   $("#pgPlays").textContent="Играли: "+nfmt(g.pp);
-  $("#pgDl").textContent="Скачано: "+nfmt(g.dp)+" "+plr(g.dp,["раз","раза","раз"]);
+  /* скачивание выключено (у всех или у этой игры): строку «Скачано» не показываем */
+  const dlOff=DL_OFF||PG.m.dl===false,dlEl=$("#pgDl");
+  dlEl.textContent=dlOff?"":"Скачано: "+nfmt(g.dp)+" "+plr(g.dp,["раз","раза","раз"]);if(dlEl.parentElement)dlEl.parentElement.style.display=dlOff?"none":"";
   const sp=$("#pgSup");if(sp)sp.innerHTML=g.stars?`${ingots(g.stars)}<b>${nfmt(g.stars)}</b><span>поддержка · ${nfmt(g.backers)} ${plr(g.backers,PLW)}</span>`:""}
 
 /* ---- «Спасибо автору»: звёзды Telegram. Звёзды приходят на бот проекта и засчитываются автору игры ---- */

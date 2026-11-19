@@ -46,8 +46,21 @@ def build():
     assert not left, left
     return html
 
+def build_tv():
+    """Мини-версия «Бомбочка» для «телевизора»: tv.src.html + картинки героев (tv_assets.json) -> games/party4/tv.html"""
+    a = json.load(open(os.path.join(D, "tv_assets.json"), encoding="utf-8"))
+    t = open(os.path.join(D, "tv.src.html"), encoding="utf-8", newline="").read()
+    assert t.count("/*AV*/[]") == 1 and t.count('/*FLAME*/""') == 1
+    t = t.replace("/*AV*/[]", json.dumps(a["av"], separators=(",", ":"))).replace('/*FLAME*/""', json.dumps(a["flame"]))
+    assert len(t) < 300000, len(t)
+    open(os.path.join(D, "tv.html"), "w", encoding="utf-8", newline="").write(t)
+    return t
+
+
 if __name__ == "__main__":
     html = build()
+    tv = build_tv()
+    print("TV", len(tv))
     out = os.path.join(D, "Party4.html")
     open(out, "w", encoding="utf-8", newline="").write(html)
     print("OK", out, len(html))
@@ -63,7 +76,7 @@ if __name__ == "__main__":
         "changes": "Первая версия", "version": "1.0", "author_name": "Coopix",
         "item": "floppy", "cover": "img:" + hashlib.sha256(cover.encode()).hexdigest()[:12], "cover_img": cover,
         "shot_img": jpg("shot.jpg"), "access": "public", "sort": 7,
-        "play_kind": "auto", "file_html": html, "dl_off": True, "price": 0,
+        "play_kind": "auto", "play_html": tv, "file_html": html, "dl_off": True, "price": 0,
     }
     url, key = env()
     st, res = req("POST", f"{url}/rest/v1/games", key, row)
