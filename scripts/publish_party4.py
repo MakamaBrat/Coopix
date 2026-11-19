@@ -42,6 +42,11 @@ def build():
     imgs.pop("card.png", None); imgs["card.png"] = data_uri("card.png")
     imgs = {k: v for k, v in imgs.items() if k.startswith("s/") or k in ("card.png", "logo.webp", "hero.webp", "flame_c.webp")}
     rep("const sp = n => `img/s/${n}.webp`;", "const IM = " + json.dumps(imgs, separators=(",", ":")) + ";\nconst sp = n => IM['s/' + n + '.webp'];")
+    # в изолированном окне магазина нет своего localStorage: подключаем то же «хранилище через магазин», что у Noomi Clone (иначе друзья и очки пропадают после перезапуска)
+    from build_noomi_plus import SHIM
+    meta = '<meta charset="utf-8">'
+    assert html.count(meta) == 1
+    html = html.replace(meta, meta + chr(10) + SHIM, 1)
     left = re.findall(r"img/[A-Za-z0-9_/.\-]+", html.replace("const IM", ""))
     assert not left, left
     return html

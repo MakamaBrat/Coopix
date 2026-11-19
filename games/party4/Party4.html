@@ -2,6 +2,15 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<script>(function(){var D=window.__CPX_SAVE;try{window.localStorage.getItem("__t");return}catch(e){}
+if(!D||typeof D!=="object")D={};var tm=0,dirty={};
+function flush(){clearTimeout(tm);var o={},any=false;for(var k in dirty){o[k]=Object.prototype.hasOwnProperty.call(D,k)?D[k]:null;any=true}dirty={};if(any){try{parent.postMessage({coopix:"save",data:o},"*")}catch(e){}}}
+function post(k){dirty[k]=1;clearTimeout(tm);tm=setTimeout(flush,120)}
+var shim={getItem:function(k){return Object.prototype.hasOwnProperty.call(D,k)?D[k]:null},setItem:function(k,v){D[k]=String(v);post(k)},removeItem:function(k){delete D[k];post(k)},clear:function(){for(var k in D){delete D[k];post(k)}},key:function(i){return Object.keys(D)[i]||null}};
+Object.defineProperty(shim,"length",{get:function(){return Object.keys(D).length}});
+try{Object.defineProperty(window,"localStorage",{get:function(){return shim},configurable:true})}catch(e){}
+addEventListener("pagehide",flush);document.addEventListener("visibilitychange",function(){if(document.hidden)flush()});})();</script>
+
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#05060f">
 <meta name="apple-mobile-web-app-capable" content="yes">
