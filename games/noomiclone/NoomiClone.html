@@ -3206,7 +3206,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 }
 
 /* пока открыта пауза или меню, мои элементы поверх игры (счётчики, кнопки турбин и ходьбы, сообщения) скрыты — иначе закрывают кнопки выхода */
-{const st=document.createElement("style");st.textContent="body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}";document.head.appendChild(st);
+{const st=document.createElement("style");st.textContent="body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}@media(orientation:portrait){#zWL,#zWR,#zTurboL,#zTurboA{top:auto;bottom:calc(env(safe-area-inset-bottom) + 46.6%);height:9.4%;width:23%;font-size:3.4vw}#zWL{left:1.5%}#zWR{left:26%}#zTurboL{left:51%}#zTurboA{left:76%;width:22.5%}}";document.head.appendChild(st);
  const _show=show;show=function(t){_show(t);document.body.classList.toggle("ncp",t!=="game")};setTimeout(()=>document.body.classList.toggle("ncp",screen!=="game"),0)}
 }
 
