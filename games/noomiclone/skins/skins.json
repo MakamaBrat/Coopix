@@ -1,0 +1,22 @@
+[
+  {"id": "s01", "ru": "Путник", "en": "Wanderer"},
+  {"id": "s02", "ru": "Студент", "en": "Student"},
+  {"id": "s03", "ru": "Учёный", "en": "Scientist"},
+  {"id": "s04", "ru": "Паук", "en": "Spider"},
+  {"id": "s05", "ru": "Чёрный худи", "en": "Black hoodie"},
+  {"id": "s06", "ru": "Котик", "en": "Kitty"},
+  {"id": "s07", "ru": "Тьма", "en": "Darkness"},
+  {"id": "s08", "ru": "Неон-тень", "en": "Neon shade"},
+  {"id": "s09", "ru": "Красная кепка", "en": "Red cap"},
+  {"id": "s10", "ru": "Радуга", "en": "Rainbow"},
+  {"id": "s11", "ru": "Крипер", "en": "Creeper"},
+  {"id": "s12", "ru": "Кибер", "en": "Cyber"},
+  {"id": "s13", "ru": "Солдат", "en": "Soldier"},
+  {"id": "s14", "ru": "Джентльмен", "en": "Gentleman"},
+  {"id": "s15", "ru": "Бандит", "en": "Bandit"},
+  {"id": "s16", "ru": "Аноним", "en": "Anon"},
+  {"id": "s17", "ru": "Серый", "en": "Grey"},
+  {"id": "s18", "ru": "Закат", "en": "Sunset"},
+  {"id": "s19", "ru": "Призрак", "en": "Ghost"},
+  {"id": "s20", "ru": "Стив", "en": "Steve"}
+]

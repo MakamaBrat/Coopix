@@ -17,6 +17,17 @@ addEventListener("pagehide",flush);document.addEventListener("visibilitychange",
 """
 BTNS = '<button class="zone tb" id="zTurboL" data-k="turboL">Турбины ног</button><button class="zone tb" id="zTurboA" data-k="turboA">Турбины рук</button><button class="zone wk" id="zWalk">&#129336;</button><button class="zone wk" id="zWL" data-k="twL">&#9664;</button><button class="zone wk" id="zWR" data-k="twR">&#9654;</button>\n'
 
+def skins_json():
+    """Скины персонажа: games/noomiclone/skins/skins.json (id + названия) и файлы <id>.png → список с data-URI."""
+    import base64
+    meta = json.load(open(os.path.join(D, "skins", "skins.json"), encoding="utf-8"))
+    out = []
+    for m in meta:
+        raw = open(os.path.join(D, "skins", m["id"] + ".png"), "rb").read()
+        out.append({"id": m["id"], "ru": m["ru"], "en": m["en"], "u": "data:image/png;base64," + base64.b64encode(raw).decode()})
+    return json.dumps(out, ensure_ascii=False)
+
+
 def build(debug=None):
     s = open(os.path.join(D, "NoomiClone.base.html"), encoding="utf-8", newline="").read()
     js = open(os.path.join(D, "plus.js"), encoding="utf-8").read()
@@ -31,6 +42,9 @@ def build(debug=None):
     if os.path.exists(vp):
         assets = open(os.path.join(D, "vice_assets.json"), encoding="utf-8").read()
         js = js + "\n" + open(vp, encoding="utf-8").read().replace("NC_VICE_ASSETS", assets)
+    sp = os.path.join(D, "skins.js")
+    if os.path.exists(sp):
+        js = js + "\n" + open(sp, encoding="utf-8").read().replace("NC_SKINS", skins_json()).replace("NC_SKDBG", "true" if debug else "false")
     # 1) кнопки турбин
     a = '<button class="zone" id="zArch" data-k="arch">'
     assert s.count(a) == 1
