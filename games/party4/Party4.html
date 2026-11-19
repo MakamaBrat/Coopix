@@ -830,12 +830,14 @@ function editorHtml() {
 function openModal(h) { $('#modal').innerHTML = h; $('#modal').classList.add('show'); }
 function closeModal() { const m = $('#modal'); m.classList.remove('show', 'kb'); m.style.height = m.style.top = m.style.bottom = ''; m.innerHTML = ''; E = null; }
 /*KB*/
+let MODAL_DOWN = false, KB_AT = 0;
+document.addEventListener('pointerdown', e => { MODAL_DOWN = e.target.id === 'modal'; }, true);
 { const vv = window.visualViewport;
   const kbFit = () => { const m = $('#modal'); if (!m.classList.contains('kb')) { m.style.height = m.style.top = m.style.bottom = ''; return; } m.style.top = (vv ? vv.offsetTop : 0) + 'px'; m.style.bottom = 'auto'; m.style.height = (vv ? vv.height : innerHeight) + 'px'; };
   let kbT = 0;
-  document.addEventListener('focusin', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); $('#modal').classList.add('kb'); kbFit(); setTimeout(kbFit, 250); setTimeout(kbFit, 600); });
-  document.addEventListener('focusout', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); kbT = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches('#modal input')) return; $('#modal').classList.remove('kb'); kbFit(); }, 350); });
-  if (vv) { vv.addEventListener('resize', kbFit); vv.addEventListener('scroll', kbFit); }
+  document.addEventListener('focusin', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); KB_AT = Date.now(); $('#modal').classList.add('kb'); kbFit(); setTimeout(kbFit, 250); setTimeout(kbFit, 600); });
+  document.addEventListener('focusout', e => { if (!e.target.matches || !e.target.matches('#modal input')) return; clearTimeout(kbT); kbT = setTimeout(() => { const a = document.activeElement; if (a && a.matches && a.matches('#modal input')) return; KB_AT = Date.now(); $('#modal').classList.remove('kb'); kbFit(); }, 350); });
+  if (vv) { vv.addEventListener('resize', () => { KB_AT = Date.now(); kbFit(); }); vv.addEventListener('scroll', kbFit); }
 }
 function openEditor(id) {
   const p = id && S.players.find(x => x.id === id);
@@ -1224,7 +1226,7 @@ const A = {
 };
 
 document.addEventListener('click', e => {
-  if (e.target.id === 'modal') { A.mclose(); return; }
+  if (e.target.id === 'modal') { if (MODAL_DOWN && Date.now() - KB_AT > 800) A.mclose(); return; } /* закрываем только если нажатие и началось на фоне, и не было сдвига окна из-за клавиатуры */
   const t = e.target.closest('[data-a]');
   if (!t || !A[t.dataset.a]) return;
   if (t.classList.contains('btn') || t.classList.contains('addb')) { const [x, y] = [e.clientX, e.clientY]; if (x || y) FX.spark(x, y, 6); }
