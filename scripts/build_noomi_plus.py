@@ -4,7 +4,7 @@
 import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = os.path.join(ROOT, "games", "noomiclone")
-FRAC_V, TURBO_L, TURBO_A = 15, 7.5, 5.5
+FRAC_V, TURBO_L, TURBO_A = 15, 9, 6.6
 
 SHIM = """<script>(function(){var D=window.__CPX_SAVE;try{window.localStorage.getItem("__t");return}catch(e){}
 if(!D||typeof D!=="object")D={};var tm=0,dirty={};

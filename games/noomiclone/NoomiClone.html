@@ -3075,7 +3075,7 @@ RKEYS.push("turboL","turboA");
  const _sp=GP.spawn;GP.spawn=function(s){this.tFuel=1;this.wk=null;return _sp.call(this,s)}; /* топливо и шаг ходьбы с нуля при каждом старте — запись и воспроизведение идут одинаково */
  const _cf=cfgOf;cfgOf=function(){return Object.assign(_cf(),{tb:SAVE.eq.gear,gt:window.__ncGait?window.__ncGait():0})}}
 /* ---------- турбины: физика и кнопки ---------- */
-const TURBO_F_LEG=7.5,TURBO_F_ARM=5.5;
+const TURBO_F_LEG=9,TURBO_F_ARM=6.6;
 GP.applyTurbo=function(dt){const g=effOf(this).tb,hasL=g==="gear_tl"||g==="gear_tb",hasA=g==="gear_ta"||g==="gear_tb";this.tOn={legs:false,arms:false};
   if(this.tFuel==null)this.tFuel=1;const B=this.B,inp=this.inp;if(!B||!this.st||(!hasL&&!hasA)){this.tFuel=Math.min(1,this.tFuel+dt*.3);return}
   const uL=hasL&&inp.turboL,uA=hasA&&inp.turboA,use=(uL||uA)&&this.tFuel>0;
@@ -3085,7 +3085,7 @@ GP.applyTurbo=function(dt){const g=effOf(this).tb,hasL=g==="gear_tl"||g==="gear_
   if(uL){push("calfL",-1,TURBO_F_LEG);push("calfR",-1,TURBO_F_LEG)}if(uA){push("armL",1,TURBO_F_ARM);push("armR",1,TURBO_F_ARM)}};
 /* тяга применяется внутри world.step (см. ниже, в обёртке мира): после разбора записанных нажатий этого шага — так запись и повтор совпадают */
 setTimeout(()=>{keyMap.t="turboL";keyMap.y="turboA"},0); /* keyMap объявлен ниже по скрипту */
-{const st=document.createElement("style");st.textContent=".zone.tb{display:none}.zone.tb.on{display:block}#zTurboL,#zTurboA{bottom:1.2%;top:auto;height:10.5%;width:12.5%;font-size:2.2vmin;opacity:.85;font-weight:800;color:#2a1000;background:linear-gradient(to top,rgba(255,150,40,.85) calc(var(--f,1)*100%),#ffffff52 0)}#zTurboL{left:32%}#zTurboA{left:45.5%;background:linear-gradient(to top,rgba(34,211,238,.85) calc(var(--f,1)*100%),#ffffff52 0)}.zone.tb.down{filter:brightness(1.35)}#cgain{position:absolute;right:2%;top:9vmin;z-index:6;color:#ffd24a;font-weight:800;font-size:3.6vmin;text-shadow:0 .3vmin 1vmin rgba(0,0,0,.7);pointer-events:none;opacity:0}#cgain.on{animation:cg 1.4s ease-out}@keyframes cg{0%{opacity:0;transform:translateY(1vmin)}15%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
+{const st=document.createElement("style");st.textContent=".zone.tb{display:none}.zone.tb.on{display:block}#zTurboL,#zTurboA{bottom:1.2%;top:auto;height:9%;width:11%;font-size:2vmin;opacity:.85;font-weight:800;color:#2a1000;background:linear-gradient(to top,rgba(255,150,40,.85) calc(var(--f,1)*100%),#ffffff52 0)}#zTurboL{left:33%}#zTurboA{left:45%;background:linear-gradient(to top,rgba(34,211,238,.85) calc(var(--f,1)*100%),#ffffff52 0)}.zone.tb.down{filter:brightness(1.35)}#cgain{position:absolute;right:2%;top:9vmin;z-index:6;color:#ffd24a;font-weight:800;font-size:3.6vmin;text-shadow:0 .3vmin 1vmin rgba(0,0,0,.7);pointer-events:none;opacity:0}#cgain.on{animation:cg 1.4s ease-out}@keyframes cg{0%{opacity:0;transform:translateY(1vmin)}15%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
  const g=$("game");if(g){const c=document.createElement("div");c.id="cgain";g.appendChild(c)}}
 function updTb(){const g=SAVE.eq.gear,L=$("zTurboL"),A=$("zTurboA");if(!L||!A)return;L.classList.toggle("on",g==="gear_tl"||g==="gear_tb");A.classList.toggle("on",g==="gear_ta"||g==="gear_tb");L.textContent="\u{1F680} "+T("x.turboL");A.textContent="\u{1F680} "+T("x.turboA")}
 const _as=applySettings;applySettings=function(){_as();updTb()};updTb();
@@ -3170,7 +3170,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  const clamp2=(x,a,b)=>Math.max(a,Math.min(b,x));
  window.__ncGait=()=>gait;
  const on=G=>G===W&&effOf(G).gt>0&&!!G.B&&!!G.st&&!G.st.ragdoll&&G.st.mode!=="bar"&&!(G.st.koT>0);
- {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:14.5%;top:auto;height:10%;width:8%;font-size:4vmin;padding:0;opacity:.85}#zWL{left:33%}#zWR{left:42%}";document.head.appendChild(st)}
+ {const st=document.createElement("style");st.textContent=".zone.wk{display:none}.zone.wk.on{display:block}#zWalk{left:19.4%;top:2%;width:8vmin;height:8vmin;border-radius:50%;padding:0;font-size:4.6vmin;background:#ffffff8c;box-shadow:0 .3vmin 1vmin rgba(0,0,0,.3)}#zWL,#zWR{bottom:13.5%;top:auto;height:8.5%;width:7%;font-size:3.5vmin;padding:0;opacity:.85}#zWL{left:34.5%}#zWR{left:42%}";document.head.appendChild(st)}
  let goTxt=null;
  function updBtns(){const m=modes(),t=$("zWalk"),L=$("zWL"),R=$("zWR"),go=$("zGo");if(!m.includes(gait))gait=0;
   if(t){t.classList.toggle("on",m.length>1);t.textContent=gait===2?"\u{1F3C3}":gait===1?"\u{1F6B6}":"\u{1F938}";t.title=gait===2?T("x.run"):gait===1?T("x.walk"):""}
@@ -3206,7 +3206,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 }
 
 /* пока открыта пауза или меню, мои элементы поверх игры (счётчики, кнопки турбин и ходьбы, сообщения) скрыты — иначе закрывают кнопки выхода */
-{const st=document.createElement("style");st.textContent="body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}@media(orientation:portrait){#zWL,#zWR,#zTurboL,#zTurboA{top:auto;bottom:calc(env(safe-area-inset-bottom) + 46.6%);height:5.8%;width:16%;font-size:2.8vw}#zWL{left:1.5%}#zWR{left:18.5%}#zTurboL{left:65%}#zTurboA{left:82.5%;width:16%}}";document.head.appendChild(st);
+{const st=document.createElement("style");st.textContent="body.ncp #cstat,body.ncp #xrmsg,body.ncp #xrfx,body.ncp #cgain,body.ncp .zone.tb,body.ncp .zone.wk{display:none!important}@media(orientation:portrait){#zWL,#zWR,#zTurboL,#zTurboA{top:auto;bottom:calc(env(safe-area-inset-bottom) + 46.6%);height:5%;width:14%;font-size:2.5vw}#zWL{left:1.5%}#zWR{left:16.5%}#zTurboL{left:70.5%}#zTurboA{left:85%;width:13.5%}#zWalk{top:auto;bottom:calc(env(safe-area-inset-bottom) + 46.6%);left:40%;width:10vw;height:10vw;font-size:5vw}}";document.head.appendChild(st);
  const _show=show;show=function(t){_show(t);document.body.classList.toggle("ncp",t!=="game")};setTimeout(()=>document.body.classList.toggle("ncp",screen!=="game"),0)}
 }
 
