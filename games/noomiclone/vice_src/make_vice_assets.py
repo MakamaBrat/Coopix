@@ -110,10 +110,10 @@ def main():
     # --- машины и мелочь с листа 18 (серый фон) ---
     b18 = {
         "car_sedan": (20, 469, 392, 590), "car_conv": (416, 472, 781, 591), "car_police": (808, 466, 1196, 590),
-        "moto": (1230, 472, 1430, 590), "palm_big": (5, 596, 182, 836), 
+        "moto": (1230, 472, 1430, 590), "cop_aim": (1230, 246, 1421, 456), "palm_big": (5, 596, 182, 836), 
     }
     for k, b in b18.items():
-        mw = {"car_sedan": 340, "car_conv": 340, "car_police": 340, "moto": 200}.get(k, 300)
+        mw = {"car_sedan": 340, "car_conv": 340, "car_police": 340, "moto": 200, "cop_aim": 150}.get(k, 300)
         sizes[k] = put(k, fit(cutout(r18, b, "bg", frac=.1), maxw=mw), q=80)
 
     # --- неоновые здания с листа 17 (серый фон) ---

@@ -248,7 +248,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
   const _pr=GP.press;GP.press=function(s){if(on(this)&&(s==="letgo"||s==="twL"||s==="twR")){if(s==="letgo")jump(this);return}return _pr.call(this,s)}}
  function jump(G){const WALK=WK(G);if(!WALK.grounded||WALK.cool>0)return;WALK.cool=.45;for(const k in G.B){const b=G.B[k],v=b.getLinearVelocity();b.setLinearVelocity(V2(v.x,5.4))}}
  const _lm3=GP.loadMap;
- GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(on(G))ctl(G,a[0])}}catch(e){}return _ws.apply(this,a)};return r};
+ GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(on(G))ctl(G,a[0])}}catch(e){}return _ws.apply(this,a)};return r};
  function ctl(G,dt){const B=G.B,J=G.J,st=G.st,tor=B.torso,WALK=WK(G),gait=effOf(G).gt;WALK.cool-=dt;WALK.turn-=dt;
   for(const wj of G.welds)G.world.destroyJoint(wj);G.welds=[];if(st.mode==="stuck"){st.mode="air";st.stuckSpawn=false}
   const p=tor.getPosition(),v=tor.getLinearVelocity();let M=0;for(const k in B)M+=B[k].getMass();
