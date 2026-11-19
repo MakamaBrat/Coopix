@@ -214,10 +214,16 @@ h1{font-size:30px}h2{font-size:23px}h3{font-size:21px;margin-bottom:10px}
 .hnote{margin:12px 0 0;text-align:center;font-size:12px;color:var(--mut);font-weight:700}
 
 /* ================= ВНУТРЕННИЕ ЭКРАНЫ ================= */
-#app.inner{overflow-x:clip;position:relative;z-index:2;width:100%;max-width:560px;margin:0 auto;min-height:calc(var(--vh)*100);display:flex;flex-direction:column;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+#app.inner{overflow-x:clip;position:relative;z-index:2;width:100%;max-width:560px;margin:0 auto;min-height:calc(var(--vh)*100);display:flex;flex-direction:column;padding-bottom:calc(var(--dk) + 86px)}
 /*BOTBAR*/
-#bot{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:8px 14px calc(8px + env(safe-area-inset-bottom));pointer-events:none}
-#bot .rb{pointer-events:auto;width:48px;height:48px}
+/*DOCK*/
+:root{--dk:max(env(safe-area-inset-bottom),40px)}
+#bot{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dk) + 10px);z-index:30;display:flex;align-items:center;gap:8px;width:max-content;max-width:94vw;padding:7px 8px;border-radius:999px;background:linear-gradient(#4a2e16ee,#1d1109f2);border:2px solid #b87a30;box-shadow:inset 0 1px 0 #ffd98a55,0 8px 22px #000b;pointer-events:auto;touch-action:manipulation}
+#bot .rb{width:auto;min-width:50px;height:50px;padding:0 18px;border-radius:999px;border:2px solid #d29a3a;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:var(--hf);font-size:17px;letter-spacing:.3px;color:var(--cream);background:linear-gradient(#6a4220,#2d1a0b);box-shadow:inset 0 1px 0 #ffd98a55,0 2px 0 #140a04}
+#bot .rb svg{width:22px;height:22px;flex:none}
+#bot .rb span{white-space:nowrap}
+#bot .rb.ico{padding:0;width:50px}
+#bot .rb:active{transform:scale(.94);background:linear-gradient(#8a5a2a,#3c2410)}
 .inner #view{flex:1;padding:calc(14px + env(safe-area-inset-top)) 14px 12px}
 #decor{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;z-index:1}
 body.is-home #decor{display:none}
@@ -340,7 +346,6 @@ body.is-home #decor{display:none}
 /* ================= ДЕСКТОП ================= */
 @media (min-width:900px){
   .hgrid{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px 44px;align-items:center;align-content:center;padding:84px 40px 40px;min-height:calc(var(--vh)*100)}
-  #bot{padding:14px 48px calc(14px + env(safe-area-inset-bottom))}
   .hcenter{grid-column:1;grid-row:1/3}
   .hcol.left{grid-column:2;grid-row:1;align-self:end}
   .hcol.right{grid-column:2;grid-row:2;align-self:start}
@@ -387,11 +392,10 @@ body.is-home #decor{display:none}
 }
 /*FIT_PATCH*/
 @media (max-width:899px){
-  .hgrid{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 14px calc(76px + env(safe-area-inset-bottom))}
+  .hgrid{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 14px calc(var(--dk) + 92px)}
   .hcol.right{order:2}.hcol.left{order:3}
   .hlogo{width:min(62%,calc(var(--vh)*34))}
   .hero2{width:min(56vw,calc(var(--vh)*24));margin-top:-22px}
-  #bot .rb{width:44px;height:44px}
   .gcards{margin-top:8px;gap:8px}.gl{height:64px;flex-basis:36%}
   .gcard{padding:8px 12px 8px 10px;gap:10px;min-height:84px}
   .gi2 b{font-size:21px}.gi2 small{font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -423,6 +427,38 @@ html.lite .btn{box-shadow:inset 0 -3px 0 #a85d10,0 4px 0 #6d3a0c}
 html.lite .plank,html.lite .rb{box-shadow:0 3px 7px #000a}
 html.lite .gcard{box-shadow:0 3px 8px #000a}
 html.lite #scene::after{background:radial-gradient(ellipse at 50% 42%,transparent 45%,rgba(2,3,8,.6) 100%)}
+/*DESIGN2*/
+@media (max-width:899px){
+  /* главная */
+  .hlogo{width:min(58%,calc(var(--vh)*30))}
+  .hero2{width:min(46vw,calc(var(--vh)*21));margin-top:-18px}
+  .gcards{grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .gcard{flex-direction:column;align-items:stretch;gap:6px;padding:10px 8px 10px;min-height:0;border-radius:18px;text-align:center}
+  .gcard .gl{flex:none;width:100%;height:72px}
+  .gcard .gi2 b{font-size:19px;line-height:1.1}
+  .gcard .gi2 small{display:block;-webkit-line-clamp:unset;font-size:12px;margin-top:3px;color:#d8b47a}
+  .gcard .gi2 small .gd{display:none}
+  .gcard .go{position:absolute;top:8px;right:8px;width:30px;height:30px;border-width:2px}
+  .gcard .go svg{width:12px;height:12px}
+  .hp{margin-top:18px;padding:32px 10px 10px}
+  .hp-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hrow{height:50px;margin:0;padding:0 6px 0 6px;gap:8px;border-radius:12px}
+  .hrow .av{--s:34px}
+  .hrow .nm{font-size:15px}
+  .hrow .st{font-size:13px}
+  .hrow .dots{width:26px;height:26px;padding:0}
+  .hrow .dots svg{width:14px;height:14px}
+  .hnote{font-size:12px;margin-top:8px}
+  /* экраны настройки игр */
+  .split .l{display:flex;flex-direction:column;align-items:center}
+  .split .l .hero{max-height:min(150px,calc(var(--vh)*17));max-width:78%;margin-bottom:4px}
+  .split .l .itemrow,.split .l .bomb{display:none!important}
+  .split .r .win{padding:14px 14px 12px;margin-bottom:12px}
+  .rules{margin:0 0 4px;font-size:15px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .rules.open{display:block}
+  .rtog{display:block;margin:0 0 8px;padding:4px 0;background:none;border:0;color:var(--gold);font:800 14px var(--hf),sans-serif;letter-spacing:.3px;cursor:pointer}
+  .split .r .btn.big{width:100%;min-height:60px;font-size:21px}
+}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
 </head>
@@ -754,7 +790,7 @@ function go(r, g) {
   render(); window.scrollTo(0, 0);
 }
 function topbar() {
-  return `<div id="bot"><button class="rb" data-a="back" aria-label="Назад">${IC.back}</button><button class="rb" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
+  return `<div id="bot"><button class="rb" data-a="back" aria-label="Назад">${IC.back}<span>Назад</span></button><button class="rb ico" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
 }
 function render() {
   const home = route === 'home';
@@ -765,6 +801,7 @@ function render() {
   const v = $('#view'); v.classList.toggle('still', key === lastKey && !home); lastKey = key;
   [...v.children].forEach((c, i) => c.style.setProperty('--i', i));
   if (AFTER[route]) AFTER[route]();
+  enhanceRules();
   fitView(); fitLater(160); setTimeout(fitView, 520); /* картинки и шрифты догружаются и меняют высоту — подгоняем ещё раз */
 }
 /*FIT_PATCH*/
@@ -786,6 +823,14 @@ let fitT = 0; const fitLater = ms => { clearTimeout(fitT); fitT = setTimeout(fit
 (() => { let n = 0, t0 = 0, bad = false; document.addEventListener('visibilitychange', () => { bad = true; });
   const f = t => { if (bad) return; if (!t0) t0 = t; n++; if (t - t0 < 2600) requestAnimationFrame(f); else if (n / ((t - t0) / 1000) < 26) { ULTRA = true; document.documentElement.classList.add('ultra'); } };
   setTimeout(() => requestAnimationFrame(f), 1500); })();
+/*DESIGN2*/
+function enhanceRules() {
+  const p = document.querySelector('#view .split .r .win > p.mut:first-child'); if (!p || p.dataset.r) return;
+  p.dataset.r = 1; p.classList.add('rules'); p.style.marginTop = '0';
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'rtog'; b.textContent = 'Как играть ▾';
+  b.onclick = () => { const o = p.classList.toggle('open'); b.textContent = o ? 'Свернуть ▴' : 'Как играть ▾'; fitView(); };
+  p.after(b);
+}
 const midGame = () => isGame(route) && G.phase && !['setup', 'over', 'boom'].includes(G.phase) && route !== 'bottle';
 
 /* ================= данные игр ================= */
@@ -811,11 +856,11 @@ VIEWS.home = () => {
     ? `<div class="hp-list">${ps.map((p, i) => `<div class="hrow ${p.on === false ? 'off' : ''}" style="--k:${i}" data-a="toggle" data-id="${p.id}">${avatar(p, 42)}<div class="nm">${esc(p.name)}</div><div class="st">★ ${total(p)}</div><button class="dots" data-a="pedit" data-id="${p.id}" aria-label="Изменить">${IC.dots}</button></div>`).join('')}</div>`
     : `<div class="empty">Добавь друзей — имя и фото — и поехали!</div>`;
   const sparks = [[14, 16, 20, 0], [80, 12, 16, 1.1], [86, 40, 14, .6], [8, 46, 14, 1.8], [50, 6, 12, 2.2]].map(s => `<svg class="spk" viewBox="0 0 20 20" style="left:${s[0]}%;top:${s[1]}%;--s:${s[2]}px;animation-delay:${s[3]}s">${STAR}</svg>`).join('');
-  return `<div id="bot"><button class="rb" data-a="menu" aria-label="Меню">${IC.menu}</button><button class="rb" data-a="score" aria-label="Таблица очков">${IC.crown}</button></div>
+  return `<div id="bot"><button class="rb" data-a="menu" aria-label="Меню">${IC.menu}<span>Меню</span></button><button class="rb" data-a="score" aria-label="Таблица очков">${IC.crown}<span>Очки</span></button></div>
   <div class="hgrid">
     <div class="hcenter"><img class="hlogo" src="img/logo.webp" alt="Boards Games"><div class="hero2"><div class="beams"></div><img class="scene" src="img/hero.webp" alt=""><div class="glow"></div><img class="flame" src="img/flame_c.webp" alt=""><canvas id="embers"></canvas>${sparks}</div></div>
     <div class="hcol left"><div class="hp"><div class="plank">Игроки <small>${on}/${ps.length}</small></div>${list}<button class="addb" data-a="padd">＋ Добавить игрока</button></div><p class="hnote">Нажми на друга — он сядет за стол или выйдет из игры</p></div>
-    <div class="hcol right"><div class="gcards">${['bottle', 'spy', 'mafia', 'bomb', 'elias', 'croc'].map((g, i) => `<button class="gcard" style="--k:${i};--ac:${GACC[g]}" data-a="start" data-g="${g}"><div class="gl"><img src="${GLOGO[g]}" alt=""></div><div class="gi2"><b>${GAMES.find(x => x.id === g).name}</b><small>${GDESC[g]} · от ${GAMES.find(x => x.id === g).min}</small></div><span class="go">${IC.play}</span></button>`).join('')}</div></div>
+    <div class="hcol right"><div class="gcards">${['bottle', 'spy', 'mafia', 'bomb', 'elias', 'croc'].map((g, i) => `<button class="gcard" style="--k:${i};--ac:${GACC[g]}" data-a="start" data-g="${g}"><div class="gl"><img src="${GLOGO[g]}" alt=""></div><div class="gi2"><b>${GAMES.find(x => x.id === g).name}</b><small><span class="gd">${GDESC[g]} · </span>от ${GAMES.find(x => x.id === g).min} игроков</small></div><span class="go">${IC.play}</span></button>`).join('')}</div></div>
   </div>`;
 };
 AFTER.home = () => {
