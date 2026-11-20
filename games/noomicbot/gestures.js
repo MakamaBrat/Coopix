@@ -125,18 +125,65 @@ GP.gestStep=function(dt){const G=this,s=G.gs,st=G.st;if(!s||!st||!G.B||!G.J)retu
 RKEYS.push("g1","g2","g3","g4");
 {const _p=GP.press;GP.press=function(s){const r=_p.call(this,s);if(s&&s.length===2&&s[0]==="g"&&s>="g1"&&s<="g4")this.gestStart(+s[1]-1);return r}}
 /* повторы: набор жестов — в конфиг записи */
-{const _cf=cfgOf;cfgOf=function(){return Object.assign(_cf(),{gs:SAVE.gest.slice()})};
- const _ac=GP.applyCfg;GP.applyCfg=function(c){_ac.call(this,c);if(Array.isArray(c.gs))this.gsCfg=c.gs.slice(0,NS)};
- const _ps=GP.playStart;GP.playStart=function(...a){this.gsCfg=[];return _ps.apply(this,a)}} /* старые повторы: без жестов */
+{const _cf=cfgOf;cfgOf=function(){const o={gs:SAVE.gest.slice()},p=phraseOf({});if(p)o.ph={t:p.t,s:p.s};return Object.assign(_cf(),o)}; /* набор жестов и коронная фраза пишутся в повтор */
+ const _ac=GP.applyCfg;GP.applyCfg=function(c){_ac.call(this,c);if(Array.isArray(c.gs)){this.gsCfg=c.gs.slice(0,NS);this.phCfg=c.ph&&c.ph.t?{t:cleanPhrase(c.ph.t),s:clamp(c.ph.s|0,0,PHS-1)}:null}};
+ const _ps=GP.playStart;GP.playStart=function(...a){this.gsCfg=[];this.phCfg=null;return _ps.apply(this,a)}} /* старые повторы: без жестов и фразы */
+/* повтор из файла или кода проходит через cleanEv, который выкидывает незнакомые поля конфига: возвращаем безопасные (жесты, турбины, фразу). Функция объявлена в скрипте ниже по странице — подключаем по load */
+addEventListener("load",()=>{if(typeof cleanEv!=="function")return;const _ce=cleanEv;
+ cleanEv=function(t){const e=_ce(t);try{for(const a of t){if(!Array.isArray(a)||(a[1]|0)!==4||!a[2]||typeof a[2]!=="object")continue;const c=e.find(x=>x[0]===(a[0]|0)&&x[1]===4);if(!c)continue;const o=a[2];
+   if(Array.isArray(o.gs))c[2].gs=o.gs.slice(0,NS).map(x=>typeof x==="string"&&byId[x]?x:"");
+   if(typeof o.tb==="string"&&/^gear_[a-z]{2}$/.test(o.tb))c[2].tb=o.tb;
+   if(o.ph&&typeof o.ph==="object"&&o.ph.t)c[2].ph={t:cleanPhrase(o.ph.t),s:clamp(o.ph.s|0,0,PHS-1)}}}catch(x){}return e}});
+
+/* ---------- коронная фраза: своя надпись вместо названия жеста ----------
+   сама фраза — предмет ph_phrase (25⭐, до 25 символов); стиль 0 «Золото» входит в покупку, стили 1..7 — отдельные предметы ph_s1..ph_s7 (5–25⭐), все анимированные.
+   показывается и в игре, и в повторе: фраза и стиль пишутся в конфиг повтора (ph) */
+const PHS=8,PH_MAX=25,PH_WAVE=[5]; /* PH_WAVE — стили, где каждая буква анимируется отдельно */
+const cleanPhrase=v=>[...String(v==null?"":v).replace(/[\u0000-\u001f\u007f<>]/g," ").replace(/\s+/g," ").trim()].slice(0,PH_MAX).join("");
+const phOwned=()=>own("ph_phrase");
+const phStyleOwned=i=>i===0||own("ph_s"+i);
+/* что показывать вместо названия: в живой игре — своя фраза (если куплена и задана; неоплаченный стиль заменяем на золото), в повторе — та, что записана в повтор */
+const phraseOf=G=>{if(G.play){const p=G.phCfg;return p&&p.t?p:null}const t=cleanPhrase(SAVE.phrase);if(!phOwned()||!t)return null;const s=clamp(SAVE.phraseStyle|0,0,PHS-1);return{t,s:phStyleOwned(s)?s:0}};
+/* надпись в элементе el: текст, стиль 0..7, мелкая строка под ней (монеты, комбо); анимация появления перезапускается */
+function showPhrase(el,text,style,sub){if(!el)return;style=clamp(style|0,0,PHS-1);for(let i=0;i<PHS;i++)el.classList.remove("phs"+i);el.classList.add("phs"+style);
+ el.textContent="";const m=document.createElement("span");m.className="pht";
+ if(PH_WAVE.includes(style)){[...text].forEach((ch,i)=>{const l=document.createElement("i");l.textContent=ch===" "?"\u00a0":ch;l.style.animationDelay=(i*.07)+"s";m.appendChild(l)})}else m.textContent=text;
+ el.appendChild(m);
+ if(sub){const s=document.createElement("small");s.textContent=sub;el.appendChild(s)}
+ const len=[...text].length||1,vm=Math.min(innerWidth,innerHeight),bw=el.id==="skPhr"&&el.parentElement?el.parentElement.clientWidth:innerWidth; /* в превью «Скинов» ширину ограничивает панель, а не весь экран */
+ m.style.fontSize=Math.max(11,Math.min(vm*(innerWidth<innerHeight?.1:.075),bw*.9/(len*.66)))+"px";
+ el.classList.remove("on");void el.offsetWidth;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),2300)}
+{const st=document.createElement("style");const CL="-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;";st.textContent=
+ ".phr{position:absolute;left:50%;top:20%;transform:translateX(-50%);z-index:7;pointer-events:none;text-align:center;opacity:0;white-space:nowrap}.phr.on{animation:phIn 2.3s ease-out forwards}"+
+ ".phr small{display:block;margin-top:.6vmin;font-size:2.8vmin;font-weight:800;color:#ffe27a;-webkit-text-fill-color:#ffe27a;text-shadow:0 .2vmin .6vmin rgba(0,0,0,.7)}.pht{display:inline-block;font-weight:900;font-style:italic;letter-spacing:.05em;line-height:1.15;padding:0 .1em}"+
+ "@keyframes phIn{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(-8deg)}14%{opacity:1;transform:translateX(-50%) scale(1.22) rotate(2deg)}26%{transform:translateX(-50%) scale(1) rotate(0)}84%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-2.4vmin) scale(1.06)}}"+
+ /* 0 Золото: полоса блеска пробегает по золотым буквам */
+ ".phs0 .pht{background:linear-gradient(110deg,#a8650a 0%,#ffd24a 28%,#fffbe0 42%,#ffd24a 56%,#a8650a 100%);background-size:260% 100%;"+CL+"-webkit-text-stroke:.18vmin #6a3d00;filter:drop-shadow(0 .5vmin .7vmin rgba(0,0,0,.55));animation:phGold 1.8s linear infinite}@keyframes phGold{from{background-position:100% 0}to{background-position:0 0}}"+
+ /* 1 Неон: мерцание неоновой трубки */
+ ".phs1 .pht{color:#fff;-webkit-text-fill-color:#fff;font-style:normal;text-shadow:0 0 .6vmin #fff,0 0 1.6vmin #19d3ff,0 0 3.4vmin #19d3ff,0 0 6vmin #0a8cff;animation:phNeon 1.7s infinite}@keyframes phNeon{0%,18%,22%,62%,64%,100%{opacity:1}20%,24%,63%{opacity:.45;text-shadow:0 0 .3vmin #fff,0 0 1vmin #19d3ff}40%{text-shadow:0 0 .8vmin #fff,0 0 2.4vmin #19d3ff,0 0 5vmin #19d3ff,0 0 9vmin #0a8cff}}"+
+ /* 2 Огонь: языки пламени — буквы дрожат, цвет течёт вверх */
+ ".phs2 .pht{background:linear-gradient(0deg,#a80d0d,#ff4a1a,#ffb02e,#fff6a8,#ffb02e,#ff4a1a,#a80d0d);background-size:100% 220%;"+CL+"-webkit-text-stroke:.14vmin #5a0a00;transform-origin:50% 100%;animation:phFire .55s ease-in-out infinite alternate}@keyframes phFire{0%{background-position:0 0;filter:drop-shadow(0 0 1vmin rgba(255,110,20,.8));transform:scale(1,1) skewX(0)}50%{transform:scale(1.02,1.07) skewX(-3deg)}100%{background-position:0 100%;filter:drop-shadow(0 -.5vmin 2.4vmin rgba(255,200,40,.95));transform:scale(.99,1.04) skewX(3deg)}}"+
+ /* 3 Лёд: мягкое парение и вспышки инея */
+ ".phs3 .pht{background:linear-gradient(110deg,#7fc8ff 0%,#e8f8ff 30%,#fff 44%,#9ad8ff 60%,#4aa8f0 100%);background-size:240% 100%;"+CL+"-webkit-text-stroke:.16vmin #1a5fa0;animation:phIce 2.6s ease-in-out infinite}@keyframes phIce{0%{background-position:100% 0;transform:translateY(0);filter:drop-shadow(0 0 .6vmin rgba(120,210,255,.6))}50%{transform:translateY(-.9vmin);filter:drop-shadow(0 0 2vmin rgba(160,230,255,1))}100%{background-position:0 0;transform:translateY(0);filter:drop-shadow(0 0 .6vmin rgba(120,210,255,.6))}}"+
+ /* 4 Радуга: бегущий спектр и покачивание */
+ ".phs4 .pht{background:linear-gradient(90deg,#ff4fd8,#ffd24a,#4ee0a0,#19d3ff,#a77bff,#ff4fd8);background-size:300% 100%;"+CL+"-webkit-text-stroke:.14vmin rgba(20,10,40,.75);animation:phRb 2s linear infinite,phBob .9s ease-in-out infinite alternate}@keyframes phRb{to{background-position:300% 0}}@keyframes phBob{from{transform:translateY(-.5vmin) rotate(-1.5deg)}to{transform:translateY(.5vmin) rotate(1.5deg)}}"+
+ /* 5 Комикс: каждая буква подпрыгивает по очереди, цвета чередуются */
+ ".phs5 .pht{-webkit-text-stroke:.9vmin #111;paint-order:stroke fill;text-transform:uppercase;font-style:normal;letter-spacing:.02em;text-shadow:.5vmin .7vmin 0 #111;transform:rotate(-3deg)}.phs5 .pht i{display:inline-block;font-style:normal;animation:phJump .95s ease-in-out infinite;-webkit-text-fill-color:#ffe600;color:#ffe600}.phs5 .pht i:nth-child(4n+2){-webkit-text-fill-color:#ff5fb0;color:#ff5fb0}.phs5 .pht i:nth-child(4n+3){-webkit-text-fill-color:#4ee4ff;color:#4ee4ff}.phs5 .pht i:nth-child(4n){-webkit-text-fill-color:#8dff6a;color:#8dff6a}@keyframes phJump{0%,55%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-1.8vmin) rotate(-6deg) scale(1.14)}40%{transform:translateY(.2vmin) rotate(3deg) scale(.96)}}"+
+ /* 6 Глитч: цифровые помехи — разъезд каналов RGB и срезы */
+ ".phs6 .pht{color:#fff;-webkit-text-fill-color:#fff;font-style:normal;text-transform:uppercase;letter-spacing:.1em;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff;animation:phGl 1.3s steps(1) infinite}@keyframes phGl{0%{transform:none;clip-path:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}10%{transform:translate(-.6vmin,.2vmin) skewX(-10deg);text-shadow:1vmin 0 #ff2a6d,-1vmin 0 #19e3ff}13%{transform:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}42%{transform:translate(.7vmin,-.2vmin) skewX(8deg);clip-path:inset(0 0 52% 0);text-shadow:-1.2vmin 0 #ff2a6d,1.2vmin 0 #19e3ff}45%{transform:translate(-.7vmin,.2vmin);clip-path:inset(48% 0 0 0)}48%{transform:none;clip-path:none}74%{transform:translateX(.5vmin);text-shadow:.8vmin .2vmin #ff2a6d,-.8vmin -.2vmin #19e3ff}77%{transform:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}}"+
+ /* 7 Голограмма: поворот в объёме, линии развёртки и бегущий блик */
+ ".phs7 .pht{background:repeating-linear-gradient(0deg,rgba(0,20,40,.38) 0 .28vmin,transparent .28vmin .56vmin),linear-gradient(100deg,#19d3ff 0%,#8f6bff 30%,#fff 46%,#ff4fd8 62%,#19d3ff 100%);background-size:100% 100%,280% 100%;"+CL+"-webkit-text-stroke:.14vmin rgba(255,255,255,.85);font-style:normal;letter-spacing:.08em;text-transform:uppercase;animation:phHolo 3.2s ease-in-out infinite}@keyframes phHolo{0%{background-position:0 0,100% 0;transform:perspective(70vmin) rotateY(-16deg);filter:drop-shadow(0 0 1.2vmin rgba(25,211,255,.9))}50%{transform:perspective(70vmin) rotateY(16deg);filter:drop-shadow(0 0 2.4vmin rgba(255,79,216,.9))}100%{background-position:0 0,0 0;transform:perspective(70vmin) rotateY(-16deg);filter:drop-shadow(0 0 1.2vmin rgba(25,211,255,.9))}}";
+ document.head.appendChild(st)}
 
 /* ---------- награда за стиль и подпись ---------- */
 {const _em=GP.emit;GP.emit=function(s,t){if(s==="gesture"&&this===W){
-   const g=byId[t.id],txt=g.ic+" "+gname(g)+(t.chain>1?"  ×"+t.chain:"");
+   const g=byId[t.id],ph=phraseOf(this);let sub="";
    if(!RP&&lesson<0){ /* живая игра: монеты за стиль */
     const n=2+(t.air?1:0)+(t.flips>0?3:0)+Math.min(3,t.chain-1);
-    SAVE.coins+=n;persist();
-    flash(txt+"  +"+n+" \u{1FA99}","#ffe27a",1500)}
-   else flash(txt,"#ffe27a",1500)} /* повтор и обучение: подпись без наград, на языке игры */
+    SAVE.coins+=n;persist();sub="+"+n+" \u{1FA99}"}
+   /* своя фраза (в повторе — записанная в нём) вместо названия жеста, иначе обычная подпись на языке игры; в повторе и обучении без монет */
+   if(ph)showPhrase($("phr"),ph.t,ph.s,(t.chain>1?"×"+t.chain+"  ":"")+sub);
+   else flash(g.ic+" "+gname(g)+(t.chain>1?"  ×"+t.chain:"")+(sub?"  "+sub:""),"#ffe27a",1500)}
   return _em.call(this,s,t)}}
 
 /* ---------- кнопки в игре и клавиши 1–4 ---------- */
@@ -145,7 +192,7 @@ RKEYS.push("g1","g2","g3","g4");
  "body.ncp #gbar{display:none!important}"+
  "@media(orientation:portrait){#gbar{left:2%;bottom:calc(var(--sbm,44px) + 39%);gap:2vw}.zone.gb{width:12vw;height:12vw;font-size:6.2vw;border-width:.4vw}.zone.gb i{font-size:2.8vw}}";
  document.head.appendChild(st);
- const g=$("game");if(g){const bar=document.createElement("div");bar.id="gbar";for(let i=0;i<NS;i++){const b=document.createElement("button");b.className="zone gb";b.dataset.k="g"+(i+1);b.id="zG"+(i+1);bar.appendChild(b)}g.appendChild(bar)}}
+ const g=$("game");if(g){const bar=document.createElement("div");bar.id="gbar";for(let i=0;i<NS;i++){const b=document.createElement("button");b.className="zone gb";b.dataset.k="g"+(i+1);b.id="zG"+(i+1);bar.appendChild(b)}g.appendChild(bar);const phr=document.createElement("div");phr.id="phr";phr.className="phr";g.appendChild(phr)}}
 function updGb(){for(let i=0;i<NS;i++){const b=$("zG"+(i+1));if(!b)continue;const g=byId[SAVE.gest[i]];b.classList.toggle("off",!g);b.innerHTML=g?g.ic+"<i>"+(i+1)+"</i>":"";b.title=g?gname(g):""}}
 {const _as=applySettings;applySettings=function(){_as();updGb()};updGb()}
 setTimeout(()=>{for(let i=0;i<NS;i++)keyMap[String(i+1)]="g"+(i+1)},0); /* keyMap объявлен ниже по скрипту */
@@ -189,5 +236,5 @@ function fk(B,a,dy){const R=(th,x,y)=>[x*Math.cos(th)-y*Math.sin(th),x*Math.sin(
    if(c.kind==="box")y=b.y-(Math.abs(Math.sin(b.a))*c.hw+Math.abs(Math.cos(b.a))*c.hh);else y=b.y-Math.abs(Math.cos(b.a))*c.hl-c.r;low=Math.min(low,y)}
  const sh=-2.575-low+(dy||0);for(const n in B)B[n].y+=sh}
 window.__ncGest={list:GEST,byId,slots:()=>SAVE.gest,owned:own,price:id=>window.__ncPay?window.__ncPay.price(id):0,setSlot(i,id){SAVE.gest[i]=byId[id]&&own(id)?id:"";persist();applySettings()},anglesAt,fk,NS,
- name:gname,NM};
+ name:gname,NM,PHS,PH_MAX,cleanPhrase,showPhrase,phOwned,phStyleOwned,PH_WAVE};
 }

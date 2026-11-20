@@ -10,6 +10,7 @@ const RU={"sk.std":"Стандартный","sk.ward":"Гардероб","sk.hin
 for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN);
 for(const L in I18N){const ru=["ru","uk","be"].includes(L);for(const s of SK)I18N[L]["sk.n."+s.id]=ru?"Скин «"+s.ru+"»":"Skin: "+s.en} /* подпись в счёте на оплату */
 const PAY=window.__ncPay,payId=id=>"sk_"+id,own=id=>!id||(PAY?PAY.owned(payId(id)):true),price=id=>PAY?PAY.price(payId(id)):0;
+const price0=id=>PAY?PAY.price(id):0; /* цена предмета по полному id (ph_phrase и т.п.) */
 const nameOf=s=>(I18N[LANG]&&I18N[LANG]["sk.nm."+s.id])||(["ru","uk","be"].includes(LANG)?s.ru:s.en); /* названия скинов на языках игры лежат в i18n.js */
 
 /* ---------- атлас скина: приводим к 64×64, как делает майнкрафт ---------- */
@@ -135,14 +136,15 @@ View3D.prototype.poseNoomi=function(t){_pnS.call(this,t);const R=this.skinRig;if
 ".skc.on{border-color:#ffd24a;background:#2f4678}.skc.on::after{content:\"\\2713\";position:absolute;right:.8vmin;top:.2vmin;color:#ffd24a;font-weight:900;font-size:3vmin}"+
 ".skc canvas{width:60%;aspect-ratio:1/2;image-rendering:pixelated}.skc span{font-size:2.2vmin;font-weight:700;text-align:center;line-height:1.1}"+
 "#skWard{position:static;align-self:stretch;flex:none;margin-top:1.4vmin;height:8.6vmin;padding:0 3vmin;font-size:3.1vmin;border-radius:1.8vmin}"+
+".phRow{grid-column:1/-1;display:flex;flex-direction:column;gap:.8vmin}#phIn{width:100%;height:7vmin;border-radius:1.4vmin;border:.3vmin solid #3a4a6c;background:#16233f;color:#fff;font-size:3.2vmin;font-weight:700;padding:0 2vmin;font-family:inherit;outline:none}#phIn:focus{border-color:#2AABEE}.phCnt{font-size:2vmin;color:#7f93b8;text-align:right}.phLock{font-size:2vmin;color:#ffd24a}.phHd{grid-column:1/-1;margin-top:.6vmin;font-weight:800;font-size:2.6vmin;color:#cfe3ff}.phc{padding-top:2vmin}.phx{display:flex;align-items:center;justify-content:center;min-height:6vmin;overflow:hidden}.phc .pht{font-size:3vmin}.phx .pht{white-space:nowrap}.phx.phs5 .pht{-webkit-text-stroke:.4vmin #111;text-shadow:.25vmin .35vmin 0 #111}#skPhr{top:16%;opacity:1}#skPhr.on{animation:phKeep .9s ease-out}@keyframes phKeep{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(-8deg)}30%{opacity:1;transform:translateX(-50%) scale(1.2) rotate(2deg)}100%{opacity:1;transform:translateX(-50%) scale(1) rotate(0)}}"+
 "#skTabs{display:flex;gap:1.2vmin}#skTabs button{height:6.4vmin;padding:0 3vmin;font-size:2.8vmin;border-radius:3.2vmin;border:0;color:#fff;background:#243557;font-weight:700;font-family:inherit}#skTabs button.on{background:#2AABEE}"+
 "#skRight{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}#skRight #skGrid{flex:1;min-height:0}"+
 "#skSlots{display:none;gap:1.2vmin;margin-bottom:1.4vmin}#skSlots.show{display:flex}#skSlots button{flex:1;position:relative;height:9vmin;border-radius:1.6vmin;border:.5vmin solid transparent;background:#243557;color:#fff;font-size:5vmin;font-family:inherit;display:flex;align-items:center;justify-content:center}#skSlots button.on{border-color:#ffd24a;background:#2f4678}#skSlots button i{position:absolute;left:1vmin;top:.4vmin;font-style:normal;font-size:2vmin;font-weight:800;color:#9fb4d8}#skSlots button.em{font-size:2vmin;color:#7f93b8}"+
 ".skc .gi{font-size:7vmin;line-height:1.1}.skc .gn{position:absolute;left:.8vmin;top:.6vmin;display:flex;gap:.4vmin}.skc .gn b{background:#ffd24a;color:#10203a;border-radius:1vmin;font-size:2vmin;min-width:3vmin;height:3vmin;display:flex;align-items:center;justify-content:center}"+
-"@media(orientation:portrait){#skWrap{flex-direction:column;gap:2.4vw}#skPv{flex:0 0 46%}#skGrid{grid-template-columns:repeat(3,1fr);gap:2.4vw}.skc{border-radius:3vw;padding:2vw;gap:1.4vw;border-width:.8vw}.skc.on::after{font-size:5vw;right:2vw}.skc span{font-size:3.4vw}.skc canvas{width:44%}#skNm{font-size:6vw;bottom:2vw}#skHint{font-size:3.2vw;top:2vw}#skBuy{bottom:calc(env(safe-area-inset-bottom) + 0px + 11vw);height:11vw;padding:0 6vw;border-radius:5.5vw;font-size:4.6vw}.skc .pr{font-size:3.2vw;border-radius:2vw;padding:.3vw 1.6vw;right:1.4vw;top:1.2vw}#skWard{height:12vw;font-size:4.4vw;padding:0 4vw;border-radius:3vw;margin-top:2vw}#skTitle{display:none}#skTabs{width:100%}#skTabs button{flex:1}#skTabs{gap:2vw}#skTabs button{height:10vw;font-size:4vw;padding:0 4vw;border-radius:5vw}#skSlots{gap:2vw;margin-bottom:2vw}#skSlots button{height:14vw;font-size:7vw;border-radius:3vw;border-width:.8vw}#skSlots button i{font-size:3vw}#skSlots button.em{font-size:3.2vw}.skc .gi{font-size:11vw}.skc .gn b{font-size:3vw;min-width:5vw;height:5vw;border-radius:1.4vw}}";
+"@media(orientation:portrait){#skWrap{flex-direction:column;gap:2.4vw}#skPv{flex:0 0 46%}#skGrid{grid-template-columns:repeat(3,1fr);gap:2.4vw}.skc{border-radius:3vw;padding:2vw;gap:1.4vw;border-width:.8vw}.skc.on::after{font-size:5vw;right:2vw}.skc span{font-size:3.4vw}.skc canvas{width:44%}#skNm{font-size:6vw;bottom:2vw}#skHint{font-size:3.2vw;top:2vw}#skBuy{bottom:calc(env(safe-area-inset-bottom) + 0px + 11vw);height:11vw;padding:0 6vw;border-radius:5.5vw;font-size:4.6vw}.skc .pr{font-size:3.2vw;border-radius:2vw;padding:.3vw 1.6vw;right:1.4vw;top:1.2vw}#skWard{height:12vw;font-size:4.4vw;padding:0 4vw;border-radius:3vw;margin-top:2vw}#skTitle{display:none}#skTabs{width:100%}#skTabs button{flex:1;padding:0 1vw}#phIn{height:12vw;font-size:4.6vw;border-radius:3vw;padding:0 3vw}.phCnt,.phLock{font-size:3vw}.phHd{font-size:4vw}.phc .pht{font-size:4.2vw}.phx{min-height:10vw}#skTabs{gap:2vw}#skTabs button{height:10vw;font-size:4vw;padding:0 4vw;border-radius:5vw}#skSlots{gap:2vw;margin-bottom:2vw}#skSlots button{height:14vw;font-size:7vw;border-radius:3vw;border-width:.8vw}#skSlots button i{font-size:3vw}#skSlots button.em{font-size:3.2vw}.skc .gi{font-size:11vw}.skc .gn b{font-size:3vw;min-width:5vw;height:5vw;border-radius:1.4vw}}";
  document.head.appendChild(css);
  const s=document.createElement("div");s.className="screen sc2";s.id="skins";
- s.innerHTML='<div class="hd"><span id="skTitle"></span><div id="skTabs"><button data-t="sk"></button><button data-t="ge"></button></div></div><div class="bd"><div id="skWrap"><div id="skPv"><canvas id="skC"></canvas><div id="skHint"></div><button id="skBuy"></button><div id="skNm"></div></div><div id="skRight"><div id="skSlots"></div><div id="skGrid"></div><button class="navy" id="skWard"></button></div></div></div><button class="navy bk" id="skBack"></button>';
+ s.innerHTML='<div class="hd"><span id="skTitle"></span><div id="skTabs"><button data-t="sk"></button><button data-t="ge"></button><button data-t="ph"></button></div></div><div class="bd"><div id="skWrap"><div id="skPv"><canvas id="skC"></canvas><div id="skHint"></div><div id="skPhr" class="phr"></div><button id="skBuy"></button><div id="skNm"></div></div><div id="skRight"><div id="skSlots"></div><div id="skGrid"></div><button class="navy" id="skWard"></button></div></div></div><button class="navy bk" id="skBack"></button>';
  $("app").appendChild(s)}
 
 let SKV=null,SKF=null,raf=0,yaw=34,drag=null,lastInt=0,lastT=0,cards=[];
@@ -183,15 +185,15 @@ function thumb(cv,a,slim,col){const x=cv.getContext("2d");x.clearRect(0,0,16,32)
  const A=a.cv,aw=slim?3:4,d=(sx,sy,sw,sh,dx,dy)=>x.drawImage(A,sx,sy,sw,sh,dx,dy,sw,sh);
  d(8,8,8,8,4,0);d(20,20,8,12,4,8);d(44,20,aw,12,4-aw,8);d(36,52,aw,12,12,8);d(4,20,4,12,4,20);d(20,52,4,12,8,20);
  d(40,8,8,8,4,0);d(20,36,8,12,4,8);d(44,36,aw,12,4-aw,8);d(52,52,aw,12,12,8);d(4,36,4,12,4,20);d(4,52,4,12,8,20)}
-function renderGrid(){if(tab==="ge")return renderGest();$("skSlots").classList.remove("show");const g=$("skGrid");g.innerHTML="";cards=[];const cur=SAVE.skin||"";
+function renderGrid(){if(tab==="ph")return renderPhrase();if(tab==="ge")return renderGest();$("skSlots").classList.remove("show");const g=$("skGrid");g.innerHTML="";cards=[];const cur=SAVE.skin||"";
  const mk=(id,label)=>{const b=document.createElement("button"),pr=id?price(id):0,lock=!own(id);b.className="skc"+(pvSkin===id?" on":"")+(lock?" lock":"");b.innerHTML='<canvas width="16" height="32"></canvas><span></span>'+(lock&&pr?'<div class="pr">⭐ '+pr+'</div>':"");b.querySelector("span").textContent=label;
   /* примерка: превью показывает скин; купленный ещё и надевается */
   b.onclick=()=>{pvSkin=id;if(own(id)){SAVE.skin=id;persist();applySettings()}lastInt=performance.now();renderGrid();updName();updBuy()};g.appendChild(b);cards.push({id,cv:b.querySelector("canvas")})};
  mk("",T("sk.std"));for(const s of SK)mk(s.id,nameOf(s));paintThumbs()}
 function paintThumbs(){for(const c of cards){if(!c.id){thumb(c.cv,null,false,colorHex());continue}const a=atlas(c.id);if(a)thumb(c.cv,a,a.slim)}}
-function updName(){if(tab==="ge"){const g=gPlay&&GX()&&GX().byId[gPlay.id];$("skNm").textContent=g?g.ic+" "+GX().name(g):"";return}const s=byId[pvSkin||""];$("skNm").textContent=s?nameOf(s):T("sk.std")}
+function updName(){if(tab==="ph"){$("skNm").textContent="";return}if(tab==="ge"){const g=gPlay&&GX()&&GX().byId[gPlay.id];$("skNm").textContent=g?g.ic+" "+GX().name(g):"";return}const s=byId[pvSkin||""];$("skNm").textContent=s?nameOf(s):T("sk.std")}
 /* кнопка «Купить» в превью: для непокупного скина или жеста */
-function buyTarget(){if(tab==="ge"){const GE=GX(),g=gPlay&&GE&&GE.byId[gPlay.id];return g&&!GE.owned(g.id)&&GE.price(g.id)?{id:g.id,nk:"ge.n."+g.id,pr:GE.price(g.id)}:null}return pvSkin&&!own(pvSkin)&&price(pvSkin)?{id:payId(pvSkin),nk:"sk.n."+pvSkin,pr:price(pvSkin)}:null}
+function buyTarget(){if(tab==="ph"){const GE=GX();if(!GE)return null;if(!GE.phOwned())return price0("ph_phrase")?{id:"ph_phrase",nk:"ph.n.ph_phrase",pr:price0("ph_phrase")}:null;const id="ph_s"+phSel;return !GE.phStyleOwned(phSel)&&price0(id)?{id,nk:"ph.n."+id,pr:price0(id)}:null}if(tab==="ge"){const GE=GX(),g=gPlay&&GE&&GE.byId[gPlay.id];return g&&!GE.owned(g.id)&&GE.price(g.id)?{id:g.id,nk:"ge.n."+g.id,pr:GE.price(g.id)}:null}return pvSkin&&!own(pvSkin)&&price(pvSkin)?{id:payId(pvSkin),nk:"sk.n."+pvSkin,pr:price(pvSkin)}:null}
 function updBuy(){const t=buyTarget(),b=$("skBuy");b.classList.toggle("show",!!t);if(!t)return;const pend=PAY&&PAY.pending()===t.id;b.textContent=pend?"…":"⭐ "+t.pr+" · "+T("sk.buy");b.disabled=!!pend}
 $("skBuy").onclick=()=>{const t=buyTarget();if(!t||!PAY)return;PAY.buy(t.id,t.nk);setTimeout(updBuy,60)};
 /* вкладка «Жесты»: 4 слота и список жестов */
@@ -207,15 +209,35 @@ function renderGest(){const GE=GX(),g=$("skGrid"),sl=$("skSlots");if(!GE){g.inne
    if(ow){for(let i=0;i<GE.NS;i++)if(cur[i]===gg.id&&i!==slot)GE.setSlot(i,"");GE.setSlot(slot,gg.id)}
    renderGest();updName();updBuy()};
   g.appendChild(b)}}
+/* вкладка «Фраза»: поле на 25 символов, 8 стилей надписи и превью. Купить (⭐ 25) можно прямо здесь, а примерить стили — до покупки */
+let phTry="",phSel=-1; /* phSel — выбранный стиль в превью (даже если он ещё не куплен) */
+function phNow(){const GE=GX();if(!GE)return{t:"",s:0};if(phSel<0)phSel=Math.max(0,Math.min(GE.PHS-1,SAVE.phraseStyle|0));return{t:GE.phOwned()?GE.cleanPhrase(SAVE.phrase):GE.cleanPhrase(phTry),s:phSel}}
+function phShow(){const GE=GX(),p=phNow();if(GE)GE.showPhrase($("skPhr"),p.t||T("ph.sample"),p.s,"")}
+function renderPhrase(){const GE=GX(),g=$("skGrid"),sl=$("skSlots");sl.classList.remove("show");g.innerHTML="";cards=[];if(!GE)return;
+ const isOwn=GE.phOwned(),p=phNow();
+ const row=document.createElement("div");row.className="phRow";
+ row.innerHTML='<input id="phIn" type="text" autocomplete="off" spellcheck="false"><div class="phCnt" id="phCnt"></div>'+(isOwn?"":'<div class="phLock"></div>');
+ g.appendChild(row);const inp=row.querySelector("#phIn"),cnt=row.querySelector("#phCnt");inp.placeholder=T("ph.ph");inp.value=p.t;
+ const upd=()=>{cnt.textContent=[...inp.value].length+" / "+GE.PH_MAX};upd();if(!isOwn)row.querySelector(".phLock").textContent=T("ph.locked");
+ inp.addEventListener("input",()=>{const v=GE.cleanPhrase(inp.value);if(v!==inp.value&&[...inp.value].length>GE.PH_MAX)inp.value=v;upd();
+  if(GE.phOwned()){SAVE.phrase=GE.cleanPhrase(inp.value);persist();applySettings()}else phTry=GE.cleanPhrase(inp.value);
+  refreshSamples();phShow()});
+ const lab=document.createElement("div");lab.className="phHd";lab.textContent=T("ph.styles");g.appendChild(lab);
+ const samples=[];const refreshSamples=()=>{const t=[...(phNow().t||T("ph.sample"))].slice(0,9).join("");samples.forEach(e=>{e.textContent="";if(e.dataset.w){[...t].forEach((ch,k)=>{const l=document.createElement("i");l.textContent=ch===" "?"\u00a0":ch;l.style.animationDelay=(k*.07)+"s";e.appendChild(l)})}else e.textContent=t})};
+ for(let i=0;i<GE.PHS;i++){const b=document.createElement("button"),pr=i?price0("ph_s"+i):0,lock=!GE.phStyleOwned(i);b.className="skc phc"+(p.s===i?" on":"")+(lock?" lock":"");
+  b.innerHTML='<div class="phs'+i+' phx"><span class="pht"></span></div><span></span>'+(lock&&pr?'<div class="pr">'+String.fromCharCode(11088)+' '+pr+'</div>':"");b.querySelector("span:last-child").textContent=T("ph.st"+i);
+  const pt=b.querySelector(".pht");if(GE.PH_WAVE.includes(i))pt.dataset.w="1";samples.push(pt);
+  b.onclick=()=>{phSel=i;if(GE.phOwned()&&GE.phStyleOwned(i)){SAVE.phraseStyle=i;persist();applySettings()}lastInt=performance.now();renderPhrase();phShow();updBuy()};g.appendChild(b)}
+ refreshSamples();updBuy();phShow()}
 function setTab(t){tab=t;document.querySelectorAll("#skTabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
- $("skHint").textContent=t==="ge"?T("ge.hint"):T("sk.hint");$("skWard").style.display=t==="ge"?"none":"";
+ $("skHint").textContent=t==="ge"?T("ge.hint"):t==="ph"?T("ph.hint"):T("sk.hint");$("skWard").style.display=t==="sk"?"":"none";$("skPhr").style.display=t==="ph"?"":"none";
  if(t==="ge"&&!gPlay){const GE=GX(),cur=GE?GE.slots():[],i=cur.findIndex(x=>x);if(i>=0){slot=i;gPlay={id:cur[i],t0:performance.now()}}}
  renderGrid();updName();updBuy()}
-function openSkins(){$("skTitle").textContent=T("menu.skins");document.querySelector("#skTabs [data-t=sk]").textContent=T("ge.tabSk");document.querySelector("#skTabs [data-t=ge]").textContent=T("ge.tabGe");$("skBack").textContent="\u2039 "+T("back");$("skWard").textContent="\u{1F455} "+T("sk.ward");$("skHint").textContent=T("sk.hint");
+function openSkins(){$("skTitle").textContent=T("menu.skins");document.querySelector("#skTabs [data-t=sk]").textContent=T("ge.tabSk");document.querySelector("#skTabs [data-t=ge]").textContent=T("ge.tabGe");document.querySelector("#skTabs [data-t=ph]").textContent=T("ph.tab");$("skBack").textContent="\u2039 "+T("back");$("skWard").textContent="\u{1F455} "+T("sk.ward");$("skHint").textContent=T("sk.hint");
  pvSkin=SAVE.skin||"";setTab(tab);show("skins")}
 $("skBack").onclick=()=>show("menu");
 if(PAY){/* после оплаты: надеть скин / поставить жест в слот и обновить экран */
- PAY.onOwned=id=>{if(!id)return;if(id.startsWith("sk_")){const sid=id.slice(3);if(byId[sid]){SAVE.skin=sid;pvSkin=sid}}else if(id.startsWith("ge_")){const GE=GX();if(GE&&GE.byId[id]){const cur=GE.slots();let i=cur[slot]?cur.findIndex(x=>!x):slot;if(i<0)i=slot;GE.setSlot(i,id);slot=i;gPlay={id,t0:performance.now()}}}};
+ PAY.onOwned=id=>{if(!id)return;if(id==="ph_phrase"){const GE=GX();if(GE){SAVE.phrase=GE.cleanPhrase(phTry);SAVE.phraseStyle=GE.phStyleOwned(phSel)?Math.max(0,phSel):0}return}if(/^ph_s[1-7]$/.test(id)){SAVE.phraseStyle=+id.slice(4);phSel=+id.slice(4);return}if(id.startsWith("sk_")){const sid=id.slice(3);if(byId[sid]){SAVE.skin=sid;pvSkin=sid}}else if(id.startsWith("ge_")){const GE=GX();if(GE&&GE.byId[id]){const cur=GE.slots();let i=cur[slot]?cur.findIndex(x=>!x):slot;if(i<0)i=slot;GE.setSlot(i,id);slot=i;gPlay={id,t0:performance.now()}}}};
  PAY.refresh=()=>{if(screen==="skins"){renderGrid();updName();updBuy()}}}
 document.querySelectorAll("#skTabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 $("skWard").onclick=()=>{shopMode="skins";renderShop();show("shop")};

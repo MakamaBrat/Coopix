@@ -202,7 +202,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  {const st=document.createElement("style");st.textContent="#nctoast{position:fixed;left:50%;bottom:9vmin;transform:translateX(-50%);z-index:60;background:rgba(14,20,34,.92);color:#fff;font-weight:700;font-size:3vmin;padding:1.4vmin 3.2vmin;border-radius:2.6vmin;border:.2vmin solid rgba(255,255,255,.25);opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap}#nctoast.on{opacity:1}";document.head.appendChild(st);
   const d=document.createElement("div");d.id="nctoast";document.body.appendChild(d)}
  let toastT=0;const ncToast=t=>{const e=$("nctoast");if(!e)return;e.textContent=t;e.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("on"),2600)};
- const catOf=id=>{for(const c in ITEMS)if(ITEMS[c].some(x=>x[0]===id))return c;if(/^(sk|ge)_[a-z0-9_]+$/.test(id)&&STAR[id])return "paid"}; /* скины (sk_…) и жесты (ge_…) — тоже покупки за звёзды, но живут не в магазине предметов, а на экране «Скины» */
+ const catOf=id=>{for(const c in ITEMS)if(ITEMS[c].some(x=>x[0]===id))return c;if(/^(sk|ge|ph)_[a-z0-9_]+$/.test(id)&&STAR[id])return "paid"}; /* скины (sk_…) и жесты (ge_…) — тоже покупки за звёзды, но живут не в магазине предметов, а на экране «Скины» */
  const inMarket=()=>{try{return window.parent&&window.parent!==window}catch(e){return false}};
  let PEND=null,pendT=0;
  /* для экрана «Скины»: оплата, цена, «идёт оплата» и обратные вызовы (их ставят skins.js и gestures.js) */
