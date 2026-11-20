@@ -136,44 +136,112 @@ addEventListener("load",()=>{if(typeof cleanEv!=="function")return;const _ce=cle
    if(o.ph&&typeof o.ph==="object"&&o.ph.t)c[2].ph={t:cleanPhrase(o.ph.t),s:clamp(o.ph.s|0,0,PHS-1)}}}catch(x){}return e}});
 
 /* ---------- коронная фраза: своя надпись вместо названия жеста ----------
-   сама фраза — предмет ph_phrase (25⭐, до 25 символов); стиль 0 «Золото» входит в покупку, стили 1..7 — отдельные предметы ph_s1..ph_s7 (5–25⭐), все анимированные.
+   сама фраза — предмет ph_phrase (25⭐, до 25 символов); стиль 0 «Золото» входит в покупку, стили 1..7 — отдельные предметы ph_s1..ph_s7 (5–25⭐).
+   Надпись собирается из букв: у каждой буквы свои слои (контур/объём, заливка, блик), а поверх — эффекты стиля (искры, угольки, снег, глитч, комикс-взрыв).
    показывается и в игре, и в повторе: фраза и стиль пишутся в конфиг повтора (ph) */
-const PHS=8,PH_MAX=25,PH_WAVE=[5]; /* PH_WAVE — стили, где каждая буква анимируется отдельно */
+const PHS=8,PH_MAX=25;
 const cleanPhrase=v=>[...String(v==null?"":v).replace(/[\u0000-\u001f\u007f<>]/g," ").replace(/\s+/g," ").trim()].slice(0,PH_MAX).join("");
 const phOwned=()=>own("ph_phrase");
 const phStyleOwned=i=>i===0||own("ph_s"+i);
 /* что показывать вместо названия: в живой игре — своя фраза (если куплена и задана; неоплаченный стиль заменяем на золото), в повторе — та, что записана в повтор */
 const phraseOf=G=>{if(G.play){const p=G.phCfg;return p&&p.t?p:null}const t=cleanPhrase(SAVE.phrase);if(!phOwned()||!t)return null;const s=clamp(SAVE.phraseStyle|0,0,PHS-1);return{t,s:phStyleOwned(s)?s:0}};
+/* эффекты поверх надписи: стиль -> число частиц */
+const PH_FX={0:7,2:16,3:12,7:10};
+let phBurstClip="";
+function phBurst(){if(phBurstClip)return phBurstClip;const p=[],n=14;for(let k=0;k<n*2;k++){const a=k*Math.PI/n,r=k%2?.74:1;p.push((50+50*r*Math.cos(a)).toFixed(1)+"% "+(50+50*r*Math.sin(a)).toFixed(1)+"%")}return phBurstClip="polygon("+p.join(",")+")"}
+/* собирает буквы и эффекты стиля внутри элемента m (.pht) — им пользуются и игра, и карточки стилей на экране «Скины» */
+/* длинная фраза (больше 13 символов) переносится на две строки по пробелу, ближайшему к середине (нет пробела — режем посередине) */
+function phLines(t){const a=[...t];if(a.length<=13)return[t];let best=-1;const mid=a.length/2;a.forEach((c,k)=>{if(c===" "&&k>0&&k<a.length-1&&(best<0||Math.abs(k-mid)<Math.abs(best-mid)))best=k});if(best<0)best=Math.ceil(mid);
+ const l1=a.slice(0,best).join("").trim(),l2=a.slice(best).join("").trim();return l2?[l1,l2]:[l1]}
+function phRender(m,text,style){style=clamp(style|0,0,PHS-1);m.textContent="";
+ const L=phLines(text);let li=0;m.classList.toggle("ph2",L.length>1);
+ L.forEach(line=>{const r=document.createElement("span");r.className="phl";[...line].forEach(ch=>{const l=document.createElement("i"),c=ch===" "?" ":ch;l.dataset.c=c;l.textContent=c;l.style.setProperty("--i",li++);r.appendChild(l)});m.appendChild(r)});
+ if(style===5){const b=document.createElement("div");b.className="phb";b.style.clipPath=phBurst();m.appendChild(b)}
+ const n=PH_FX[style]||0;if(n){const f=document.createElement("div");f.className="phfx";
+  for(let k=0;k<n;k++){const b=document.createElement("b");b.style.setProperty("--x",(4+Math.random()*92).toFixed(0)+"%");b.style.setProperty("--y",(style===2?55+Math.random()*45:style===3?Math.random()*45:Math.random()*100).toFixed(0)+"%");
+   b.style.setProperty("--d",(-Math.random()*2).toFixed(2)+"s");b.style.setProperty("--dx",((Math.random()-.5)*.8).toFixed(2)+"em");f.appendChild(b)}
+  m.appendChild(f)}}
+/* глитч: буквы «собираются» из случайных символов */
+function phScramble(m){const ls=[...m.querySelectorAll("i")];if(!ls.length)return;const real=ls.map(l=>l.dataset.c),set="#%&$@01XZ?";let k=0;clearInterval(m._sc);
+ m._sc=setInterval(()=>{k++;ls.forEach((l,i)=>{const c=k>i*2+5?real[i]:(real[i]===" "||real[i]===" "?real[i]:set[Math.random()*set.length|0]);if(l.dataset.c!==c){l.dataset.c=c;l.textContent=c}});if(k>ls.length*2+6)clearInterval(m._sc)},55)}
+/* надпись в элементе el без таймера (для живого превью при вводе): класс стиля, буквы, размер под ширину bw */
+function phSet(el,text,style,bw){style=clamp(style|0,0,PHS-1);for(let i=0;i<PHS;i++)el.classList.remove("phs"+i);el.classList.add("phs"+style);
+ el.textContent="";const m=document.createElement("span");m.className="pht";phRender(m,text,style);el.appendChild(m);
+ const mx=Math.max(1,...phLines(text).map(l=>[...l].length)),vm=Math.min(innerWidth,innerHeight),W0=bw||innerWidth;
+ let fs=Math.max(11,Math.min(vm*(innerWidth<innerHeight?.11:.085),W0*.9/(mx*.74)));m.style.fontSize=fs+"px";
+ /* подгонка по факту: если надпись (со взрывом у «Комикса») шире доступного места — уменьшаем */
+ const w=m.offsetWidth;if(w>0){const lim=W0*.96,need=w+(style===5?.8:.1)*fs;if(need>lim){fs=Math.max(9,fs*lim/need);m.style.fontSize=fs+"px"}}return m}
 /* надпись в элементе el: текст, стиль 0..7, мелкая строка под ней (монеты, комбо); анимация появления перезапускается */
-function showPhrase(el,text,style,sub){if(!el)return;style=clamp(style|0,0,PHS-1);for(let i=0;i<PHS;i++)el.classList.remove("phs"+i);el.classList.add("phs"+style);
- el.textContent="";const m=document.createElement("span");m.className="pht";
- if(PH_WAVE.includes(style)){[...text].forEach((ch,i)=>{const l=document.createElement("i");l.textContent=ch===" "?"\u00a0":ch;l.style.animationDelay=(i*.07)+"s";m.appendChild(l)})}else m.textContent=text;
- el.appendChild(m);
+function showPhrase(el,text,style,sub){if(!el)return;style=clamp(style|0,0,PHS-1);
+ const m=phSet(el,text,style,el.id==="skPhr"&&el.parentElement?el.parentElement.clientWidth:innerWidth); /* в превью «Скинов» ширину ограничивает панель, а не весь экран */
  if(sub){const s=document.createElement("small");s.textContent=sub;el.appendChild(s)}
- const len=[...text].length||1,vm=Math.min(innerWidth,innerHeight),bw=el.id==="skPhr"&&el.parentElement?el.parentElement.clientWidth:innerWidth; /* в превью «Скинов» ширину ограничивает панель, а не весь экран */
- m.style.fontSize=Math.max(11,Math.min(vm*(innerWidth<innerHeight?.1:.075),bw*.9/(len*.66)))+"px";
- el.classList.remove("on");void el.offsetWidth;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),2300)}
-{const st=document.createElement("style");const CL="-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;";st.textContent=
- ".phr{position:absolute;left:50%;top:20%;transform:translateX(-50%);z-index:7;pointer-events:none;text-align:center;opacity:0;white-space:nowrap}.phr.on{animation:phIn 2.3s ease-out forwards}"+
- ".phr small{display:block;margin-top:.6vmin;font-size:2.8vmin;font-weight:800;color:#ffe27a;-webkit-text-fill-color:#ffe27a;text-shadow:0 .2vmin .6vmin rgba(0,0,0,.7)}.pht{display:inline-block;font-weight:900;font-style:italic;letter-spacing:.05em;line-height:1.15;padding:0 .1em}"+
- "@keyframes phIn{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(-8deg)}14%{opacity:1;transform:translateX(-50%) scale(1.22) rotate(2deg)}26%{transform:translateX(-50%) scale(1) rotate(0)}84%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-2.4vmin) scale(1.06)}}"+
- /* 0 Золото: полоса блеска пробегает по золотым буквам */
- ".phs0 .pht{background:linear-gradient(110deg,#a8650a 0%,#ffd24a 28%,#fffbe0 42%,#ffd24a 56%,#a8650a 100%);background-size:260% 100%;"+CL+"-webkit-text-stroke:.18vmin #6a3d00;filter:drop-shadow(0 .5vmin .7vmin rgba(0,0,0,.55));animation:phGold 1.8s linear infinite}@keyframes phGold{from{background-position:100% 0}to{background-position:0 0}}"+
- /* 1 Неон: мерцание неоновой трубки */
- ".phs1 .pht{color:#fff;-webkit-text-fill-color:#fff;font-style:normal;text-shadow:0 0 .6vmin #fff,0 0 1.6vmin #19d3ff,0 0 3.4vmin #19d3ff,0 0 6vmin #0a8cff;animation:phNeon 1.7s infinite}@keyframes phNeon{0%,18%,22%,62%,64%,100%{opacity:1}20%,24%,63%{opacity:.45;text-shadow:0 0 .3vmin #fff,0 0 1vmin #19d3ff}40%{text-shadow:0 0 .8vmin #fff,0 0 2.4vmin #19d3ff,0 0 5vmin #19d3ff,0 0 9vmin #0a8cff}}"+
- /* 2 Огонь: языки пламени — буквы дрожат, цвет течёт вверх */
- ".phs2 .pht{background:linear-gradient(0deg,#a80d0d,#ff4a1a,#ffb02e,#fff6a8,#ffb02e,#ff4a1a,#a80d0d);background-size:100% 220%;"+CL+"-webkit-text-stroke:.14vmin #5a0a00;transform-origin:50% 100%;animation:phFire .55s ease-in-out infinite alternate}@keyframes phFire{0%{background-position:0 0;filter:drop-shadow(0 0 1vmin rgba(255,110,20,.8));transform:scale(1,1) skewX(0)}50%{transform:scale(1.02,1.07) skewX(-3deg)}100%{background-position:0 100%;filter:drop-shadow(0 -.5vmin 2.4vmin rgba(255,200,40,.95));transform:scale(.99,1.04) skewX(3deg)}}"+
- /* 3 Лёд: мягкое парение и вспышки инея */
- ".phs3 .pht{background:linear-gradient(110deg,#7fc8ff 0%,#e8f8ff 30%,#fff 44%,#9ad8ff 60%,#4aa8f0 100%);background-size:240% 100%;"+CL+"-webkit-text-stroke:.16vmin #1a5fa0;animation:phIce 2.6s ease-in-out infinite}@keyframes phIce{0%{background-position:100% 0;transform:translateY(0);filter:drop-shadow(0 0 .6vmin rgba(120,210,255,.6))}50%{transform:translateY(-.9vmin);filter:drop-shadow(0 0 2vmin rgba(160,230,255,1))}100%{background-position:0 0;transform:translateY(0);filter:drop-shadow(0 0 .6vmin rgba(120,210,255,.6))}}"+
- /* 4 Радуга: бегущий спектр и покачивание */
- ".phs4 .pht{background:linear-gradient(90deg,#ff4fd8,#ffd24a,#4ee0a0,#19d3ff,#a77bff,#ff4fd8);background-size:300% 100%;"+CL+"-webkit-text-stroke:.14vmin rgba(20,10,40,.75);animation:phRb 2s linear infinite,phBob .9s ease-in-out infinite alternate}@keyframes phRb{to{background-position:300% 0}}@keyframes phBob{from{transform:translateY(-.5vmin) rotate(-1.5deg)}to{transform:translateY(.5vmin) rotate(1.5deg)}}"+
- /* 5 Комикс: каждая буква подпрыгивает по очереди, цвета чередуются */
- ".phs5 .pht{-webkit-text-stroke:.9vmin #111;paint-order:stroke fill;text-transform:uppercase;font-style:normal;letter-spacing:.02em;text-shadow:.5vmin .7vmin 0 #111;transform:rotate(-3deg)}.phs5 .pht i{display:inline-block;font-style:normal;animation:phJump .95s ease-in-out infinite;-webkit-text-fill-color:#ffe600;color:#ffe600}.phs5 .pht i:nth-child(4n+2){-webkit-text-fill-color:#ff5fb0;color:#ff5fb0}.phs5 .pht i:nth-child(4n+3){-webkit-text-fill-color:#4ee4ff;color:#4ee4ff}.phs5 .pht i:nth-child(4n){-webkit-text-fill-color:#8dff6a;color:#8dff6a}@keyframes phJump{0%,55%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-1.8vmin) rotate(-6deg) scale(1.14)}40%{transform:translateY(.2vmin) rotate(3deg) scale(.96)}}"+
- /* 6 Глитч: цифровые помехи — разъезд каналов RGB и срезы */
- ".phs6 .pht{color:#fff;-webkit-text-fill-color:#fff;font-style:normal;text-transform:uppercase;letter-spacing:.1em;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff;animation:phGl 1.3s steps(1) infinite}@keyframes phGl{0%{transform:none;clip-path:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}10%{transform:translate(-.6vmin,.2vmin) skewX(-10deg);text-shadow:1vmin 0 #ff2a6d,-1vmin 0 #19e3ff}13%{transform:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}42%{transform:translate(.7vmin,-.2vmin) skewX(8deg);clip-path:inset(0 0 52% 0);text-shadow:-1.2vmin 0 #ff2a6d,1.2vmin 0 #19e3ff}45%{transform:translate(-.7vmin,.2vmin);clip-path:inset(48% 0 0 0)}48%{transform:none;clip-path:none}74%{transform:translateX(.5vmin);text-shadow:.8vmin .2vmin #ff2a6d,-.8vmin -.2vmin #19e3ff}77%{transform:none;text-shadow:.35vmin 0 #ff2a6d,-.35vmin 0 #19e3ff}}"+
- /* 7 Голограмма: поворот в объёме, линии развёртки и бегущий блик */
- ".phs7 .pht{background:repeating-linear-gradient(0deg,rgba(0,20,40,.38) 0 .28vmin,transparent .28vmin .56vmin),linear-gradient(100deg,#19d3ff 0%,#8f6bff 30%,#fff 46%,#ff4fd8 62%,#19d3ff 100%);background-size:100% 100%,280% 100%;"+CL+"-webkit-text-stroke:.14vmin rgba(255,255,255,.85);font-style:normal;letter-spacing:.08em;text-transform:uppercase;animation:phHolo 3.2s ease-in-out infinite}@keyframes phHolo{0%{background-position:0 0,100% 0;transform:perspective(70vmin) rotateY(-16deg);filter:drop-shadow(0 0 1.2vmin rgba(25,211,255,.9))}50%{transform:perspective(70vmin) rotateY(16deg);filter:drop-shadow(0 0 2.4vmin rgba(255,79,216,.9))}100%{background-position:0 0,0 0;transform:perspective(70vmin) rotateY(-16deg);filter:drop-shadow(0 0 1.2vmin rgba(25,211,255,.9))}}";
- document.head.appendChild(st)}
+ if(style===6)phScramble(m);
+ el.classList.remove("on");void el.offsetWidth;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),2900)}
+{const st=document.createElement("style");const CL="-webkit-background-clip:text;background-clip:text;";
+ const POP="phPop .55s cubic-bezier(.2,1.7,.35,1) backwards",PD="calc(var(--i)*.045s)",LD="calc(var(--i)*.045s + .55s)";
+ st.textContent=
+ ".phr{position:absolute;left:50%;top:27%;transform:translateX(-50%);z-index:7;pointer-events:none;text-align:center;opacity:0;white-space:nowrap}.phr.on{opacity:1;animation:phOut 2.9s ease-out forwards}"+
+ "@keyframes phOut{0%,82%{opacity:1;transform:translateX(-50%)}100%{opacity:0;transform:translateX(-50%) translateY(-2.4vmin) scale(1.04)}}"+
+ ".phr small{display:block;margin-top:.5vmin;font-size:2.8vmin;font-weight:800;color:#ffe27a;-webkit-text-fill-color:#ffe27a;text-shadow:0 .2vmin .6vmin rgba(0,0,0,.8)}"+
+ /* общая основа: буквы с тремя слоями (::before — контур и объём, сама буква — заливка, ::after — блик) */
+ ".pht{position:relative;display:inline-flex;flex-direction:column;align-items:center;font-family:Impact,'Arial Black','Haettenschweiler','Roboto Condensed',Roboto,'Segoe UI',sans-serif;font-weight:900;font-style:normal;text-transform:uppercase;letter-spacing:.05em;line-height:1.12;padding:.14em .12em;white-space:pre;isolation:isolate}"+
+ ".phl{display:inline-flex;align-items:baseline;white-space:pre}.pht.ph2 .phl+.phl{margin-top:-.06em}"+
+ ".pht i{position:relative;display:inline-block;font-style:normal;white-space:pre;animation:"+POP+";animation-delay:"+PD+"}"+
+ ".phs0 i,.phs2 i,.phs3 i,.phs4 i,.phs7 i{color:transparent;-webkit-text-fill-color:transparent}"+
+ ".pht i::before,.pht i::after{content:attr(data-c);position:absolute;left:0;top:0;white-space:pre;pointer-events:none;display:none;-webkit-text-fill-color:currentColor;-webkit-text-stroke:0;text-shadow:none;background:none}.pht i::before{z-index:-1}.pht i::after{z-index:1}"+
+ "@keyframes phPop{0%{opacity:0;transform:translateY(.6em) scale(.2) rotate(-14deg)}100%{opacity:1;transform:none}}"+
+ "@keyframes phShine{0%{background-position:100% 0,0 0,0 0}45%,100%{background-position:0 0,0 0,0 0}}"+
+ ".phfx{position:absolute;inset:-.3em -.2em;pointer-events:none;z-index:6}.phfx b{position:absolute;left:var(--x);top:var(--y);display:block}"+
+ /* 0 Золото: рельефное золото с тёмным объёмом, блик пробегает по буквам, искры */
+ ".phs0 i::before{display:block;color:#2e1400;-webkit-text-stroke:.15em #2e1400;text-shadow:0 .05em 0 #5a2c00,0 .09em 0 #5a2c00,0 .13em 0 #3d1c00,0 .2em .1em rgba(0,0,0,.55),0 0 .35em rgba(255,190,40,.6)}"+
+ ".phs0 i::after{display:block;-webkit-text-fill-color:transparent;-webkit-text-stroke:.025em #7a3f00;background:linear-gradient(100deg,transparent 38%,rgba(255,255,255,.95) 50%,transparent 62%) 100% 0/300% 100% no-repeat,linear-gradient(180deg,#fffbe6 0%,#ffe680 20%,#ffc21a 44%,#a85d00 52%,#ffd24a 62%,#fff0b0 84%,#ffb52e 100%);"+CL+"animation:phShine 2.4s ease-in-out infinite;animation-delay:calc(var(--i)*.08s + .7s)}"+
+ ".phs0 .phfx b{width:.3em;height:.3em;margin:-.15em;background:#fff;clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);transform:scale(0);animation:phTw 1.3s ease-in-out infinite;animation-delay:var(--d)}@keyframes phTw{0%,100%{transform:scale(0) rotate(0)}50%{transform:scale(1) rotate(45deg)}}"+
+ /* 1 Неон: трубки с цветным свечением, буквы мерцают по очереди */
+ ".phs1 i{--c:#19e6ff;color:#fff;-webkit-text-fill-color:#190a2e;-webkit-text-stroke:.05em #fff;text-shadow:0 0 .08em var(--c),0 0 .2em var(--c),0 0 .45em var(--c),0 0 .9em var(--c);animation:"+POP+",phNeon 3.2s infinite;animation-delay:"+PD+",calc(var(--i)*.43s + .6s)}.phs1 i:nth-child(2n){--c:#ff3df2}"+
+ ".phs1 i::before{display:block;color:var(--c);-webkit-text-fill-color:var(--c);-webkit-text-stroke:.1em var(--c);opacity:.28;filter:blur(.05em)}"+
+ "@keyframes phNeon{0%,6%,9%,48%,51%,100%{opacity:1}7%,50%{opacity:.35}8%{opacity:.8}}"+
+ /* 2 Огонь: пламя бежит вверх по буквам, края колышутся, летят угольки */
+ ".phs2 i{transform-origin:50% 100%;animation:"+POP+",phFlick .4s ease-in-out infinite alternate;animation-delay:"+PD+","+LD+"}"+
+ ".phs2 i::before{display:block;color:#3a0300;-webkit-text-stroke:.14em #3a0300;text-shadow:0 0 .12em #ff5a00,0 -.04em .3em #ff3c00,0 0 .6em rgba(255,90,0,.8)}"+
+ ".phs2 i::after{display:block;-webkit-text-fill-color:transparent;-webkit-text-stroke:.02em #4a0500;background:linear-gradient(0deg,#b01200 0%,#f03a00 20%,#ff8a00 46%,#ffd02a 72%,#fff7b0 100%);"+CL+"}"+
+ "@keyframes phFlick{0%{transform:scale(1,1) skewX(0)}100%{transform:scale(1.02,1.07) skewX(-3deg) translateY(-.02em)}}.phr.phs2 .pht{filter:url(#phFlame)}"+
+ ".phs2 .phfx b{width:.07em;height:.07em;border-radius:50%;background:#ffb02e;box-shadow:0 0 .1em .02em #ff6a00;animation:phEm 1.3s linear infinite;animation-delay:var(--d);opacity:0}@keyframes phEm{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-.9em) scale(.3)}}"+
+ /* 3 Лёд: морозный блеск, буквы парят, падают снежинки */
+ ".phs3 i{filter:drop-shadow(0 0 .1em #9fe6ff);animation:"+POP+",phFloat 2.8s ease-in-out infinite;animation-delay:"+PD+",calc(var(--i)*.15s + .55s)}"+
+ ".phs3 i::before{display:block;color:#0a3d8a;-webkit-text-stroke:.15em #0a3d8a;text-shadow:0 .06em 0 #0a2f6e,0 .1em 0 #0a2f6e,0 .18em .1em rgba(0,20,60,.5)}"+
+ ".phs3 i::after{display:block;-webkit-text-fill-color:transparent;-webkit-text-stroke:.025em #0a4aa0;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%) 100% 0/300% 100% no-repeat,linear-gradient(180deg,#fff 0%,#d6f4ff 28%,#7fd0ff 50%,#3d9bf0 56%,#8fdcff 78%,#e8fbff 100%);"+CL+"animation:phShine 3s ease-in-out infinite;animation-delay:calc(var(--i)*.1s + .8s)}"+
+ "@keyframes phFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-.06em)}}"+
+ ".phs3 .phfx b{width:.07em;height:.07em;border-radius:50%;background:#fff;box-shadow:0 0 .08em #bfeaff;animation:phSn 2.2s linear infinite;animation-delay:var(--d);opacity:0}@keyframes phSn{0%{opacity:0;transform:translate(0,-.3em)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),.9em)}}"+
+ /* 4 Радуга: у каждой буквы свой цвет, белая «наклейка», волна и плавная смена оттенка */
+ ".phs4 i{--h:calc(var(--i)*38);animation:"+POP+",phWave 1s ease-in-out infinite,phHue 3s linear infinite;animation-delay:"+PD+",calc(var(--i)*.09s + .55s),calc(var(--i)*.09s + .55s)}"+
+ ".phs4 i::before{display:block;color:#fff;-webkit-text-stroke:.2em #fff;text-shadow:0 .07em .05em rgba(0,0,0,.4),0 0 .3em rgba(0,0,0,.25)}"+
+ ".phs4 i::after{display:block;-webkit-text-fill-color:transparent;-webkit-text-stroke:.02em rgba(0,0,0,.4);background:linear-gradient(180deg,hsl(var(--h) 100% 80%) 0%,hsl(var(--h) 100% 58%) 52%,hsl(calc(var(--h) + 24) 100% 46%) 100%);"+CL+"}"+
+ "@keyframes phWave{0%,100%{transform:translateY(.03em) rotate(-2deg)}50%{transform:translateY(-.07em) rotate(2deg)}}@keyframes phHue{to{filter:hue-rotate(360deg)}}"+
+ /* 5 Комикс: взрыв-звезда с растром, буквы с жирным контуром и красной тенью подпрыгивают */
+ ".phs5 i{color:#fff;-webkit-text-fill-color:#fff;-webkit-text-stroke:.02em #111;rotate:3deg;animation:"+POP+",phJump .9s ease-in-out infinite;animation-delay:"+PD+",calc(var(--i)*.07s + .55s)}.phs5 i:nth-child(2n){rotate:-4deg}"+
+ ".phs5 i::before{display:block;color:#111;-webkit-text-stroke:.2em #111;text-shadow:.07em .1em 0 #e8212f}"+
+ ".phb{position:absolute;left:-.4em;right:-.4em;top:-.3em;bottom:-.3em;z-index:-3;background:#e8212f;animation:phBurst .5s cubic-bezier(.2,1.6,.4,1) backwards}.phb::after{content:'';position:absolute;inset:.1em;background:radial-gradient(#f2a900 18%,transparent 19%) 0 0/.3em .3em,#ffe600;clip-path:inherit}"+
+ "@keyframes phJump{0%,55%,100%{transform:translateY(0) scale(1)}25%{transform:translateY(-.14em) scale(1.12)}40%{transform:translateY(0) scale(.95,1.05)}}@keyframes phBurst{0%{transform:scale(.1) rotate(-30deg);opacity:0}100%{transform:none;opacity:1}}"+
+ /* 6 Глитч: расползание каналов RGB, срезы, строки развёртки, буквы собираются из мусора */
+ ".phs6 i{color:#fff;-webkit-text-fill-color:#fff;text-shadow:0 0 .1em rgba(0,0,0,.8),0 .04em 0 #000;animation:"+POP+",phJit 1.6s steps(1) infinite;animation-delay:"+PD+",calc(var(--i)*.11s + .6s)}"+
+ ".phs6 i::before{display:block;z-index:1;color:#00f0ff;-webkit-text-fill-color:#00f0ff;left:-.045em;mix-blend-mode:screen;animation:phSliceA 1.6s steps(1) infinite;animation-delay:calc(var(--i)*.11s + .6s)}"+
+ ".phs6 i::after{display:block;color:#ff2d6f;-webkit-text-fill-color:#ff2d6f;left:.045em;mix-blend-mode:screen;animation:phSliceB 1.6s steps(1) infinite;animation-delay:calc(var(--i)*.11s + .6s)}"+
+ ".phs6 .pht::after{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 .025em,transparent .025em .08em)}"+
+ "@keyframes phJit{0%,100%{transform:none}8%{transform:translateX(-.03em) skewX(-6deg)}10%{transform:none}52%{transform:translateX(.04em)}54%{transform:none}}"+
+ "@keyframes phSliceA{0%,100%{clip-path:inset(0);left:-.045em}12%{clip-path:inset(10% 0 55% 0);left:-.12em}14%{clip-path:inset(0);left:-.045em}60%{clip-path:inset(55% 0 5% 0);left:-.09em}62%{clip-path:inset(0);left:-.045em}}"+
+ "@keyframes phSliceB{0%,100%{clip-path:inset(0);left:.045em}30%{clip-path:inset(40% 0 25% 0);left:.13em}32%{clip-path:inset(0);left:.045em}75%{clip-path:inset(5% 0 60% 0);left:.1em}77%{clip-path:inset(0);left:.045em}}"+
+ /* 7 Голограмма: объёмный поворот, линии развёртки, свечение, бегущий луч, частицы */
+ ".phs7 .pht{animation:phHolo 3.4s ease-in-out infinite}@keyframes phHolo{0%,100%{transform:perspective(40em) rotateY(-16deg)}50%{transform:perspective(40em) rotateY(16deg)}}"+
+ ".phs7 i{animation:"+POP+",phFlH 2.6s infinite;animation-delay:"+PD+",calc(var(--i)*.2s + .6s)}"+
+ ".phs7 i::before{display:block;color:#19d3ff;-webkit-text-fill-color:#19d3ff;-webkit-text-stroke:.12em #19d3ff;opacity:.55;filter:blur(.09em)}"+
+ ".phs7 i::after{display:block;-webkit-text-fill-color:transparent;-webkit-text-stroke:.025em #e8ffff;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.9) 50%,transparent 58%) 100% 0/300% 100% no-repeat,repeating-linear-gradient(0deg,rgba(0,30,60,.35) 0 .02em,transparent .02em .05em),linear-gradient(180deg,#c9fbff 0%,#46e0ff 40%,#8a6bff 70%,#ff4fd8 100%);"+CL+"animation:phShine 2.2s ease-in-out infinite;animation-delay:calc(var(--i)*.07s + .5s)}"+
+ "@keyframes phFlH{0%,92%,96%,100%{opacity:1}94%{opacity:.5}}"+
+ ".phs7 .phfx b{width:.05em;height:.05em;background:#8ff;box-shadow:0 0 .1em #19d3ff;animation:phEm 1.8s linear infinite;animation-delay:var(--d);opacity:0}";
+ document.head.appendChild(st);
+ /* фильтр «колышущееся пламя» для стиля Огонь (SVG-турбулентность со смещением) */
+ const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("width","0");sv.setAttribute("height","0");sv.style.cssText="position:absolute;pointer-events:none";
+ sv.innerHTML='<filter id="phFlame" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="2" seed="3" result="n"><animate attributeName="baseFrequency" dur="1.4s" values="0.02 0.06;0.026 0.1;0.02 0.06" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter>';
+ document.body?document.body.appendChild(sv):addEventListener("DOMContentLoaded",()=>document.body.appendChild(sv))}
 
 /* ---------- награда за стиль и подпись ---------- */
 {const _em=GP.emit;GP.emit=function(s,t){if(s==="gesture"&&this===W){
@@ -236,5 +304,5 @@ function fk(B,a,dy){const R=(th,x,y)=>[x*Math.cos(th)-y*Math.sin(th),x*Math.sin(
    if(c.kind==="box")y=b.y-(Math.abs(Math.sin(b.a))*c.hw+Math.abs(Math.cos(b.a))*c.hh);else y=b.y-Math.abs(Math.cos(b.a))*c.hl-c.r;low=Math.min(low,y)}
  const sh=-2.575-low+(dy||0);for(const n in B)B[n].y+=sh}
 window.__ncGest={list:GEST,byId,slots:()=>SAVE.gest,owned:own,price:id=>window.__ncPay?window.__ncPay.price(id):0,setSlot(i,id){SAVE.gest[i]=byId[id]&&own(id)?id:"";persist();applySettings()},anglesAt,fk,NS,
- name:gname,NM,PHS,PH_MAX,cleanPhrase,showPhrase,phOwned,phStyleOwned,PH_WAVE};
+ name:gname,NM,PHS,PH_MAX,cleanPhrase,showPhrase,phOwned,phStyleOwned,phRender,phSet};
 }
