@@ -33,6 +33,7 @@ export const ITEM_PRICES = {
     fx_spark: 1,
     ge_angel: 2,
     ge_bow: 1,
+    ge_break: 10,
     ge_dance: 10,
     ge_joy: 10,
     ge_mill: 5,

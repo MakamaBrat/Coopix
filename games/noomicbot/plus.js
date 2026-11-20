@@ -219,19 +219,31 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  /* при запуске: что игрок уже купил за звёзды (магазин кладёт список в окно игры) */
  for(const id of window.__CPX_ITEMS||[])if(catOf(id))SAVE.owned[id]=1;
  renderShop=function(){$("shTitle").textContent=T(shopMode==="shop"?"menu.store":"menu.skins");$("shCoins").textContent="";
-  const t=$("shBody");t.innerHTML="";const e=document.createElement("div");e.className="cats";
-  for(const a in ITEMS){const i=document.createElement("button");i.className="navy"+(a===shopCat?" on":"");i.textContent=T(catName[a]);i.onclick=()=>{shopCat=a;renderShop()};e.appendChild(i)}t.appendChild(e);
-  const n=document.createElement("div");n.className="grid";
-  ITEMS[shopCat].forEach(([a,i,o,r])=>{const c=SAVE.owned[a],l=SAVE.eq[shopCat]===a;if(shopMode==="skins"&&!c)return;const d=document.createElement("div");d.className="cell";
-   d.innerHTML='<div class="n">'+(o?'<span class="sw" style="background:'+o+'"></span>':"")+T(i)+"</div>";
-   const p=document.createElement("button");p.className="mini"+(l?" alt":"");p.style.width="100%";const pend=PEND===a;
-   p.textContent=l?T("equipped"):c?T("equip"):pend?"…":"⭐ "+r;p.disabled=l||pend;
-   p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[shopCat]=a;if(window.__ncSetItem)window.__ncSetItem(shopCat,a);persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
-  t.appendChild(n)}}
+  const t=$("shBody");t.innerHTML="";
+  /* без вкладок категорий: все предметы сразу, одним списком с заголовками разделов (в «гардеробе» — только купленные) */
+  for(const cat in ITEMS){
+   const list=ITEMS[cat].filter(it=>!(shopMode==="skins"&&!SAVE.owned[it[0]]));if(!list.length)continue;
+   const hd=document.createElement("div");hd.className="shSec";hd.innerHTML="<span>"+T(catName[cat])+"</span><i>"+list.length+"</i>";t.appendChild(hd);
+   const n=document.createElement("div");n.className="grid";
+   list.forEach(([a,i,o,r])=>{const c=SAVE.owned[a],l=SAVE.eq[cat]===a;const d=document.createElement("div");d.className="cell"+(l?" eq":"");
+    d.innerHTML='<div class="n">'+(o?'<span class="sw" style="background:'+o+'"></span>':"")+T(i)+"</div>";
+    const p=document.createElement("button");p.className="mini"+(l?" alt":"");p.style.width="100%";const pend=PEND===a;
+    p.textContent=l?T("equipped"):c?T("equip"):pend?"…":"⭐ "+r;p.disabled=l||pend;
+    p.onclick=()=>{if(!c){buyStar(a,i);return}SAVE.eq[cat]=a;if(window.__ncSetItem)window.__ncSetItem(cat,a);persist();applySettings();renderShop()};d.appendChild(p);n.appendChild(d)});
+   t.appendChild(n)}}}
 
 /* ---------- шаг физики: турбины и сцены Vice применяются прямо внутри world.step (после разбора нажатий этого шага — запись и повтор совпадают) ---------- */
 {const _lm3=GP.loadMap;
  GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(G.gestStep)G.gestStep(a[0])}}catch(e){}return _ws.apply(this,a)};return r}}
+
+/* ---------- магазин одним списком: заголовки разделов вместо вкладок ---------- */
+{const st=document.createElement("style");st.textContent=".shSec{display:flex;align-items:center;gap:1.4vmin;margin:3vmin 0 1.4vmin;padding-right:2.4vmin;font-weight:800;font-size:3vmin;color:#e6f2ff;letter-spacing:.1vmin}.shSec:first-child{margin-top:.6vmin}.shSec::before{content:\"\";width:1vmin;height:3.4vmin;border-radius:.6vmin;background:#2AABEE}.shSec::after{content:\"\";flex:1;height:.3vmin;border-radius:.2vmin;background:linear-gradient(90deg,rgba(42,171,238,.55),transparent)}.shSec i{order:3;font-style:normal;font-size:2.2vmin;font-weight:700;color:#7f93b8}.shSec span{order:1}.shSec::after{order:2}.cell.eq{box-shadow:inset 0 0 0 .4vmin #2AABEE;background:#2b4270}"+
+ "@media(orientation:portrait){.shSec{margin:5vw 0 2.6vw;font-size:5vw;gap:2.4vw}.shSec::before{width:1.6vw;height:5.6vw}.shSec i{font-size:3.6vw}.shSec:first-child{margin-top:1vw}.cell.eq{box-shadow:inset 0 0 0 .7vw #2AABEE}}";document.head.appendChild(st)}
+
+/* ---------- кнопка «Назад» на экранах магазина, скинов, настроек и т.п. — вверху, прямо под нативной кнопкой Telegram «Назад/Закрыть», а не внизу ----------
+   (в Telegram эта кнопка висит поверх окна в левом верхнем углу, поэтому отступ сверху тот же, что у паузы; заголовок идёт справа от «Назад», список занимает всё освободившееся место) */
+{const st=document.createElement("style");st.textContent=":root{--bkt:max(56px,calc(env(safe-area-inset-top) + 52px))}.sc2 .bk{top:var(--bkt);bottom:auto;left:4.9%;width:15%;height:8.6vmin}.sc2 .hd{top:var(--bkt);left:calc(4.9% + 17%);right:4.9%;height:8.6vmin}.sc2 .bd{top:calc(var(--bkt) + 11.6vmin);bottom:3%;left:4.9%;right:4.9%}#skins .bd{bottom:15%}"+
+ "@media(orientation:portrait){.sc2 .bk{top:var(--bkt);bottom:auto;left:4%;width:40%;height:11vw;font-size:4.4vw}.sc2 .hd{top:calc(var(--bkt) + 13vw);left:4%;right:4%;height:10vw}.sc2 .bd{top:calc(var(--bkt) + 25vw);left:4%;right:4%;bottom:calc(env(safe-area-inset-bottom) + 2%)}#skins .bd{bottom:calc(env(safe-area-inset-bottom) + 17vw)}}";document.head.appendChild(st)}
 
 /* ---------- выход в меню из паузы: понятная подпись и отступ сверху (в Telegram там своя кнопка закрытия — их легко перепутать) ---------- */
 {const RU4={"x.exit":"В меню"},EN4={"x.exit":"Menu"};for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU4:EN4);

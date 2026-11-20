@@ -10,7 +10,7 @@ const RU={"sk.std":"Стандартный","sk.ward":"Гардероб","sk.hin
 for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN);
 for(const L in I18N){const ru=["ru","uk","be"].includes(L);for(const s of SK)I18N[L]["sk.n."+s.id]=ru?"Скин «"+s.ru+"»":"Skin: "+s.en} /* подпись в счёте на оплату */
 const PAY=window.__ncPay,payId=id=>"sk_"+id,own=id=>!id||(PAY?PAY.owned(payId(id)):true),price=id=>PAY?PAY.price(payId(id)):0;
-const nameOf=s=>["ru","uk","be"].includes(LANG)?s.ru:s.en;
+const nameOf=s=>(I18N[LANG]&&I18N[LANG]["sk.nm."+s.id])||(["ru","uk","be"].includes(LANG)?s.ru:s.en); /* названия скинов на языках игры лежат в i18n.js */
 
 /* ---------- атлас скина: приводим к 64×64, как делает майнкрафт ---------- */
 const ATL={};
@@ -162,7 +162,7 @@ function pose(F,tm){const s=tm/1000,GE=GX();
   if(tab==="ge"&&gPlay){const g=GE.byId[gPlay.id];t=(tm-gPlay.t0)/1000;if(g){if(t>g.dur+.7){gPlay.t0=tm;t=0}id=gPlay.id}}
   const r=GE.anglesAt(id,t),a=r.a;hop=r.hop;
   if(!id){/* спокойная стойка: руки слегка покачиваются */a.shL+=Math.sin(s*1.7)*5;a.shR+=Math.sin(s*1.7+1.2)*5}
-  GE.fk(F.B,a,hop);F.B.head.y+=Math.sin(s*2.2)*.006;return}
+  GE.fk(F.B,a,hop);F.B.head.y+=Math.sin(s*2.2)*.006;F.gs=id?{g:GE.byId[id],t:Math.min(t,GE.byId[id].dur)}:null;return}
  for(const p of["armL","armR"]){const sgn=p==="armL"?1:-1,th=(-168+Math.sin(s*1.7+(sgn>0?0:1.2))*5)*Math.PI/180,A=[0,-.78],C=PARTS[p].c,dx=C[0]-A[0],dy=C[1]-A[1],b=F.B[p];
   b.x=A[0]+dx*Math.cos(th)-dy*Math.sin(th);b.y=A[1]+dx*Math.sin(th)+dy*Math.cos(th);b.a=th}
  const bob=Math.sin(s*2.2)*.006;for(const p of["head"])F.B[p].y=PARTS[p].c[1]+bob}

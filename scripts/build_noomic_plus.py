@@ -54,6 +54,9 @@ def build(debug=None):
     sp = os.path.join(D, "skins.js")
     if os.path.exists(sp):
         js = js + "\n" + open(sp, encoding="utf-8").read().replace("NC_SKINS", skins_json()).replace("NC_SKDBG", "true" if debug else "false")
+    ip = os.path.join(D, "i18n.js")
+    if os.path.exists(ip):
+        js = js + "\n" + open(ip, encoding="utf-8").read()
     # 1) кнопки турбин
     a = '<button class="zone" id="zArch" data-k="arch">'
     assert s.count(a) == 1
