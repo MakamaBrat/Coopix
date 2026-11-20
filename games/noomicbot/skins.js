@@ -97,7 +97,7 @@ function putSkin(V,id,a){
   const w=new T3.Group,inner=new T3.Group;if(sp.arm)inner.rotation.z=Math.PI;/* руки покоятся «вверх»: поворот на 180°, чтобы на опущенной руке текстура стояла ровно */
   inner.position.set(sp.cx,sp.cy,0);
   const m=new T3.Mesh(geoFor(p,sp,false,a.slim),base);m.castShadow=true;inner.add(m);
-  if(hasOv(p)){const o=new T3.Mesh(geoFor(p,sp,true,a.slim),ovm);o.castShadow=true;inner.add(o)}
+  if(hasOv(p)){const o=new T3.Mesh(geoFor(p,sp,true,a.slim),ovm);inner.add(o)}/* слой одежды тень не отбрасывает: основа уже даёт тень, а лишний проход тяжёлый для слабых телефонов */
   w.add(inner);w.userData.sp=sp;w.userData.sgn=p.endsWith("R")?-1:1;V.noomi.parts[p].add(w);R.g[p]=w}
  V.noomiMat.visible=false;V.headMat.visible=false}
 function applySkin(V,id){
@@ -109,6 +109,18 @@ function applySkin(V,id){
 const _slS=View3D.prototype.setLook;
 View3D.prototype.setLook=function(t,i){_slS.call(this,t,i);if(this.noomi)applySkin(this,t.skin)};
 const _lookS=look;look=function(){const r=_lookS();r.skin=own(SAVE.skin)?SAVE.skin||"":"";return r};
+/* ---------- мультиплеер: скин игрока видят и остальные ----------
+   (код подключается по load — сетевой блок страницы стоит ниже по документу) поза игрока (packPose) уходит всем 20 раз в секунду — добавляем в неё id скина (k), хост пересылает пакет как есть.
+   призрак другого игрока получает тот же скин: «виртуальный вид» с частями призрака, к которому применяем applySkin */
+addEventListener("load",()=>{const _pp=packPose;packPose=function(){const r=_pp();if(r){const k=own(SAVE.skin)?SAVE.skin||"":"";if(k)r.k=k}return r};
+ const _gl=ghostList;ghostList=function(){const L=_gl();if(L)for(const e of L){const g=NET.gh.get(e.id),k=g&&g.tgt&&g.tgt.k;e.sk=typeof k==="string"&&byId[k]?k:""}return L};
+ const _pg=View3D.prototype.poseGhosts;
+ View3D.prototype.poseGhosts=function(list){const before=this.ghostMap?Object.assign({},this.ghostMap):{};_pg.call(this,list);const gm=this.ghostMap||{};
+  for(const id in before)if(gm[id]!==before[id]&&before[id].sv){clearSkin(before[id].sv);before[id].sv=null}
+  for(const o of list||[]){const e=gm[o.id];if(!e||!o.cur||o.hide)continue;
+   if(!e.sv)e.sv={noomi:{parts:e.parts},noomiMat:e.mat,headMat:e.headMat,skinRig:null,hat:null,faceG:null,cape:null};
+   applySkin(e.sv,o.sk||"");const R=e.sv.skinRig;
+   if(R){const f=o.cur.f||1;for(const p in R.g){const w=R.g[p],sp=w.userData.sp;w.rotation.y=f>0?0:Math.PI;w.position.z=(w.userData.sgn*sp.z-(PARTS[p].z||0))*f}}}}});
 
 /* каждый кадр: лицо вперёд по ходу, зеркальные левая/правая стороны, подгонка вещей под квадратную голову, рентген */
 const _pnS=View3D.prototype.poseNoomi;
@@ -136,7 +148,7 @@ View3D.prototype.poseNoomi=function(t){_pnS.call(this,t);const R=this.skinRig;if
 ".skc.on{border-color:#ffd24a;background:#2f4678}.skc.on::after{content:\"\\2713\";position:absolute;right:.8vmin;top:.2vmin;color:#ffd24a;font-weight:900;font-size:3vmin}"+
 ".skc canvas{width:60%;aspect-ratio:1/2;image-rendering:pixelated}.skc span{font-size:2.2vmin;font-weight:700;text-align:center;line-height:1.1}"+
 "#skWard{position:static;align-self:stretch;flex:none;margin-top:1.4vmin;height:8.6vmin;padding:0 3vmin;font-size:3.1vmin;border-radius:1.8vmin}"+
-".phRow{grid-column:1/-1;display:flex;flex-direction:column;gap:.8vmin}#phIn{width:100%;height:7vmin;border-radius:1.4vmin;border:.3vmin solid #3a4a6c;background:#16233f;color:#fff;font-size:3.2vmin;font-weight:700;padding:0 2vmin;font-family:inherit;outline:none}#phIn:focus{border-color:#2AABEE}.phCnt{font-size:2vmin;color:#7f93b8;text-align:right}.phLock{font-size:2vmin;color:#ffd24a}.phHd{grid-column:1/-1;margin-top:.6vmin;font-weight:800;font-size:2.6vmin;color:#cfe3ff}.phc{padding-top:2vmin}.phx{display:flex;align-items:center;justify-content:center;min-height:8vmin;overflow:hidden}.phc .pht{font-size:3vmin}.phx .pht{white-space:nowrap}#phIn[readonly]{cursor:pointer}#phEd{position:fixed;inset:0;z-index:99;display:none;flex-direction:column;gap:1.6vmin;padding:2vmin 3vmin;background:#060c1c;box-sizing:border-box}#phEd.show{display:flex}.phEdRow{display:flex;gap:1.6vmin;align-items:center}#phIn2{flex:1;min-width:0;height:9vmin;border-radius:1.6vmin;border:.35vmin solid #2AABEE;background:#16233f;color:#fff;font-size:max(16px,4vmin);font-weight:700;padding:0 2.4vmin;font-family:inherit;outline:none}#phDone{height:9vmin;padding:0 4vmin;border:0;border-radius:1.6vmin;background:#2AABEE;color:#fff;font-size:max(15px,3.4vmin);font-weight:800;font-family:inherit}#phEdCnt{font-size:max(12px,2.2vmin);color:#7f93b8;text-align:right}#phLive.phr{position:relative;left:auto;top:auto;transform:none;opacity:1;animation:none;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}#skPhr{top:16%;opacity:1}#skPhr.on{animation:phKeep .9s ease-out}@keyframes phKeep{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(-8deg)}30%{opacity:1;transform:translateX(-50%) scale(1.2) rotate(2deg)}100%{opacity:1;transform:translateX(-50%) scale(1) rotate(0)}}"+
+".phRow{grid-column:1/-1;display:flex;flex-direction:column;gap:.8vmin}#phIn{width:100%;height:7vmin;border-radius:1.4vmin;border:.3vmin solid #3a4a6c;background:#16233f;color:#fff;font-size:3.2vmin;font-weight:700;padding:0 2vmin;font-family:inherit;outline:none}#phIn:focus{border-color:#2AABEE}.phCnt{font-size:2vmin;color:#7f93b8;text-align:right}.phLock{font-size:2vmin;color:#ffd24a}.phHd{grid-column:1/-1;margin-top:.6vmin;font-weight:800;font-size:2.6vmin;color:#cfe3ff}.phc{padding-top:2vmin}.phx{display:flex;align-items:center;justify-content:center;min-height:8vmin;overflow:hidden}.phc .pht{font-size:3vmin}.phx .pht{white-space:nowrap}.phx .pht,.phx .pht i,.phx .phb{animation:none}.phx .phfx{display:none}#phIn[readonly]{cursor:pointer}#phIn,#phIn2{touch-action:auto;user-select:text;-webkit-user-select:text}#phEd{position:fixed;inset:0;z-index:99;display:none;flex-direction:column;gap:1.6vmin;padding:2vmin 3vmin;background:#060c1c;box-sizing:border-box}#phEd.show{display:flex}.phEdRow{display:flex;gap:1.6vmin;align-items:center}#phIn2{flex:1;min-width:0;height:9vmin;border-radius:1.6vmin;border:.35vmin solid #2AABEE;background:#16233f;color:#fff;font-size:max(16px,4vmin);font-weight:700;padding:0 2.4vmin;font-family:inherit;outline:none}#phDone{height:9vmin;padding:0 4vmin;border:0;border-radius:1.6vmin;background:#2AABEE;color:#fff;font-size:max(15px,3.4vmin);font-weight:800;font-family:inherit}#phEdCnt{font-size:max(12px,2.2vmin);color:#7f93b8;text-align:right}#phLive.phr{position:relative;left:auto;top:auto;transform:none;opacity:1;animation:none;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}#skPhr{top:16%;opacity:1}#skPhr.on{animation:phKeep .9s ease-out}@keyframes phKeep{0%{opacity:0;transform:translateX(-50%) scale(.3) rotate(-8deg)}30%{opacity:1;transform:translateX(-50%) scale(1.2) rotate(2deg)}100%{opacity:1;transform:translateX(-50%) scale(1) rotate(0)}}"+
 "#skTabs{display:flex;gap:1.2vmin}#skTabs button{height:6.4vmin;padding:0 3vmin;font-size:2.8vmin;border-radius:3.2vmin;border:0;color:#fff;background:#243557;font-weight:700;font-family:inherit}#skTabs button.on{background:#2AABEE}"+
 "#skRight{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}#skRight #skGrid{flex:1;min-height:0}"+
 "#skSlots{display:none;gap:1.2vmin;margin-bottom:1.4vmin}#skSlots.show{display:flex}#skSlots button{flex:1;position:relative;height:9vmin;border-radius:1.6vmin;border:.5vmin solid transparent;background:#243557;color:#fff;font-size:5vmin;font-family:inherit;display:flex;align-items:center;justify-content:center}#skSlots button.on{border-color:#ffd24a;background:#2f4678}#skSlots button i{position:absolute;left:1vmin;top:.4vmin;font-style:normal;font-size:2vmin;font-weight:800;color:#9fb4d8}#skSlots button.em{font-size:2vmin;color:#7f93b8}"+
@@ -221,7 +233,7 @@ function phEditUpd(){const GE=GX(),i2=$("phIn2");if(!GE||!i2)return;const t=GE.c
  GE.phSet($("phLive"),t||T("ph.sample"),phNow().s,Math.min(innerWidth,innerHeight*1.6))}
 function phEditOpen(){const GE=GX();if(!GE)return;const d=$("phEd")||phEditBuild(),i2=$("phIn2");i2.placeholder=T("ph.ph");$("phDone").textContent=T("ph.done");i2.value=phNow().t;
  d.classList.add("show");phEditUpd();i2.focus();setTimeout(()=>{i2.focus();try{i2.setSelectionRange(i2.value.length,i2.value.length)}catch(e){}},60)}
-/* вкладка «Фраза»: поле на 25 символов, 8 стилей надписи и превью. Купить (⭐ 25) можно прямо здесь, а примерить стили — до покупки */
+/* вкладка «Фраза»: поле на 25 символов, 8 стилей надписи и превью. Купить (⭐ 5) можно прямо здесь, а примерить стили — до покупки */
 let phTry=String(SAVE.phDraft||""),phSel=-1; /* phSel — выбранный стиль в превью (даже если он ещё не куплен) */
 function phNow(){const GE=GX();if(!GE)return{t:"",s:0};if(phSel<0)phSel=Math.max(0,Math.min(GE.PHS-1,(SAVE.phSel!=null?SAVE.phSel:SAVE.phraseStyle)|0));return{t:GE.phOwned()?GE.cleanPhrase(SAVE.phrase||SAVE.phDraft):GE.cleanPhrase(phTry),s:phSel}}
 function phShow(){const GE=GX(),p=phNow();if(GE)GE.showPhrase($("skPhr"),p.t||T("ph.sample"),p.s,"")}
@@ -241,7 +253,7 @@ function renderPhrase(){const GE=GX(),g=$("skGrid"),sl=$("skSlots");sl.classList
   b.onclick=()=>{phSel=i;SAVE.phSel=i;persist();if(GE.phOwned()&&GE.phStyleOwned(i)){SAVE.phraseStyle=i;persist();applySettings()}lastInt=performance.now();renderPhrase();phShow();updBuy()};g.appendChild(b)}
  refreshSamples();updBuy();phShow()}
 function setTab(t){tab=t;document.querySelectorAll("#skTabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
- $("skHint").textContent=t==="ge"?T("ge.hint"):t==="ph"?T("ph.hint"):T("sk.hint");$("skWard").style.display=t==="sk"?"":"none";$("skPhr").style.display=t==="ph"?"":"none";
+ $("skHint").textContent=t==="ge"?T("ge.hint"):t==="ph"?"":T("sk.hint");$("skWard").style.display=t==="sk"?"":"none";$("skPhr").style.display=t==="ph"?"":"none";
  if(t==="ge"&&!gPlay){const GE=GX(),cur=GE?GE.slots():[],i=cur.findIndex(x=>x);if(i>=0){slot=i;gPlay={id:cur[i],t0:performance.now()}}}
  renderGrid();updName();updBuy()}
 function openSkins(){$("skTitle").textContent=T("menu.skins");document.querySelector("#skTabs [data-t=sk]").textContent=T("ge.tabSk");document.querySelector("#skTabs [data-t=ge]").textContent=T("ge.tabGe");document.querySelector("#skTabs [data-t=ph]").textContent=T("ph.tab");$("skBack").textContent="\u2039 "+T("back");$("skWard").textContent="\u{1F455} "+T("sk.ward");$("skHint").textContent=T("sk.hint");

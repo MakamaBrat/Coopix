@@ -55,7 +55,7 @@ export const ITEM_PRICES = {
     hat_top: 1,
     hat_viking: 1,
     hat_wizard: 1,
-    ph_phrase: 25,
+    ph_phrase: 5,
     ph_s1: 5,
     ph_s2: 5,
     ph_s3: 10,
