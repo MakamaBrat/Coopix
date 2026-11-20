@@ -3352,7 +3352,9 @@ async function gameMaps(gid,msg,frame){
     if(msg.op==="share"){mapShare(id,String(msg.text||"").slice(0,120));send({ok:true});return}
     send({ok:false,err:"bad_op"})}
   catch(e){send({ok:false,err:(e&&e.code)||(e&&e.status===429?"rate_limit":"err")})}}
-function withSave(html,saved,items){const mapInj=mapLinkInj()+statsInj();let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
+/* высота интерфейса Telegram сверху (в полноэкранном режиме там нативные кнопки «Назад»/«Закрыть»): игра ставит свою кнопку «Назад» прямо под ними, а в обычном режиме отступа нет */
+function topInj(){let t=0;try{const w=window.Telegram&&Telegram.WebApp;if(w){const a=w.safeAreaInset||{},b=w.contentSafeAreaInset||{};t=(+a.top||0)+(+b.top||0)}}catch(e){}return"<script>window.__CPX_TOP="+Math.max(0,Math.round(t))+";<"+"/script>"}
+function withSave(html,saved,items){const mapInj=mapLinkInj()+statsInj()+topInj();let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
   const inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+";window.__CPX_ITEMS="+JSON.stringify(items||[]).replace(/</g,"\\u003c")+"<\/script>";
   return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj+mapInj):inj+mapInj+html}
 function gameMode(html,title,gid,saved,items){window.__gm=1;

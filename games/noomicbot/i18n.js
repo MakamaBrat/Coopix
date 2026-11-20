@@ -80,12 +80,15 @@ moreTxt=function(){$("mMoreT").textContent=T("x.moreBtn");$("moreTitle").textCon
 /* слово «скин» и «жест» для подписи в счёте на оплату; ru/uk — с кавычками «», остальные — «Слово: Название» */
 const WS={ru:["Скин","Жест"],uk:["Скін","Жест"],en:["Skin","Gesture"],de:["Skin","Geste"],fr:["Skin","Geste"],es:["Skin","Gesto"],it:["Skin","Gesto"],pt:["Skin","Gesto"],pl:["Skin","Gest"],nl:["Skin","Gebaar"],sv:["Skin","Gest"],fi:["Skini","Ele"],cs:["Skin","Gesto"],ro:["Skin","Gest"],tr:["Görünüm","Hareket"],id:["Skin","Gerakan"],vi:["Skin","Cử chỉ"]};
 const GN=window.__ncGest&&window.__ncGest.NM;
-for(const L in I18N){const v=I18N[L],t=TR[L]||{},w=WS[L]||WS.en,ru=L==="ru"||L==="uk";
+const applyAll=()=>{for(const L in I18N){const v=I18N[L],t=TR[L]||{},w=WS[L]||WS.en,ru=L==="ru"||L==="uk";
  if(t.a&&t.a.length===K1.length)K1.forEach((k,i)=>{v[k]=t.a[i]});else if(t.a)console.warn("i18n",L,"a",t.a.length,K1.length);
  if(t.c&&t.c.length===K2.length)K2.forEach((k,i)=>{if(v[k]===I18N.en[k]||v[k]===undefined)v[k]=t.c[i]});else if(t.c)console.warn("i18n",L,"c",t.c.length,K2.length);
  if(t.tw&&(v.twistSpeed===I18N.en.twistSpeed||v.twistSpeed===undefined))v.twistSpeed=t.tw;
  const names=t.b||TR.en.b;if(names.length!==SK.length)console.warn("i18n",L,"b",names.length);
  SK.forEach((id,i)=>{v["sk.nm."+id]=names[i];v["sk.n."+id]=ru?w[0]+" «"+names[i]+"»":w[0]+": "+names[i]});
  const gl=GN&&(GN[L]||(L==="be"?GN.ru:GN.en));
- if(gl)["ge_victory","ge_wave","ge_bow","ge_super","ge_angel","ge_runner","ge_star","ge_joy","ge_dance","ge_mill","ge_break"].forEach((id,i)=>{v["ge.n."+id]=ru?w[1]+" «"+gl[i]+"»":w[1]+": "+gl[i]})}
+ if(gl)["ge_victory","ge_wave","ge_bow","ge_super","ge_angel","ge_runner","ge_star","ge_joy","ge_dance","ge_mill","ge_break"].forEach((id,i)=>{v["ge.n."+id]=ru?w[1]+" «"+gl[i]+"»":w[1]+": "+gl[i]})}};
+applyAll();addEventListener("load",applyAll); /* повторно после загрузки: модуль карт в облаке задаёт свои строки только по-русски и по-английски на событии load — перекрываем их */
+/* кнопка «Назад» на экране сетевой игры не входит в общий список и оставалась русской */
+{const _s=show;show=function(t){_s(t);const b=$("netBack");if(b)b.textContent="‹ "+T("back")}}
 }
