@@ -32,6 +32,20 @@
                 "games/noomicbot"
             ],
             "port": 5180
+        },
+        {
+            "name": "pixelia",
+            "runtimeExecutable": "C:/Users/15mak/AppData/Local/Programs/Python/Python312/python.exe",
+            "runtimeArgs": [
+                "-m",
+                "http.server",
+                "5181",
+                "--bind",
+                "127.0.0.1",
+                "--directory",
+                "games/pixelia/src"
+            ],
+            "port": 5181
         }
     ]
 }

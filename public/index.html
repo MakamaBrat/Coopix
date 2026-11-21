@@ -98,6 +98,7 @@ body:not(.onhome) .top{--ts:.6;transform:scale(var(--ts));transform-origin:50% 0
   animation:pgin .95s cubic-bezier(.2,1.3,.4,1) .3s both}
 @keyframes pgin{0%{opacity:0;transform:translateY(-60px) scale(.8) rotate(-8deg)}60%{opacity:1}100%{opacity:1;transform:none}}
 .mjump{transform-origin:50% 100%}
+.mascot.intro .mwrap,.mascot.intro .pshadow{animation:none} /* на время знакомства голубь не качается сам — его двигает показ, потом возвращается обычная анимация */
 .mwrap{position:relative;transform-origin:50% 100%;animation:pghop 2.4s ease-in-out infinite;filter:drop-shadow(0 0 14px hsl(calc(262 + var(--th)) 83% 57.8% / 0.53))}
 @keyframes pghop{0%,100%{transform:translateY(0) scale(1.015,.985) rotate(0)}38%{transform:translateY(-7px) scale(.99,1.012) rotate(-1.4deg)}68%{transform:translateY(-2px) scale(1,1) rotate(1deg)}}
 .pgn{display:block;width:100%;height:auto;-webkit-user-drag:none}
@@ -2276,6 +2277,47 @@ function renderHome(){
   fitAll();requestAnimationFrame(fitAll);document.fonts&&document.fonts.ready.then(fitAll);
   /* само листает каждые 5 секунд; если новости трогали (касание, клик, точки) — пауза 9 секунд */
   if(items.length>1&&!RM)homeT=setInterval(()=>{if(view!==0||document.hidden||document.body.classList.contains("pgopen")||Date.now()-hold<9000)return;go((Math.round(ns.scrollLeft/ns.clientWidth)+1)%items.length)},5000); /* текущий слайд берём из реальной прокрутки, а не из события */
+  introTry();
+}
+
+/* ---------- первое знакомство (только на новом устройстве, один раз) ----------
+   цвета магазина сами «проклацываются» по носителям (кассета → диск → дискета → консоль), каждый плавно, а потом тема возвращается к стартовой;
+   в это же время голубь с джойстиком в шапке играет движение и застывает, дальше всё как обычно. Любое касание прерывает показ. */
+const INTRO_KEY="coopix.intro";
+const INTRO_NEW=(()=>{try{return !localStorage.getItem("am.seen")&&!localStorage.getItem(INTRO_KEY)}catch(e){return false}})(); /* am.seen ставится в конце первой загрузки: смотрим до неё */
+let introState=0; /* 0 — ждём, 1 — идёт, 2 — готово */
+function introTry(n){
+  if(!INTRO_NEW||introState)return;
+  const mark=()=>{try{localStorage.setItem(INTRO_KEY,"1")}catch(e){}};
+  if(RM||Q===0){introState=2;mark();return}
+  const mas=$("#mascot"),mj=mas&&mas.querySelector(".mjump"),gs=()=>[...homeEl.querySelectorAll(".gad")];
+  if(view!==0||document.hidden||document.body.classList.contains("pgopen")||!BOOTED||$("#boot")||gs().length<HOME_GADS.length||!mj){if((n|0)<30)setTimeout(()=>introTry((n|0)+1),400);return}
+  introState=1;mark();const t00=performance.now();
+  const start=TH,ST={abort:false};let cur=start,lastBg=0;
+  const norm=v=>((v%360)+540)%360-180;
+  const soft=(v,force)=>{TH=norm(v);document.documentElement.style.setProperty("--th",TH.toFixed(1));const now=performance.now();
+    if(force||now-lastBg>110){lastBg=now;rotCache.clear();bgBase=null;bgPainted=false;lastPl=0;STARS.forEach(s=>s.c=rotC(s.c0))}}; /* фон-звёзды перекрашиваем реже, чем меняется интерфейс */
+  const tween=(from,to,ms)=>new Promise(res=>{const t0=performance.now(),f=now=>{if(ST.abort){res();return}const u=Math.min(1,(now-t0)/ms),e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;soft(from+(to-from)*e);if(u<1)requestAnimationFrame(f);else res()};requestAnimationFrame(f)});
+  const delta=(a,b)=>((b-a+540)%360)-180; /* кратчайший путь по кругу оттенков */
+  const mark2=i=>{gs().forEach((x,j)=>x.classList.toggle("on",j===i))};
+  const press=i=>{const el=gs()[i],b=el&&el.querySelector(".bob");mark2(i);if(b&&b.animate)b.animate([{transform:"scale(1)"},{transform:"scale(.86)",offset:.32},{transform:"scale(1.12)",offset:.68},{transform:"scale(1)"}],{duration:380,easing:"ease-out"})};
+  /* голубь с джойстиком: наклоны «стиком» влево-вправо, подскок, оборот и приземление; потом замирает */
+  mas.classList.add("intro");
+  const P="perspective(420px)",f=(x,y,r,ry,sx,sy)=>`${P} translate(${x}px,${y}px) rotate(${r}deg) rotateY(${ry}deg) scale(${sx},${sy})`;
+  const KF=[[0,0,0,0,0,1,1],[.1,-9,-1,-13,0,1,1],[.22,9,-1,13,0,1,1],[.34,-7,-8,-9,0,1.03,1.03],[.45,7,-12,9,0,1.05,1.05],[.6,0,-22,0,180,1.1,1.1],[.76,0,-22,0,360,1.1,1.1],[.87,0,0,0,360,1.1,.86],[.94,0,0,0,360,.98,1.03],[1,0,0,0,360,1,1]]
+    .map(k=>({offset:k[0],transform:f(k[1],k[2],k[3],k[4],k[5],k[6])}));
+  const anim=mj.animate?mj.animate(KF,{duration:1900,easing:"cubic-bezier(.4,.1,.3,1)"}):null;
+  const finish=keepTheme=>{if(introState===2)return;introState=2;ST.abort=true;removeEventListener("pointerdown",onTouch,true);
+    try{if(anim)anim.cancel()}catch(e){}mas.classList.remove("intro");
+    if(!keepTheme)setTheme(265+start); /* вернуть стартовую тему и сохранить её (то же значение, что было) */
+    gs().forEach(x=>x.classList.toggle("on",hueShift(+x.dataset.h)===TH))};
+  const onTouch=e=>finish(!!(e.target&&e.target.closest&&e.target.closest(".gad")));
+  addEventListener("pointerdown",onTouch,true);
+  (async()=>{
+    for(let i=0;i<HOME_GADS.length&&!ST.abort;i++){const to=hueShift(HOME_GADS[i][1]);press(i);await tween(cur,cur+delta(cur,to),420);cur=to;await wait(40)}
+    if(!ST.abort){await tween(cur,cur+delta(cur,start),420);cur=start}
+    if(!ST.abort){await wait(Math.max(0,1900+500-(performance.now()-t00)));} /* голубь успевает закончить и постоять на месте */
+    if(!ST.abort)finish(false)})();
 }
 
 /* главная всегда в один экран: средний блок (предметы, заголовок, кнопка) уменьшается ровно настолько, чтобы влезть над новостями */
