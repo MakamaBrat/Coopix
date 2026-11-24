@@ -206,7 +206,7 @@
     mk('Ход времени', [[true, 'Идёт', 'play'], [false, 'Стоит', 'pause']], () => G.tcycle, (v) => { G.tcycle = v; Sky.set({ auto: v }); saveSet(); });
     mk('Погода', [[0, 'Ясно', 'sun'], [1, 'Дождь', 'cloud'], [2, 'Снег', 'snow'], [3, 'Гроза', 'bolt']], () => G.weather, (v) => { G.weather = Sim.weather = v; if (v === 3) G.stormed = true; });
     mk('Ветер', [[-1, '← Влево'], [0, 'Штиль'], [1, 'Вправо →']], () => G.wind, (v) => { G.wind = Sim.wind = v; });
-    mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Лес'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Горы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
+    mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Луг'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Горы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
     body.appendChild(h('div', 'hint', 'Авто: горы и холмы за миром подстраиваются под то, что лежит на земле.'));
   }
   function pWorld(body) {
@@ -387,13 +387,12 @@
   }
   let titleTimer = 0;
   function showTitle() { buildTitle(); title.classList.remove('hide'); $('#app').classList.add('intitle'); autosave(); }
+  /* игра всегда начинается с пустой карты; из главного меню в тот же режим возвращаемся в тот же мир, смена режима начинает с пустоты */
+  let lastMode = null;
   function startGame(camp, keepWorld) {
     G.camp = !!camp; title.classList.add('hide'); $('#app').classList.remove('intitle'); hideModal();
-    if (!keepWorld) {
-      const d = store.get(camp ? 'autoc' : 'auto', null);
-      if (d) { try { loadPack(d); } catch (e) { newWorld('island'); } } else newWorld('island');
-      if (camp && !d) { /* новый мир кампании */ }
-    }
+    if (!keepWorld && lastMode !== !!camp) { newWorld('void'); undoStack.length = 0; }
+    lastMode = !!camp;
     if (camp && !prog.unlocked) prog.unlocked = ['EARTH', 'WATER', 'STONE'];
     if (camp && prog.unlocked.indexOf(G.sel) < 0 && !isTool(G.sel)) select(prog.unlocked[1] || 'WATER', true);
     updateHud(); renderBar(); closePanel();
@@ -402,7 +401,7 @@
   }
   function autosave() {
     if (title && !title.classList.contains('hide') && !G.dirty) { /* заставка: сохраняем как есть */ }
-    try { store.set(G.camp ? 'autoc' : 'auto', Sim.pack()); saveSet(); } catch (e) { }
+    try { saveSet(); } catch (e) { }
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
   setInterval(() => { if (!document.hidden && title.classList.contains('hide')) autosave(); }, 20000);
@@ -440,8 +439,7 @@
   stage.style.backgroundImage = 'url(' + rockTile() + ')'; stage.style.backgroundSize = '144px 144px'; stage.style.imageRendering = 'pixelated';
   Snd.on = G.sound;
   Sky.set({ time: G.time, auto: G.tcycle, lock: G.biome, day: G.sday });
-  layout(true); newWorld('island');
-  const auto = store.get('auto', null); if (auto) { try { loadPack(auto); } catch (e) { } }
+  layout(true); newWorld('void');
   if (!exists(G.sel)) G.sel = 'WATER';
   renderBar(); updateHud(); buildTitle(); $('#app').classList.add('intitle'); fixK(document.body);
   if (window.Telegram && Telegram.WebApp) { try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) { } }
