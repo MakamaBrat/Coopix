@@ -349,13 +349,17 @@ const People = (function () {
   /* слой: ширина и высота вдвое больше мира */
   let lay = null, lctx = null;
   function init(canvas, W, H) { lay = canvas; lay.width = W * 2; lay.height = H * 2; lctx = lay.getContext('2d'); lctx.imageSmoothingEnabled = false; }
-  function draw(ents, T, amb, ambKey) {
+  function draw(ents, T, amb, ambKey, lightAt) {
     if (!lctx) return;
     lctx.clearRect(0, 0, lay.width, lay.height);
+    const day = amb[0] > .985 && amb[1] > .985 && amb[2] > .985;
     for (const e of ents) {
       if (e.seed == null) e.seed = (Math.random() * 1000) | 0;
       if (!e.form) e.form = 'ref';
-      const st = animate(e, T), spr = sprite(e, st.P, st.burn, e.dir < 0, st.sub, amb, ambKey, st.zk, st.char);
+      /* ночью человечек освещён тем же светом, что и мир вокруг: у костра и лампы он виден, в темноте тёмный */
+      let a = amb, ak = ambKey;
+      if (!day && lightAt) { const L = lightAt(e.x, e.y - 6), q = (v) => Math.min(1.1, Math.round(v * 10) / 10); a = [q(L[0]), q(L[1]), q(L[2])]; ak = a.join(','); }
+      const st = animate(e, T), spr = sprite(e, st.P, st.burn, e.dir < 0, st.sub, a, ak, st.zk, st.char);
       const cx = Math.round(e.x * 2), fy = (Math.round(e.y) + 1) * 2;
       if (st.alpha < 1) lctx.globalAlpha = st.alpha;
       if (st.rot) {
