@@ -61,3 +61,30 @@ if(f){let busy=0;const dec=t=>{const cp=[...t].map(c=>c.codePointAt(0)).filter(n
 ".zone.gb{background:#0b0b0fb3!important}"+
 "#zStop{background:#0b0b0fe6!important;color:#fff!important}";
 document.head.appendChild(st)}
+
+/* ---------- магазин и гардероб: вкладки-категории сверху (Все / Цвета / Шляпы / ... / Шлейф), выбор типа в один тап ---------- */
+{const IC={col:"🎨",hat:"🎩",cape:"🦸",sky:"🌤️",face:"🕶️",wear:"👟",gear:"🚀",fx:"✨"};
+ let TAB="";
+ const st=document.createElement("style");st.textContent=
+ "#shTabs{position:sticky;top:0;z-index:5;display:flex;gap:1.4vmin;overflow-x:auto;padding:1vmin 0 1.4vmin;margin:0 0 1vmin;background:#09090c;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}#shTabs::-webkit-scrollbar{display:none}"+
+ "#shTabs button{flex:0 0 auto;display:flex;align-items:center;gap:1vmin;height:max(40px,8vmin);padding:0 2.6vmin;border-radius:99px;border:1px solid #3b3b46;background:#14141a;color:#fff;font-size:max(14px,3vmin);font-weight:700;white-space:nowrap}"+
+ "#shTabs button i{font-style:normal;font-size:.95em;opacity:.7;font-weight:600}#shTabs button.on{background:#fff;color:#000;border-color:#fff}#shTabs button.on i{opacity:.6}"+
+ "@media(orientation:portrait){#shTabs{gap:2vw;padding:2vw 0 2.6vw}#shTabs button{height:11vw;padding:0 4.2vw;font-size:4vw;gap:1.6vw}}";
+ document.head.appendChild(st);
+ const dec=()=>{const body=document.getElementById("shBody");if(!body||typeof ITEMS==="undefined")return;
+  const owned=id=>!!SAVE.owned[id],skins=typeof shopMode!=="undefined"&&shopMode==="skins";
+  const cats=Object.keys(ITEMS).filter(c=>ITEMS[c].some(it=>!(skins&&!owned(it[0]))));
+  const secs=[...body.querySelectorAll(".shSec")];
+  secs.forEach((s,i)=>{const c=cats[i];s.dataset.cat=c;const g=s.nextElementSibling;if(g&&g.classList.contains("grid"))g.dataset.cat=c});
+  if(TAB&&!cats.includes(TAB))TAB="";
+  const bar=document.createElement("div");bar.id="shTabs";
+  const mk=(c,label,n)=>{const b=document.createElement("button");b.className=(TAB===c?"on":"");b.innerHTML=(c?(IC[c]||"")+" ":"")+label+" <i>"+n+"</i>";
+   b.onclick=()=>{TAB=c;apply();bar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));body.scrollTop=0;try{b.scrollIntoView({inline:"center",block:"nearest"})}catch(e){}};bar.appendChild(b);return b};
+  const total=secs.reduce((a,s)=>a+(s.querySelector("i")?+s.querySelector("i").textContent:0),0);
+  mk("",T("x.all")||"Все",total);
+  secs.forEach(s=>{const n=s.querySelector("span"),i=s.querySelector("i");mk(s.dataset.cat,n?n.textContent:s.dataset.cat,i?i.textContent:"")});
+  body.insertBefore(bar,body.firstChild);
+  function apply(){for(const el of body.querySelectorAll("[data-cat]")){el.style.display=(!TAB||el.dataset.cat===TAB)?"":"none"}}
+  apply()};
+ const _rs=renderShop;renderShop=function(){const r=_rs.apply(this,arguments);try{dec()}catch(e){console.warn("shTabs",e)}return r};
+ for(const L in I18N)I18N[L]["x.all"]=["ru","uk","be"].includes(L)?(L==="uk"?"Усе":"Все"):"All"}
