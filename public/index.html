@@ -1388,13 +1388,13 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
 <div class="toast" id="toast" role="status"></div>
 
 <script src="assets/config.js"></script>
-<script>/* Быстрый запуск: если игра по ссылке из бота помечена в админке «запускать отдельно», сервер сразу отдаёт её файл (window.__SOLO), а маркет не грузится */
+<script>/* Быстрый запуск: если бот, через которого открыли, помечен в админке «запускать игру отдельно», сервер сразу отдаёт файл игры бота (window.__SOLO), а маркет не грузится */
 window.__SOLO=(async function(){try{var C=window.APP_CONFIG||{},API=String(C.SUB_API||"").replace(/\/+$/,"");if(!API)return null;
   var sp="";for(var i=0;i<15;i++){var w=window.Telegram&&Telegram.WebApp;if(w&&w.initData){sp=(w.initDataUnsafe&&w.initDataUnsafe.start_param)||"";break}await new Promise(function(r){setTimeout(r,100)})}
   if(!sp){try{sp=new URLSearchParams(location.search).get("tgWebAppStartParam")||""}catch(e){}}
-  if(!/^[A-Za-z0-9_-]{1,64}$/.test(sp)||/^map_/.test(sp))return null;
+  if(/^map_/.test(sp))return null;if(!/^[A-Za-z0-9_-]{1,64}$/.test(sp))sp="_";
   var w2=window.Telegram&&Telegram.WebApp;if(!w2||!w2.initData)return null;
-  var r=await fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp),{headers:{"X-Tg-Init":w2.initData}});if(!r.ok)return null;var j=await r.json();return j&&j.solo?j:null}catch(e){return null}})();</script>
+  var ac=new AbortController();setTimeout(function(){ac.abort()},3000);var r=await fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp),{headers:{"X-Tg-Init":w2.initData},signal:ac.signal});if(!r.ok)return null;var j=await r.json();return j&&j.solo?j:null}catch(e){return null}})();</script>
 
 <script>/* Спрайты лежат файлами в assets/spr/ (кэш на год, см. vercel.json). Меняете картинку — переименуйте файл или папку, иначе у игроков останется старая. */
 window.SPRITES=Object.fromEntries(["cassette","cd","floppy","handheld","cards","case_a","case_b","case_c","case_d","case_e","case_f","case_g"].map(k=>[k,"assets/spr/"+k+".png"]));

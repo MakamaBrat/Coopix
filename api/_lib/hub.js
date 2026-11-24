@@ -215,7 +215,7 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
     pid,
     log,
 
-    async handle(req, { uid, staff, isMain = false }) {
+    async handle(req, { uid, staff, isMain = false, via = "market", botGame = null }) {
       const q = req.query ?? {}, r = String(q.r ?? ""), m = req.method;
       const bad = () => json(405, { error: "method_not_allowed" });
 
@@ -275,11 +275,11 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const raw = String(q.g ?? "");
         if (!/^[A-Za-z0-9_-]{1,64}$/.test(raw)) return json(200, { solo: false });
         const ids = (await store.getSetting("solo"))?.value?.ids ?? [];
-        if (!Array.isArray(ids) || !ids.length) return json(200, { solo: false });
+        if (via === "market" || !Array.isArray(ids) || !ids.includes(via)) return json(200, { solo: false }); // только если бот отмечен в админке
         const all = await store.listGames();
         const find = (s) => all.find((x) => slug(x.id) === s) || all.find((x) => slug(x.title) === s) || all.find((x) => slug(x.title).replace(/-/g, "") === s.replace(/-/g, ""));
-        const g = find(slug(raw)) || (/r$/i.test(raw) && raw.length > 1 ? find(slug(raw.slice(0, -1))) : null);
-        if (!g || !ids.includes(g.id) || !g.has_file || !isVisible(g, staff) || (await locked(g, uid, staff, isMain))) return json(200, { solo: false });
+        const g = find(slug(raw)) || (/r$/i.test(raw) && raw.length > 1 ? find(slug(raw.slice(0, -1))) : null) || all.find((x) => x.id === botGame);
+        if (!g || !g.has_file || !isVisible(g, staff) || (await locked(g, uid, staff, isMain))) return json(200, { solo: false });
         const html = (await store.gameHtml(g.id))?.file_html ?? "";
         if (!html) return json(200, { solo: false });
         return json(200, { solo: true, id: g.id, title: g.title, html });

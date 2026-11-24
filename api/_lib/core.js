@@ -149,7 +149,7 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
     }
 
     // ---- /api/hub?r=...: отзывы, профили и посты, счётчики игр, журнал действий ----
-    if (req.route === "hub") return hub.handle(req, { uid, staff, isMain });
+    if (req.route === "hub") return hub.handle(req, { uid, staff, isMain, via, botGame: via === "market" ? null : ((await gameBots()).find((x) => x.id === via)?.game_id ?? null) });
 
     // ---- /api/admin?r=...: панель управления ----
     if (req.route === "admin") return admin(req, { uid, role, staff, isMain });
@@ -489,9 +489,9 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
       return json(200, { sent, failed, bot, next: ids.length === BROADCAST_BATCH ? ids[ids.length - 1] : null, total });
     }
 
-    // --- игры, которые по ссылке из стороннего бота запускаются сами, без загрузки маркета (список id в settings.solo) ---
+    // --- боты, через которые игра запускается сама, без загрузки маркета (список username ботов в settings.solo) ---
     if (r === "solo") {
-      const idsOf = (v) => (Array.isArray(v?.ids) ? v.ids.filter((x) => typeof x === "string" && /^[a-z0-9_-]{1,32}$/.test(x)).slice(0, 100) : []);
+      const idsOf = (v) => (Array.isArray(v?.ids) ? v.ids.filter((x) => typeof x === "string" && BOT_ID.test(x)).slice(0, 100) : []);
       if (m === "GET") return json(200, { ids: idsOf((await store.getSetting("solo"))?.value) });
       if (m === "PUT") {
         const b = parseBody(req.body);

@@ -474,7 +474,7 @@ const GACC = { public: { t: "Все игроки", c: "#5dff8a" }, staff: { t: "
 const PLAYS = { auto: "Авто (по жанру)", arcade: "Арканоид", music: "Ритм (ноты)", shooter: "Шутер", puzzle: "Блоки", catch: "Ловилка" };
 const PLAY_MAX = 300000;
 async function viewGames(root) {
-  let games = await api("/admin?r=games"), site = await api("/admin?r=site"), solo = []; try { solo = (await api("/admin?r=solo")).ids || []; } catch (e) { /* сервер без этой настройки */ }
+  let games = await api("/admin?r=games"), site = await api("/admin?r=site");
   const draw = () => {
     root.innerHTML = `<div class="sec-h"><h2>Игры</h2><span class="muted small">${games.length}</span></div>
       <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -499,7 +499,6 @@ async function viewGames(root) {
             ${g.playable ? `<button class="btn ghost sm" type="button" data-prm style="color:var(--bad)">Убрать свой</button>` : ""}</div></div>
         <div class="acts"><span class="row" style="gap:6px;align-items:center"><span class="muted small">Цена ⭐</span><input class="in" type="number" min="0" max="10000" step="1" data-price value="${g.price || 0}" aria-label="Цена в звёздах (0 — бесплатно)" style="width:90px;min-height:34px;padding:4px 8px"><button class="btn ghost sm" type="button" data-psave>OK</button></span>
           ${g.price ? `<button class="btn ghost sm" type="button" data-rb title="Удалить вашу тестовую покупку этой игры">Сбросить мою покупку</button>` : ""}
-          <button class="btn ${solo.includes(g.id) ? "ok" : "ghost"} sm" type="button" data-solo="${solo.includes(g.id) ? "off" : "on"}" title="По ссылке из стороннего бота маркет не грузится: сразу открывается эта игра. Игрок всё равно регистрируется и считается заходом.">${solo.includes(g.id) ? "Запуск отдельно: вкл" : "Запуск отдельно: выкл"}</button>
           <button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button>
           <label class="btn ghost sm" style="cursor:pointer" title="HTML игры, который автор прислал в @Coopsupbot">${g.file ? "Заменить HTML игры" : "Прикрепить HTML игры"}<input type="file" accept=".html,.htm,text/html" data-gf hidden></label></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
       <p class="hint">Плейабл — мини-игра на «телевизоре» на странице игры. Без своего HTML играет стандартная мини-игра, нарисованная картинкой этой игры. Свой HTML — один файл до 300 КБ, запускается в изолированном окне.</p>
@@ -527,8 +526,6 @@ async function viewGames(root) {
     const a = e.target.closest("[data-acc]"); if (a && a.getAttribute("aria-pressed") !== "true") return patch(row.dataset.id, { access: a.dataset.acc }, "Доступ: " + GACC[a.dataset.acc].t);
     if (e.target.closest("[data-psave]")) { const v = Math.trunc(Number(row.querySelector("[data-price]").value)); if (!(v >= 0 && v <= 10000)) { toast("Цена: от 0 до 10000 звёзд", true); return; } return patch(row.dataset.id, { price: v }, v ? "Игра платная: ⭐ " + v : "Игра бесплатная"); }
     if (e.target.closest("[data-rb]")) { try { const j = await api("/admin?r=resetbuys", { method: "POST", body: { game: row.dataset.id } }); toast(j.removed ? "Тестовая покупка сброшена" : "Тестовых покупок этой игры нет"); } catch (x) { toast(errText(x), true); } return; }
-    const so = e.target.closest("[data-solo]"); if (so) { const id = row.dataset.id, next = so.dataset.solo === "on" ? [...new Set([...solo, id])] : solo.filter(x => x !== id);
-      try { solo = (await api("/admin?r=solo", { method: "PUT", body: { ids: next } })).ids; toast(so.dataset.solo === "on" ? "Игра запускается отдельно, без маркета" : "Запуск через маркет"); draw(); } catch (err) { toast(errText(err), true); } return; }
     const d = e.target.closest("[data-dl]"); if (d) return patch(row.dataset.id, { dl_off: d.dataset.dl === "off" }, d.dataset.dl === "off" ? "Скачивание у игры выключено" : "Скачивание у игры включено");
     if (e.target.closest("[data-prm]")) return confirmBox("Убрать свой плейабл?", "На странице игры снова будет стандартная мини-игра с картинкой игры.", "Убрать", "bad", () => patch(row.dataset.id, { play_html: "" }, "Свой плейабл убран"));
   };
@@ -605,8 +602,8 @@ async function viewCast(root) {
 
 /* ===================== БОТЫ: у каждой игры свой Telegram-бот (ссылка сразу в игру) ===================== */
 async function viewBots(root) {
-  let list = [], games = [];
-  const load = async () => { [list, games] = await Promise.all([api("/admin?r=bots"), api("/admin?r=games").catch(() => [])]); draw(); };
+  let list = [], games = [], solo = [];
+  const load = async () => { [list, games, solo] = await Promise.all([api("/admin?r=bots"), api("/admin?r=games").catch(() => []), api("/admin?r=solo").then(r => r.ids || []).catch(() => [])]); draw(); };
   const opts = sel => `<option value="">— без игры —</option>` + games.map(g => `<option value="${esc(g.id)}"${g.id === sel ? " selected" : ""}>${esc(g.title)}</option>`).join("");
   const draw = () => {
     root.innerHTML = `<div class="sec-h"><h2>Игровые боты</h2></div>
@@ -620,6 +617,7 @@ async function viewBots(root) {
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><b style="font-size:18px">@${esc(b.id)}</b><span class="hint" style="margin:0">токен ${esc(b.token)} · игроков: <b>${b.players}</b></span></div>
         <span class="lbl">Игра</span><select class="in" data-game>${opts(b.game || "")}</select>
         <span class="lbl">Ссылка сразу в игру</span><div class="addr" style="font-size:14px">t.me/${esc(b.id)}/<i>имя_mini_app</i>?startapp=${esc(b.game || "игра")}R</div>
+        <div class="row" style="margin-top:10px;gap:10px;align-items:center"><button class="btn sm ${solo.includes(b.id) ? "ok" : "ghost"}" data-solo type="button" title="Мини-приложение этого бота открывает сразу игру: маркет не грузится. Игрок всё равно регистрируется и считается заходом.">${solo.includes(b.id) ? "Игра отдельно: вкл" : "Игра отдельно: выкл"}</button><span class="hint" style="margin:0">без загрузки маркета</span></div>
         <div class="row" style="margin-top:10px"><button class="btn sm ghost" data-users type="button">Игроки бота</button><button class="btn sm bad" data-del type="button">Удалить бота</button></div></div>`).join("")
       : `<div class="empty" style="margin-top:12px">Игровых ботов пока нет</div>`}
     <p class="hint">Порядок: создайте бота в @BotFather → у бота настройте Mini App с тем же адресом сайта → вставьте токен сюда. Рассылка от бота — во вкладке «Рассылка».</p>`;
@@ -627,6 +625,8 @@ async function viewBots(root) {
     root.querySelectorAll("[data-id]").forEach(card => {
       const id = card.dataset.id;
       card.querySelector("[data-game]").onchange = async e => { try { await api("/admin?r=bot&id=" + encodeURIComponent(id), { method: "PATCH", body: { game: e.target.value } }); toast("Игра бота сохранена"); await load(); } catch (er) { toast(errText(er), true); } };
+      card.querySelector("[data-solo]").onclick = async () => { const next = solo.includes(id) ? solo.filter(x => x !== id) : [...solo, id];
+        try { solo = (await api("/admin?r=solo", { method: "PUT", body: { ids: next } })).ids; toast(solo.includes(id) ? "Бот открывает игру отдельно, без маркета" : "Бот открывает маркет как раньше"); draw(); } catch (er) { toast(errText(er), true); } };
       card.querySelector("[data-del]").onclick = () => confirmBox("Удалить бота?", `<b>@${esc(id)}</b> перестанет пускать игроков в маркет, рассылка от него будет недоступна. Сами игроки останутся в базе.`, "Удалить", "bad",
         async () => { try { await api("/admin?r=bot&id=" + encodeURIComponent(id), { method: "DELETE" }); toast("Бот удалён"); await load(); } catch (er) { toast(errText(er), true); return false; } });
       card.querySelector("[data-users]").onclick = () => go("users");
