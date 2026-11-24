@@ -28,8 +28,27 @@ def skins_json():
     return json.dumps(out, ensure_ascii=False)
 
 
+
+# чёрная тема интерфейса: синие кнопки и фоны -> нейтральный тёмный (цвета предметов в списках НЕ трогаем: их нет в карте)
+THEME = {
+    "#2aabee": "#0d0d11", "#52bdf4": "#2c2c34", "#1d7fb8": "#18181d", "#243557": "#1b1b21", "#135d86": "#0b0b0e",
+    "#0d4f78": "#09090c", "#0f1a30": "#09090c", "#1b2a4a": "#17171c", "#22335a": "#1f1f26", "#2a3d66": "#26262d",
+    "#2c3f6e": "#2c2c34", "#3a4a6c": "#3c3c46", "#14213d": "#101014", "#16233f": "#101014", "#10203a": "#0c0c10",
+    "#0e1a33": "#0c0c10", "#1b2b4b": "#15151a", "#060c1c": "#050507", "#2f4678": "#30303a", "#2b4270": "#2c2c34",
+    "#9fb0d0": "#b6b6c1", "#9fb4e0": "#b6b6c1", "#9fb4d8": "#b6b6c1", "#c4d0ea": "#d0d0d9", "#8a98b8": "#8f8f9a",
+    "#7f93b8": "#8f8f9a", "#79b4f3": "#c8c8d2", "#9fd8ff": "#e4e4ea", "#cfe3ff": "#dcdce4",
+    "#d6d6d6": "#14141a", "#d9d9d9": "#14141a", "#e8e8e8": "#1c1c22",
+}
+def theme(t):
+    import re
+    return re.sub(r"#[0-9a-fA-F]{6}(?![0-9a-fA-F])", lambda m: THEME.get(m.group(0).lower(), m.group(0)), t)
+
+def theme_base(s):
+    import re
+    return re.sub(r"<style>.*?</style>", lambda m: theme(m.group(0)), s, flags=re.S)
+
 def build(debug=None):
-    s = open(os.path.join(D, "NoomicBot.base.html"), encoding="utf-8", newline="").read()
+    s = theme_base(open(os.path.join(D, "NoomicBot.base.html"), encoding="utf-8", newline="").read())
     js = open(os.path.join(D, "plus.js"), encoding="utf-8").read()
     prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
     js = js.replace("NC_STAR_PRICES", json.dumps(prices))
@@ -54,9 +73,13 @@ def build(debug=None):
     sp = os.path.join(D, "skins.js")
     if os.path.exists(sp):
         js = js + "\n" + open(sp, encoding="utf-8").read().replace("NC_SKINS", skins_json()).replace("NC_SKDBG", "true" if debug else "false")
+    up = os.path.join(D, "ui.js")
+    if os.path.exists(up):
+        js = js + "\n" + open(up, encoding="utf-8").read()
     ip = os.path.join(D, "i18n.js")
     if os.path.exists(ip):
         js = js + "\n" + open(ip, encoding="utf-8").read()
+    js = theme(js)
     # 1) кнопки турбин
     a = '<button class="zone" id="zArch" data-k="arch">'
     assert s.count(a) == 1
@@ -75,7 +98,7 @@ def build(debug=None):
 def write_server_prices():
     prices = json.load(open(os.path.join(D, "items.json"), encoding="utf-8"))
     lines = [
-        "/** Цены предметов внутри игр в звёздах Telegram (1–10 на предмет, задаются в games/noomicbot/items.json). Сервер сверяет цену с этой таблицей, клиенту не верит.",
+        "/** Цены предметов внутри игр в звёздах Telegram (1–3 на предмет, задаются в games/noomicbot/items.json). Сервер сверяет цену с этой таблицей, клиенту не верит.",
         " * Генерируется scripts/build_noomic_plus.py из games/noomicbot/items.json. */",
         "export const ITEM_PRICES = {",
         "  noomicbot: {",
