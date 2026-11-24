@@ -115,7 +115,7 @@ function buildViceMap(){
   s.spawns.push({x:-30,y:.5},{x:-22,y:.5},{x:112,y:.5},{x:225,y:.5});
   s.tags=["bars","floor","moving"];s.glassN=0;s.ext=true;s.gears={};
   return s}
-MAPS.push(buildViceMap());
+/* карта «Vice: перестрелка» убрана из игры: MAPS.push(buildViceMap()) */
 
 /* стрельба: детерминированная (одинаково при записи и повторе): всё считается от времени и состояния мира */
 GP.viceStep=function(dt){const M=this.M,G=M&&M.guns;if(!G||!this.B||!this.st)return;
