@@ -833,6 +833,28 @@ const IC = {
   dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>'
 };
+{ const L = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  Object.assign(IC, {
+    users: L('<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20c0-3.600 2.900-6 6.500-6s6.500 2.400 6.500 6"/><circle cx="17.500" cy="9" r="2.800"/><path d="M17.500 14.200c2.600.2 4.300 2 4.300 5.300"/>'),
+    gear: L('<circle cx="12" cy="12" r="8.200" stroke-width="3.600" stroke-dasharray="2.600 2.790"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.400"/>'),
+    pad: L('<rect x="2.500" y="7" width="19" height="11" rx="5"/><path d="M8 10.500v4M6 12.500h4"/><circle cx="15.500" cy="11.500" r=".9" fill="currentColor"/><circle cx="18" cy="14" r=".9" fill="currentColor"/>'),
+    clock: L('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.500 2"/>'),
+    check: L('<path d="M5 12.500l4.500 4.500L19 7.500"/>'),
+    eye: L('<path d="M2 12s3.600-6.500 10-6.500S22 12 22 12s-3.600 6.500-10 6.500S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+    eyeoff: L('<path d="M3 3l18 18M10.600 5.700A9.500 9.500 0 0 1 12 5.500c6.400 0 10 6.500 10 6.500a17 17 0 0 1-3.200 4M6.300 7.300A16.500 16.500 0 0 0 2 12s3.600 6.500 10 6.500c1.600 0 3-.4 4.200-1"/><path d="M9.900 9.900a3 3 0 0 0 4.200 4.200"/>'),
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.500" width="4" height="15" rx="1.200"/><rect x="14" y="4.500" width="4" height="15" rx="1.200"/></svg>',
+    replay: L('<path d="M4 12a8 8 0 1 0 2.500-5.800"/><path d="M4 4v4.500h4.500"/>'),
+    sliders: L('<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'),
+    exit: L('<path d="M14 4.500h4.500A1.500 1.500 0 0 1 20 6v12a1.500 1.500 0 0 1-1.500 1.500H14M10 8l-4 4 4 4M6 12h10"/>'),
+    chev: L('<path d="M9 5l7 7-7 7"/>'),
+    arrow: L('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    book: L('<path d="M4 5.500A2 2 0 0 1 6 4h13v14H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4"/>'),
+    spark: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.500l2.200 7.300 7.300 2.200-7.300 2.200L12 20.500l-2.200-7.300L2.500 11l7.300-2.200z"/></svg>',
+    bolt: L('<path d="M13 2L4.500 13.500H11L10 22l8.500-11.500H12z"/>'),
+    dice: L('<rect x="3.500" y="3.500" width="17" height="17" rx="4"/><circle cx="8.500" cy="8.500" r="1" fill="currentColor"/><circle cx="15.500" cy="8.500" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="8.500" cy="15.500" r="1" fill="currentColor"/><circle cx="15.500" cy="15.500" r="1" fill="currentColor"/>'),
+    star: L('<path d="M12 3l2.700 5.600 6.100.8-4.500 4.300 1.100 6.100L12 16.800l-5.400 3 1.100-6.100L3.200 9.400l6.100-.8z"/>')
+  });
+}
 const STAR = '<path d="M10 0Q10.8 9.2 20 10Q10.8 10.8 10 20Q9.2 10.8 0 10Q9.2 9.2 10 0Z" fill="#fff"/>';
 const GLYPH = {
   mafia: '<path d="M50 24 58 60 50 68 42 60Z" fill="#fff"/><rect x="38" y="66" width="24" height="5" rx="2.5" fill="#7df9ff"/><rect x="46.5" y="71" width="7" height="14" rx="3.5" fill="#7df9ff"/>',
@@ -873,7 +895,7 @@ function cardBack(kind) {
   return `<svg viewBox="0 0 160 220"><defs><pattern id="pat" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M8 0L16 8 8 16 0 8z" fill="none" stroke="#ff4fd8" stroke-opacity=".35"/></pattern></defs><rect x="3" y="3" width="154" height="214" rx="14" fill="${kind === 'spy' ? '#2a1a3a' : '#3a1016'}" stroke="url(#gGold)" stroke-width="4"/><rect x="12" y="12" width="136" height="196" rx="9" fill="url(#pat)" stroke="#ff4fd8" stroke-opacity=".7"/><circle cx="80" cy="110" r="46" fill="#140a05" stroke="url(#gGold)" stroke-width="3"/><g transform="translate(30 56) scale(1)">${hat}</g></svg>`;
 }
 function banner(text, c = '#c2185b') {
-  return `<svg viewBox="0 0 240 100" class="banner"><path d="M0 22h44l-14 26 14 26H0z" fill="${c}" opacity=".7"/><path d="M240 22h-44l14 26-14 26h44z" fill="${c}" opacity=".7"/><path d="M26 6h188v68H26z" fill="${c}" stroke="#7df9ff" stroke-width="3"/><path d="M26 6h188v20H26z" fill="#fff" opacity=".14"/><path d="M26 74l-12 14 12-4zM214 74l12 14-12-4z" fill="#000" opacity=".35"/><text x="120" y="52" text-anchor="middle" font-family="Unbounded,Nunito,sans-serif" font-size="25" fill="#fff" stroke="#1a0640" stroke-width="1.2" paint-order="stroke">${text}</text></svg>`;
+  return `<div class="trophy banner"><svg viewBox="0 0 64 64"><defs><linearGradient id="gTr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".55" stop-color="#ffc83a"/><stop offset="1" stop-color="#ff8a2a"/></linearGradient></defs><path d="M20 8h24v14c0 9-5 15-12 15s-12-6-12-15z" fill="url(#gTr)"/><path d="M20 12H10c0 9 4 14 11 15M44 12h10c0 9-4 14-11 15" fill="none" stroke="url(#gTr)" stroke-width="3.500" stroke-linecap="round"/><rect x="29" y="37" width="6" height="9" fill="url(#gTr)"/><path d="M19 56h26l-3.500-10h-19z" fill="url(#gTr)"/><path d="M32 13l2.200 4.600 5 .7-3.600 3.500.9 5-4.500-2.400-4.500 2.400.9-5-3.600-3.500 5-.7z" fill="#fff" opacity=".92"/></svg><span class="chip win" style="--tc:${c}">${text}</span></div>`;
 }
 function bottleSVG() {
   return `<svg viewBox="0 0 60 150"><rect x="22" y="1" width="16" height="10" rx="2.500" fill="#ff4fd8" stroke="#ffd6f6"/><path d="M24 10h12v6h-1v24c0 7 12 15 12 31v68c0 6-4 10-10 10H23c-6 0-10-4-10-10V71c0-16 12-24 12-31V16h-1z" fill="url(#gGlass)" stroke="#bfe9ff" stroke-width="2" stroke-linejoin="round"/><rect x="14" y="88" width="32" height="38" rx="3" fill="url(#gWax)" opacity=".9"/><path d="M30 118c-10-7-11-14-6-16 3-1 5 1 6 4 1-3 3-5 6-4 5 2 4 9-6 16z" fill="#ff2e8a"/><path d="M19 74v58" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/><path d="M27 20v18" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/></svg>`;
@@ -1016,9 +1038,9 @@ document.addEventListener('pointermove', e => {
 document.addEventListener('pointerout', e => { const c = e.target.closest && e.target.closest('.gcard'); if (c && !c.contains(e.relatedTarget)) { c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); } });
 
 /* ================= маршрутизатор ================= */
-let route = 'home', G = {}, TM = [], wl = null, lastKey = '';
+let route = (S.seen || S.players.length) ? 'home' : 'welcome', G = {}, TM = [], wl = null, lastKey = '';
 const later = (fn, ms) => { const id = setTimeout(fn, ms); TM.push(id); return id; };
-const TITLES = { players:'Друзья', score:'Игроки', bottle:'Бутылочка', spy:'Шпион', mafia:'Мафия', bomb:'Бомбочка', elias:'Элиас', croc:'Крокодил' };
+const TITLES = { players:'Компания', score:'История', bottle:'Бутылочка', spy:'Шпион', mafia:'Мафия', bomb:'Бомбочка', elias:'Элиас', croc:'Крокодил' };
 const isGame = r => GAMES.some(g => g.id === r);
 function setMood(m) { if (m) document.body.dataset.mood = m; else delete document.body.dataset.mood; }
 function cleanup() {
@@ -1034,14 +1056,27 @@ function go(r, g) {
   if (isGame(r)) lockScreen();
   render(); window.scrollTo(0, 0);
 }
+const PH_SUB = { setup: 'Настройка игры', deal: 'Раздача ролей', play: 'Идёт игра', vote: 'Голосование', result: 'Итоги', over: 'Итоги', boom: 'Бабах!', run: 'Идёт раунд', review: 'Проверка слов', peek: 'Подготовка', res: 'Результат', ready: 'Готовность', dawn: 'Утро', exiled: 'Изгнание' };
+function subtitle() {
+  if (route === 'info') return 'Карточка игры';
+  const ph = G.phase;
+  if (route === 'bottle' && G.ps) return P(G.ps[G.turn] || G.ps[0]).name;
+  if (route === 'mafia' && (ph === 'night' || ph === 'nightIntro')) return 'Ночь ' + G.round;
+  if (route === 'mafia' && (ph === 'vote' || ph === 'dawn' || ph === 'exiled')) return 'День ' + G.round;
+  if (isTeam(route) && G.teams && G.cur !== undefined && ph !== 'setup' && ph !== 'over') return TEAMC[G.cur].n;
+  return PH_SUB[ph] || '';
+}
 function topbar() {
-  return `<div id="bot" class="top"><button class="rb" data-a="back" aria-label="Назад">${IC.back}<span>Назад</span></button><button class="rb ico" data-a="snd" aria-label="Звук">${S.sound ? IC.spk : IC.spkoff}</button></div>`;
+  const t = route === 'info' ? GAMES.find(x => x.id === G.g).name : TITLES[route] || '';
+  return `<div id="bot" class="top"><button class="rb ico" data-a="back" aria-label="Назад">${IC.back}</button><div class="tt"><b>${t}</b><small>${subtitle()}</small></div><button class="rb ico" data-a="${route === 'info' ? 'menu' : 'pause'}" aria-label="Меню">${IC.gear}</button></div>`;
 }
 function render() {
-  const home = route === 'home';
-  $('#app').className = home ? 'home' : 'inner' + (route === 'bottle' ? ' wide' : '');
+  const home = route === 'home', tabbed = !!TABS[route], wel = route === 'welcome';
+  $('#app').className = home ? 'home' : wel ? 'welcome' : tabbed ? 'inner tabbed' : 'inner' + (route === 'bottle' ? ' wide' : '');
   document.body.classList.toggle('is-home', home);
-  $('#app').innerHTML = (home ? '' : topbar()) + `<main id="view">${route === 'players' || route === 'score' ? `<h2 class="center" style="margin:0 0 12px">${TITLES[route]}${route === 'score' ? ` <small class="mut">(${S.players.length})</small>` : ''}</h2>` : ''}${VIEWS[route]()}</main>`;
+  const gm = isGame(route) ? route : route === 'info' ? G.g : '';
+  if (gm) document.body.dataset.game = gm; else delete document.body.dataset.game;
+  $('#app').innerHTML = (home || tabbed || wel ? '' : topbar()) + `<main id="view">${VIEWS[route]()}</main>` + (tabbed || home ? tabbar() : '');
   const key = route + ':' + (G.phase || '') + ':' + (G.di || 0) + ':' + (G.rev ? 1 : 0) + ':' + (G.si || 0) + ':' + (G.round || 0) + (G.res ? 'r' : '') + (G.acc || '');
   const v = $('#view'); v.classList.toggle('still', key === lastKey && !home); lastKey = key;
   [...v.children].forEach((c, i) => c.style.setProperty('--i', i));
@@ -1053,7 +1088,7 @@ function render() {
 /*FIT_PATCH*/
 function fitView() {
   const v = $('#view'); if (!v) return;
-  if (route === 'home' || route === 'players' || route === 'score' || innerWidth >= 900) { if (v.style.zoom) v.style.zoom = ''; return; }
+  if (route === 'home' || route === 'players' || route === 'score' || route === 'welcome' || route === 'info' || innerWidth >= 900) { if (v.style.zoom) v.style.zoom = ''; return; }
   if (v.style.zoom) v.style.zoom = '';
   const top = v.getBoundingClientRect().top + scrollY, pb = parseFloat(getComputedStyle(v).paddingBottom) || 0;
   const reserve = parseFloat(getComputedStyle($('#app')).paddingBottom) || 0;
@@ -1102,36 +1137,78 @@ const GICON = {
   croc: '<svg viewBox="0 0 48 48"><path d="M5 8h20v14c0 7-4.500 12-10 12S5 29 5 22z"/><path d="M11 16h.1M19 16h.1" stroke-width="3.500"/><path d="M10.500 23.500c2.500 2.300 6 2.300 8.500 0"/><path d="M27 17h16v14c0 7-4 12-8 12s-8-5-8-12z"/><path d="M32 25h.1M38 25h.1" stroke-width="3.500"/><path d="M32 34c1.800-1.600 4.200-1.600 6 0"/></svg>'
 };
 const GACC = { bottle: '255,79,216', spy: '84,170,255', mafia: '255,64,110', bomb: '255,138,60', elias: '255,226,80', croc: '60,255,170' };
-const gHero = g => `<div class="nhero" style="--ac:${GACC[g]}"><span class="gic">${GICON[g]}</span><b>${GAMES.find(x => x.id === g).name}</b></div>`;
+const GINFO = {
+  bottle: { sub: 'Вопросы, действия и немного смелости 💜', max: 20, mins: '5–30', tag: 'Для компании', steps: ['Крутите бутылочку', 'Выбирайте вопрос или действие', 'Выполняйте и узнавайте друг друга лучше'] },
+  spy: { sub: 'Найди шпиона среди своих', max: 12, mins: '10–20', tag: 'Дедукция', steps: ['Все видят локацию, кроме шпиона', 'Задавайте друг другу вопросы по очереди', 'Вычислите шпиона до конца таймера'] },
+  mafia: { sub: 'Город засыпает, мафия просыпается', max: 20, mins: '15–40', tag: 'Блеф', steps: ['Роли раздаются тайно по кругу', 'Ночью мафия выбирает жертву', 'Днём город голосует и ищет мафию'] },
+  bomb: { sub: 'Передай бомбу, пока не рванула', max: 20, mins: '5–15', tag: 'Экшен', steps: ['Тема появляется на экране', 'Называйте слова и передавайте телефон', 'Тот, у кого рванёт, проигрывает'] },
+  elias: { sub: 'Объясняй слова своей команде', max: 20, mins: '15–30', tag: 'Командная', steps: ['Разделитесь на команды', 'Объясняйте слово, не называя его', 'Команда с наибольшим счётом побеждает'] },
+  croc: { sub: 'Покажи слово без слов', max: 20, mins: '15–30', tag: 'Командная', steps: ['Игрок получает слово по секрету', 'Показывает его жестами, без звуков', 'Команда угадывает до конца времени'] }
+};
+const partsStrip = () => { const on = players(); return `<button class="parts" data-a="players"><b>Участники</b><span class="cn">${on.length}</span><span class="avs">${on.slice(0, 5).map(p => avatar(p, 30)).join('')}${on.length > 5 ? `<i class="more">+${on.length - 5}</i>` : ''}</span>${IC.chev}</button>`; };
+const TABS = { home: ['Игры', 'pad'], players: ['Компания', 'users'], score: ['История', 'clock'] };
+const tabbar = () => `<nav id="tabs">${Object.entries(TABS).map(([r, [t, i]]) => `<button class="tab ${route === r ? 'on' : ''}" data-a="tab" data-r="${r}">${IC[i]}<span>${t}</span></button>`).join('')}</nav>`;
 VIEWS.home = () => {
-  const ps = S.players.slice().sort((a, b) => total(b) - total(a));
-  const on = players().length;
-  const list = ps.length
-    ? `<div class="hp-list">${ps.map((p, i) => `<div class="hrow ${p.on === false ? 'off' : ''}" style="--k:${i}" data-a="toggle" data-id="${p.id}">${avatar(p, 42)}<div class="nm">${esc(p.name)}</div><div class="st">★ ${total(p)}</div><button class="dots" data-a="pedit" data-id="${p.id}" aria-label="Изменить">${IC.dots}</button></div>`).join('')}</div>`
-    : `<div class="empty">Добавь друзей — имя и фото — и поехали!</div>`;
-  const sparks = [[14, 16, 20, 0], [80, 12, 16, 1.1], [86, 40, 14, .6], [8, 46, 14, 1.8], [50, 6, 12, 2.2]].map(s => `<svg class="spk" viewBox="0 0 20 20" style="left:${s[0]}%;top:${s[1]}%;--s:${s[2]}px;animation-delay:${s[3]}s">${STAR}</svg>`).join('');
-  return `
-  <div class="hgrid">
-    <div class="hcenter"><div class="hlogo" role="img" aria-label="Boards Games"><span class="lg1">BOARDS</span><span class="lg2">GAMES</span></div><div class="hero2"><div class="rings"><i class="rg r1"></i><i class="rg r2"></i><i class="rg r3"></i></div><img class="crew" src="${sp('n_crew')}" alt="">${sparks}</div></div>
-    <div class="hcol left"><div class="hp"><div class="plank">Игроки <small>${on}/${ps.length}</small></div>${list}<button class="addb" data-a="padd">＋ Добавить игрока</button><div class="hlinks"><button type="button" data-a="score">🏆 Таблица очков</button><button type="button" data-a="menu">⚙ Настройки</button></div></div><p class="hnote">Нажми на друга — он сядет за стол или выйдет из игры</p></div>
-    <div class="hcol right"><div class="langs" role="radiogroup" aria-label="Язык">${Object.entries(LANGS).map(([k, v]) => `<button type="button" data-a="lang" data-l="${k}" class="${LANG === k ? 'on' : ''}">${v}</button>`).join('')}</div><div class="gcards">${['bottle', 'spy', 'mafia', 'bomb', 'elias', 'croc'].map((g, i) => `<button class="gcard" style="--k:${i};--ac:${GACC[g]}" data-a="start" data-g="${g}"><div class="gl"><span class="gic">${GICON[g]}</span></div><div class="gi2"><b>${GAMES.find(x => x.id === g).name}</b><small><span class="gd">${GDESC[g]} · </span>от ${GAMES.find(x => x.id === g).min} игроков</small></div><span class="go">${IC.play}</span></button>`).join('')}</div></div>
+  const ps = S.players, on = players();
+  const crew = on.length
+    ? `<span class="avs">${on.slice(0, 5).map(p => avatar(p, 32)).join('')}${on.length > 5 ? `<i class="more">+${on.length - 5}</i>` : ''}</span><b>Игроки</b><span class="cn">${on.length}/${ps.length}</span>`
+    : `<span class="empty-t">Добавь друзей — имя и фото — и поехали!</span>`;
+  return `<div class="homev">
+    <header class="hdr"><div class="brand">${IC.spark}<b>BOARDS</b><i>GAMES</i></div><div class="hbtns"><button class="rb ico" data-a="players" aria-label="Компания">${IC.users}</button><button class="rb ico" data-a="menu" aria-label="Настройки">${IC.gear}</button></div></header>
+    <section class="herocard"><div class="hc-txt"><small>Твоя вечеринка</small><h2>Во что играем сегодня?</h2><p>Собирай друзей. Всё остальное мы придумаем.</p><button class="btn" data-a="quick">Начать играть ${IC.arrow}</button></div><i class="hc-sun"></i><img class="hc-crew" src="${sp('n_crew')}" alt=""></section>
+    <button class="crewbar" data-a="players">${crew}${IC.chev}</button>
+    <div class="gtiles">${['bottle', 'spy', 'mafia', 'bomb', 'elias', 'croc'].map((g, i) => `<button class="gtile" style="--k:${i};--ac:${GACC[g]}" data-a="info" data-g="${g}"><span class="gic">${GICON[g]}</span><b>${GAMES.find(x => x.id === g).name}</b><small>от ${GAMES.find(x => x.id === g).min} игроков</small></button>`).join('')}</div>
   </div>`;
 };
+VIEWS.welcome = () => `<div class="wel">
+  <div class="hlogo" role="img" aria-label="Boards Games"><span class="lg1">BOARDS</span><span class="lg2">GAMES</span></div>
+  <p class="wtag">Вечер начинается здесь</p>
+  <div class="wscene"><i class="hc-sun"></i><div class="rings"><i class="rg r1"></i><i class="rg r2"></i></div><img class="crew" src="${sp('n_crew')}" alt=""></div>
+  <ul class="feats"><li><span class="fi">${IC.pad}</span>6 культовых игр</li><li><span class="fi">${IC.users}</span>Для любой компании</li><li><span class="fi">${IC.bolt}</span>Быстрый старт</li></ul>
+  <button class="btn big" data-a="welcome_go">Начать ${IC.arrow}</button>
+</div>`;
+VIEWS.info = () => {
+  const g = GAMES.find(x => x.id === G.g), I = GINFO[g.id], n = players().length;
+  return `<div class="ginfo" style="--ac:${GACC[g.id]}">
+    <div class="gbig"><span class="gic">${GICON[g.id]}</span></div>
+    <h1>${g.name}</h1><p class="gsub">${I.sub}</p>
+    <div class="stats"><div>${IC.users}<b>${g.min}–${I.max}</b><small>игроков</small></div><div>${IC.clock}<b>${I.mins}</b><small>мин</small></div><div>${IC.star}<b class="tg2">${I.tag}</b></div></div>
+    ${n < g.min ? `<div class="need">Нужно минимум ${g.min} игрока — отметь друзей в «Компании»</div>` : ''}
+    <h3>Коротко о правилах:</h3>
+    <ol class="steps">${I.steps.map((t, i) => `<li><i>${i + 1}</i>${t}</li>`).join('')}</ol>
+    <button class="btn big" data-a="begin" data-g="${g.id}">Начать игру ${IC.arrow}</button>
+    <button class="btn ghost wide" data-a="rules" data-g="${g.id}">${IC.book} Все правила</button>
+  </div>`;
+};
+const rulesHtml = g => { const x = GAMES.find(q => q.id === g), I = GINFO[g]; return `<div class="sheet rules-sheet" style="--ac:${GACC[g]}"><div class="gbig sm"><span class="gic">${GICON[g]}</span></div><h3 class="center">${x.name}</h3><ol class="steps">${I.steps.map((t, i) => `<li><i>${i + 1}</i>${t}</li>`).join('')}</ol><button class="btn wide" data-a="mclose">Понятно</button></div>`; };
 function menuHtml() {
-  return `<div class="sheet"><h3 class="center">Меню</h3>
+  return `<div class="sheet menu"><h3 class="center">Меню</h3>
+  <div class="langs" role="radiogroup" aria-label="Язык">${Object.entries(LANGS).map(([k, v]) => `<button type="button" data-a="lang" data-l="${k}" class="${LANG === k ? 'on' : ''}">${v}</button>`).join('')}</div>
   <button class="btn ghost wide" data-a="mui_snd">${S.sound ? '🔊 Звук: включён' : '🔇 Звук: выключен'}</button>
   <button class="btn ghost wide" data-a="mui_players">👥 Все друзья</button>
   <button class="btn danger wide" data-a="resetscore">🗑 Сбросить все очки</button>
   <div class="hint center" style="margin-top:14px">Друзья, фото и очки хранятся в памяти этого браузера.</div>
   <button class="btn wide" data-a="mclose">Закрыть</button></div>`;
 }
+function pauseHtml() {
+  return `<div class="sheet pause"><div class="pause-ico">${IC.pause}</div><h1>Пауза</h1>
+  <button class="btn wide" data-a="p_resume">Продолжить ${IC.play}</button>
+  <button class="btn ghost wide" data-a="p_restart">${IC.replay} Начать раунд заново</button>
+  <button class="btn ghost wide" data-a="p_settings">${IC.sliders} Изменить настройки</button>
+  <button class="btn ghost wide" data-a="mui_snd2">${S.sound ? IC.spk : IC.spkoff} Звук</button>
+  <button class="btn danger wide" data-a="p_end">${IC.exit} Закончить игру</button></div>`;
+}
 
 /* ---- друзья ---- */
-VIEWS.players = () => `
-  <section class="win">
-    ${S.players.length ? S.players.map((p, i) => `<div class="prow" style="--k:${i}" data-a="pedit" data-id="${p.id}">${avatar(p, 50)}<div class="nm">${esc(p.name)}</div><div class="pts" style="min-width:0">★ ${total(p)}</div><span class="mut">✏️</span></div>`).join('') : '<p class="mut center">Список пуст</p>'}
-  </section>
-  <button class="btn wide" data-a="padd">＋ Добавить игрока</button>`;
+VIEWS.players = () => {
+  const ps = S.players, on = players().length;
+  return `<div class="pghead"><h2>Моя компания</h2></div>
+  <div class="sec"><b>Участники</b><span class="chip">${on}/${ps.length}</span></div>
+  ${ps.length ? `<div class="clist">${ps.map((p, i) => `<div class="crow ${p.on === false ? 'off' : ''}" data-a="toggle" data-id="${p.id}">${avatar(p, 44)}<div class="nm">${esc(p.name)}</div>${i === 0 ? `<span class="crown">${IC.crown}</span>` : ''}<span class="chk">${IC.check}</span><button class="dots" data-a="pedit" data-id="${p.id}" aria-label="Изменить">${IC.dots}</button></div>`).join('')}</div>` : `<div class="empty">Добавь друзей — имя и фото — и поехали!</div>`}
+  <button class="btn ghost wide add" data-a="padd">＋ Добавить игрока</button>
+  <button class="btn ghost wide" data-a="guests">${IC.users} Создать гостей</button>
+  <div class="hint center">Нажми на друга — он сядет за стол или выйдет из игры</div>`;
+};
 
 let E = null;
 function editorHtml() {
@@ -1145,7 +1222,9 @@ function editorHtml() {
 let ASK = null;
 function ask(t, fn) { ASK = fn; openModal(`<div class="sheet"><h3 class="center" style="margin:4px 0 16px">${esc(t)}</h3><div class="row gap"><button class="btn ghost" style="flex:1" data-a="ask_no">Отмена</button><button class="btn" style="flex:1" data-a="ask_yes">Да</button></div></div>`); }
 function openModal(h) { $('#modal').innerHTML = h; $('#modal').classList.add('show'); }
-function closeModal() { const m = $('#modal'); m.classList.remove('show', 'kb'); m.style.height = m.style.top = m.style.bottom = ''; m.innerHTML = ''; E = null; }
+let PAUSE = null;
+function endPause() { if (PAUSE) { clearInterval(PAUSE.id); PAUSE = null; } }
+function closeModal() { endPause(); const m = $('#modal'); m.classList.remove('show', 'kb'); m.style.height = m.style.top = m.style.bottom = ''; m.innerHTML = ''; E = null; }
 /*KB*/
 let MODAL_DOWN = false, KB_AT = 0;
 document.addEventListener('pointerdown', e => { MODAL_DOWN = e.target.id === 'modal'; }, true);
@@ -1178,9 +1257,10 @@ function fileToAvatar(file) {
 /* ---- таблица очков ---- */
 VIEWS.score = () => {
   const ps = S.players.slice().sort((a, b) => total(b) - total(a));
-  if (!ps.length) return `<section class="win"><p class="mut center">Сначала добавь друзей</p></section><button class="btn wide" data-a="padd">＋ Добавить игрока</button>`;
+  const hd = `<div class="pghead"><h2>Таблица очков</h2></div>`;
+  if (!ps.length) return hd + `<section class="win"><p class="mut center">Сначала добавь друзей</p></section><button class="btn wide" data-a="padd">＋ Добавить игрока</button>`;
   const medalOf = i => i < 3 ? medal(i) : i + 1;
-  return `${laurel()}
+  return `${hd}${laurel()}
   <section class="win">
     <div class="th"><span style="width:38px;text-align:center">#</span><span style="flex:1">Игрок</span><span style="min-width:60px;text-align:right">★ Звёзды</span></div>
     ${ps.map((p, i) => { const sc = p.scores || {}; return `<div class="prow" style="--k:${i}" data-a="adjust" data-id="${p.id}"><div class="rank">${medalOf(i)}</div>${avatar(p, 48)}<div class="nm">${esc(p.name)}<div class="sub">${GAMES.map(g => `<span>${gi(g.id, 16)}${sc[g.id] || 0}</span>`).join('')}</div></div><div class="pts" data-n="${total(p)}">★ ${total(p)}</div></div>`; }).join('')}
@@ -1205,8 +1285,8 @@ function adjustHtml(id) {
 
 /* ================= ОБЩЕЕ ================= */
 function dealView(secretFn) {
-  const p = P(G.order[G.di]), last = G.di === G.order.length - 1;
-  if (!G.rev) return `<div class="center pad"><div class="mut">Передайте телефон</div><div style="margin:6px 0">${pcard(p, 210)}</div><div class="card3d">${cardBack(route)}</div><p class="mut" style="margin:4px 0">Убедись, что никто не подглядывает 👀</p><button class="btn big" data-a="d_show">👁 Показать мою роль</button><div class="mut small" style="margin-top:12px">${G.di + 1} из ${G.order.length}</div></div>`;
+  const p = P(G.order[G.di]), last = G.di === G.order.length - 1, ac = GACC[route] || '125,249,255';
+  if (!G.rev) return `<div class="pass" style="--ac:${ac}"><span class="pass-ico"><span class="gic">${GICON[route] || GICON.spy}</span></span><span class="chip secret">Секретный этап</span><h1>Передайте телефон<br><span class="nm">${esc(p.name)}</span></h1><div class="pass-av">${avatar(p, 92)}</div><p class="mut">Убедись, что никто не подглядывает 👀</p><button class="btn big" data-a="d_show">${IC.eye} Показать мою роль</button><div class="mut small">${G.di + 1} из ${G.order.length}</div></div>`;
   return `<div class="center pad"><div class="row gap" style="justify-content:center">${avatar(p, 44)}<b style="font-size:19px;color:var(--cream)">${esc(p.name)}</b></div><div id="secret">${secretFn(p)}</div><button class="btn big" data-a="d_hide">${last ? '✅ Готово — начинаем' : '🙈 Скрыть и передать дальше'}</button></div>`;
 }
 function dealFx(bad) {
@@ -1247,7 +1327,7 @@ VIEWS.spy = () => {
   const n = players().length, ph = G.phase;
   if (ph === 'setup') {
     const min = cv('spyMin', 8), sn = Math.min(cv('spyN', 1), Math.max(1, Math.floor(n / 3)));
-    return `<div class="split"><div class="l">${gHero('spy')}<div class="itemrow">${badge('spy', 74)}${badge('civ', 74)}</div></div>
+    return `<div class="split"><div class="l">${partsStrip()}<div class="itemrow">${badge('spy', 74)}${badge('civ', 74)}</div></div>
     <div class="r"><section class="win"><p class="mut" style="margin-top:0">Все получают одну локацию, кроме шпиона. Задавайте друг другу вопросы и вычисли того, кто не знает, где вы. Шпион пытается угадать место.</p>
     ${stepper('⏱ Время раунда, мин', min, 'spy_min')}
     ${stepper('🕵️ Шпионов', sn, 'spy_n', n < 6 ? 'Два шпиона — от 6 игроков' : '')}</section>
@@ -1269,7 +1349,7 @@ VIEWS.spy = () => {
     <div class="mut small" style="margin-top:12px">Локация</div><div style="font-size:24px;font-weight:900;color:var(--cream)">${G.loc[0]} ${G.loc[1]}</div></section>
     ${G.spies.includes(G.acc) ? (town ? `<button class="btn ghost wide" data-a="s_flip">🕵️ Но шпион угадал локацию!</button>` : `<button class="btn ghost wide" data-a="s_flip">↩ Шпион не угадал</button>`) : ''}
     <div class="hint">${town ? 'Мирные получают +1 очко' : 'Шпион получает +2 очка'}</div>
-    <button class="btn big" data-a="s_again">Ещё раунд</button><button class="btn ghost wide" data-a="s_home">В меню</button></div>`;
+    <button class="btn big" data-a="s_again">Следующий раунд</button><button class="btn ghost wide" data-a="s_home">Выбрать другую игру</button></div>`;
   }
 };
 AFTER.spy = () => {
@@ -1319,7 +1399,7 @@ VIEWS.mafia = () => {
   const n = players().length, ph = G.phase;
   if (ph === 'setup') {
     const mn = Math.min(cv('mN', 0) || mafiaAuto(n), mafiaMax(n));
-    return `<div class="split"><div class="l">${gHero('mafia')}<div class="itemrow">${['mafia', 'det', 'doc', 'civ'].map(x => badge(x, 70)).join('')}</div></div>
+    return `<div class="split"><div class="l">${partsStrip()}<div class="itemrow">${['mafia', 'det', 'doc', 'civ'].map(x => badge(x, 70)).join('')}</div></div>
     <div class="r"><section class="win"><p class="mut" style="margin-top:0">Телефон — ведущий. Роли раздаются тайно по кругу, а ночью приложение само «будит» нужных игроков.</p>
     ${stepper('🔪 Мафиози', mn, 'mf_n')}
     <div class="stepper"><b style="font-size:17px;color:var(--cream)">💉 Доктор</b><div class="seg" style="margin:0;width:140px"><button class="${cv('mDoc', true) ? 'on' : ''}" data-a="mf_doc" data-v="1">Да</button><button class="${!cv('mDoc', true) ? 'on' : ''}" data-a="mf_doc" data-v="0">Нет</button></div></div>
@@ -1355,7 +1435,7 @@ VIEWS.mafia = () => {
     return `<div class="center pad"><div class="emb">${badge(w ? 'mafia' : 'det', 130)}</div><h1 style="margin-top:8px">${w ? 'Победила мафия!' : 'Победил город!'}</h1>
     <section class="win" style="text-align:left;margin-top:14px">${G.order.map((id, i) => `<div class="prow" style="cursor:default;--k:${i}">${avatar(P(id), 40)}<div class="nm">${esc(P(id).name)}</div><span class="tag ${G.roles[id] === 'mafia' ? 'bad' : 'ok'}">${ROLES[G.roles[id]].e} ${ROLES[G.roles[id]].n}</span>${G.alive.includes(id) ? '' : '<span title="погиб">💀</span>'}</div>`).join('')}</section>
     <div class="hint">Победившая мафия +2 очка, горожане +1</div>
-    <button class="btn big" data-a="m_again">Ещё партию</button><button class="btn ghost wide" data-a="m_home">В меню</button></div>`;
+    <button class="btn big" data-a="m_again">Ещё партию</button><button class="btn ghost wide" data-a="m_home">Выбрать другую игру</button></div>`;
   }
 };
 AFTER.mafia = () => {
@@ -1401,7 +1481,7 @@ VIEWS.bomb = () => {
   const ph = G.phase;
   if (ph === 'setup') {
     const f = cv('bFuse', 'm');
-    return `<div class="split"><div class="l">${gHero('bomb')}<div class="bomb" style="width:150px;height:165px;animation:floaty 3s ease-in-out infinite">${bombSVG('e0')}</div></div>
+    return `<div class="split"><div class="l">${partsStrip()}<div class="bomb" style="width:150px;height:165px;animation:floaty 3s ease-in-out infinite">${bombSVG('e0')}</div></div>
     <div class="r"><section class="win"><p class="mut" style="margin-top:0">Бомба тикает и взорвётся в случайный момент. Передавайте телефон из рук в руки и называйте слова на тему — ничего нажимать не нужно. Когда рванёт, укажешь, у кого она взорвалась.</p>
     <b style="color:var(--cream);font-size:17px">Длина фитиля</b><div class="seg">${Object.entries(FUSES).map(([k, v]) => `<button class="${f === k ? 'on' : ''}" data-a="bm_fuse" data-f="${k}">${v[2]}</button>`).join('')}</div></section>
     <button class="btn big" data-a="bm_go">💣 Поджечь! (${players().length} игр.)</button></div></div>`;
@@ -1417,7 +1497,7 @@ VIEWS.bomb = () => {
     <div class="mut">Бомба взорвалась у</div>${pcard(l, 190)}<div class="sad">${bombSVG('e4')}</div>
     <div class="mini">${others.map(p => `<div class="m">${avatar(p, 44)}<span class="sg">${bombSVG('e5')}</span></div>`).join('')}</div>
     <div class="hint">Остальные получили +1 очко</div>
-    <button class="btn big" data-a="bm_again">Ещё раунд</button><button class="btn ghost wide" data-a="bm_home">В меню</button></div>`; }
+    <button class="btn big" data-a="bm_again">Следующий раунд</button><button class="btn ghost wide" data-a="bm_home">Выбрать другую игру</button></div>`; }
 };
 function bombStart() {
   audio();
@@ -1510,7 +1590,7 @@ function teamEnd(w) {
 const teamOver = () => `<div class="center pad">${banner('ПОБЕДА: ' + TEAMC[G.win].n.toUpperCase(), TEAMC[G.win].c)}<h1 style="margin:10px 0">Победили ${TEAMC[G.win].n}!</h1>
   <section class="win">${G.teams.map((t, i) => `<div class="prow" style="cursor:default;--k:${i}"><span class="tchip" style="--tc:${TEAMC[i].c}">${TEAMC[i].n}</span><div class="nm" style="font-size:14px;font-weight:700">${t.map(id => esc(P(id).name)).join(', ')}</div><div class="pts">${G.score[i]}</div></div>`).join('')}</section>
   <div class="hint">Игроки победившей команды получают +2 очка</div>
-  <button class="btn big" data-a="t_again">Ещё партию</button><button class="btn ghost wide" data-a="t_home">В меню</button></div>`;
+  <button class="btn big" data-a="t_again">Ещё партию</button><button class="btn ghost wide" data-a="t_home">Выбрать другую игру</button></div>`;
 function deckNext(list) { if (!G.deck || !G.deck.length) G.deck = shuffle(list); return G.deck.pop(); }
 
 /* ================= 5. ЭЛИАС ================= */
@@ -1529,7 +1609,7 @@ const ELIAS_W = ('кот собака слон жираф пингвин кро�
  'деньги золото алмаз корона замок сокровище карта компас фонарик палатка костёр рюкзак удочка гамак').split(' ');
 VIEWS.elias = () => {
   const ph = G.phase;
-  if (ph === 'setup') return `<div class="split"><div class="l">${gHero('elias')}${teamsBox()}</div>
+  if (ph === 'setup') return `<div class="split"><div class="l">${partsStrip()}${teamsBox()}</div>
     <div class="r"><section class="win"><p class="mut" style="margin-top:0">Объясняй слова своей команде, не называя само слово и однокоренные. Угадали — очко. Побеждает команда, первой набравшая нужное число очков.</p>
     ${stepper('👥 Команд', G.teams.length, 't_n')}
     ${stepper('⏱ Раунд, сек', cv('eTime', 60), 'e_time')}
@@ -1561,7 +1641,7 @@ CROC_W.e = ['кошка', 'собака', 'лягушка', 'обезьяна', 
 const CDIFF = { e: 'Лёгкие', m: 'Средние', h: 'Сложные' };
 VIEWS.croc = () => {
   const ph = G.phase;
-  if (ph === 'setup') { const d = cv('cDiff', 'e'); return `<div class="split"><div class="l">${gHero('croc')}${teamsBox()}</div>
+  if (ph === 'setup') { const d = cv('cDiff', 'e'); return `<div class="split"><div class="l">${partsStrip()}${teamsBox()}</div>
     <div class="r"><section class="win"><p class="mut" style="margin-top:0">Один игрок показывает слово жестами и мимикой — без слов и звуков. Его команда угадывает. Угадали до конца времени — очко команде.</p>
     ${stepper('👥 Команд', G.teams.length, 't_n')}
     ${stepper('⏱ На показ, сек', cv('cTime', 90), 'c_time')}
@@ -1594,13 +1674,30 @@ const A = {
   /* окно игры в магазине не умеет confirm(): спрашиваем своим окном */
   ask_yes() { const f = ASK; ASK = null; closeModal(); if (f) f(); else render(); },
   ask_no() { ASK = null; closeModal(); render(); },
-  back() { if (midGame()) { ask('Выйти из игры? Прогресс раунда пропадёт.', () => go('home')); return; } go('home'); },
+  back() { if (route === 'info') { go('home'); return; } if (midGame()) { ask('Выйти из игры? Прогресс раунда пропадёт.', () => go('home')); return; } if (isGame(route) && G.phase === 'setup') { go('info', { g: route }); return; } go('home'); },
   snd() { S.sound = !S.sound; save(); render(); if (S.sound) beep(660, .08); },
   menu() { openModal(menuHtml()); },
+  tab(d) { go(d.r); },
+  welcome_go() { S.seen = true; save(); go('home'); },
+  info(d) { audio(); beep(520, .06, .1, 'triangle'); go('info', { g: d.g }); },
+  begin(d) { A.start({ g: d.g }); },
+  rules(d) { openModal(rulesHtml(d.g)); },
+  quick() {
+    const n = players().length, ok = GAMES.filter(g => n >= g.min);
+    if (!ok.length) { toast('Добавь друзей в «Компании» — нужно минимум 2 игрока'); go('players'); return; }
+    A.info({ g: pick(ok).id });
+  },
+  guests() { let n = S.players.length; const add = n >= 6 ? 2 : 6 - n; for (let i = 0; i < add; i++) { n++; S.players.push({ id: uid(), name: 'Гость ' + n, img: '', emoji: '', pic: pick(PORTRAITS), on: true, scores: {} }); } save(); chime(); render(); },
+  pause() { if (PAUSE) return; let last = Date.now(); PAUSE = { id: setInterval(() => { const n = Date.now(), d = n - last; last = n; if (G.end) G.end += d; if (G.start) G.start += d; }, 100) }; openModal(pauseHtml()); },
+  p_resume() { closeModal(); render(); },
+  p_restart() { closeModal(); const f = { spy: spyStart, mafia: mafiaStart, bomb: bombStart, elias: () => teamStart({}), croc: () => teamStart({ diff: cv('cDiff', 'e') }), bottle: () => go('bottle', bottleInit()) }[route]; if (f) f(); },
+  p_settings() { closeModal(); go(route, route === 'bottle' ? bottleInit() : isTeam(route) ? { phase: 'setup', teams: G.teams } : { phase: 'setup' }); },
+  p_end() { closeModal(); go('home'); },
+  mui_snd2() { S.sound = !S.sound; save(); openModal(pauseHtml()); if (S.sound) beep(660, .08); },
   mui_snd() { S.sound = !S.sound; save(); openModal(menuHtml()); if (S.sound) beep(660, .08); },
   mui_players() { closeModal(); go('players'); },
   players() { go('players'); }, score() { go('score'); },
-  toggle(d) { const p = S.players.find(x => x.id === d.id); p.on = p.on === false; save(); const el = document.querySelector(`.hrow[data-id="${d.id}"]`); if (el) { el.classList.toggle('off', p.on === false); el.style.animation = 'none'; const on = $('.hp .plank small'); if (on) on.textContent = `${players().length}/${S.players.length}`; chime(); } else render(); },
+  toggle(d) { const p = S.players.find(x => x.id === d.id); p.on = p.on === false; save(); chime(); render(); },
   start(d) {
     const g = GAMES.find(x => x.id === d.g);
     if (players().length < g.min) { toast(`Для «${g.name}» нужно минимум ${g.min} игрока — отметь друзей на главной`); return; }
@@ -1855,7 +1952,7 @@ function setContent() {
   for (const k of ['e', 'm', 'h']) put(CROC_W[k], c ? c.CROC_W[k] : RU0.CROC[k]);
 }
 function setLang(l) { if (!LANGS[l]) return; LANG = l; S.lang = l; save(); document.documentElement.lang = l; setContent(); G.deck = null; render(); trNode(document.body); }
-A.lang = d => setLang(d.l);
+A.lang = d => { setLang(d.l); if ($('#modal .sheet.menu')) { openModal(menuHtml()); } };
 new MutationObserver(ms => { if (LANG === 'ru') return; for (const m of ms) { if (m.type === 'characterData') trOne(m.target); else m.addedNodes.forEach(trNode); } })
   .observe(document.body, { subtree: true, childList: true, characterData: true });
 document.documentElement.lang = LANG; setContent();
@@ -1866,6 +1963,7 @@ render();
 (function demo() {
   if (!/^#demo/.test(location.hash)) return;
   const arg = location.hash.split('=')[1] || 'home';
+  S.seen = true; if (route === 'welcome') route = 'home';
   if (!S.players.length) {
     ['Аня', 'Борис', 'Витя', 'Даша', 'Егор', 'Жанна'].forEach((n, i) => S.players.push({ id: 'd' + i, name: n, img: '', emoji: '', pic: PORTRAITS[(i * 2) % 9], on: true, scores: { bottle: i * 3, spy: i, mafia: i % 3 } }));
   }
