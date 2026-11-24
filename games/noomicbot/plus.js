@@ -247,6 +247,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  /* отступ сверху = реальная высота интерфейса Telegram (в полноэкранном режиме там нативные кнопки; маркет присылает её в window.__CPX_TOP), вне Telegram — маленький */
  {const top=window.__CPX_TOP,root=document.documentElement.style;if(typeof top==="number")root.setProperty("--bkt",Math.max(8,Math.round(top)+8)+"px");else if(window.parent===window)root.setProperty("--bkt","10px")}
  /* общий отступ для экранов без своей шапки (меню, выбор карт, пауза, игра, редактор): сверху — под кнопки Telegram, снизу — над навигацией телефона */
+ {const v=document.querySelector("#menu .ver");if(v)v.textContent="V 1.1 · 24.11"}
  {const bot=window.__CPX_BOT,r=document.documentElement.style,inTg=window.parent!==window;r.setProperty("--bkb",Math.max(inTg?18:0,Math.round(+bot||0)+(inTg?10:0))+"px");
   const st=document.createElement("style");st.textContent="#menu,#maps,#pause,#game,#ed{top:var(--bkt)!important;bottom:var(--bkb)!important;height:auto!important}#maps::before,#maps::after,#ed::before,#ed::after,#pause::before,#pause::after{content:'';position:absolute;left:0;right:0;background:inherit;pointer-events:none}#maps::before,#ed::before,#pause::before{bottom:100%;height:var(--bkt)}#maps::after,#ed::after,#pause::after{top:100%;height:var(--bkb)}.sc2 .bd{bottom:calc(var(--bkb) + 2%)!important}";document.head.appendChild(st)}}
 
