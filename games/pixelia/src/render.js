@@ -10,6 +10,13 @@ const Render = (function () {
   const px = (r, g, b, a) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
   const PAL = new Uint32Array(NT * 256), GRASS = new Uint32Array(256), LAVAPAL = new Uint32Array(256), FIREPAL = new Uint32Array(32);
   const LENS = new Uint32Array(301);
+  /* светотень деревьев: листва 1..5, трава 6..8, лепестки 9..16, сердцевина цветка 17; кора 1..5 */
+  const LEAFPAL = [0, px(22, 70, 42, 255), px(36, 108, 56, 255), px(54, 148, 68, 255), px(92, 192, 86, 255), px(150, 228, 118, 255), px(62, 172, 72, 255), px(118, 216, 92, 255), px(38, 124, 58, 255),
+    px(255, 140, 190, 255), px(255, 224, 80, 255), px(250, 250, 255, 255), px(176, 120, 255, 255), px(240, 70, 80, 255), px(255, 150, 50, 255), px(110, 170, 255, 255), px(255, 196, 220, 255), px(255, 205, 40, 255)];
+  const SKINC = [[255, 208, 168], [240, 184, 140], [204, 146, 104], [150, 98, 64], [104, 68, 46]];
+  const HAIRC = [[62, 40, 24], [28, 24, 22], [176, 112, 52], [224, 194, 92], [154, 62, 42], [112, 112, 116]];
+  const PANTC = [[48, 66, 140], [60, 60, 72], [92, 72, 50], [40, 92, 72]];
+  const WOODPAL = [0, px(46, 26, 20, 255), px(80, 46, 30, 255), px(116, 68, 40, 255), px(154, 96, 56, 255), px(192, 132, 82, 255)];
   const mix = (c, r, g, b, k) => {
     const cr = c & 255, cg = (c >> 8) & 255, cb = (c >> 16) & 255, ca = c >>> 24;
     return px(clamp(cr + (r - cr) * k), clamp(cg + (g - cg) * k), clamp(cb + (b - cb) * k), Math.max(ca, (255 * k) | 0));
@@ -111,6 +118,7 @@ const Render = (function () {
     lw = Math.ceil(W / 2); lh = Math.ceil(H / 2);
     gcv.width = lw; gcv.height = lh; gctx = gcv.getContext('2d'); gimg = gctx.createImageData(lw, lh); gu32 = new Uint32Array(gimg.data.buffer);
     light = new Float32Array(lw * lh * 3);
+    const ec = document.getElementById('ents'); if (ec && typeof People !== 'undefined') People.init(ec, W, H);
     buildBackdrop(); drawBackdrop();
   }
   function setTheme(name) { R.theme = THEMES[name] ? name : 'night'; if (bgctx) { buildBackdrop(); drawBackdrop(); } }
@@ -162,9 +170,9 @@ const Render = (function () {
           }
           case SNOW: case SALT: if (((x * 3 + y * 7 + wave) & 31) === 0) c = px(255, 255, 255, 255); break;
           case GUNP: if (aux[i] & 1) c = mix(c, 20, 22, 32, .45); break;
-          case LEAF: if (type[i - W] === AIR) c = mix(c, 180, 255, 120, .22); break;
+          case LEAF: { const a = aux[i]; if (a > 0 && a < LEAFPAL.length) c = LEAFPAL[a]; else if (type[i - W] === AIR) c = mix(c, 180, 255, 120, .22); break; }
           case SPROUT: c = mix(c, 220, 255, 160, ((wave + x) & 7) < 3 ? .35 : 0); break;
-          case WOOD: if ((x & 3) === 0) c = mix(c, 60, 34, 14, .22); break;
+          case WOOD: { const a = aux[i]; if (a > 0 && a < WOODPAL.length) c = WOODPAL[a]; else if ((x & 3) === 0) c = mix(c, 60, 34, 14, .22); break; }
           case LAMP: {
             const l = life[i];
             if (l > 0) { const k = Math.min(1, l / 10); c = px(clamp(220 + 35 * k), clamp(214 + 30 * k), clamp(190 - 40 * k + 100 * (1 - k)), 255); er = 1.3 * k; eg = 1.1 * k; eb = .6 * k; }
@@ -186,7 +194,11 @@ const Render = (function () {
           case SPARK: c = px(220, 250, 255, 255); er = 1; eg = 1.1; eb = 1.3; break;
         }
         const b = burn[i];
-        if (b !== 0) { const n = (v + wave * 7) & 255; c = n > 120 ? mix(c, 255, 190, 50, .6) : mix(c, 255, 100, 20, .6); er += .55; eg += .25; eb += .05; }
+        if (b !== 0) {
+          const n = (v + wave * 7) & 255, left = b / (FUEL[t] * 1.15 + 1);
+          if (left < .3 && (t === WOOD || t === LEAF)) { c = n > 190 ? px(255, 120, 30, 255) : mix(c, 28, 20, 18, .72); er += .5 * left + .15; eg += .15; }
+          else { c = n > 120 ? mix(c, 255, 190, 50, .6) : mix(c, 255, 100, 20, .6); er += .55; eg += .25; eb += .05; }
+        }
         if (T > 380 && t !== FIRE && t !== LAVA) {
           const g = Math.min(1, (T - 380) / 700);
           c = mix(c, 255, clamp(50 + 190 * g), clamp(14 + 140 * g * g), .35 + .6 * g);
@@ -197,6 +209,14 @@ const Render = (function () {
         if (er + eg + eb > .01) { const li = lrow + (x >> 1) * 3; light[li] += er; light[li + 1] += eg; light[li + 2] += eb; }
       }
     }
+    /* человечки и зомби: спрайт 10x23 на слое с двойным разрешением (people.js); здесь только свет от горящих */
+    for (const e of S.ents) if (e.ab && e.ab.light) {
+      /* фонарь шахтёра и посох мага светятся */
+      const lx = Math.floor(e.x) + (e.ab.light === 'staff' ? 2 * (e.dir < 0 ? -1 : 1) : 0), ly = Math.round(e.y) - 11;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = (ly >> 1) + dy, xx = (lx >> 1) + dx; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) continue; const li = yy * lw3 + xx * 3, k = dx || dy ? .45 : 1.1; if (e.ab.light === 'staff') { light[li] += .5 * k; light[li + 1] += .9 * k; light[li + 2] += 1.3 * k; } else { light[li] += 1.2 * k; light[li + 1] += 1.05 * k; light[li + 2] += .6 * k; } }
+    }
+    for (const e of S.ents) if (e.burn > 0) { const cx = Math.floor(e.x), fy = Math.round(e.y), li = (fy >> 1) * lw3 + (cx >> 1) * 3; if (li >= 0 && li < light.length - 2) { light[li] += 1.4; light[li + 1] += .6; light[li + 2] += .1; } }
+    if (typeof People !== 'undefined') People.draw(S.ents, tick);
     /* молнии */
     for (const bolt of S.bolts) {
       const k = bolt.ttl / 8;
@@ -243,7 +263,7 @@ const Render = (function () {
   }
   function snapshot(w, h) {
     const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
-    x.drawImage(bgcv, 0, 0, w, h); x.drawImage(cv, 0, 0, w, h); x.globalCompositeOperation = 'screen'; x.imageSmoothingEnabled = true; x.drawImage(gcv, 0, 0, w, h);
+    x.drawImage(bgcv, 0, 0, w, h); x.drawImage(cv, 0, 0, w, h); if (typeof People !== 'undefined' && People.canvas) x.drawImage(People.canvas, 0, 0, w, h); x.globalCompositeOperation = 'screen'; x.imageSmoothingEnabled = true; x.drawImage(gcv, 0, 0, w, h);
     return c;
   }
   Object.assign(R, { init, draw, setTheme, snapshot, PAL, THEMES });

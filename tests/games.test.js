@@ -82,6 +82,22 @@ test("«Скачать» в Telegram: бот присылает файл в ли
   assert.equal((await w.hub("sendgame", "POST", ANN, { query: { id: game.id } })).body.error, "dl_off");
 });
 
+test("запуск отдельно: сервер отдаёт файл игры по ссылке только если игра отмечена в админке, видна и не платная", async () => {
+  const w = await world();
+  const { game } = await published(w, "staff");
+  await w.adm("game", "PATCH", MAIN, { query: { id: game.id }, body: { access: "public" } });
+  const launch = (who, g) => w.hub("launch", "GET", who, { query: { g } });
+  assert.equal((await launch(BOB, game.id)).body.solo, false); // не отмечена
+  assert.equal((await w.adm("solo", "PUT", MOD, { body: { ids: [game.id] } })).status, 403);
+  assert.equal((await w.adm("solo", "PUT", MAIN, { body: { ids: "x" } })).status, 400);
+  assert.deepEqual((await w.adm("solo", "PUT", MAIN, { body: { ids: [game.id, "bad id!"] } })).body.ids, [game.id]);
+  const r = (await launch(BOB, game.id)).body;
+  assert.equal(r.solo, true); assert.match(r.html, /<script>/);
+  assert.equal((await launch(BOB, game.id + "R")).body.solo, true); // «R» на конце тоже находит игру
+  assert.equal((await launch(BOB, "nope")).body.solo, false);
+  assert.equal((await w.hub("launch", "POST", BOB, { query: { g: game.id } })).status, 405);
+});
+
 test("файл из игры (повтор): бот присылает его в личку; чужие и скрытые игры, пустые и слишком большие данные отклоняются", async () => {
   const w = await world();
   const { game } = await published(w, "staff");

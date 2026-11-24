@@ -267,6 +267,23 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         catch (e) { sentAt.delete(uid); return json(e.code === 403 || e.code === 400 ? 409 : 502, { error: e.code === 403 || e.code === 400 ? "open_bot" : "send_failed", bot: botUser || "" }); }
         return json(200, { ok: true, bot: botUser || "" });
       }
+      // быстрый запуск по ссылке из бота: если игра отмечена в админке как «запускать отдельно», отдаём её файл сразу одним запросом
+      // (игрок при этом уже зарегистрирован этим запросом; «заход» клиент засчитывает отдельно)
+      if (r === "launch") {
+        if (m !== "GET") return bad();
+        const slug = (v) => String(v ?? "").toLowerCase().replace(/ё/g, "е").replace(/[^a-z0-9а-я]+/g, "-").replace(/^-+|-+$/g, "");
+        const raw = String(q.g ?? "");
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(raw)) return json(200, { solo: false });
+        const ids = (await store.getSetting("solo"))?.value?.ids ?? [];
+        if (!Array.isArray(ids) || !ids.length) return json(200, { solo: false });
+        const all = await store.listGames();
+        const find = (s) => all.find((x) => slug(x.id) === s) || all.find((x) => slug(x.title) === s) || all.find((x) => slug(x.title).replace(/-/g, "") === s.replace(/-/g, ""));
+        const g = find(slug(raw)) || (/r$/i.test(raw) && raw.length > 1 ? find(slug(raw.slice(0, -1))) : null);
+        if (!g || !ids.includes(g.id) || !g.has_file || !isVisible(g, staff) || (await locked(g, uid, staff, isMain))) return json(200, { solo: false });
+        const html = (await store.gameHtml(g.id))?.file_html ?? "";
+        if (!html) return json(200, { solo: false });
+        return json(200, { solo: true, id: g.id, title: g.title, html });
+      }
       // файл из игры (например, повтор Noomic Bot): окно игры скачивать не умеет, поэтому бот присылает файл в личку
       if (r === "savefile") {
         if (m !== "POST") return bad();

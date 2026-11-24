@@ -474,7 +474,7 @@ const GACC = { public: { t: "Все игроки", c: "#5dff8a" }, staff: { t: "
 const PLAYS = { auto: "Авто (по жанру)", arcade: "Арканоид", music: "Ритм (ноты)", shooter: "Шутер", puzzle: "Блоки", catch: "Ловилка" };
 const PLAY_MAX = 300000;
 async function viewGames(root) {
-  let games = await api("/admin?r=games"), site = await api("/admin?r=site");
+  let games = await api("/admin?r=games"), site = await api("/admin?r=site"), solo = []; try { solo = (await api("/admin?r=solo")).ids || []; } catch (e) { /* сервер без этой настройки */ }
   const draw = () => {
     root.innerHTML = `<div class="sec-h"><h2>Игры</h2><span class="muted small">${games.length}</span></div>
       <div class="panel" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -499,6 +499,7 @@ async function viewGames(root) {
             ${g.playable ? `<button class="btn ghost sm" type="button" data-prm style="color:var(--bad)">Убрать свой</button>` : ""}</div></div>
         <div class="acts"><span class="row" style="gap:6px;align-items:center"><span class="muted small">Цена ⭐</span><input class="in" type="number" min="0" max="10000" step="1" data-price value="${g.price || 0}" aria-label="Цена в звёздах (0 — бесплатно)" style="width:90px;min-height:34px;padding:4px 8px"><button class="btn ghost sm" type="button" data-psave>OK</button></span>
           ${g.price ? `<button class="btn ghost sm" type="button" data-rb title="Удалить вашу тестовую покупку этой игры">Сбросить мою покупку</button>` : ""}
+          <button class="btn ${solo.includes(g.id) ? "ok" : "ghost"} sm" type="button" data-solo="${solo.includes(g.id) ? "off" : "on"}" title="По ссылке из стороннего бота маркет не грузится: сразу открывается эта игра. Игрок всё равно регистрируется и считается заходом.">${solo.includes(g.id) ? "Запуск отдельно: вкл" : "Запуск отдельно: выкл"}</button>
           <button class="btn ghost sm" type="button" data-dl="${g.dl ? "off" : "on"}" ${site.dlOff ? "disabled" : ""}>${g.dl ? "Выключить скачивание" : "Включить скачивание"}</button>
           <label class="btn ghost sm" style="cursor:pointer" title="HTML игры, который автор прислал в @Coopsupbot">${g.file ? "Заменить HTML игры" : "Прикрепить HTML игры"}<input type="file" accept=".html,.htm,text/html" data-gf hidden></label></div></div>`).join("") || `<div class="empty">Игр нет</div>`}</div>
       <p class="hint">Плейабл — мини-игра на «телевизоре» на странице игры. Без своего HTML играет стандартная мини-игра, нарисованная картинкой этой игры. Свой HTML — один файл до 300 КБ, запускается в изолированном окне.</p>
@@ -526,6 +527,8 @@ async function viewGames(root) {
     const a = e.target.closest("[data-acc]"); if (a && a.getAttribute("aria-pressed") !== "true") return patch(row.dataset.id, { access: a.dataset.acc }, "Доступ: " + GACC[a.dataset.acc].t);
     if (e.target.closest("[data-psave]")) { const v = Math.trunc(Number(row.querySelector("[data-price]").value)); if (!(v >= 0 && v <= 10000)) { toast("Цена: от 0 до 10000 звёзд", true); return; } return patch(row.dataset.id, { price: v }, v ? "Игра платная: ⭐ " + v : "Игра бесплатная"); }
     if (e.target.closest("[data-rb]")) { try { const j = await api("/admin?r=resetbuys", { method: "POST", body: { game: row.dataset.id } }); toast(j.removed ? "Тестовая покупка сброшена" : "Тестовых покупок этой игры нет"); } catch (x) { toast(errText(x), true); } return; }
+    const so = e.target.closest("[data-solo]"); if (so) { const id = row.dataset.id, next = so.dataset.solo === "on" ? [...new Set([...solo, id])] : solo.filter(x => x !== id);
+      try { solo = (await api("/admin?r=solo", { method: "PUT", body: { ids: next } })).ids; toast(so.dataset.solo === "on" ? "Игра запускается отдельно, без маркета" : "Запуск через маркет"); draw(); } catch (err) { toast(errText(err), true); } return; }
     const d = e.target.closest("[data-dl]"); if (d) return patch(row.dataset.id, { dl_off: d.dataset.dl === "off" }, d.dataset.dl === "off" ? "Скачивание у игры выключено" : "Скачивание у игры включено");
     if (e.target.closest("[data-prm]")) return confirmBox("Убрать свой плейабл?", "На странице игры снова будет стандартная мини-игра с картинкой игры.", "Убрать", "bad", () => patch(row.dataset.id, { play_html: "" }, "Свой плейабл убран"));
   };

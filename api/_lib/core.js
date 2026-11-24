@@ -489,6 +489,20 @@ export function createCore({ store, verify, botToken, tgApiFor = null, adminIds 
       return json(200, { sent, failed, bot, next: ids.length === BROADCAST_BATCH ? ids[ids.length - 1] : null, total });
     }
 
+    // --- игры, которые по ссылке из стороннего бота запускаются сами, без загрузки маркета (список id в settings.solo) ---
+    if (r === "solo") {
+      const idsOf = (v) => (Array.isArray(v?.ids) ? v.ids.filter((x) => typeof x === "string" && /^[a-z0-9_-]{1,32}$/.test(x)).slice(0, 100) : []);
+      if (m === "GET") return json(200, { ids: idsOf((await store.getSetting("solo"))?.value) });
+      if (m === "PUT") {
+        const b = parseBody(req.body);
+        if (!b || !Array.isArray(b.ids)) return json(400, { error: "bad_json" });
+        const ids = idsOf({ ids: b.ids });
+        await store.setSetting("solo", { ids }, uid);
+        return json(200, { ids });
+      }
+      return json(405, { error: "method_not_allowed" });
+    }
+
     // --- сайт: ссылки «Канал» и «Чатик» на главной, общий выключатель скачивания ---
     if (r === "site") {
       if (m === "GET") return json(200, siteOf((await store.getSetting("site"))?.value));

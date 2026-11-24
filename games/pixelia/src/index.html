@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a1030">
+<title>Пикселия — песочница миров</title>
+<link rel="stylesheet" href="font.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="hud"></header>
+  <main id="stage">
+    <div id="field">
+      <canvas id="bg"></canvas><canvas id="sim"></canvas><canvas id="ents"></canvas><canvas id="fx"></canvas><canvas id="glow"></canvas>
+      <div id="flash"></div><div id="ring"></div><div id="info"></div><div id="paused">ПАУЗА</div><button id="stepbtn"></button>
+    </div>
+  </main>
+  <footer id="bar"></footer>
+  <section id="panel"></section>
+  <div id="title"></div>
+  <div id="modal"></div>
+  <div id="toast"></div>
+</div>
+<script src="elements.js"></script>
+<script src="sim.js"></script>
+<script src="render.js"></script>
+<script src="people.js"></script>
+<script src="icons.js"></script>
+<script src="audio.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
