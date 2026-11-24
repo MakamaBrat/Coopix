@@ -39,7 +39,7 @@ def build(debug=None):
         js = js.rstrip()[:-1] + "\nwindow.__nc={get W(){return W},SAVE,persist,show:x=>show(x),startGame:i=>startGame(i),look,applySettings,renderShop,setKey,get FX(){return FX},FRAC:()=>FRAC_V_DBG};\n}\n"
         js = js.replace("FRAC_V_DBG", str(FRAC_V))
     vp = os.path.join(D, "vice.js")
-    if os.path.exists(vp):
+    if False and os.path.exists(vp):  # карты «Супер экстрим» (Vice) удалены: ~0.9 МБ ассетов не грузим
         assets = open(os.path.join(D, "vice_assets.json"), encoding="utf-8").read()
         js = js + "\n" + open(vp, encoding="utf-8").read().replace("NC_VICE_ASSETS", assets)
     gp = os.path.join(D, "gestures.js")
