@@ -59,6 +59,12 @@ function start(j,w){var gid=j.id,MB=/^[A-Za-z0-9_]{3,64}$/.test(j.bot||"")?j.bot
     f.setAttribute("style","position:fixed;left:0;top:0;width:100%;height:100%;border:0;display:block;background:#000;z-index:100000");
     f.srcdoc=/<head[^>]*>/i.test(j.html)?j.html.replace(/<head[^>]*>/i,function(m){return m+inj}):inj+j.html;
     (document.body||document.documentElement).appendChild(f);setTimeout(function(){try{f.focus()}catch(e){}},50);
+    /* «Назад» на телефоне не должен уводить страницу на прошлый адрес (там снова экран загрузки): сразу закрываем мини-приложение */
+    var bye=function(){try{if(w&&w.close){w.close();return}}catch(e){}try{window.close()}catch(e){}};
+    addEventListener("popstate",bye);addEventListener("hashchange",bye);
+    try{w&&w.onEvent&&w.onEvent("backButtonClicked",bye)}catch(e){}
+    /* в шапке должно быть «Закрыть», а не «Назад»: Telegram мог запомнить кнопку от прошлого запуска */
+    [0,300,1500].forEach(function(t){setTimeout(function(){try{w&&w.BackButton&&w.BackButton.hide()}catch(e){}},t)});
     function send(m){try{f.contentWindow.postMessage(m,"*")}catch(e){}}
     function hub(r,o){o=o||{};var q=new URLSearchParams(Object.assign({r:r},o.q||{})),h={"X-Tg-Init":(w&&w.initData)||init};if(o.body!=null)h["Content-Type"]="application/json";
       return fetch(API+"/hub?"+q,{method:o.method||"GET",headers:h,body:o.body!=null?JSON.stringify(o.body):undefined}).then(function(x){if(x.ok)return x.json();
@@ -86,8 +92,7 @@ function start(j,w){var gid=j.id,MB=/^[A-Za-z0-9_]{3,64}$/.test(j.bot||"")?j.bot
         p.then(sm,function(x){sm({ok:false,err:(x&&x.code)||(x&&x.status===429?"rate_limit":"err")})});return}
       if(d.coopix==="stats"){hub("statput",{method:"POST",body:{game:gid,regrabs:Math.trunc(+d.regrabs)||0,best:Math.trunc(+d.best)||0}})
         .then(function(r){send({coopix:"stats",ok:true,regrabs:r.regrabs,best:r.best})},function(){send({coopix:"stats",ok:false})});return}
-      /* бот «Игра отдельно»: выход из игры закрывает мини-приложение, магазин не открываем */
-      if(d.coopix==="market"){try{if(w&&w.close){w.close();return}}catch(x){}try{window.close()}catch(x){}}})})}
+      if(d.coopix==="market")openTg("https://t.me/"+MB+"?startapp")})})}
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
