@@ -11,12 +11,14 @@
     get(k, d) { try { const v = localStorage.getItem('pixelia.' + k); return v == null ? (k in mem ? mem[k] : d) : JSON.parse(v); } catch (e) { return k in mem ? mem[k] : d; } },
     set(k, v) { try { localStorage.setItem('pixelia.' + k, JSON.stringify(v)); return true; } catch (e) { mem[k] = v; return false; } }
   };
-  const G = Object.assign({ sel: 'WATER', size: 3, shape: 'round', mode: 'brush', replace: false, paused: false, speed: 1, lens: false, cs: 0, sound: true, theme: 'night', hot: ['WATER', 't:HUMAN', 'SAND', 'EARTH', 'FIRE'], weather: 0, wind: 0, cat: 0 }, store.get('set', {}));
+  const G = Object.assign({ sel: 'WATER', size: 3, shape: 'round', mode: 'brush', replace: false, paused: false, speed: 1, lens: false, cs: 0, sound: true, time: .3, tcycle: true, biome: 'auto', sday: 0, hot: ['WATER', 't:HUMAN', 'SAND', 'EARTH', 'FIRE'], weather: 0, wind: 0, cat: 0 }, store.get('set', {}));
+  /* старые сохранения хранили тему неба: переводим в время суток */
+  { const sv = store.get('set', {}); if (sv.time === undefined && sv.theme) { G.time = { night: .02, day: .5, dusk: .74, cave: .3 }[sv.theme] || .3; if (sv.theme === 'cave') G.biome = 'cave'; } }
   /* человечек всегда под рукой на нижней полке */
   if (G.hot.indexOf('t:HUMAN') < 0) G.hot = [G.hot[0], 't:HUMAN'].concat(G.hot.slice(1)).slice(0, 5);
   G.paused = false; G.lens = false; G.weather = 0; G.wind = 0; G.camp = false;
   let prog = store.get('prog', null) || { day: 1, unlocked: ['EARTH', 'WATER', 'STONE', 't:HUMAN'], done: {}, finished: false };
-  const saveSet = () => store.set('set', { sel: G.sel, size: G.size, shape: G.shape, mode: G.mode, replace: G.replace, speed: 1, cs: G.cs, sound: G.sound, theme: G.theme, hot: G.hot, cat: G.cat });
+  const saveSet = () => store.set('set', { sel: G.sel, size: G.size, shape: G.shape, mode: G.mode, replace: G.replace, speed: 1, cs: G.cs, sound: G.sound, time: Sky.time, tcycle: G.tcycle, biome: G.biome, sday: Sky.day, hot: G.hot, cat: G.cat });
   if (prog.unlocked && prog.unlocked.indexOf('t:HUMAN') < 0) prog.unlocked.push('t:HUMAN');
   const saveProg = () => store.set('prog', prog);
 
@@ -87,7 +89,7 @@
     const g = gridFor();
     if (first) Sim.alloc(g.w, g.h); else if (g.w !== W || g.h !== H) { const d = Sim.pack(); Sim.unpack(d, g.w, g.h); }
     W = g.w; H = g.h; cs = g.c;
-    Render.init($('#sim'), $('#glow'), $('#bg'), W, H); Render.setTheme(G.theme);
+    Render.init($('#sim'), $('#glow'), $('#bg'), W, H);
     fx.width = W; fx.height = H;
     field.style.width = (W * cs) + 'px'; field.style.height = (H * cs) + 'px';
   }
@@ -190,11 +192,21 @@
     mk('Рисовать поверх', [[false, 'Только в пустоту'], [true, 'Заменять всё']], () => G.replace, (v) => { G.replace = v; saveSet(); });
     body.appendChild(h('div', 'hint', 'Зажми палец, чтобы лить непрерывно. Линия и прямоугольник — тяни и отпускай. Заливка заполняет пустую область.'));
   }
+  let timeUI = null;
   function pWeather(body) {
     const mk = (title, opts, cur, set) => { const r = h('div', 'row'); r.appendChild(h('div', 'lbl', title)); opts.forEach((o) => { const b = btn(o[1], cur() === o[0], '', o[2]); b.onclick = () => { set(o[0]); Snd.sfx('tap'); openPanel('weather', true); updateHud(); }; r.appendChild(b); }); body.appendChild(r); };
     mk('Погода', [[0, 'Ясно', 'sun'], [1, 'Дождь', 'cloud'], [2, 'Снег', 'snow'], [3, 'Гроза', 'bolt']], () => G.weather, (v) => { G.weather = Sim.weather = v; if (v === 3) G.stormed = true; });
     mk('Ветер', [[-1, '← Влево'], [0, 'Штиль'], [1, 'Вправо →']], () => G.wind, (v) => { G.wind = Sim.wind = v; });
-    mk('Небо', [['night', 'Ночь'], ['day', 'День'], ['dusk', 'Закат'], ['cave', 'Пещера']], () => G.theme, (v) => { G.theme = v; Render.setTheme(v); saveSet(); });
+    const lab = h('div', 'lbl', 'Время суток'), sl = h('div', 'sl'), rg = h('input'), val = h('b', '', ''), ph = h('div', 'hint', '');
+    rg.type = 'range'; rg.min = 0; rg.max = 1439;
+    const showT = () => { const p = Sky.label().split(' · '); rg.value = Math.round(Sky.time * 1440) % 1440; val.textContent = p[0]; ph.textContent = p[1]; };
+    rg.oninput = () => { timeUI.drag = true; Sky.set({ time: rg.value / 1440 }); const p = Sky.label().split(' · '); val.textContent = p[0]; ph.textContent = p[1]; };
+    rg.onchange = () => { timeUI.drag = false; saveSet(); };
+    timeUI = { rg, val, ph, showT, drag: false }; showT();
+    sl.append(rg, val); const tr = h('div', 'row'); tr.append(lab, sl, ph); body.appendChild(tr);
+    mk('Ход времени', [[true, 'Идёт', 'play'], [false, 'Стоит', 'pause']], () => G.tcycle, (v) => { G.tcycle = v; Sky.set({ auto: v }); saveSet(); });
+    mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Лес'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Горы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
+    body.appendChild(h('div', 'hint', 'Авто: горы и холмы за мирозданием подстраиваются под то, что лежит на земле.'));
   }
   function pWorld(body) {
     const col = h('div', 'row'); body.appendChild(col);
@@ -389,7 +401,7 @@
   }
   function autosave() {
     if (title && !title.classList.contains('hide') && !G.dirty) { /* заставка: сохраняем как есть */ }
-    try { store.set(G.camp ? 'autoc' : 'auto', Sim.pack()); } catch (e) { }
+    try { store.set(G.camp ? 'autoc' : 'auto', Sim.pack()); saveSet(); } catch (e) { }
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
   setInterval(() => { if (!document.hidden && title.classList.contains('hide')) autosave(); }, 20000);
@@ -400,7 +412,7 @@
   function loop(now) {
     requestAnimationFrame(loop);
     const dt = Math.min(100, now - last); last = now;
-    if (!G.paused) acc += dt * G.speed; const stepMs = 1000 / 60; let n = 0;
+    if (!G.paused) { acc += dt * G.speed; Sky.advance(dt * G.speed); } const stepMs = 1000 / 60; let n = 0;
     while (acc >= stepMs && n < 5) { Sim.step(); acc -= stepMs; n++; } if (n === 5) acc = 0;
     if (ptr.down && !G.paused || (ptr.down && G.paused)) { ptr.held++; if (G.mode === 'brush' || isTool(G.sel)) { if (G.sel !== 't:WIND' && !(isTool(G.sel) && G.sel.slice(2) === 'METEOR' && ptr.held % 40)) stamp(ptr.x, ptr.y, false); } }
     Render.draw(Sim);
@@ -409,6 +421,7 @@
     frameN++;
     if (frameN % 6 === 0) { Snd.update(Sim.act, Sim.weather); Sim.act.p = Sim.act.l = Sim.act.f = 0; }
     if (frameN % 45 === 0) checkGoals();
+    if (frameN % 20 === 0 && openedPanel === 'weather' && timeUI && !timeUI.drag) timeUI.showT();
     if (!title.classList.contains('hide')) { titleTimer++; if (titleTimer % 420 === 200) Sim.lightning(Math.floor(W * (.15 + Math.random() * .7))); }
   }
   let rzT = 0; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => layout(false), 220); });
@@ -425,11 +438,12 @@
   document.documentElement.style.setProperty('--vine', 'url(' + Icons.vine() + ')');
   stage.style.backgroundImage = 'url(' + rockTile() + ')'; stage.style.backgroundSize = '144px 144px'; stage.style.imageRendering = 'pixelated';
   Snd.on = G.sound;
+  Sky.set({ time: G.time, auto: G.tcycle, lock: G.biome, day: G.sday });
   layout(true); newWorld('island');
   const auto = store.get('auto', null); if (auto) { try { loadPack(auto); } catch (e) { } }
   if (!exists(G.sel)) G.sel = 'WATER';
   renderBar(); updateHud(); buildTitle(); $('#app').classList.add('intitle'); fixK(document.body);
   if (window.Telegram && Telegram.WebApp) { try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) { } }
   requestAnimationFrame(loop);
-  window.Pixelia = { G, Sim, Render, select, openPanel, startGame, toast, prog, checkGoals, layout, DAYS };
+  window.Pixelia = { G, Sim, Render, Sky, People, select, openPanel, startGame, toast, prog, checkGoals, layout, DAYS };
 })();

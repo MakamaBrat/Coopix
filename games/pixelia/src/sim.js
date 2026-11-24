@@ -27,7 +27,7 @@ const Sim = (function () {
     for (let i = 0; i < N; i++) vv[i] = (rnd() * 256) | 0;
     NB4 = [-W, W, -1, 1]; NB8 = [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1]; DIRS = [-W, -W + 1, 1, W + 1, W, W - 1, -1, -W - 1];
     nf = 0; S.bolts.length = 0; S.meteors.length = 0; if (S.ents) S.ents.length = 0; if (S.plants) S.plants.length = 0; if (S.bodies) S.bodies.length = 0;
-    S.A = { type, Tm, life, aux, vv, burn, fl }; S.W = W; S.H = H; S.tscale = Math.max(.75, Math.min(1.3, Math.min(W, H * 1.6) / 190));
+    S.A = { type, Tm, life, aux, vv, burn, fl, vy }; S.W = W; S.H = H; S.tscale = Math.max(.75, Math.min(1.3, Math.min(W, H * 1.6) / 190));
     borders();
   }
   function borders() {
@@ -840,79 +840,130 @@ const Sim = (function () {
   }
 
 
-  /* ---------- человечки и зомби: 5x12 клеток, ходят, прыгают, плавают, горят, заражают ---------- */
+  /* ---------- человечки и зомби: 5x12 клеток; ходят, бегут, прыгают, плавают, горят, заражаются, падают и умирают.
+     Состояния для анимации (people.js): land, hurt, stun, turn, atk, fear, act/at, tumble, kx, sub, dying/dt. ---------- */
   const ents = []; S.ents = ents;
   const HB = 12;
   const SHIRTS = [[220, 70, 60], [70, 150, 230], [240, 200, 60], [160, 90, 220], [80, 190, 110], [240, 140, 50]];
   const NOAB = {};
+  S.ENT_DUR = { fall: 46, blast: 52, crush: 30, burn: 42, drown: 64 };
   function spawnEnt(x, y, z, form, ab) {
     if (ents.length >= 70) ents.shift();
     x = Math.max(5, Math.min(W - 6, x | 0)); y = Math.max(HB + 2, Math.min(H - 3, y | 0));
     ents.push({ x: x + .5, y: y, fy: 0, vy: 0, dir: rnd() < .5 ? -1 : 1, z: !!z, hp: 100, t: 0, burn: 0, drown: 0, col: SHIRTS[rn(SHIRTS.length)],
-      skin: rn(5), hair: rn(6), hs: rn(4), pc: rn(4), idle: 0, swim: false, air: false, walk: false, jump: false, form: form || null, ab: ab || NOAB });
+      skin: rn(5), hair: rn(6), hs: rn(4), pc: rn(4), idle: 0, swim: false, air: false, walk: false, jump: false, form: form || null, ab: ab || NOAB,
+      land: 0, hurt: 0, stun: 0, turn: 0, atk: 0, fear: 0, act: null, at: 0, tumble: 0, kx: 0, sub: 0, dying: null, dt: 0 });
     if (ab && ab.hp) ents[ents.length - 1].hp = ab.hp;
     sfx('pop', 1);
   }
   function blockedC(x, y) { if (x < 1 || x >= W - 1 || y < 1 || y >= H - 1) return true; const t = type[y * W + x]; if (t === AIR) return false; const k = KIND[t]; return k === K.SOLID || k === K.POWDER; }
   function bodyFree(cx, fy) { for (let k = 0; k < HB; k++) if (blockedC(cx, fy - k)) return false; return true; }
-  function killEnt(n, burned) {
-    const e = ents[n]; if (burned) { const i = Math.round(e.y) * W + Math.floor(e.x); if (type[i] === AIR) put(i, ASH); }
-    ents.splice(n, 1);
+  /* смерть не мгновенная: человечек падает, горит или тонет на глазах, потом исчезает (сгоревший оставляет пепел) */
+  function dieEnt(e, kind) {
+    if (e.dying) return;
+    e.dying = kind; e.dt = 0; e.hp = 0; e.walk = false; e.jump = false; e.fear = 0; e.atk = 0; e.turn = 0; e.stun = 0; e.act = null; e.at = 0; e.idle = 0;
+    if (kind !== 'burn') e.burn = 0;
   }
+  function infect(o) { o.z = true; o.hp = 100; o.burn = 0; o.turn = 45; o.stun = 45; o.fear = 0; o.act = null; o.at = 0; }
   function entBlast(cx, cy, R, power) {
     for (const e of ents) {
+      if (e.dying) continue;
       const d = Math.hypot(e.x - cx, e.y - 6 - cy); if (d > R) continue;
-      if (d < R * .55) e.hp = 0; else { e.vy = -2.4 * power; e.x += Math.sign(e.x - cx) * 2; e.hp -= 55; }
+      const sg = Math.abs(e.x - cx) < .5 ? (rnd() < .5 ? -1 : 1) : Math.sign(e.x - cx);
+      e.kx = sg * (.9 + power * .9 * (1 - d / R)); e.vy = -2.4 * power; e.tumble = 46; e.hurt = 14; e.act = null; e.at = 0; e.stun = Math.max(e.stun, 16);
+      if (d < R * .55) dieEnt(e, 'blast'); else e.hp -= 55;
     }
+  }
+  /* всплеск: несколько клеток воды у поверхности подбрасываются вверх */
+  function splash(cx, fy, power) {
+    let top = -1;
+    for (let y = Math.max(2, fy - HB); y <= fy; y++) if (KIND[type[y * W + cx]] === K.LIQUID) { top = y; break; }
+    if (top < 0) return;
+    let n = 0;
+    for (let k = -2; k <= 2 && n < 7; k++) {
+      const x = cx + k; if (x < 1 || x >= W - 1) continue;
+      for (let y = Math.max(2, top - 2); y <= top + 3; y++) {
+        const i = y * W + x;
+        if (KIND[type[i]] === K.LIQUID && type[i - W] === AIR && !fl[i]) { launch(i, k * .35 + (rnd() - .5) * .6, -(1 + rnd() * 1.4 * power)); n++; break; }
+      }
+    }
+    if (n) sfx('hiss', .25);
   }
   function stepEnts() {
     for (let n = ents.length - 1; n >= 0; n--) {
       const e = ents[n]; let cx = Math.floor(e.x), fy = Math.round(e.y);
+      if (e.hurt > 0) e.hurt--; if (e.land > 0) e.land--; if (e.fear > 0) e.fear--; if (e.atk > 0) e.atk--; if (e.stun > 0) e.stun--; if (e.turn > 0) e.turn--; if (e.tumble > 0) e.tumble--;
+      if (e.at > 0 && --e.at === 0) e.act = null;
       let inLiq = 0, hot = false, fire = false;
       for (let k = 0; k < HB; k++) {
         const j = (fy - k) * W + cx, t = type[j];
         if (KIND[t] === K.LIQUID) { inLiq++; if (t === LAVA || t === ACID) hot = true; } else if (t === FIRE || burn[j] !== 0) fire = true;
         if (Tm[j] > 220) hot = true;
       }
-      if (hot) { killEnt(n, true); continue; }
+      e.sub = inLiq;
       const ab = e.ab || NOAB;
-      if (fire && !e.burn && !ab.fireproof) e.burn = 170;
-      if (e.burn > 0) {
-        e.burn--; if (inLiq >= 5) e.burn = 0;
-        if (rnd() < .3 && type[(fy - HB) * W + cx] === AIR) { put((fy - HB) * W + cx, FIRE); }
-        if (e.burn === 0 && inLiq < 5) { killEnt(n, true); continue; }
+      if (!e.dying) {
+        if (hot) dieEnt(e, 'burn');
+        else {
+          if (fire && !e.burn && !ab.fireproof) e.burn = 170;
+          if (e.burn > 0) {
+            e.burn--; if (inLiq >= 5) e.burn = 0;
+            if (rnd() < .3 && type[(fy - HB) * W + cx] === AIR) { put((fy - HB) * W + cx, FIRE); }
+            if (e.burn === 0 && inLiq < 5) dieEnt(e, 'burn');
+          }
+          if (!ab.noDrown && KIND[type[(fy - HB + 1) * W + cx]] === K.LIQUID) { if (++e.drown > 420) dieEnt(e, 'drown'); } else e.drown = 0;
+        }
       }
-      if (!ab.noDrown && KIND[type[(fy - HB + 1) * W + cx]] === K.LIQUID) { if (++e.drown > 420) { killEnt(n, false); continue; } } else e.drown = 0;
       if (!bodyFree(cx, fy)) {
         let ok = false; for (let u = 1; u <= 6; u++) if (bodyFree(cx, fy - u)) { fy -= u; e.y = fy; ok = true; break; }
-        if (!ok) { e.hp -= 3; if (e.hp <= 0) { killEnt(n, false); continue; } }
+        if (!ok) { e.hp -= 3; if (e.hp <= 0 && !e.dying) dieEnt(e, 'crush'); }
       }
       let ground = blockedC(cx, fy + 1);
+      const wasSwim = e.swim;
       if (e.jump) { e.jump = false; if (ground && inLiq < 6) { e.vy = -1.45 * (ab.jump || 1); ground = false; } }
       e.swim = inLiq >= 6; e.air = !ground && !e.swim;
-      if (e.swim) { e.vy = Math.max(-.28, e.vy - .05); if (ground && e.vy > 0) e.vy = 0; }
-      else if (!ground) e.vy = Math.min(3.2, e.vy + .2 * (ab.grav || 1));
-      else { if (e.vy > 2.5) e.hp -= (e.vy - 2.3) * 80 / (ab.tough || 1); e.vy = 0; }
-      if (e.hp <= 0) { killEnt(n, false); continue; }
+      if (e.swim && !wasSwim && e.vy > .8 && !e.dying) splash(cx, fy, Math.min(1.5, e.vy / 2));
+      if (e.swim && !e.dying) { e.vy = Math.max(-.28, e.vy - .05); if (ground && e.vy > 0) e.vy = 0; }
+      else if (!ground) e.vy = Math.min(e.swim ? .6 : 3.2, e.vy + (e.swim ? .04 : .2 * (ab.grav || 1)));
+      else {
+        if (e.vy > 1.1 && !e.dying) e.land = Math.min(12, 4 + Math.round(e.vy * 3));
+        if (e.vy > 2.5) { e.hp -= (e.vy - 2.3) * 80 / (ab.tough || 1); e.hurt = 14; if (!e.dying && e.hp > 0) e.stun = Math.max(e.stun, 12); }
+        e.vy = 0;
+      }
+      if (e.hp <= 0 && !e.dying) dieEnt(e, e.tumble > 0 ? 'blast' : 'fall');
       e.fy += e.vy;
       while (e.fy >= 1) { e.fy -= 1; if (!blockedC(cx, fy + 1)) fy++; else { e.vy = 0; e.fy = 0; } }
       while (e.fy <= -1) { e.fy += 1; if (bodyFree(cx, fy - 1)) fy--; else { e.vy = 0; e.fy = 0; } }
       e.y = fy;
+      /* отброс от взрыва */
+      if (e.kx) {
+        const nx = e.x + e.kx, ncx = Math.floor(nx);
+        if (ncx === cx || bodyFree(ncx, fy)) e.x = nx; else { if (Math.abs(e.kx) > 1 && !e.dying) { e.hp -= 8; e.hurt = 10; } e.kx = 0; }
+        e.kx *= (ground || e.swim) ? .82 : .985; if (Math.abs(e.kx) < .04) e.kx = 0;
+        e.x = Math.max(3, Math.min(W - 4, e.x));
+      }
+      if (e.dying) {
+        e.dt++;
+        if (e.dying === 'burn' && rnd() < .25 && type[(fy - HB) * W + cx] === AIR) put((fy - HB) * W + cx, FIRE);
+        if (e.dt >= (S.ENT_DUR[e.dying] || 40)) { if (e.dying === 'burn') { const i = Math.round(e.y) * W + Math.floor(e.x); if (type[i] === AIR) put(i, ASH); } ents.splice(n, 1); }
+        continue;
+      }
+      if (e.stun > 0) { e.walk = false; continue; }
       /* мозг: зомби идут к людям, люди бегут от зомби */
       let tgt = null, best = 1e9;
-      for (const o of ents) { if (o === e || e.z === o.z) continue; const d = Math.abs(o.x - e.x) + Math.abs(o.y - e.y); if (d < best) { best = d; tgt = o; } }
+      for (const o of ents) { if (o === e || e.z === o.z || o.dying) continue; const d = Math.abs(o.x - e.x) + Math.abs(o.y - e.y); if (d < best) { best = d; tgt = o; } }
       if (e.z) {
         if (tgt && best < 130) e.dir = tgt.x > e.x ? 1 : -1; else if (--e.t <= 0) { e.t = 60 + rn(140); e.dir = rnd() < .5 ? -1 : 1; e.idle = rnd() < .3 ? 1 : 0; }
-        if (tgt && Math.abs(tgt.x - e.x) < 4 && Math.abs(tgt.y - e.y) < 10 && rnd() < .04) { tgt.z = true; tgt.hp = 100; tgt.burn = 0; }
+        if (tgt && Math.abs(tgt.x - e.x) < 4 && Math.abs(tgt.y - e.y) < 10 && rnd() < .04) { e.atk = 16; infect(tgt); }
       } else {
-        if (tgt && best < 70) { e.dir = tgt.x > e.x ? -1 : 1; e.idle = 0; } else if (--e.t <= 0) { e.t = 50 + rn(180); e.dir = rnd() < .5 ? -1 : 1; e.idle = rnd() < .35 ? 1 : 0; }
+        if (tgt && best < 70) { e.dir = tgt.x > e.x ? -1 : 1; e.idle = 0; e.fear = 10; } else if (--e.t <= 0) { e.t = 50 + rn(180); e.dir = rnd() < .5 ? -1 : 1; e.idle = rnd() < .35 ? 1 : 0; }
       }
       if (e.burn > 0) { if (rnd() < .06) e.dir = -e.dir; e.idle = 0; }
       e.walk = !(e.idle && !(e.burn > 0));
       if (!e.walk) continue;
-      const sp = (e.z ? .09 : .15) * (ab.speed || 1) * (e.burn > 0 ? 1.8 : 1) * (e.swim ? .5 * (ab.swim || 1) : 1);
+      const sp = (e.z ? .09 : .15) * (ab.speed || 1) * (e.burn > 0 ? 1.8 : 1) * (e.fear > 0 ? 1.3 : 1) * (e.swim ? .5 * (ab.swim || 1) : 1);
       /* фермер сажает семена на землю позади себя */
-      if (ab.seeds && ground && !e.z && type[(fy + 1) * W + cx] === EARTH && rnd() < .004) { const bx = cx - e.dir, bi = fy * W + bx; if (bx > 1 && bx < W - 2 && type[bi] === AIR) put(bi, rnd() < .2 ? FSEED : SEED); }
+      if (ab.seeds && ground && !e.z && type[(fy + 1) * W + cx] === EARTH && rnd() < .004) { const bx = cx - e.dir, bi = fy * W + bx; if (bx > 1 && bx < W - 2 && type[bi] === AIR) { put(bi, rnd() < .2 ? FSEED : SEED); e.act = 'seed'; e.at = 16; e.stun = 14; } }
       const nx = e.x + e.dir * sp, ncx = Math.floor(nx), lead = ncx + e.dir;
       if (ncx !== cx) {
         if (bodyFree(ncx, fy) && bodyFree(lead, fy)) {
@@ -930,7 +981,7 @@ const Sim = (function () {
               if (t === WALL || t === SKY) { hard = true; continue; }
               can = true; if (rnd() < .25) { put(j, AIR); if (rnd() < .06) sfx('pop', .4); }
             }
-            if (can && !hard) stepped = true;
+            if (can && !hard) { stepped = true; e.act = 'dig'; e.at = 10; }
           }
           if (!stepped) { if (ground && rnd() < .12) e.jump = true; else e.dir = -e.dir; }
         }

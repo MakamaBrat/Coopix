@@ -3,20 +3,20 @@
 const Render = (function () {
   const { AIR, WALL, SKY, EARTH, SAND, SNOW, SALT, GUNP, ASH, WATER, BRINE, OIL, LAVA, ACID, MUD, FIRE, STEAM, SMOKE, GAS, STONE, METAL, GLASS,
     WOOD, ICE, LEAF, SEED, SPROUT, SPARK, BATT, LAMP, CLONE, VOID, FLY } = E;
-  const R = { lens: false, theme: 'night', W: 0, H: 0 };
-  let cv, ctx, img, u32, gcv, gctx, gimg, gu32, lw, lh, light, bgcv, bgctx, bgBase, tick = 0;
-  let stars = [], clouds = [];
+  const R = { lens: false, W: 0, H: 0 };
+  let cv, ctx, img, u32, gcv, gctx, gimg, gu32, lw, lh, light, bgcv, tick = 0, litKey = -1;
   const clamp = (v) => v < 0 ? 0 : v > 255 ? 255 : v | 0;
   const px = (r, g, b, a) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
   const PAL = new Uint32Array(NT * 256), GRASS = new Uint32Array(256), LAVAPAL = new Uint32Array(256), FIREPAL = new Uint32Array(32);
   const LENS = new Uint32Array(301);
   /* светотень деревьев: листва 1..5, трава 6..8, лепестки 9..16, сердцевина цветка 17; кора 1..5 */
-  const LEAFPAL = [0, px(22, 70, 42, 255), px(36, 108, 56, 255), px(54, 148, 68, 255), px(92, 192, 86, 255), px(150, 228, 118, 255), px(62, 172, 72, 255), px(118, 216, 92, 255), px(38, 124, 58, 255),
+  const LEAFPAL0 = [0, px(22, 70, 42, 255), px(36, 108, 56, 255), px(54, 148, 68, 255), px(92, 192, 86, 255), px(150, 228, 118, 255), px(62, 172, 72, 255), px(118, 216, 92, 255), px(38, 124, 58, 255),
     px(255, 140, 190, 255), px(255, 224, 80, 255), px(250, 250, 255, 255), px(176, 120, 255, 255), px(240, 70, 80, 255), px(255, 150, 50, 255), px(110, 170, 255, 255), px(255, 196, 220, 255), px(255, 205, 40, 255)];
   const SKINC = [[255, 208, 168], [240, 184, 140], [204, 146, 104], [150, 98, 64], [104, 68, 46]];
   const HAIRC = [[62, 40, 24], [28, 24, 22], [176, 112, 52], [224, 194, 92], [154, 62, 42], [112, 112, 116]];
   const PANTC = [[48, 66, 140], [60, 60, 72], [92, 72, 50], [40, 92, 72]];
-  const WOODPAL = [0, px(46, 26, 20, 255), px(80, 46, 30, 255), px(116, 68, 40, 255), px(154, 96, 56, 255), px(192, 132, 82, 255)];
+  const WOODPAL0 = [0, px(46, 26, 20, 255), px(80, 46, 30, 255), px(116, 68, 40, 255), px(154, 96, 56, 255), px(192, 132, 82, 255)];
+  const LEAFPAL = LEAFPAL0.slice(), WOODPAL = WOODPAL0.slice();
   const mix = (c, r, g, b, k) => {
     const cr = c & 255, cg = (c >> 8) & 255, cb = (c >> 16) & 255, ca = c >>> 24;
     return px(clamp(cr + (r - cr) * k), clamp(cg + (g - cg) * k), clamp(cb + (b - cb) * k), Math.max(ca, (255 * k) | 0));
@@ -49,82 +49,30 @@ const Render = (function () {
     }
   })();
 
-  /* ---------- небо ---------- */
-  const THEMES = {
-    night: { top: [5, 9, 34], bot: [22, 44, 100], stars: 1, cloud: [58, 76, 134, 150], moon: 1 },
-    day: { top: [58, 142, 228], bot: [176, 224, 250], stars: 0, cloud: [255, 255, 255, 235] },
-    dusk: { top: [40, 28, 92], bot: [255, 168, 98], stars: .5, cloud: [255, 190, 170, 190] },
-    cave: { top: [20, 20, 30], bot: [38, 34, 50], stars: 0, cloud: null }
-  };
-  function buildBackdrop() {
-    const T = THEMES[R.theme] || THEMES.night, W = R.W, H = R.H;
-    bgBase = bgctx.createImageData(W, H); const d = new Uint32Array(bgBase.data.buffer);
-    const bands = 18;
-    for (let y = 0; y < H; y++) {
-      const f = Math.min(bands - 1, Math.floor(y / H * bands)) / (bands - 1);
-      const r = clamp(T.top[0] + (T.bot[0] - T.top[0]) * f), g = clamp(T.top[1] + (T.bot[1] - T.top[1]) * f), b = clamp(T.top[2] + (T.bot[2] - T.top[2]) * f);
-      for (let x = 0; x < W; x++) {
-        let rr = r, gg = g, bb = b;
-        if (R.theme === 'cave') { const n = ((x * 7349 + y * 1013 + ((x >> 2) * (y >> 2)) * 31) & 15); const k = n < 3 ? 8 : n > 13 ? -6 : 0; rr += k; gg += k; bb += k + 2; }
-        else if (((x + y) & 1) === 0 && (y % Math.max(2, Math.floor(H / bands))) === 0) { rr += 2; gg += 2; bb += 3; }
-        d[y * W + x] = px(rr, gg, bb, 255);
-      }
-    }
-    stars = [];
-    const ns = Math.floor(W * H * T.stars / 500);
-    for (let i = 0; i < ns; i++) {
-      const x = (Math.random() * W) | 0, y = (Math.random() * H * .8) | 0, big = Math.random() < .12, c = Math.random() < .5 ? px(255, 255, 255, 255) : px(190, 210, 255, 255);
-      stars.push({ x, y, big, tw: (Math.random() * 64) | 0 });
-      d[y * W + x] = c; if (big) { d[y * W + Math.min(W - 1, x + 1)] = c; d[Math.min(H - 1, y + 1) * W + x] = c; }
-    }
-    if (T.moon) {
-      const mx = (W * .82) | 0, my = (H * .14) | 0, mr = Math.max(4, (Math.min(W, H) * .045) | 0);
-      for (let dy = -mr; dy <= mr; dy++) for (let dx = -mr; dx <= mr; dx++) {
-        if (dx * dx + dy * dy > mr * mr) continue;
-        const crater = ((dx * 3 + dy * 5) & 7) === 0 ? 14 : 0;
-        const inShade = (dx + mr * .4) * (dx + mr * .4) + (dy - mr * .2) * (dy - mr * .2) < mr * mr * .78;
-        if (!inShade) d[(my + dy) * W + mx + dx] = px(250 - crater, 244 - crater, 214 - crater, 255);
-        else d[(my + dy) * W + mx + dx] = px(232 - crater, 228 - crater, 200 - crater, 255);
-      }
-    }
-    if (R.theme === 'dusk') { const sy = (H * .42) | 0; for (let x = 0; x < W; x++) for (let k = 0; k < 3; k++) { const y = sy + k * 3; d[y * W + x] = mix(d[y * W + x], 255, 220, 160, .12); } }
-    clouds = [];
-    if (T.cloud) { const n = Math.max(3, (W / 55) | 0); for (let i = 0; i < n; i++) clouds.push({ x: Math.random() * W, y: H * (.05 + Math.random() * .38), s: 1 + (Math.random() * 1.6), v: .015 + Math.random() * .03 }); }
-  }
-  const CLOUD = [[2, 0, 5, 1], [0, 1, 9, 1], [-1, 2, 11, 1], [0, 3, 9, 1], [3, -1, 3, 1]];
-  function drawBackdrop() {
-    bgctx.putImageData(bgBase, 0, 0);
-    const T = THEMES[R.theme] || THEMES.night;
-    for (const s of stars) {
-      const ph = (tick / 12 + s.tw) % 8;
-      if (ph < 1) { bgctx.fillStyle = 'rgba(5,9,34,.85)'; bgctx.fillRect(s.x, s.y, 1, 1); }
-      else if (ph > 6.5 && s.big) { bgctx.fillStyle = '#fff'; bgctx.fillRect(s.x - 1, s.y, 3, 1); bgctx.fillRect(s.x, s.y - 1, 1, 3); }
-    }
-    if (T.cloud) {
-      const c = T.cloud; bgctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (c[3] / 255) + ')';
-      for (const cl of clouds) {
-        cl.x += cl.v; if (cl.x > R.W + 12) cl.x = -14;
-        const bx = Math.round(cl.x), by = Math.round(cl.y);
-        for (const r of CLOUD) bgctx.fillRect(bx + Math.round(r[0] * cl.s), by + Math.round(r[1] * cl.s * 1.4), Math.max(1, Math.round(r[2] * cl.s)), Math.max(1, Math.round(r[3] * cl.s * 1.4)));
-      }
-    }
+  /* ---------- освещение мира по времени суток: палитры материалов умножаются на цвет окружающего света ---------- */
+  const PAL0 = PAL.slice(), GRASS0 = GRASS.slice();
+  const tintArr = (dst, src, r, g, b) => { for (let i = 0; i < src.length; i++) { const c = src[i]; dst[i] = ((c & 0xff000000) | (clamp(((c >> 16) & 255) * b) << 16) | (clamp(((c >> 8) & 255) * g) << 8) | clamp((c & 255) * r)) >>> 0; } };
+  function applyAmb(am) {
+    const r = am.amb[0], g = am.amb[1], b = am.amb[2];
+    tintArr(PAL, PAL0, r, g, b); tintArr(GRASS, GRASS0, r, g, b); tintArr(LEAFPAL, LEAFPAL0, r, g, b); tintArr(WOODPAL, WOODPAL0, r, g, b);
+    litKey = am.ambKey;
   }
 
   function init(canvas, glowCanvas, bgCanvas, W, H) {
     cv = canvas; gcv = glowCanvas; bgcv = bgCanvas; R.W = W; R.H = H;
-    cv.width = W; cv.height = H; bgcv.width = W; bgcv.height = H;
-    ctx = cv.getContext('2d'); bgctx = bgcv.getContext('2d');
+    cv.width = W; cv.height = H;
+    ctx = cv.getContext('2d');
     img = ctx.createImageData(W, H); u32 = new Uint32Array(img.data.buffer);
     lw = Math.ceil(W / 2); lh = Math.ceil(H / 2);
     gcv.width = lw; gcv.height = lh; gctx = gcv.getContext('2d'); gimg = gctx.createImageData(lw, lh); gu32 = new Uint32Array(gimg.data.buffer);
     light = new Float32Array(lw * lh * 3);
     const ec = document.getElementById('ents'); if (ec && typeof People !== 'undefined') People.init(ec, W, H);
-    buildBackdrop(); drawBackdrop();
+    Sky.init(bgcv, W, H); litKey = -1;
   }
-  function setTheme(name) { R.theme = THEMES[name] ? name : 'night'; if (bgctx) { buildBackdrop(); drawBackdrop(); } }
 
   function draw(S) {
     tick++;
+    const am = Sky.ambient(); if (am.ambKey !== litKey) applyAmb(am);
     const A = S.A, type = A.type, Tm = A.Tm, life = A.life, aux = A.aux, vv = A.vv, burn = A.burn;
     const W = R.W, H = R.H, lens = R.lens, wave = tick >> 2;
     light.fill(0);
@@ -216,7 +164,7 @@ const Render = (function () {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = (ly >> 1) + dy, xx = (lx >> 1) + dx; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) continue; const li = yy * lw3 + xx * 3, k = dx || dy ? .45 : 1.1; if (e.ab.light === 'staff') { light[li] += .5 * k; light[li + 1] += .9 * k; light[li + 2] += 1.3 * k; } else { light[li] += 1.2 * k; light[li + 1] += 1.05 * k; light[li + 2] += .6 * k; } }
     }
     for (const e of S.ents) if (e.burn > 0) { const cx = Math.floor(e.x), fy = Math.round(e.y), li = (fy >> 1) * lw3 + (cx >> 1) * 3; if (li >= 0 && li < light.length - 2) { light[li] += 1.4; light[li + 1] += .6; light[li + 2] += .1; } }
-    if (typeof People !== 'undefined') People.draw(S.ents, tick);
+    if (typeof People !== 'undefined') People.draw(S.ents, S.frame, am.amb, am.ambKey);
     /* молнии */
     for (const bolt of S.bolts) {
       const k = bolt.ttl / 8;
@@ -242,7 +190,8 @@ const Render = (function () {
       if (mx >= 0 && mx < W && my >= 0 && my < H) { const li = (my >> 1) * lw3 + (mx >> 1) * 3; light[li] += 2.4; light[li + 1] += 1.4; light[li + 2] += .4; }
     }
     ctx.putImageData(img, 0, 0);
-    /* свечение: размытие 3x3 и вывод */
+    /* свечение: размытие 3x3 и вывод; ночью огонь и лава светят сильнее */
+    const gain = 1.6 * (1 + .7 * am.night);
     for (let y = 0; y < lh; y++) {
       for (let x = 0; x < lw; x++) {
         let r = 0, g = 0, b = 0, wsum = 0;
@@ -255,17 +204,17 @@ const Render = (function () {
           }
         }
         r = r / 16 + flash * .22; g = g / 16 + flash * .26; b = b / 16 + flash * .4;
-        gu32[y * lw + x] = px(clamp((1 - Math.exp(-r * 1.6)) * 255), clamp((1 - Math.exp(-g * 1.6)) * 255), clamp((1 - Math.exp(-b * 1.6)) * 255), 255);
+        gu32[y * lw + x] = px(clamp((1 - Math.exp(-r * gain)) * 255), clamp((1 - Math.exp(-g * gain)) * 255), clamp((1 - Math.exp(-b * gain)) * 255), 255);
       }
     }
     gctx.putImageData(gimg, 0, 0);
-    if ((tick & 3) === 0) drawBackdrop();
+    Sky.draw(S, tick);
   }
   function snapshot(w, h) {
     const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
     x.drawImage(bgcv, 0, 0, w, h); x.drawImage(cv, 0, 0, w, h); if (typeof People !== 'undefined' && People.canvas) x.drawImage(People.canvas, 0, 0, w, h); x.globalCompositeOperation = 'screen'; x.imageSmoothingEnabled = true; x.drawImage(gcv, 0, 0, w, h);
     return c;
   }
-  Object.assign(R, { init, draw, setTheme, snapshot, PAL, THEMES });
+  Object.assign(R, { init, draw, snapshot, PAL });
   return R;
 })();

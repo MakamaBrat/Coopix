@@ -102,7 +102,8 @@ const People = (function () {
   };
   const TOWN = Object.keys(FORMS).filter((k) => FORMS[k].town);
 
-  /* сборка кадра: сетка символов FH x SW */
+  /* ---------- сборка кадра из частей: голова, туловище, руки на двух костях, ноги ----------
+     Всё берётся из символьной сетки образа; поза — числа: сдвиг тела, голова, взгляд, рот, цель каждой руки, подъём и разворот ног. */
   const pad = (r) => r.length >= SW ? r.slice(0, SW) : ('..' + r.padEnd(10, '.') + '..').slice(0, SW);
   function base(form) {
     const F = FORMS[form] || FORMS.ref, g = []; for (let i = 0; i < ROWS; i++) g.push(new Array(SW).fill('.'));
@@ -112,70 +113,258 @@ const People = (function () {
     for (const [r, x, ch] of F.props || []) g[r + HAT][x] = ch;
     return g;
   }
-  function frame(form, f) {
-    const F = FORMS[form] || FORMS.ref, src = base(form), lift = f === 1 ? 'l' : f === 2 ? 'r' : null, bob = lift ? 1 : 0;
-    const at = (r) => src[r + HAT];
-    if (f === 3 && !F.noBlink) { at(5)[6] = 'S'; at(5)[9] = 'S'; }
-    if (lift) { const c = lift === 'l' ? 9 : 4, v = [at(13)[c], at(14)[c], at(15)[c], at(16)[c]]; at(13)[c] = v[1]; at(14)[c] = v[2]; at(15)[c] = v[3]; at(16)[c] = v[0]; }
-    const out = []; for (let y = 0; y < FH; y++) out.push(new Array(SW).fill('.'));
-    for (let r = -3; r < 17; r++) for (let x = 0; x < SW; x++) if (at(r)[x] !== '.') out[r + HAT + 1 - bob][x] = at(r)[x];
-    if (bob) for (let x = 0; x < SW; x++) if (out[20][x] === '.' && at(17)[x] !== '.') out[20][x] = at(17)[x];
-    for (let r = 17; r < 23; r++) for (let x = 0; x < SW; x++) if (at(r)[x] !== '.') out[r + HAT + 1][x] = at(r)[x];
-    if (lift) {
-      const cols = lift === 'l' ? [4, 5, 6] : [7, 8, 9], last = FH - 1;
-      for (const x of cols) { for (let y = 21; y < last; y++) out[y][x] = y + 1 < last ? out[y + 1][x] : 'k'; out[last][x] = '.'; }
-      out[last - 1][lift === 'l' ? 6 : 7] = 'k';
-    }
-    return { g: out, eyes: f === 3 && !F.noBlink ? [] : [[5, 6], [5, 9], [6, 6], [6, 9]].map(([r, x]) => [r + HAT + 1 - bob, x]) };
+  const rigCache = {};
+  function rig(form) {
+    if (rigCache[form]) return rigCache[form];
+    const F = FORMS[form] || FORMS.ref, g = base(form), at = (r) => g[r + HAT], skirt = F.legs === 'dress' ? 2 : 0;
+    const R = { head: [], torso: [], armSym: [[], []], legs: [[], []], props: F.props || [], skirt, noBlink: !!F.noBlink };
+    for (let r = -3; r <= 9; r++) R.head.push(at(r).slice());
+    for (let r = 10; r <= 16 + skirt; r++) { const row = at(r).slice(); if (r >= 11 && r <= 15) for (const x of [3, 4, 9, 10]) row[x] = '.'; R.torso.push(row); }
+    for (let i = 0; i < 5; i++) { R.armSym[0].push(at(11 + i)[4]); R.armSym[1].push(at(11 + i)[9]); }
+    for (let r = 17 + skirt; r <= 22; r++) { const row = at(r); R.legs[0].push(row.slice(4, 7)); R.legs[1].push(row.slice(7, 10)); }
+    return rigCache[form] = R;
   }
-  const FR = {};
-  const frameOf = (form, f) => (FR[form + f] || (FR[form + f] = frame(form, f)));
+  function line(x0, y0, x1, y1) {
+    const pts = [], dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let err = dx - dy;
+    for (let k = 0; k < 40; k++) { pts.push([x0, y0]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } }
+    return pts;
+  }
+  /* рука из двух костей по 2 клетки: плечо → локоть → кисть; локоть уходит наружу */
+  function ik(sx, sy, tx, ty, out) {
+    const L = 2; let dx = tx - sx, dy = ty - sy, d = Math.hypot(dx, dy);
+    if (d < .01) return { pts: [[Math.round(sx), Math.round(sy)]], ex: sx, ey: sy, hx: sx, hy: sy };
+    const reach = 2 * L - .001; let hx = tx, hy = ty;
+    if (d > reach) { hx = sx + dx / d * reach; hy = sy + dy / d * reach; dx = hx - sx; dy = hy - sy; d = reach; }
+    const h = Math.sqrt(Math.max(0, L * L - d * d / 4)), ux = dx / d, uy = dy / d; let qx = -uy, qy = ux;
+    if (qx * out < 0) { qx = -qx; qy = -qy; }
+    const ex = sx + dx / 2 + qx * h, ey = sy + dy / 2 + qy * h, rd = Math.round;
+    const pts = line(rd(sx), rd(sy), rd(ex), rd(ey)).concat(line(rd(ex), rd(ey), rd(hx), rd(hy)).slice(1));
+    return { pts, ex, ey, hx, hy };
+  }
+  const isSkin = (c) => c === 'S' || c === 'L' || c === 'D';
+  /* лицо: взгляд, моргание, рот. Строки головы: индекс = r + 3 */
+  function face(h, P, noBlink) {
+    const r5 = h[8], r6 = h[9], r7 = h[10], r8 = h[11], ex = [6, 9];
+    const has = (x) => r5[x] === 'k' && r6[x] === 'k';
+    const lk = P.look | 0;
+    if (lk) for (let q = 0; q < 2; q++) { const x = ex[q]; if (has(x) && isSkin(r5[x + lk]) && isSkin(r6[x + lk])) { r5[x] = 'S'; r6[x] = 'S'; r5[x + lk] = 'k'; r6[x + lk] = 'k'; ex[q] = x + lk; } }
+    const eyes = [];
+    for (const x of ex) if (r5[x] === 'k' && r6[x] === 'k') { eyes.push([8, x], [9, x]); }
+    if (P.blink && !noBlink) for (const x of ex) if (r5[x] === 'k' && r6[x] === 'k') { r5[x] = 'S'; const k = eyes.findIndex((p) => p[0] === 8 && p[1] === x); if (k >= 0) eyes.splice(k, 1); }
+    if (r7[7] === 'm' && r7[8] === 'm' && P.mouth) {
+      const m = P.mouth;
+      if (m === 1 || m === 2) { if (isSkin(r8[7]) && isSkin(r8[8])) { r8[7] = 'm'; r8[8] = 'm'; } if (m === 2 && isSkin(r7[6]) && isSkin(r7[9])) { r7[6] = 'm'; r7[9] = 'm'; } }
+      else if (m === 3 && isSkin(r8[7]) && isSkin(r8[8]) && isSkin(r7[6]) && isSkin(r7[9])) { r7[6] = 'm'; r7[9] = 'm'; r7[7] = 'S'; r7[8] = 'S'; r8[7] = 'm'; r8[8] = 'm'; }
+    }
+    return eyes;
+  }
+  const NEUTRAL = { dy: 0, hdy: 0, hx: 0, lean: 0, look: 0, blink: 0, mouth: 0, al: [.2, 4], ar: [.2, 4], ll: 0, lr: 0, dl: 0, dr: 0, up: 0, tool: 0 };
+  function compose(form, P) {
+    const R = rig(form), out = [];
+    for (let y = 0; y < FH; y++) out.push(new Array(SW).fill('.'));
+    const put = (y, x, c) => { if (y >= 0 && y < FH && x >= 0 && x < SW) out[y][x] = c; };
+    const B = HAT + 1, dy = P.dy | 0, lean = P.lean | 0, hip = 17 + R.skirt + B + dy;
+    /* ноги: нижняя точка ступни поднимается на lift, верх привязан к бёдрам; лишние строки вынимаются из середины */
+    for (let s = 0; s < 2; s++) {
+      const lift = (s ? P.lr : P.ll) | 0, sh = (s ? P.dr : P.dl) | 0, rows = R.legs[s], nr = rows.length;
+      const len = Math.max(3, 26 - lift - (P.up | 0) - hip + 1), x0 = 4 + s * 3 + (s ? sh : -sh);
+      for (let j = 0; j < len; j++) {
+        let si = j >= len - 2 ? nr - (len - j) : Math.min(j, nr - 3); si = Math.max(0, Math.min(nr - 1, si));
+        const row = rows[si]; for (let q = 0; q < 3; q++) if (row[q] !== '.') put(hip + j, x0 + q, row[q]);
+      }
+    }
+    for (let i = 0; i < R.torso.length; i++) for (let x = 0; x < SW; x++) { const c = R.torso[i][x]; if (c !== '.') put(10 + i + B + dy, x + lean, c); }
+    /* руки */
+    const arms = [];
+    for (let s = 0; s < 2; s++) {
+      const sx = (s ? 9 : 4) + lean, sy = 11 + B + dy, T = s ? P.ar : P.al, a = ik(sx, sy, sx + (s ? T[0] : -T[0]), sy + T[1], s ? 1 : -1);
+      a.pts.forEach((p, i) => put(p[1], p[0], R.armSym[s][a.pts.length === 1 ? 0 : Math.round(i / (a.pts.length - 1) * 4)]));
+      arms.push(a);
+    }
+    if (P.tool) {   /* кирка в правой руке: рукоять продолжает предплечье, на конце стальная головка */
+      const a = arms[1], dx = a.hx - a.ex, dy2 = a.hy - a.ey, d = Math.hypot(dx, dy2) || 1, ux = dx / d, uy = dy2 / d;
+      for (let k = 1; k <= 3; k++) put(Math.round(a.hy + uy * k), Math.round(a.hx + ux * k), 'M');
+      const tx = a.hx + ux * 3, ty = a.hy + uy * 3; put(Math.round(ty - ux), Math.round(tx + uy), 'X'); put(Math.round(ty + ux), Math.round(tx - uy), 'X'); put(Math.round(ty), Math.round(tx), 'x');
+    }
+    /* голова */
+    const hrows = R.head.map((r) => r.slice()), eyes0 = face(hrows, P, R.noBlink), hdy = P.hdy | 0, hx = (P.hx | 0) + lean, eyes = [];
+    for (let i = 0; i < hrows.length; i++) for (let x = 0; x < SW; x++) { const c = hrows[i][x]; if (c !== '.') put(i - 3 + B + dy + hdy, x + hx, c); }
+    for (const [r, x] of eyes0) eyes.push([r - 3 + B + dy + hdy, x + hx]);
+    for (const [r, x, ch] of R.props) put(r + B + dy, x + lean, ch);
+    /* обводка вокруг рук там, где они отошли от тела */
+    for (const a of arms) for (const p of a.pts) for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = p[0] + ox, y = p[1] + oy; if (x >= 0 && x < SW && y >= 0 && y < FH && out[y][x] === '.') out[y][x] = 'k'; }
+    return { g: out, eyes };
+  }
 
-  /* палитра конкретного человечка: образ + случайная кожа у горожан + зомби */
-  function palette(e) {
+  /* ---------- палитры и растр ---------- */
+  const palCache = new Map();
+  const mul3 = (c, a) => [Math.min(255, Math.round(c[0] * a[0])), Math.min(255, Math.round(c[1] * a[1])), Math.min(255, Math.round(c[2] * a[2]))];
+  function basePal(e, z) {
     const F = FORMS[e.form] || FORMS.ref, P = Object.assign({}, REF, F.pal || {});
     if (F.town && e.form !== 'ref' || (e.form === 'ref' && e.skinV)) { const s = SKIN[(e.seed || 0) % SKIN.length]; Object.assign(P, { S: s, L: mix(s, [255, 255, 255], .18), D: mul(s, .9), h: mix(s, [255, 240, 220], .25), o: mix(mul(s, .78), [200, 70, 30], .35) }); }
-    if (e.z) {
+    if (z) {
       const G = [132, 184, 104];
       for (const k in P) if (k !== 'k' && k !== 'eye') P[k] = mul(mix(P[k], [96, 108, 96], .45), .86);
       Object.assign(P, { S: G, L: mix(G, [255, 255, 255], .2), D: mul(G, .85), h: mul(G, .95), m: [96, 34, 40], eye: [220, 44, 36] });
     }
     return P;
   }
-  const cache = new Map();
-  function sprite(e, f, burn, flip) {
-    const key = (e.form || 'ref') + (e.z ? 'z' : '') + ((e.seed || 0) % SKIN.length) + '|' + f + '|' + burn + '|' + flip;
+  function palette(e, zk, amb, ak) {
+    const key = (e.form || 'ref') + '|' + ((e.seed || 0) % SKIN.length) + '|' + zk + '|' + ak;
+    let P = palCache.get(key); if (P) return P;
+    if (zk <= 0) P = basePal(e, false); else if (zk >= 1) P = basePal(e, true);
+    else { const a = basePal(e, false), b = basePal(e, true); P = {}; for (const k in a) P[k] = mix(a[k], b[k], zk); }
+    if (amb) { const q = {}; for (const k in P) q[k] = (k === 'eye' && zk > 0) ? P[k] : mul3(P[k], amb); P = q; }
+    if (palCache.size > 400) palCache.clear();
+    palCache.set(key, P); return P;
+  }
+  const cache = new Map(), WATER = [44, 112, 224];
+  const r5 = (v) => Math.round(v * 2) / 2;
+  const poseKey = (P) => [P.dy, P.hdy, P.hx, P.lean, P.look, P.blink, P.mouth, r5(P.al[0]), r5(P.al[1]), r5(P.ar[0]), r5(P.ar[1]), P.ll, P.lr, P.dl, P.dr, P.up, P.tool].join(',');
+  function sprite(e, P, burn, flip, sub, amb, ak, zk, char) {
+    const form = e.form || 'ref', key = form + '|' + ((e.seed || 0) % SKIN.length) + '|' + poseKey(P) + '|' + burn + '|' + (flip ? 1 : 0) + '|' + sub + '|' + ak + '|' + zk + '|' + char + '|' + (zk >= .5 ? (e.seed || 0) % 11 : '');
     let cv = cache.get(key); if (cv) return cv;
-    if (cache.size > 900) cache.clear();
-    const P = palette(e), fr = frameOf(e.form || 'ref', f);
+    if (cache.size > 3500) cache.clear();
+    const Pal = palette(e, zk, amb, ak), fr = compose(form, P);
     cv = document.createElement('canvas'); cv.width = SW; cv.height = FH;
-    const c = cv.getContext('2d'), im = c.createImageData(SW, FH), d = im.data;
+    const c = cv.getContext('2d'), im = c.createImageData(SW, FH), d = im.data, subRows = Math.min(FH, sub * 2);
     for (let y = 0; y < FH; y++) for (let x = 0; x < SW; x++) {
       const ch = fr.g[y][x]; if (ch === '.') continue;
-      let col = P[ch] || [255, 0, 255];
-      if (ch === 'k' && fr.eyes.some(([ey, ex]) => ey === y && ex === x)) col = P.eye;
-      if (e.z && ch !== 'k' && ((x * 7 + y * 13 + (e.seed || 0) * 3) % 11) === 0) col = mul(col, .62);
+      let col = Pal[ch] || [255, 0, 255];
+      if (ch === 'k' && fr.eyes.some(([ey, ex]) => ey === y && ex === x)) col = Pal.eye;
+      if (zk >= .5 && ch !== 'k' && ((x * 7 + y * 13 + (e.seed || 0) * 3) % 11) === 0) col = mul(col, .62);
+      if (char) col = mix(col, [34, 28, 26], char === 2 ? .78 : .5);
       if (burn) col = mix(col, burn === 2 ? [255, 196, 60] : [255, 110, 30], ch === 'k' ? .25 : .5);
+      if (subRows && y >= FH - subRows) col = mix(col, WATER, y === FH - subRows ? .3 : .6);
       const tx = flip ? SW - 1 - x : x, o = (y * SW + tx) * 4;
       d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255;
     }
     c.putImageData(im, 0, 0); cache.set(key, cv); return cv;
   }
+
+  /* ---------- позы ---------- */
+  const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+  const pose = (o) => Object.assign({}, NEUTRAL, o);
+  const rnd2 = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const TAU = 6.2831853;
+  /* шаг: ph — доля цикла (0..1); run — бег; z — шаркающая походка зомби */
+  function gait(P, ph, run, z) {
+    const sA = Math.sin(ph * TAU), sB = -sA, lm = z ? 2 : run ? 3 : 2;
+    P.ll = Math.round(Math.max(0, sA) * lm); P.lr = Math.round(Math.max(0, sB) * (z ? 1 : lm));
+    P.dl = P.ll > 0 ? 1 : 0; P.dr = P.lr > 0 ? 1 : 0;
+    P.dy = Math.abs(sA) < (run ? .5 : .45) ? 1 : 0;
+    P.hdy = P.dy;
+    if (z) {
+      P.al = [.6, 2.0 + .7 * sA]; P.ar = [.6, 2.0 - .7 * sA]; P.hdy = 1; P.hx = 1; P.lean = 0; P.look = 1; P.mouth = 1; P.dy = Math.min(2, P.dy + 1);
+    } else {
+      const k = run ? 1 : .6, fl = -sA, fr = sA;   /* рука идёт вперёд, когда противоположная нога впереди */
+      P.al = [(run ? .9 : .4) + .7 * Math.max(0, fl) * k, (run ? 3.0 : 3.6) - (run ? 1.5 : .9) * fl];
+      P.ar = [(run ? .9 : .4) + .7 * Math.max(0, fr) * k, (run ? 3.0 : 3.6) - (run ? 1.5 : .9) * fr];
+      P.look = 1; if (run) P.lean = 1;
+    }
+  }
+  function fidget(e, T, P) {
+    const sd = e.seed || 0, slot = Math.floor((T + sd * 37) / 520), local = (T + sd * 37) % 520 - Math.floor(rnd2(slot, sd + 1) * 380);
+    if (local < 0 || local >= 84) return false;
+    const type = Math.floor(rnd2(slot, sd + 2) * 6), w = Math.sin(local / 3.6);
+    if (type === 0) { P.ar = [3.2 + w * .5, -2.2 + w * .9]; P.mouth = 3; P.look = 0; }
+    else if (type === 1) { P.al = [3, -3]; P.ar = [3, -3]; P.dy = -1; P.mouth = 1; P.blink = local > 20 && local < 50 ? 1 : 0; }
+    else if (type === 2) { P.ar = [1.5 + w * .4, -.6 + Math.sin(local / 2.2) * .6]; P.look = -1; }
+    else if (type === 3) { P.look = local < 22 ? -1 : local < 44 ? 1 : local < 62 ? -1 : 0; P.hx = local < 22 ? -1 : local < 44 ? 1 : 0; }
+    else if (type === 4) { P.al = [2.2, 2.3]; P.ar = [2.2, 2.3]; P.mouth = 3; }
+    else { const up = local < 40; P.al = [1.2, up ? 2.6 : 4]; P.ar = [1.2, up ? 2.6 : 4]; P.hdy = up ? 1 : 0; P.look = 0; }
+    return true;
+  }
+  const DUR = Sim.ENT_DUR;
+  /* выбор позы по состоянию из симуляции */
+  function animate(e, T) {
+    const sd = e.seed || 0, P = pose({}), st = { P, burn: 0, char: 0, rot: 0, alpha: 1, sub: Math.min(12, e.sub | 0), zk: e.z ? 1 : 0, pivot: 'feet' };
+    const px = e.px === undefined ? e.x : e.px; e.dist = (e.dist || 0) + Math.abs(e.x - px); e.px = e.x;
+    const blink = ((T + sd * 7) % 230) < 7, dir = e.dir < 0 ? -1 : 1, flame = 1 + ((T >> 1) & 1);
+    if (e.z && e.turn > 0) st.zk = Math.round((1 - e.turn / 45) * 4) / 4;
+    if (e.dying) {
+      const dt = e.dt | 0, k = e.dying, dur = DUR[k] || 40;
+      P.al = [2.2, 3]; P.ar = [2.2, 3]; P.dl = 1; P.dr = 1; P.hdy = 1; P.blink = 1;
+      if (k === 'burn') {
+        if (dt < 7) { const w = T / 2.5; P.al = [2.6 + Math.sin(w) * .8, -1.8 + Math.cos(w) * 1.2]; P.ar = [2.6 + Math.cos(w) * .8, -1.8 + Math.sin(w) * 1.2]; P.mouth = 2; P.blink = 0; }
+        else { P.dy = Math.min(2, Math.floor((dt - 7) / 3)); P.al = [1.4, 2.4]; P.ar = [1.4, 2.4]; }
+        st.burn = dt > 20 ? 0 : flame; st.char = dt > 12 ? 2 : 1;
+        const p = clamp01((dt - 7) / 16); st.rot = -dir * p * p * (3 - 2 * p) * 1.5;
+      } else if (k === 'drown') {
+        P.al = [2.4, -1.6 + Math.sin(T / 5) * .8]; P.ar = [2.4, -1.6 + Math.cos(T / 5) * .8]; P.mouth = 1; P.up = 1; P.dy = -1; P.blink = 0;
+        st.rot = -dir * Math.min(.7, dt / 40); st.pivot = 'center';
+      } else {
+        const spin = k === 'blast' && dt < 22, p = clamp01(dt / (spin ? 22 : 16)), ease = p * p * (3 - 2 * p);
+        st.rot = -dir * (spin ? ease * (1.5708 + 6.2832) : ease * 1.5708);
+        if (dt < 10) { const w = T / 2; P.al = [2.8 + Math.sin(w) * .6, -1.5 + Math.cos(w)]; P.ar = [2.8 + Math.cos(w) * .6, -1.5 + Math.sin(w)]; P.mouth = 2; P.blink = 0; }
+      }
+      if (dur - dt < 14) st.alpha = Math.max(0, (dur - dt) / 14);
+      return st;
+    }
+    if (e.turn > 0) {   /* заражение: судороги */
+      const f = T >> 1, r1 = rnd2(f, sd), r2 = rnd2(f, sd + 5), r3 = rnd2(f, sd + 9);
+      P.hx = r1 < .33 ? -1 : r1 > .66 ? 1 : 0; P.al = [1.5 + 2 * r2, -1 + 4 * r3]; P.ar = [1.5 + 2 * r3, -1 + 4 * r1]; P.dy = f & 1 ? 0 : 1; P.mouth = 2; P.ll = r2 > .6 ? 1 : 0; P.lr = r3 > .6 ? 1 : 0;
+      return st;
+    }
+    if (e.hurt > 6) { P.dy = 1; P.hdy = 1; P.al = [2.4, 1.2]; P.ar = [2.4, 1.2]; P.mouth = 2; if (e.burn > 0) st.burn = flame; return st; }
+    if (e.tumble > 0 && e.air) { P.al = [3, -2]; P.ar = [3, -2]; P.ll = 1; P.lr = 1; P.dl = 1; P.dr = 1; P.mouth = 2; st.rot = (T * .32) * (e.kx < 0 ? -1 : 1); st.pivot = 'center'; if (e.burn > 0) st.burn = flame; return st; }
+    if (e.air && !e.swim) {
+      const t = Math.max(-1, Math.min(1, e.vy / 2.2)); P.up = 1; P.dy = -1; P.look = 1;
+      if (t < -.25) { P.al = [2.8, -2.4]; P.ar = [2.8, -2.4]; P.ll = 2; P.lr = 2; P.dl = 1; P.dr = 1; P.mouth = e.z ? 1 : 3; }
+      else if (t < .4) { P.al = [3.4, -.2]; P.ar = [3.4, -.2]; P.ll = 1; P.lr = 1; P.dl = 1; P.dr = 1; }
+      else { const w = Math.sin(T / 3) * .8; P.al = [3, -1.2 + w]; P.ar = [3, -1.2 - w]; P.ll = 1; P.lr = 0; P.dl = 1; P.dr = 1; P.mouth = t > .8 ? 2 : 0; }
+      if (e.burn > 0) st.burn = flame;
+      return st;
+    }
+    if (e.land > 0 && !e.swim) { P.dy = e.land > 5 ? 2 : 1; P.hdy = 1; P.al = [2, 3]; P.ar = [2, 3]; P.look = 1; if (e.burn > 0) st.burn = flame; return st; }
+    if (e.swim) {
+      const w = T / 9 + sd; P.al = [2.2 + 1.4 * Math.cos(w), .4 + 1.4 * Math.sin(w)]; P.ar = [2.2 + 1.4 * Math.cos(w + 3.14), .4 + 1.4 * Math.sin(w + 3.14)];
+      P.ll = (T >> 2) & 1; P.lr = 1 - P.ll; P.dy = Math.sin(T / 14 + sd) > 0 ? 0 : 1; P.look = 1; P.blink = blink ? 1 : 0;
+      if (e.z) { P.mouth = 1; P.al[1] -= 1; P.ar[1] -= 1; }
+      return st;
+    }
+    if (e.burn > 0) {   /* горит: паника */
+      const w = T / 2.5; gait(P, T / 9 + sd, true, false);
+      P.al = [2.6 + Math.sin(w) * .8, -1.8 + Math.cos(w) * 1.2]; P.ar = [2.6 + Math.cos(w) * .8, -1.8 + Math.sin(w) * 1.2]; P.mouth = 2; P.hx = (T >> 1) & 1 ? 1 : -1;
+      st.burn = flame; return st;
+    }
+    if (e.act === 'seed') { P.dy = 2; P.hdy = 1; P.ar = [.8, 3.6]; P.al = [.4, 3.2]; P.look = 1; return st; }
+    if (e.act === 'dig') { const c = Math.cos(T * .45); P.ar = [1.2, -2.4 + (1 + c) * 2.8]; P.al = [.4, 3.2]; P.dy = c < 0 ? 1 : 0; P.look = 1; P.tool = 1; P.lean = 1; return st; }
+    if (e.walk && !e.swim) {
+      const run = e.fear > 0 && !e.z, stride = e.z ? 2.2 : run ? 3.4 : 2.8;
+      gait(P, e.dist / stride + sd * .13, run, e.z);
+      if (e.z && e.atk > 0) { P.dy = 1; P.hdy = 1; P.hx = 1; P.al = [.2, 1.2]; P.ar = [.2, 1.2]; P.mouth = 2; }
+      if (run) P.mouth = 2;
+      return st;
+    }
+    /* стоит */
+    const br = ((T + sd * 13) % 160) < 64; P.hdy = br ? 1 : 0; P.blink = blink && !e.z ? 1 : 0;
+    const slot = Math.floor((T + sd * 3) / 90), r = rnd2(slot, sd); P.look = r < .22 ? -1 : r > .78 ? 1 : 0;
+    if (e.z) { P.hdy = 1; P.hx = [0, 1, 0, -1][(T >> 5) & 3]; P.al = [.8, 3 + Math.sin(T / 20) * .5]; P.ar = [.8, 3 + Math.cos(T / 20) * .5]; P.mouth = ((T >> 6) & 1) ? 1 : 0; P.dy = 1; P.look = 0; if (e.atk > 0) { P.al = [.2, 1.2]; P.ar = [.2, 1.2]; P.mouth = 2; } return st; }
+    if (e.fear > 0) { P.al = [2, 1]; P.ar = [2, 1]; P.mouth = 2; P.look = 1; return st; }
+    fidget(e, T, P);
+    return st;
+  }
+
   /* слой: ширина и высота вдвое больше мира */
   let lay = null, lctx = null;
   function init(canvas, W, H) { lay = canvas; lay.width = W * 2; lay.height = H * 2; lctx = lay.getContext('2d'); lctx.imageSmoothingEnabled = false; }
-  function draw(ents, tick) {
+  function draw(ents, T, amb, ambKey) {
     if (!lctx) return;
     lctx.clearRect(0, 0, lay.width, lay.height);
     for (const e of ents) {
       if (e.seed == null) e.seed = (Math.random() * 1000) | 0;
       if (!e.form) e.form = 'ref';
-      let f = 0;
-      if (e.air) f = 1;
-      else if (e.walk && !e.swim) f = [0, 1, 0, 2][Math.floor(e.x * 2.2) & 3];
-      else if ((tick + e.seed) % 230 < 7) f = 3;
-      const burn = e.burn > 0 ? 1 + ((tick >> 1) & 1) : 0;
-      lctx.drawImage(sprite(e, f, burn, e.dir < 0), Math.round(e.x * 2) - SW / 2, (Math.round(e.y) + 1) * 2 - FH);
+      const st = animate(e, T), spr = sprite(e, st.P, st.burn, e.dir < 0, st.sub, amb, ambKey, st.zk, st.char);
+      const cx = Math.round(e.x * 2), fy = (Math.round(e.y) + 1) * 2;
+      if (st.alpha < 1) lctx.globalAlpha = st.alpha;
+      if (st.rot) {
+        lctx.save();
+        if (st.pivot === 'center') { lctx.translate(cx, fy - FH / 2); lctx.rotate(st.rot); lctx.drawImage(spr, -SW / 2, -FH / 2); }
+        else { lctx.translate(cx, fy); lctx.rotate(st.rot); lctx.drawImage(spr, -SW / 2, -FH); }
+        lctx.restore();
+      } else lctx.drawImage(spr, cx - SW / 2, fy - FH);
+      if (st.alpha < 1) lctx.globalAlpha = 1;
     }
   }
   /* случайный горожанин для инструмента «Человек» */
@@ -185,7 +374,7 @@ const People = (function () {
   function icon(form, z) {
     const k = (form || 'ref') + (z ? 'z' : ''); if (icons[k]) return icons[k];
     const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d');
-    x.drawImage(sprite({ form: form || 'ref', z: !!z, seed: 0 }, 0, 0, false), 0, 2, SW, 16, 1, 0, SW, 16);
+    x.drawImage(sprite({ form: form || 'ref', seed: 0 }, NEUTRAL, 0, false, 0, null, 'i', z ? 1 : 0, 0), 0, 2, SW, 16, 1, 0, SW, 16);
     return icons[k] = c.toDataURL();
   }
   /* каждый образ — отдельный инструмент во вкладке «Люди» */
@@ -196,5 +385,5 @@ const People = (function () {
       CATS.splice(CATS.indexOf(life) + 1, 0, { id: 'people', name: 'Люди', icon: 'people', els: ['t:HUMAN'].concat(Object.keys(FORMS).filter((k) => k !== 'ref').map((k) => 't:P_' + k), ['t:ZOMBIE']) });
     }
   }
-  return { init, draw, icon, randomForm, FORMS, frame: frameOf, get canvas() { return lay; } };
+  return { init, draw, icon, randomForm, FORMS, compose, sprite, animate, NEUTRAL, get canvas() { return lay; } };
 })();
