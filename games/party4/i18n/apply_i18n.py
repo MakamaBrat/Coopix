@@ -8,6 +8,7 @@ s = open(p, encoding="utf-8", newline="").read()
 CRLF = (CR + NL) in s
 s = s.replace(CR + NL, NL)
 ui = open(os.path.join(D, "ui.js"), encoding="utf-8").read()
+ui += chr(10) + open(os.path.join(D, "ui2.js"), encoding="utf-8").read()  # строки нового дизайна
 content = open(os.path.join(D, "content.js"), encoding="utf-8").read()
 
 def rep(a, b, cnt=1):
@@ -50,7 +51,7 @@ function setContent() {
   for (const k of ['e', 'm', 'h']) put(CROC_W[k], c ? c.CROC_W[k] : RU0.CROC[k]);
 }
 function setLang(l) { if (!LANGS[l]) return; LANG = l; S.lang = l; save(); document.documentElement.lang = l; setContent(); G.deck = null; render(); trNode(document.body); }
-A.lang = d => setLang(d.l);
+A.lang = d => { setLang(d.l); if ($('#modal .sheet.menu')) openModal(menuHtml()); };
 new MutationObserver(ms => { if (LANG === 'ru') return; for (const m of ms) { if (m.type === 'characterData') trOne(m.target); else m.addedNodes.forEach(trNode); } })
   .observe(document.body, { subtree: true, childList: true, characterData: true });
 document.documentElement.lang = LANG; setContent();

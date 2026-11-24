@@ -1,6 +1,0 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    { "name": "party4-src", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8777", "--directory", "src"], "port": 8777 }
-  ]
-}

@@ -756,6 +756,201 @@ html.lite .bomb{filter:drop-shadow(0 0 14px rgba(255,70,170,.85))}
 html.ultra{animation:none}
 /* уважаем «меньше движения» */
 @media (prefers-reduced-motion:reduce){:root{animation:none}#scene .grid,#scene .bl,#scene .mote,#scene .lay{animation:none!important}}
+/*SHELL*/
+/* ================= КАРКАС ПО МАКЕТУ: шапка, плитки, нижняя навигация ================= */
+:root{--tb:92px}
+#app.home,#app.welcome,#app.tabbed{max-width:520px;margin:0 auto;min-height:calc(var(--vh)*100)}
+#app.home,#app.tabbed{padding-bottom:calc(var(--tb) + env(safe-area-inset-bottom))!important}
+#app.tabbed #view{padding:calc(18px + env(safe-area-inset-top)) 16px 12px!important}
+#app.tabbed #view>:not(svg){max-width:none}
+#app.home #view{padding:0}
+.homev{display:flex;flex-direction:column;gap:14px;padding:calc(14px + env(safe-area-inset-top)) 16px 0}
+
+/* шапка главной */
+.hdr{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.brand{display:flex;align-items:center;gap:8px;font:700 19px/1 var(--hf);letter-spacing:.07em;color:#fff;text-shadow:0 0 12px var(--c1)}
+.brand svg{width:24px;height:24px;color:var(--c2);filter:drop-shadow(0 0 6px var(--c2))}
+.brand i{font-style:normal;color:transparent;-webkit-text-stroke:1.2px var(--c2);text-shadow:0 0 12px var(--c2)}
+.hbtns{display:flex;gap:8px}
+.hbtns .rb,.rb.ico{width:42px;height:42px;padding:0}
+.hbtns .rb svg{width:21px;height:21px}
+
+/* герой-карточка «Во что играем сегодня?» */
+.herocard{position:relative;overflow:hidden;border-radius:26px;padding:18px 16px 16px;min-height:184px;border:1px solid var(--edge);
+  background:linear-gradient(135deg,rgba(80,36,184,.78),rgba(18,8,48,.9) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 40px -18px #000,var(--glow)}
+.hc-sun{position:absolute;right:-12%;bottom:-34%;width:78%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(255,170,90,.7),rgba(255,70,170,.4) 45%,transparent 70%);animation:breathe 6s ease-in-out infinite alternate}
+.hc-txt{position:relative;z-index:2;max-width:62%}
+.herocard small{display:block;font:800 10.5px Nunito,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--c1)}
+.herocard h2{margin:6px 0 6px;font-size:clamp(17px,5.2vw,21px)}
+.herocard p{margin:0 0 14px;font-size:12.5px;line-height:1.4;color:#cfc4f0;font-weight:600}
+.herocard .btn{min-height:44px;padding:0 18px;font-size:14.5px;border-radius:15px;gap:6px}
+.herocard .btn svg,.btn svg{width:18px;height:18px;flex:none}
+.hc-crew{position:absolute;right:-9%;bottom:-2%;width:54%;z-index:1;-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent);filter:drop-shadow(0 0 14px rgba(255,79,216,.4))}
+
+/* полоска «Игроки» */
+.crewbar{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:18px;border:1px solid var(--edge);background:rgba(255,255,255,.05);color:#fff;font:inherit;cursor:pointer;text-align:left}
+.crewbar b{font-size:15px;font-weight:900}
+.crewbar .cn{margin-left:auto;font:900 13px Nunito;color:var(--c1)}
+.crewbar>svg{width:18px;height:18px;color:var(--mut);flex:none}
+.crewbar .empty-t{flex:1;font-size:14px;font-weight:700;color:var(--mut)}
+.avs{display:flex}.avs .av{--s:32px;margin-left:-9px;border-width:2px}.avs .av:first-child{margin-left:0}
+.avs .more{margin-left:-9px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:900 11px Nunito;font-style:normal;background:rgba(255,255,255,.12);color:#fff;border:2px solid rgba(7,3,26,.6)}
+
+/* плитки игр */
+.gtiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gtile{--ac:125,249,255;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;aspect-ratio:1.42;padding:8px;border-radius:22px;cursor:pointer;color:#fff;font:inherit;
+  border:1px solid rgba(var(--ac),.45);background:linear-gradient(160deg,rgba(var(--ac),.24),rgba(18,8,48,.86) 68%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 12px 26px -14px #000,0 0 18px -8px rgba(var(--ac),.75);
+  transition:transform .15s,border-color .2s,box-shadow .25s;animation:rise .5s backwards;animation-delay:calc(var(--k)*70ms + .1s)}
+.gtile:hover{border-color:rgba(var(--ac),.95);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 14px 30px -14px #000,0 0 30px -4px rgba(var(--ac),.85)}
+.gtile:active{transform:scale(.96)}
+.gtile .gic{width:50px;height:50px}
+.gtile .gic::before{content:"";position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:radial-gradient(circle,rgba(var(--ac),.4),transparent 68%);z-index:-1;animation:breathe 3.6s ease-in-out infinite alternate}
+.gtile b{font:700 13.5px/1.15 var(--hf);text-shadow:0 0 10px rgba(var(--ac),.8)}
+.gtile small{font-size:11px;font-weight:700;color:#cfc4f0}
+html.lite .gtile .gic::before{animation:none}
+
+/* нижняя навигация */
+#tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:30;width:min(496px,calc(100vw - 24px));display:flex;gap:6px;padding:7px;border-radius:26px;
+  background:rgba(18,8,48,.93);border:1px solid var(--edge);box-shadow:0 12px 30px -10px #000,var(--glow);touch-action:manipulation}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;border:1px solid transparent;border-radius:20px;background:none;color:var(--mut);font:800 12px Nunito,sans-serif;cursor:pointer;transition:color .2s,background .2s}
+.tab svg{width:24px;height:24px}
+.tab.on{color:#fff;border-color:rgba(255,255,255,.14);background:linear-gradient(135deg,color-mix(in srgb,var(--c3) 55%,#1a0a40),color-mix(in srgb,var(--c2) 45%,#1a0a40));box-shadow:0 0 18px -6px var(--g1)}
+.tab.on svg{filter:drop-shadow(0 0 6px var(--c1))}
+.tab:active{transform:scale(.95)}
+
+/* «Моя компания» и «История» */
+.pghead h2{font-size:clamp(18px,5.4vw,22px);margin:0 0 14px}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px;font-weight:900;color:#fff}
+.chip{display:inline-flex;align-items:center;padding:3px 11px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid var(--edge);font:900 12px Nunito,sans-serif;color:var(--c1)}
+.clist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.crow{display:flex;align-items:center;gap:12px;height:62px;padding:0 10px;border-radius:17px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);cursor:pointer;transition:opacity .2s,border-color .2s,transform .1s}
+.crow:hover{border-color:var(--c1)}.crow:active{transform:scale(.98)}
+.crow .nm{flex:1;min-width:0;font-size:16px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .crown{width:20px;height:20px;color:#ffe27a;filter:drop-shadow(0 0 6px rgba(255,226,122,.7));flex:none}.crow .crown svg{width:100%;height:100%}
+.crow .chk{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--c1),var(--c2));color:#0c0420}
+.crow .chk svg{width:14px;height:14px;stroke-width:3.4}
+.crow.off{opacity:.5}.crow.off .chk{background:transparent;border:1.5px solid var(--edge);color:transparent}.crow.off .av{filter:grayscale(1)}
+.btn.add{margin-top:0}
+.btn.wide svg{width:19px;height:19px}
+
+/* ---------- шапка игры ---------- */
+#bot .rb,#bot.top .rb{border:1px solid var(--edge)}
+.btn.ghost{text-shadow:none}
+.hbtns .rb{border:1px solid var(--edge)}
+#bot.top{align-items:center;gap:10px}
+#bot.top .rb{width:44px;height:44px;min-width:44px;padding:0}
+#bot.top .rb svg{width:22px;height:22px}
+#bot .tt{flex:1;min-width:0;text-align:center;line-height:1.2;pointer-events:none}
+#bot .tt b{display:block;font:700 15px var(--hf);color:#fff;text-shadow:var(--tglow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bot .tt small{display:block;font:800 12px Nunito,sans-serif;color:var(--c1);min-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inner.tabbed #view{padding-top:calc(18px + env(safe-area-inset-top))!important}
+
+/* ---------- карточка игры ---------- */
+.ginfo{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding-top:6px}
+.gbig{position:relative;display:grid;place-items:center;width:150px;height:130px}
+.gbig::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(var(--ac),.5),transparent 68%);animation:breathe 4s ease-in-out infinite alternate}
+.gbig .gic{width:96px;height:96px;animation:floaty 5s ease-in-out infinite}
+.gbig.sm{width:90px;height:76px;margin:0 auto}.gbig.sm .gic{width:56px;height:56px;animation:none}
+.ginfo h1{font-size:clamp(24px,7.4vw,30px);text-shadow:0 0 14px rgba(var(--ac),.9),0 0 34px rgba(var(--ac),.45)}
+.gsub{margin:0;color:#cfc4f0;font-weight:700;font-size:14.5px;line-height:1.35;max-width:300px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);width:100%;border-radius:20px;border:1px solid var(--edge);background:rgba(255,255,255,.05);padding:12px 0}
+.stats>div{display:flex;flex-direction:column;align-items:center;gap:3px;border-left:1px solid rgba(255,255,255,.1);padding:0 4px}.stats>div:first-child{border-left:0}
+.stats svg{width:22px;height:22px;color:rgb(var(--ac));filter:drop-shadow(0 0 5px rgba(var(--ac),.8))}
+.stats b{font:700 15px var(--hf);color:#fff}.stats b.tg2{font:800 13px Nunito,sans-serif;line-height:1.2}
+.stats small{font-size:11.5px;font-weight:800;color:var(--mut)}
+.need{width:100%;padding:9px 12px;border-radius:14px;background:rgba(255,64,110,.13);border:1px solid rgba(255,64,110,.5);color:#ff9ab8;font-size:13px;font-weight:800}
+.ginfo h3{align-self:flex-start;margin:6px 0 0;font-family:"Nunito",sans-serif!important;font-weight:900!important;font-size:16px;text-shadow:none}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;width:100%;text-align:left}
+.steps li{display:flex;align-items:center;gap:12px;font-weight:700;font-size:15px;line-height:1.3;color:#efe8ff}
+.steps i{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:900 13px Nunito,sans-serif;font-style:normal;color:#10062a;background:linear-gradient(135deg,rgb(var(--ac)),rgba(var(--ac),.5));box-shadow:0 0 12px rgba(var(--ac),.6)}
+.ginfo .btn.big{margin-top:10px}.ginfo .btn.wide{margin-top:0}
+.rules-sheet{text-align:left}.rules-sheet h3{margin:4px 0 12px}
+
+/* ---------- настройка игры ---------- */
+.split{display:block!important;min-height:0!important}
+.inner #view:has(>.split){justify-content:flex-start}
+.split .l{display:block;margin-bottom:12px}
+.split .l .itemrow,.split .l .bomb,.split .l .hero{display:none!important}
+.split .r .btn.big{margin-top:6px}
+.parts{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:18px;border:1px solid var(--edge);background:rgba(255,255,255,.05);color:#fff;font:inherit;cursor:pointer;text-align:left;margin-bottom:10px}
+.parts b{font-size:15px;font-weight:900}
+.parts .cn{font:900 12px Nunito;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.1);color:var(--c1)}
+.parts .avs{margin-left:auto}
+.parts>svg{width:18px;height:18px;color:var(--mut);flex:none}
+.hero{display:none}
+
+/* ---------- передача телефона ---------- */
+.pass{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:6px 0 0}
+.pass-ico{position:relative;display:grid;place-items:center;width:112px;height:112px;border-radius:50%;background:radial-gradient(circle,rgba(var(--ac),.28),rgba(var(--ac),.04) 70%);border:1.5px solid rgba(var(--ac),.5);box-shadow:0 0 38px -6px rgba(var(--ac),.7)}
+.pass-ico .gic{width:64px;height:64px}
+.pass-ico .gic{color:rgb(var(--ac))}
+.chip.secret{padding:4px 14px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgb(var(--ac));border-color:rgba(var(--ac),.6);background:rgba(var(--ac),.12)}
+.pass h1{font-size:clamp(20px,6.4vw,26px);line-height:1.25}
+.pass h1 .nm{color:rgb(var(--ac));text-shadow:0 0 16px rgba(var(--ac),.9)}
+.pass-av .av{border-color:rgb(var(--ac));box-shadow:0 0 0 3px rgba(7,3,26,.7),0 0 22px rgba(var(--ac),.65)}
+.pass .btn.big{margin-top:6px}
+
+/* ---------- пауза ---------- */
+.sheet.pause{text-align:center;border-radius:30px;border-bottom:1px solid var(--edge);margin:auto 14px;width:calc(100% - 28px)}
+.pause-ico{display:grid;place-items:center;width:68px;height:68px;margin:2px auto 8px;border-radius:22px;color:#fff;background:linear-gradient(135deg,var(--c3),var(--c2));box-shadow:0 0 26px -4px var(--g2)}
+.pause-ico svg{width:30px;height:30px}
+.sheet.pause h1{margin-bottom:8px}
+.sheet.pause .btn{margin-top:10px}
+.sheet.menu .langs{margin:6px auto 4px}
+
+/* ---------- онбординг ---------- */
+.wel{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:calc(var(--vh)*100);padding:calc(26px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));text-align:center}
+.wel .hlogo{animation:logoIn 1s cubic-bezier(.2,.9,.3,1.1) both}
+.wtag{margin:0;font-weight:700;color:#cfc4f0;font-size:15px}
+.wscene{position:relative;width:min(100%,360px);aspect-ratio:1.08;flex:none}
+.wscene .hc-sun{right:auto;left:10%;bottom:-18%;width:80%;opacity:.9}
+.wscene .rings{position:absolute;inset:0;animation:hueSway 18s ease-in-out infinite alternate}
+.wscene .rg{position:absolute;border-radius:50%;background:conic-gradient(from 0deg,#00e5ff,transparent 28%,#ff2bd6 52%,transparent 78%,#00e5ff);-webkit-mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));animation:spinSlow 18s linear infinite}
+.wscene .r1{inset:4%}.wscene .r2{inset:15%;animation-duration:26s;animation-direction:reverse;opacity:.7}
+.wscene .crew{position:absolute;left:0;bottom:4%;width:100%;-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent);filter:drop-shadow(0 0 16px rgba(255,79,216,.45))}
+.feats{list-style:none;margin:0;padding:0;display:grid;gap:11px;width:100%;max-width:300px;text-align:left}
+.feats li{display:flex;align-items:center;gap:12px;font-weight:800;font-size:15px;color:#efe8ff}
+.fi{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid var(--edge);color:var(--c1)}
+.fi svg{width:19px;height:19px}
+.wel .btn.big{margin-top:auto;max-width:360px}
+
+/* ---------- итоги ---------- */
+.trophy{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 auto 4px;animation:popIn .7s cubic-bezier(.2,.9,.3,1.1) both}
+.trophy svg{width:104px;height:104px;filter:drop-shadow(0 0 16px rgba(255,200,58,.75));animation:floaty 4s ease-in-out infinite}
+.chip.win{padding:5px 16px;font-size:12px;letter-spacing:.12em;color:#fff;border-color:color-mix(in srgb,var(--tc) 70%,#fff);background:color-mix(in srgb,var(--tc) 45%,transparent);box-shadow:0 0 18px -4px var(--tc)}
+.banner{width:auto;transform:none;filter:none}
+
+/* ---------- палитры по играм (цвета тоже «перетекают» через --p, но вокруг своего оттенка) ---------- */
+body[data-game]{
+  --c1:hsl(calc(var(--h) + 18*var(--p)) 100% 62%);
+  --c2:hsl(calc(var(--h) + 48 - 14*var(--p)) 100% 66%);
+  --c3:hsl(calc(var(--h) - 26 + 8*var(--p)) 100% 68%);
+  --g1:hsl(calc(var(--h) + 18*var(--p)) 100% 62%/.5);
+  --g2:hsl(calc(var(--h) + 48 - 14*var(--p)) 100% 66%/.42);
+}
+body[data-game=bottle]{--h:285;--m1:rgba(190,60,255,.42);--m2:rgba(255,70,190,.30)}
+body[data-game=spy]{--h:188;--m1:rgba(0,200,255,.36);--m2:rgba(40,110,255,.34)}
+body[data-game=mafia]{--h:346;--m1:rgba(255,40,100,.42);--m2:rgba(140,20,150,.36)}
+body[data-game=bomb]{--h:24;--m1:rgba(255,110,30,.42);--m2:rgba(255,40,120,.30)}
+body[data-game=elias]{--h:150;--m1:rgba(0,230,150,.36);--m2:rgba(0,170,220,.32)}
+body[data-game=croc]{--h:42;--m1:rgba(255,170,20,.40);--m2:rgba(255,80,60,.30)}
+body[data-game][data-mood=night]{--m1:rgba(255,40,110,.55);--m2:rgba(130,20,170,.45)}
+body[data-game][data-mood=day]{--m1:rgba(255,150,60,.50);--m2:rgba(255,60,170,.40)}
+body[data-game][data-mood=tense]{--m1:rgba(0,225,205,.40);--m2:rgba(50,100,255,.40)}
+body[data-game=mafia] .role:not(.bad) .big .bdg{filter:drop-shadow(0 0 16px var(--g1))}
+
+/* ---------- десктоп: приложение — аккуратная колонка, как на макете ---------- */
+@media (min-width:900px){
+  #app.inner{max-width:560px}
+  #app.inner.wide{max-width:1000px}
+  .inner:not(.tabbed) #view{padding:calc(84px + env(safe-area-inset-top)) 20px 40px!important}
+  .inner.tabbed #view{padding:30px 20px 12px!important}
+  .split{grid-template-columns:none!important}
+  #bot.top{left:50%;right:auto;transform:translateX(-50%);width:min(520px,calc(100vw - 24px));top:16px}
+  .wel{justify-content:center}
+}
+html.ultra #scene .grid,html.ultra #scene .mote{display:none}
 </style>
 </head>
 <body>
@@ -836,7 +1031,7 @@ const IC = {
 { const L = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   Object.assign(IC, {
     users: L('<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20c0-3.600 2.900-6 6.500-6s6.500 2.400 6.500 6"/><circle cx="17.500" cy="9" r="2.800"/><path d="M17.500 14.200c2.600.2 4.300 2 4.300 5.300"/>'),
-    gear: L('<circle cx="12" cy="12" r="8.200" stroke-width="3.600" stroke-dasharray="2.600 2.790"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.400"/>'),
+    gear: L('<circle cx="12" cy="12" r="5.600"/><circle cx="12" cy="12" r="2"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<path d="M12 2.800v3" stroke-width="2.800" transform="rotate(${a} 12 12)"/>`).join('')),
     pad: L('<rect x="2.500" y="7" width="19" height="11" rx="5"/><path d="M8 10.500v4M6 12.500h4"/><circle cx="15.500" cy="11.500" r=".9" fill="currentColor"/><circle cx="18" cy="14" r=".9" fill="currentColor"/>'),
     clock: L('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.500 2"/>'),
     check: L('<path d="M5 12.500l4.500 4.500L19 7.500"/>'),
@@ -1863,6 +2058,88 @@ const I18N_RX = [
 [/^Назови животное на «(.)»$/, 'Назви тварину на «$1»', 'Name an animal starting with “$1”']
 ];
 
+/* Новый дизайн («неон»): дополнительные строки интерфейса. [русский, українська, English] */
+I18N_UI.push(
+['Вечер начинается здесь','Вечір починається тут','The evening starts here'],
+['6 культовых игр','6 культових ігор','6 iconic games'],
+['Для любой компании','Для будь-якої компанії','For any group'],
+['Быстрый старт','Швидкий старт','Quick start'],
+['Начать','Почати','Start'],
+['Твоя вечеринка','Твоя вечірка','Your party'],
+['Во что играем сегодня?','У що граємо сьогодні?','What are we playing today?'],
+['Собирай друзей. Всё остальное мы придумаем.','Збирай друзів. Решту ми вигадаємо.','Gather your friends. We’ll handle the rest.'],
+['Начать играть','Почати грати','Start playing'],
+['Игры','Ігри','Games'],
+['Компания','Компанія','Group'],
+['История','Історія','History'],
+['Игроки','Гравці','Players'],
+['Моя компания','Моя компанія','My group'],
+['Участники','Учасники','Participants'],
+['Создать гостей','Створити гостей','Add guests'],
+['Таблица очков','Таблиця очок','Scoreboard'],
+['Карточка игры','Картка гри','Game card'],
+['игроков','гравців','players'],
+['мин','хв','min'],
+['Для компании','Для компанії','For groups'],
+['Дедукция','Дедукція','Deduction'],
+['Блеф','Блеф','Bluff'],
+['Экшен','Екшен','Action'],
+['Командная','Командна','Team game'],
+['Коротко о правилах:','Коротко про правила:','Rules in brief:'],
+['Начать игру','Почати гру','Start game'],
+['Все правила','Усі правила','Full rules'],
+['Понятно','Зрозуміло','Got it'],
+['Вопросы, действия и немного смелости 💜','Питання, дії та трохи сміливості 💜','Questions, dares and a little courage 💜'],
+['Найди шпиона среди своих','Знайди шпигуна серед своїх','Find the spy among you'],
+['Город засыпает, мафия просыпается','Місто засинає, мафія прокидається','The town sleeps, the mafia wakes'],
+['Передай бомбу, пока не рванула','Передай бомбу, поки не вибухнула','Pass the bomb before it blows'],
+['Объясняй слова своей команде','Пояснюй слова своїй команді','Explain words to your team'],
+['Покажи слово без слов','Покажи слово без слів','Show the word without words'],
+['Крутите бутылочку','Крутіть пляшечку','Spin the bottle'],
+['Выбирайте вопрос или действие','Обирайте питання або дію','Pick a question or a dare'],
+['Выполняйте и узнавайте друг друга лучше','Виконуйте та пізнавайте одне одного краще','Do it and get to know each other better'],
+['Все видят локацию, кроме шпиона','Усі бачать локацію, крім шпигуна','Everyone sees the location except the spy'],
+['Задавайте друг другу вопросы по очереди','Ставте одне одному питання по черзі','Take turns asking each other questions'],
+['Вычислите шпиона до конца таймера','Вирахуйте шпигуна до кінця таймера','Find the spy before the timer ends'],
+['Роли раздаются тайно по кругу','Ролі роздаються таємно по колу','Roles are dealt in secret, one by one'],
+['Ночью мафия выбирает жертву','Вночі мафія обирає жертву','At night the mafia picks a victim'],
+['Днём город голосует и ищет мафию','Вдень місто голосує та шукає мафію','By day the town votes and hunts the mafia'],
+['Тема появляется на экране','Тема з’являється на екрані','A topic appears on the screen'],
+['Называйте слова и передавайте телефон','Називайте слова та передавайте телефон','Say words and pass the phone'],
+['Тот, у кого рванёт, проигрывает','Той, у кого вибухне, програє','Whoever holds it when it blows loses'],
+['Разделитесь на команды','Розділіться на команди','Split into teams'],
+['Объясняйте слово, не называя его','Пояснюйте слово, не називаючи його','Explain the word without saying it'],
+['Команда с наибольшим счётом побеждает','Команда з найбільшим рахунком перемагає','The team with the top score wins'],
+['Игрок получает слово по секрету','Гравець отримує слово таємно','A player gets a word in secret'],
+['Показывает его жестами, без звуков','Показує його жестами, без звуків','Acts it out with gestures, no sounds'],
+['Команда угадывает до конца времени','Команда вгадує до кінця часу','The team guesses before time runs out'],
+['Настройка игры','Налаштування гри','Game setup'],
+['Раздача ролей','Роздача ролей','Dealing roles'],
+['Идёт игра','Гра триває','In progress'],
+['Голосование','Голосування','Voting'],
+['Итоги','Підсумки','Results'],
+['Идёт раунд','Триває раунд','Round in progress'],
+['Проверка слов','Перевірка слів','Checking words'],
+['Подготовка','Підготовка','Get ready'],
+['Результат','Результат','Result'],
+['Готовность','Готовність','Ready'],
+['Утро','Ранок','Morning'],
+['Изгнание','Вигнання','Banishment'],
+['Пауза','Пауза','Pause'],
+['Продолжить','Продовжити','Resume'],
+['Начать раунд заново','Почати раунд заново','Restart round'],
+['Изменить настройки','Змінити налаштування','Change settings'],
+['Закончить игру','Завершити гру','End game'],
+['Секретный этап','Секретний етап','Secret stage'],
+['Показать мою роль','Показати мою роль','Show my role'],
+['Выбрать другую игру','Обрати іншу гру','Pick another game'],
+['Следующий раунд','Наступний раунд','Next round'],
+['Добавь друзей в «Компании» — нужно минимум 2 игрока','Додай друзів у «Компанії» — потрібно мінімум 2 гравці','Add friends in “Group” — you need at least 2 players']
+);
+I18N_RX.push(
+[/^Нужно минимум (\d+) игрока — отметь друзей в «Компании»$/, 'Потрібно мінімум $1 гравці — познач друзів у «Компанії»', 'You need at least $1 players — select friends in “Group”']
+);
+
 /* Boards Games — содержимое игр на украинском и английском (порядок как в русских списках). */
 const I18N_CONTENT = {
 uk: {
@@ -1952,7 +2229,7 @@ function setContent() {
   for (const k of ['e', 'm', 'h']) put(CROC_W[k], c ? c.CROC_W[k] : RU0.CROC[k]);
 }
 function setLang(l) { if (!LANGS[l]) return; LANG = l; S.lang = l; save(); document.documentElement.lang = l; setContent(); G.deck = null; render(); trNode(document.body); }
-A.lang = d => { setLang(d.l); if ($('#modal .sheet.menu')) { openModal(menuHtml()); } };
+A.lang = d => { setLang(d.l); if ($('#modal .sheet.menu')) openModal(menuHtml()); };
 new MutationObserver(ms => { if (LANG === 'ru') return; for (const m of ms) { if (m.type === 'characterData') trOne(m.target); else m.addedNodes.forEach(trNode); } })
   .observe(document.body, { subtree: true, childList: true, characterData: true });
 document.documentElement.lang = LANG; setContent();
@@ -1968,6 +2245,7 @@ render();
     ['Аня', 'Борис', 'Витя', 'Даша', 'Егор', 'Жанна'].forEach((n, i) => S.players.push({ id: 'd' + i, name: n, img: '', emoji: '', pic: PORTRAITS[(i * 2) % 9], on: true, scores: { bottle: i * 3, spy: i, mafia: i % 3 } }));
   }
   const steps = {
+    info() { go('info', { g: 'bottle' }); }, 'info-mafia'() { go('info', { g: 'mafia' }); }, pause() { A.start({ g: 'bottle' }); A.pause(); }, welcome() { route = 'welcome'; render(); },
     home() { render(); }, score() { go('score'); }, players() { go('players'); }, menu() { render(); A.menu(); }, editor() { render(); A.padd(); },
     bottle() { A.start({ g: 'bottle' }); }, 'bottle-spun'() { A.start({ g: 'bottle' }); A.b_spin(); },
     spy() { A.start({ g: 'spy' }); }, 'spy-deal'() { A.start({ g: 'spy' }); A.spy_go(); },
