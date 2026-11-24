@@ -79,7 +79,7 @@ if __name__ == "__main__":
     row = {
         "id": "party4", "title": "Boards Games", "tags": ["Party", "Board"],
         "description": "Вечеринка на одном телефоне: Шпион, Мафия, Бутылочка и Бомбочка.\nДобавь друзей, выбирай игру и передавай телефон по кругу: роли, таймер, голосование и общий счёт очков.",
-        "changes": "Первая версия", "version": "1.0", "author_name": "Coopix",
+        "changes": "Новый неоновый дизайн: новое главное меню, карточки игр, пауза, новая бомба", "version": "1.1", "author_name": "Coopix",
         "item": "floppy", "cover": "img:" + hashlib.sha256(cover.encode()).hexdigest()[:12], "cover_img": cover,
         "shot_img": jpg("shot.jpg"), "access": "public", "sort": 7,
         "play_kind": "auto", "play_html": tv, "file_html": html, "dl_off": True, "price": 0,

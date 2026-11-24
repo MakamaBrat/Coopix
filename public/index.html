@@ -9,6 +9,11 @@
 (function(){
 var PRE=["f:montserrat-cyrillic-var","f:montserrat-latin-var","cassette","cd","floppy","handheld","case_a","case_b","case_c","case_d","case_e","case_f"];
 function pre(){try{PRE.forEach(function(n){var l=document.createElement("link");l.rel="preload";if(n.indexOf("f:")===0){l.href="assets/fonts/"+n.slice(2)+".woff2";l.as="font";l.type="font/woff2";l.crossOrigin="anonymous"}else{l.href="assets/spr/"+n+".png";l.as="image"}document.head.appendChild(l)})}catch(e){}}
+/* кэш файлов игр (IndexedDB): ключ -> {h,html}. На сервер уходит только хэш; файл качаем лишь если он изменился */
+var GC={db:null,open:function(){return GC.db||(GC.db=new Promise(function(res){try{var q=indexedDB.open("cpx-games",1);q.onupgradeneeded=function(){q.result.createObjectStore("f")};q.onsuccess=function(){res(q.result)};q.onerror=q.onblocked=function(){res(null)}}catch(e){res(null)}}))},
+ get:function(k){return GC.open().then(function(d){return d?new Promise(function(res){try{var r=d.transaction("f").objectStore("f").get(k);r.onsuccess=function(){var v=r.result;res(v&&v.h&&typeof v.html==="string"?v:null)};r.onerror=function(){res(null)}}catch(e){res(null)}}):null})},
+ put:function(k,h,html){GC.open().then(function(d){try{d&&h&&d.transaction("f","readwrite").objectStore("f").put({h:h,html:html},k)}catch(e){}})}};
+window.__GC=GC;
 var API="",init="",sp="",skip=0;
 try{API=String((window.APP_CONFIG||{}).SUB_API||"").replace(/\/+$/,"")}catch(e){}
 try{var hp=new URLSearchParams(location.hash.slice(1));init=hp.get("tgWebAppData")||"";sp=new URLSearchParams(location.search).get("tgWebAppStartParam")||hp.get("tgWebAppStartParam")||""}catch(e){}
@@ -18,8 +23,8 @@ try{if(sessionStorage.getItem("am.nosolo")){sessionStorage.removeItem("am.nosolo
 if(skip||!API||!init||/^map_/.test(sp)){window.__SOLO=Promise.resolve(null);pre();return}
 if(!/^[A-Za-z0-9_-]{1,64}$/.test(sp))sp="_";
 var ac=window.AbortController?new AbortController():null,tm=setTimeout(function(){ac&&ac.abort()},3000),STOP=0;
-window.__SOLO=fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp),{headers:{"X-Tg-Init":init},signal:ac?ac.signal:undefined})
-  .then(function(r){clearTimeout(tm);return r.ok?r.json():null})
+var CK="solo:"+sp;
+window.__SOLO=GC.get(CK).then(function(c){return fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp)+(c?"&h="+c.h:""),{headers:{"X-Tg-Init":init},signal:ac?ac.signal:undefined}).then(function(r){clearTimeout(tm);return r.ok?r.json():null}).then(function(j){if(j&&j.solo){if(j.same&&c)j.html=c.html;else if(j.html)GC.put(CK,j.h,j.html)}return j})})
   .then(function(j){if(!j||!j.solo||!j.html)return null;run(j);return j})
   .catch(function(){return null});
 window.__SOLO.then(function(j){if(!j)pre()});
@@ -3508,7 +3513,8 @@ function gameMode(html,title,gid,saved,items){window.__gm=1;
   try{history.pushState({gm:1},"")}catch(e){}addEventListener("popstate",out);
   setTimeout(()=>{try{f.focus()}catch(e){}},50)}
 async function playFile(){const me=PG;if(!me)return;if(isLocked(me.m)){buyGame(me.m.id);return}countPlay();toast("Загружаем игру…",true);
-  try{const j=await hub("gamefile",{q:{id:me.m.id}});if(PG!==me)return;gameMode(j.text,me.m.title,me.m.id,await loadGameSave(me.m.id),await loadGameItems(me.m.id))}catch(e){toast("Не удалось загрузить игру")}}
+  try{const ck="g:"+me.m.id,c=await window.__GC.get(ck),j=await hub("gamefile",{q:Object.assign({id:me.m.id},c?{h:c.h}:{})});if(PG!==me)return;
+    if(j.same&&c)j.text=c.html;else if(j.h)window.__GC.put(ck,j.h,j.text);gameMode(j.text,me.m.title,me.m.id,await loadGameSave(me.m.id),await loadGameItems(me.m.id))}catch(e){toast("Не удалось загрузить игру")}}
 const STATS={};            /* id игры -> { plays, playPlayers, downloads, dlPlayers, reviews, rated, rating } */
 const REV={};              /* id игры -> { items:[…], ok, err }: отзывы встроенной игры с сервера */
 const AUTH={};             /* pid -> { n, c, hp, p, f }: имя, цвет, фото авторов (фото подгружается лениво) */

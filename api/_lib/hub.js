@@ -5,7 +5,7 @@ import { itemPrice } from "./items.js";
 import { cleanMod, modWire, MOD_ID, MODS_PENDING_MAX } from "./mods.js";
 import { cleanMapCode, mapWire, MAP_ID, MAPS_PER_GAME, MAP_PUTS_PER_MIN } from "./maps.js";
 import { mergeGameStats, statsWire, STATS_PUTS_PER_MIN } from "./stats.js";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 
 /**
  * Данные сообщества: отзывы и рейтинг, профили с постом, счётчики игр, журнал действий и график активности.
@@ -234,7 +234,10 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const g = GAME_ID.test(id) ? await store.getGame(id) : null;
         if (!g || !g.has_file || !isVisible(g, staff)) return json(404, { error: "not_found" });
         if (await locked(g, uid, staff, isMain)) return json(402, { error: "not_owned", price: +g.price });
-        return json(200, { text: (await store.gameHtml(id))?.file_html ?? "" });
+        // клиент кэширует файл игры и присылает хэш (h): не изменился — файл не отправляем
+        const text = (await store.gameHtml(id))?.file_html ?? "", h = createHash("sha1").update(text).digest("hex").slice(0, 16);
+        if (q.h && String(q.h) === h) return json(200, { same: true, h });
+        return json(200, { text, h });
       }
       // «Скачать» в Telegram: бот присылает файл игры в личку, в подписи — ссылки на канал, чат и бота
       if (r === "sendgame") {
@@ -289,7 +292,8 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         ]);
         if (!html) return json(200, { solo: false });
         try { await track(uid, { body: { events: [{ type: "visit" }, { type: "play", game: g.id }] } }); } catch { /* запуск важнее счётчика */ }
-        return json(200, { solo: true, id: g.id, title: g.title, html, items, stats: statsWire(st), bot: bot || "" });
+        const h = createHash("sha1").update(html).digest("hex").slice(0, 16), same = !!q.h && String(q.h) === h;
+        return json(200, { solo: true, id: g.id, title: g.title, h, ...(same ? { same: true } : { html }), items, stats: statsWire(st), bot: bot || "" });
       }
       // файл из игры (например, повтор Noomic Bot): окно игры скачивать не умеет, поэтому бот присылает файл в личку
       if (r === "savefile") {
