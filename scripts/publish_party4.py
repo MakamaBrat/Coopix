@@ -10,7 +10,7 @@ from upload_games import env, req, ROOT
 D = os.path.join(ROOT, "games", "party4")
 SRC = os.path.join(D, "src")
 # максимальная сторона картинки (экономим вес файла игры): крупные оформительские картинки уменьшаем
-MAXSIDE = {"hero.webp": 600, "logo.webp": 520, "table.webp": 640, "card.png": 360, "flame_c.webp": 300}
+MAXSIDE = {"s/n_crew.webp": 720, "s/n_city.webp": 640, "s/n_spy.webp": 520}
 
 def data_uri(rel):
     im = Image.open(os.path.join(SRC, "img", rel))
@@ -33,8 +33,9 @@ def build():
         nonlocal html
         assert html.count(a) == cnt, (a, html.count(a))
         html = html.replace(a, b)
-    table = imgs.pop("table.webp")
-    rep("url(img/table.webp)", f"url({table})")
+    table = imgs.pop("table.webp", None)  # в неоновой теме стол нарисован CSS-ом, картинки стола больше нет
+    if table:
+        rep("url(img/table.webp)", f"url({table})")
     for k in list(imgs):
         if k.startswith("s/"):
             continue
