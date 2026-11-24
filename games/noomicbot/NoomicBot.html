@@ -3181,7 +3181,10 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 {const st=document.createElement("style");st.textContent=":root{--bkt:max(56px,calc(env(safe-area-inset-top) + 52px))}.sc2 .bk{top:var(--bkt);bottom:auto;left:4.9%;width:15%;height:8.6vmin}.sc2 .hd{top:var(--bkt);left:calc(4.9% + 17%);right:4.9%;height:8.6vmin}.sc2 .bd{top:calc(var(--bkt) + 11.6vmin);bottom:3%;left:4.9%;right:4.9%}"+
  "@media(orientation:portrait){.sc2 .bk{top:var(--bkt);bottom:auto;left:4%;width:27vw;height:11vw;font-size:4.2vw;padding:0}.sc2 .hd{top:var(--bkt);left:calc(4% + 29.5vw);right:4%;height:11vw;font-size:5.8vw}.sc2 .hd small{font-size:4vw}.sc2 .bd{top:calc(var(--bkt) + 14vw);left:4%;right:4%;bottom:calc(env(safe-area-inset-bottom) + 2%)}}";document.head.appendChild(st);
  /* отступ сверху = реальная высота интерфейса Telegram (в полноэкранном режиме там нативные кнопки; маркет присылает её в window.__CPX_TOP), вне Telegram — маленький */
- {const top=window.__CPX_TOP,root=document.documentElement.style;if(typeof top==="number")root.setProperty("--bkt",Math.max(8,Math.round(top)+8)+"px");else if(window.parent===window)root.setProperty("--bkt","10px")}}
+ {const top=window.__CPX_TOP,root=document.documentElement.style;if(typeof top==="number")root.setProperty("--bkt",Math.max(8,Math.round(top)+8)+"px");else if(window.parent===window)root.setProperty("--bkt","10px")}
+ /* общий отступ для экранов без своей шапки (меню, выбор карт, пауза, игра, редактор): сверху — под кнопки Telegram, снизу — над навигацией телефона */
+ {const bot=window.__CPX_BOT,r=document.documentElement.style,inTg=window.parent!==window;r.setProperty("--bkb",Math.max(inTg?18:0,Math.round(+bot||0)+(inTg?10:0))+"px");
+  const st=document.createElement("style");st.textContent="#menu,#maps,#pause,#game,#ed{top:var(--bkt)!important;bottom:var(--bkb)!important;height:auto!important}.sc2 .bd{bottom:calc(var(--bkb) + 2%)!important}";document.head.appendChild(st)}}
 
 /* ---------- выход в меню из паузы: понятная подпись и отступ сверху (в Telegram там своя кнопка закрытия — их легко перепутать) ---------- */
 {const RU4={"x.exit":"В меню"},EN4={"x.exit":"Menu"};for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU4:EN4);

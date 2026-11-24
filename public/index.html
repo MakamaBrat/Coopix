@@ -50,11 +50,11 @@ function put(id,data,w){var o=loc(id);for(var k in data){if(data[k]===null)delet
     for(var i=0;i<ks.length;i++){n+=ks[i].length+o[ks[i]].length+8;if(n>3900)break;pick[ks[i]]=o[ks[i]]}cs.setItem("gs_"+id,JSON.stringify(pick),function(){})}catch(e){}},2500)}
 function start(j,w){var gid=j.id,MB=/^[A-Za-z0-9_]{3,64}$/.test(j.bot||"")?j.bot:"coopixbot";
   loadSave(gid,w,function(saved){
-    var lang="",top=0,st=j.stats||{},esc=function(o){return JSON.stringify(o).replace(/</g,"\\u003c")};
+    var lang="",top=0,bot=0,st=j.stats||{},esc=function(o){return JSON.stringify(o).replace(/</g,"\\u003c")};
     try{lang=String((w&&w.initDataUnsafe&&w.initDataUnsafe.user&&w.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
-    try{var a=(w&&w.safeAreaInset)||{},c=(w&&w.contentSafeAreaInset)||{};top=Math.max(0,Math.round((+a.top||0)+(+c.top||0)))}catch(e){}
+    try{var a=(w&&w.safeAreaInset)||{},c=(w&&w.contentSafeAreaInset)||{};top=Math.max(0,Math.round((+a.top||0)+(+c.top||0)));bot=Math.max(0,Math.round((+a.bottom||0)+(+c.bottom||0)))}catch(e){}
     var inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+esc(saved||{})+";window.__CPX_ITEMS="+esc(j.items||[])+
-      ";window.__CPX_STATS="+esc({regrabs:+st.regrabs||0,best:+st.best||0})+";window.__CPX_TOP="+top+";<\/script>";
+      ";window.__CPX_STATS="+esc({regrabs:+st.regrabs||0,best:+st.best||0})+";window.__CPX_TOP="+top+";window.__CPX_BOT="+bot+";<\/script>";
     var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=j.title||"Игра";
     f.setAttribute("style","position:fixed;left:0;top:0;width:100%;height:100%;border:0;display:block;background:#000;z-index:100000");
     f.srcdoc=/<head[^>]*>/i.test(j.html)?j.html.replace(/<head[^>]*>/i,function(m){return m+inj}):inj+j.html;
@@ -3475,7 +3475,7 @@ async function gameMaps(gid,msg,frame){
     send({ok:false,err:"bad_op"})}
   catch(e){send({ok:false,err:(e&&e.code)||(e&&e.status===429?"rate_limit":"err")})}}
 /* высота интерфейса Telegram сверху (в полноэкранном режиме там нативные кнопки «Назад»/«Закрыть»): игра ставит свою кнопку «Назад» прямо под ними, а в обычном режиме отступа нет */
-function topInj(){let t=0;try{const w=window.Telegram&&Telegram.WebApp;if(w){const a=w.safeAreaInset||{},b=w.contentSafeAreaInset||{};t=(+a.top||0)+(+b.top||0)}}catch(e){}return"<script>window.__CPX_TOP="+Math.max(0,Math.round(t))+";<"+"/script>"}
+function topInj(){let t=0,bt=0;try{const w=window.Telegram&&Telegram.WebApp;if(w){const a=w.safeAreaInset||{},b=w.contentSafeAreaInset||{};t=(+a.top||0)+(+b.top||0);bt=(+a.bottom||0)+(+b.bottom||0)}}catch(e){}return"<script>window.__CPX_TOP="+Math.max(0,Math.round(t))+";window.__CPX_BOT="+Math.max(0,Math.round(bt))+";<"+"/script>"}
 function withSave(html,saved,items){const mapInj=mapLinkInj()+statsInj()+topInj();let lang="";try{lang=String((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
   const inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+JSON.stringify(saved||{}).replace(/</g,"\\u003c")+";window.__CPX_ITEMS="+JSON.stringify(items||[]).replace(/</g,"\\u003c")+"<\/script>";
   return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+inj+mapInj):inj+mapInj+html}
