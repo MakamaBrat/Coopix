@@ -4,7 +4,7 @@
 {
 const VA=NC_VICE_ASSETS,TXC={},MTC={};
 const rng=seed=>{let a=seed>>>0||1;return()=>(a=(Math.imul(a,1664525)+1013904223)>>>0)/4294967296};
-function tex(n){let t=TXC[n];if(t)return t;const im=new Image();t=TXC[n]=new T3.CanvasTexture(im);im.onload=()=>{t.needsUpdate=true};im.src=VA[n].u;t.userData={ar:VA[n].w/VA[n].h};return t}
+function tex(n){let t=TXC[n];if(t)return t;const im=new Image();t=TXC[n]=new T3.CanvasTexture(im);t.generateMipmaps=false;t.minFilter=1006;im.decoding="async";im.onload=()=>{t.needsUpdate=true};im.src=VA[n].u;t.userData={ar:VA[n].w/VA[n].h};return t}
 const mat=(n,o={})=>{const k=n+"|"+(o.tint||"")+"|"+(o.add?1:0);let m=MTC[k];if(!m){m=MTC[k]=new T3.MeshBasicMaterial({map:tex(n),transparent:true,alphaTest:.04,side:T3.DoubleSide,depthWrite:o.dw!==false,color:o.tint==null?16777215:o.tint,fog:false});if(o.add)m.blending=T3.AdditiveBlending}return m};
 const GEO=new T3.PlaneGeometry(1,1);
 const AR=n=>VA[n].w/VA[n].h;
@@ -38,7 +38,8 @@ function sceneHighway(V,M,g){
 /* подпись на канве: неоновая табличка */
 function sign(txt,col,bg,w=512,h=128,f="bold 64px sans-serif"){const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle=bg;x.fillRect(0,0,w,h);x.strokeStyle=col;x.lineWidth=6;x.strokeRect(5,5,w-10,h-10);x.font=f;x.textAlign="center";x.textBaseline="middle";x.shadowColor=col;x.shadowBlur=18;x.fillStyle="#fff";const L=txt.split("|");L.forEach((t,i)=>x.fillText(t,w/2,h/2+(i-(L.length-1)/2)*h/(L.length+.5)));return new T3.CanvasTexture(c)}
 /* дорога и тротуар в стиле присланной полосы: сиренево-коричневый асфальт и персиковая плитка (рисуем на канве, без лишнего веса) */
-function paveTex(kind){const c=document.createElement("canvas"),W=512,H=kind==="road"?256:128;c.width=W;c.height=H;const x=c.getContext("2d"),R=rng(kind==="road"?5:9);
+const PVC={};function paveTex(kind){let cc=PVC[kind];if(cc){const t=new T3.CanvasTexture(cc);t.wrapS=t.wrapT=T3.RepeatWrapping;return t}return paveTex0(kind,cc=PVC[kind]=document.createElement("canvas"))}
+function paveTex0(kind,c){const W=512,H=kind==="road"?256:128;c.width=W;c.height=H;const x=c.getContext("2d"),R=rng(kind==="road"?5:9);
   if(kind==="road"){const gr=x.createLinearGradient(0,0,0,H);gr.addColorStop(0,"#5b4358");gr.addColorStop(1,"#4a3548");x.fillStyle=gr;x.fillRect(0,0,W,H);x.fillStyle="#e8a8b8";x.fillRect(0,0,W,6);x.fillRect(0,H-6,W,6);x.fillStyle="rgba(255,225,235,.55)";x.fillRect(0,12,W,2);x.fillRect(0,H-14,W,2);for(let i=0;i<2200;i++){x.fillStyle="rgba("+(R()<.5?"255,235,255":"20,8,24")+","+(R()*.07).toFixed(3)+")";x.fillRect(R()*W,R()*H,1+R()*2,1)}}
   else{x.fillStyle="#d9a487";x.fillRect(0,0,W,H);const tw=64;for(let r=0;r*32<H;r++){for(let q=-1;q*tw<W;q++){const ox=(r%2)*tw/2;x.fillStyle="hsl("+(18+R()*8)+","+(38+R()*12)+"%,"+(66+R()*8)+"%)";x.fillRect(q*tw+ox+1,r*32+1,tw-2,30)}}x.fillStyle="rgba(70,30,40,.22)";for(let r=0;r*32<H;r++)x.fillRect(0,r*32,W,1)}
   const t=new T3.CanvasTexture(c);t.wrapS=t.wrapT=T3.RepeatWrapping;return t}
