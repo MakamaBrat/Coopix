@@ -34,6 +34,12 @@
             "port": 5180
         },
         {
+            "name": "public-py",
+            "runtimeExecutable": "C:/Users/15mak/AppData/Local/Programs/Python/Python312/python.exe",
+            "runtimeArgs": ["-m", "http.server", "5182", "--bind", "127.0.0.1", "--directory", "public"],
+            "port": 5182
+        },
+        {
             "name": "pixelia",
             "runtimeExecutable": "C:/Users/15mak/AppData/Local/Programs/Python/Python312/python.exe",
             "runtimeArgs": [

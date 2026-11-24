@@ -280,9 +280,16 @@ export function createHub({ store, botToken, notify = () => {}, adminIds = [], t
         const find = (s) => all.find((x) => slug(x.id) === s) || all.find((x) => slug(x.title) === s) || all.find((x) => slug(x.title).replace(/-/g, "") === s.replace(/-/g, ""));
         const g = find(slug(raw)) || (/r$/i.test(raw) && raw.length > 1 ? find(slug(raw.slice(0, -1))) : null) || all.find((x) => x.id === botGame);
         if (!g || !g.has_file || !isVisible(g, staff) || (await locked(g, uid, staff, isMain))) return json(200, { solo: false });
-        const html = (await store.gameHtml(g.id))?.file_html ?? "";
+        // одним запросом: файл игры, купленные предметы, рекорды игрока и бот маркета; заход и запуск записываем сразу здесь
+        const [html, items, st, bot] = await Promise.all([
+          store.gameHtml(g.id).then((x) => x?.file_html ?? ""),
+          store.ownedItems(uid, g.id).catch(() => []),
+          store.getGameStats(uid, g.id).catch(() => null),
+          (async () => { if (!botUser && tgApi) { try { botUser = (await tgApi("getMe", {}))?.username || ""; } catch { /* без ссылки */ } } return botUser; })(),
+        ]);
         if (!html) return json(200, { solo: false });
-        return json(200, { solo: true, id: g.id, title: g.title, html });
+        try { await track(uid, { body: { events: [{ type: "visit" }, { type: "play", game: g.id }] } }); } catch { /* запуск важнее счётчика */ }
+        return json(200, { solo: true, id: g.id, title: g.title, html, items, stats: statsWire(st), bot: bot || "" });
       }
       // файл из игры (например, повтор Noomic Bot): окно игры скачивать не умеет, поэтому бот присылает файл в личку
       if (r === "savefile") {

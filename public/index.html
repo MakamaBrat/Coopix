@@ -2,6 +2,92 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="assets/config.js"></script>
+<script>/* «Игра отдельно»: бот помечен в админке → сразу (до разбора маркета) один запрос /hub?r=launch отдаёт файл игры, предметы и рекорды,
+   сервер тут же засчитывает заход и запуск. Маркет останавливается (window.stop), его стили и разметка убираются, на экране только игра.
+   initData берём прямо из адреса (#tgWebAppData), не дожидаясь telegram-web-app.js. Не Telegram / маркет-бот → маркет грузится как обычно. */
+(function(){
+var PRE=["f:montserrat-cyrillic-var","f:montserrat-latin-var","cassette","cd","floppy","handheld","case_a","case_b","case_c","case_d","case_e","case_f"];
+function pre(){try{PRE.forEach(function(n){var l=document.createElement("link");l.rel="preload";if(n.indexOf("f:")===0){l.href="assets/fonts/"+n.slice(2)+".woff2";l.as="font";l.type="font/woff2";l.crossOrigin="anonymous"}else{l.href="assets/spr/"+n+".png";l.as="image"}document.head.appendChild(l)})}catch(e){}}
+var API="",init="",sp="",skip=0;
+try{API=String((window.APP_CONFIG||{}).SUB_API||"").replace(/\/+$/,"")}catch(e){}
+try{var hp=new URLSearchParams(location.hash.slice(1));init=hp.get("tgWebAppData")||"";sp=new URLSearchParams(location.search).get("tgWebAppStartParam")||hp.get("tgWebAppStartParam")||""}catch(e){}
+if(!init){try{var ss=JSON.parse(sessionStorage.getItem("__telegram__initParams")||"null");if(ss){init=ss.tgWebAppData||"";sp=sp||ss.tgWebAppStartParam||""}}catch(e){}}
+if(init&&!sp){try{sp=new URLSearchParams(init).get("start_param")||""}catch(e){}}
+try{if(sessionStorage.getItem("am.nosolo")){sessionStorage.removeItem("am.nosolo");skip=1}}catch(e){}
+if(skip||!API||!init||/^map_/.test(sp)){window.__SOLO=Promise.resolve(null);pre();return}
+if(!/^[A-Za-z0-9_-]{1,64}$/.test(sp))sp="_";
+var ac=window.AbortController?new AbortController():null,tm=setTimeout(function(){ac&&ac.abort()},3000),STOP=0;
+window.__SOLO=fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp),{headers:{"X-Tg-Init":init},signal:ac?ac.signal:undefined})
+  .then(function(r){clearTimeout(tm);return r.ok?r.json():null})
+  .then(function(j){if(!j||!j.solo||!j.html)return null;run(j);return j})
+  .catch(function(){return null});
+window.__SOLO.then(function(j){if(!j)pre()});
+function fail(){try{sessionStorage.setItem("am.nosolo","1")}catch(e){}location.reload()}
+function run(j){window.__gm=1;var de=document.documentElement;
+  if(document.readyState==="loading"){STOP=1;try{window.stop()}catch(e){}}
+  try{de.className="";de.style.cssText="height:100%;background:#000";
+    [].slice.call(document.querySelectorAll("style,link[rel=stylesheet],link[rel=preload]")).forEach(function(x){x.remove()});
+    var b=document.body;if(!b){b=document.createElement("body");de.appendChild(b)}b.innerHTML="";b.className="";
+    b.setAttribute("style","margin:0;height:100%;overflow:hidden;background:#000");document.title=j.title||"Игра"}catch(e){}
+  tg(function(w){try{start(j,w)}catch(e){fail()}})}
+/* telegram-web-app.js: ждём (если window.stop его оборвал — подключаем заново), дальше как в маркете: ready/expand, без «Назад» — выход кнопкой «Закрыть» */
+function tg(cb){var t0=Date.now(),done=0;
+  function go(){if(done)return;done=1;var w=(window.Telegram&&Telegram.WebApp)||null;
+    try{if(w){if(window.tgInit)tgInit();else{w.ready();w.expand()}w.BackButton&&w.BackButton.hide();w.unlockOrientation&&w.unlockOrientation()}}catch(e){}
+    try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}cb(w)}
+  if(STOP&&!window.Telegram){var s=document.createElement("script");s.src="https://telegram.org/js/telegram-web-app.js";s.onload=go;s.onerror=go;document.head.appendChild(s)}
+  (function wt(){if(window.Telegram&&Telegram.WebApp)return go();if(Date.now()-t0>3000)return go();setTimeout(wt,50)})()}
+var K=function(id){return"am.gs."+id};
+function loc(id){try{var o=JSON.parse(localStorage.getItem(K(id))||"{}");return o&&typeof o==="object"?o:{}}catch(e){return{}}}
+function loadSave(id,w,cb){var l=loc(id),done=0,fin=function(v){if(done)return;done=1;cb(v&&typeof v==="object"?v:{})};if(Object.keys(l).length)return fin(l);
+  var cs=w&&w.CloudStorage;if(!cs||!cs.getItem)return fin({});setTimeout(function(){fin({})},1500);
+  try{cs.getItem("gs_"+id,function(err,v){try{fin(err||!v?{}:JSON.parse(v))}catch(e){fin({})}})}catch(e){fin({})}}
+var GT=0;
+function put(id,data,w){var o=loc(id);for(var k in data){if(data[k]===null)delete o[k];else o[k]=String(data[k])}try{localStorage.setItem(K(id),JSON.stringify(o))}catch(e){}
+  clearTimeout(GT);GT=setTimeout(function(){try{var cs=w&&w.CloudStorage;if(!cs||!cs.setItem)return;
+    var ks=Object.keys(o).filter(function(k){return o[k].length<=3000}).sort(function(a,b){return o[a].length-o[b].length}),pick={},n=2;
+    for(var i=0;i<ks.length;i++){n+=ks[i].length+o[ks[i]].length+8;if(n>3900)break;pick[ks[i]]=o[ks[i]]}cs.setItem("gs_"+id,JSON.stringify(pick),function(){})}catch(e){}},2500)}
+function start(j,w){var gid=j.id,MB=/^[A-Za-z0-9_]{3,64}$/.test(j.bot||"")?j.bot:"coopixbot";
+  loadSave(gid,w,function(saved){
+    var lang="",top=0,st=j.stats||{},esc=function(o){return JSON.stringify(o).replace(/</g,"\\u003c")};
+    try{lang=String((w&&w.initDataUnsafe&&w.initDataUnsafe.user&&w.initDataUnsafe.user.language_code)||navigator.language||"").replace(/[^\w-]/g,"").slice(0,12)}catch(e){}
+    try{var a=(w&&w.safeAreaInset)||{},c=(w&&w.contentSafeAreaInset)||{};top=Math.max(0,Math.round((+a.top||0)+(+c.top||0)))}catch(e){}
+    var inj="<script>window.__CPX_LANG="+JSON.stringify(lang)+";window.__CPX_SAVE="+esc(saved||{})+";window.__CPX_ITEMS="+esc(j.items||[])+
+      ";window.__CPX_STATS="+esc({regrabs:+st.regrabs||0,best:+st.best||0})+";window.__CPX_TOP="+top+";<\/script>";
+    var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-pointer-lock");f.setAttribute("allow","fullscreen; autoplay; gamepad");f.title=j.title||"Игра";
+    f.setAttribute("style","position:fixed;left:0;top:0;width:100%;height:100%;border:0;display:block;background:#000;z-index:100000");
+    f.srcdoc=/<head[^>]*>/i.test(j.html)?j.html.replace(/<head[^>]*>/i,function(m){return m+inj}):inj+j.html;
+    (document.body||document.documentElement).appendChild(f);setTimeout(function(){try{f.focus()}catch(e){}},50);
+    function send(m){try{f.contentWindow.postMessage(m,"*")}catch(e){}}
+    function hub(r,o){o=o||{};var q=new URLSearchParams(Object.assign({r:r},o.q||{})),h={"X-Tg-Init":(w&&w.initData)||init};if(o.body!=null)h["Content-Type"]="application/json";
+      return fetch(API+"/hub?"+q,{method:o.method||"GET",headers:h,body:o.body!=null?JSON.stringify(o.body):undefined}).then(function(x){if(x.ok)return x.json();
+        return x.json().catch(function(){return{}}).then(function(b){var e=new Error(String(x.status));e.status=x.status;e.code=b&&b.error;throw e})})}
+    function openTg(url){try{if(w&&w.openTelegramLink){w.openTelegramLink(url);return}}catch(e){}try{window.open(url,"_blank","noopener")}catch(e){}}
+    function items(bought){hub("myitems",{q:{game:gid}}).then(function(r){return r.items||[]},function(){return[]}).then(function(l){send({coopix:"items",list:l,bought:bought})})}
+    function dl(name,data){try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=name;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},4000);return true}catch(e){return false}}
+    addEventListener("message",function(e){var d=e.data;if(e.source!==f.contentWindow||!d)return;
+      if(d.coopix==="save"&&d.data&&typeof d.data==="object"){put(gid,d.data,w);return}
+      if(d.coopix==="file"&&typeof d.name==="string"&&typeof d.data==="string"){var nm=d.name.slice(0,80),dt=d.data;
+        hub("savefile",{method:"POST",body:{game:gid,name:nm,data:dt}}).then(function(){send({coopix:"filedone",ok:true,via:"bot"})},
+          function(x){if(x.status===409||x.code==="open_bot")send({coopix:"filedone",ok:false,err:"open_bot"});else send({coopix:"filedone",ok:dl(nm,dt),via:"download",err:"fail"})});return}
+      if(d.coopix==="buy"&&typeof d.item==="string"){var it=d.item.slice(0,40);
+        hub("itembuy",{method:"POST",body:{game:gid,item:it,name:String(d.name||"").slice(0,40)}}).then(function(r){if(r.free){items(it);return}
+          if(!w||!w.openInvoice){send({coopix:"items",list:[],fail:"tg"});return}
+          w.openInvoice(r.link,function(s){if(s==="paid"){setTimeout(function(){items(it)},1200);setTimeout(function(){items(it)},4500)}else send({coopix:"items",list:[],fail:s==="failed"?"pay":"cancel"})})},
+          function(x){if(x.code==="owned")items(it);else send({coopix:"items",list:[],fail:"err"})});return}
+      if(d.coopix==="maps"&&typeof d.op==="string"){var id=String(d.id||"").slice(0,20),p,sm=function(m){m.coopix="maps";m.op=d.op;m.rid=d.rid;send(m)};
+        if(d.op==="list")p=hub("mymaps",{q:{game:gid}}).then(function(r){return{ok:true,items:r.items||[],max:r.max||3}});
+        else if(d.op==="put")p=hub("mapput",{method:"POST",body:{game:gid,id:id||undefined,code:String(d.code||"").slice(0,30000)}}).then(function(r){return{ok:true,item:r}});
+        else if(d.op==="del")p=hub("mapdel",{method:"DELETE",q:{id:id}}).then(function(){return{ok:true}});
+        else if(d.op==="get")p=hub("mapget",{q:{id:id}}).then(function(r){return{ok:true,item:r}});
+        else if(d.op==="share"){openTg("https://t.me/share/url?url="+encodeURIComponent("https://t.me/"+MB+"?startapp=map_"+id)+"&text="+encodeURIComponent(String(d.text||"").slice(0,120)));p=Promise.resolve({ok:true})}
+        else p=Promise.resolve({ok:false,err:"bad_op"});
+        p.then(sm,function(x){sm({ok:false,err:(x&&x.code)||(x&&x.status===429?"rate_limit":"err")})});return}
+      if(d.coopix==="stats"){hub("statput",{method:"POST",body:{game:gid,regrabs:Math.trunc(+d.regrabs)||0,best:Math.trunc(+d.best)||0}})
+        .then(function(r){send({coopix:"stats",ok:true,regrabs:r.regrabs,best:r.best})},function(){send({coopix:"stats",ok:false})});return}
+      if(d.coopix==="market")openTg("https://t.me/"+MB+"?startapp")})})}
+})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0618">
 <script>try{var _t=localStorage.getItem("coopix.th");if(_t)document.documentElement.style.setProperty("--th",_t)}catch(e){}
@@ -34,11 +120,6 @@ if(window.Telegram)tgInit();else document.addEventListener("DOMContentLoaded",fu
 <title>Coopix Market</title>
 <meta name="description" content="Coopix Market: ретро-маркет приложений. Добавьте обложку, выберите предмет, и вся карточка окрасится в её цвета.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0618'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23a56bff'/%3E%3Crect x='5' y='3' width='6' height='2' fill='%23a56bff'/%3E%3Crect x='6' y='7' width='1' height='3' fill='%230a0618'/%3E%3Crect x='5' y='8' width='3' height='1' fill='%230a0618'/%3E%3Crect x='10' y='7' width='1' height='1' fill='%230a0618'/%3E%3Crect x='11' y='9' width='1' height='1' fill='%230a0618'/%3E%3C/svg%3E">
-<link rel="preload" href="assets/fonts/montserrat-cyrillic-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/montserrat-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-<!-- спрайты предметов: обычные PNG (раньше 700 КБ base64 в блокирующем скрипте), качаются параллельно и кэшируются на год -->
-<link rel="preload" href="assets/spr/cassette.png" as="image"><link rel="preload" href="assets/spr/cd.png" as="image"><link rel="preload" href="assets/spr/floppy.png" as="image"><link rel="preload" href="assets/spr/handheld.png" as="image">
-<link rel="preload" href="assets/spr/case_a.png" as="image"><link rel="preload" href="assets/spr/case_b.png" as="image"><link rel="preload" href="assets/spr/case_c.png" as="image"><link rel="preload" href="assets/spr/case_d.png" as="image"><link rel="preload" href="assets/spr/case_e.png" as="image"><link rel="preload" href="assets/spr/case_f.png" as="image">
 <style>
 /* шрифт интерфейса: Montserrat (гладкий, жирный, с кириллицей), один variable-файл на алфавит, жирность 500–900 */
 @font-face{font-family:"Montserrat";font-weight:500 900;font-display:swap;src:url(assets/fonts/montserrat-cyrillic-var.woff2) format("woff2");unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116}
@@ -1386,15 +1467,6 @@ b.onclick=function(){try{localStorage.setItem("am.lite","1")}catch(e){}b.textCon
   <div class="pbar"><button class="bigplay" id="bigplay" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 2.6v18.8L21 12z"/></svg>Играть</button><button class="bigplay dlbtn" id="dlbtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3h3v8.2l3.1-3.1 2.1 2.1L12 16.9 5.3 10.2l2.1-2.1 3.1 3.1zM4 18h16v3H4z"/></svg>Скачать</button></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
-
-<script src="assets/config.js"></script>
-<script>/* Быстрый запуск: если бот, через которого открыли, помечен в админке «запускать игру отдельно», сервер сразу отдаёт файл игры бота (window.__SOLO), а маркет не грузится */
-window.__SOLO=(async function(){try{var C=window.APP_CONFIG||{},API=String(C.SUB_API||"").replace(/\/+$/,"");if(!API)return null;
-  var sp="";for(var i=0;i<15;i++){var w=window.Telegram&&Telegram.WebApp;if(w&&w.initData){sp=(w.initDataUnsafe&&w.initDataUnsafe.start_param)||"";break}await new Promise(function(r){setTimeout(r,100)})}
-  if(!sp){try{sp=new URLSearchParams(location.search).get("tgWebAppStartParam")||""}catch(e){}}
-  if(/^map_/.test(sp))return null;if(!/^[A-Za-z0-9_-]{1,64}$/.test(sp))sp="_";
-  var w2=window.Telegram&&Telegram.WebApp;if(!w2||!w2.initData)return null;
-  var ac=new AbortController();setTimeout(function(){ac.abort()},3000);var r=await fetch(API+"/hub?r=launch&g="+encodeURIComponent(sp),{headers:{"X-Tg-Init":w2.initData},signal:ac.signal});if(!r.ok)return null;var j=await r.json();return j&&j.solo?j:null}catch(e){return null}})();</script>
 
 <script>/* Спрайты лежат файлами в assets/spr/ (кэш на год, см. vercel.json). Меняете картинку — переименуйте файл или папку, иначе у игроков останется старая. */
 window.SPRITES=Object.fromEntries(["cassette","cd","floppy","handheld","cards","case_a","case_b","case_c","case_d","case_e","case_f","case_g"].map(k=>[k,"assets/spr/"+k+".png"]));
@@ -3813,9 +3885,7 @@ async function spotGame(id){
 
 (async()=>{
   /* игра помечена «запускать отдельно»: сразу игра, без каталога, спрайтов и главной (игрока уже зарегистрировал запрос /launch) */
-  {const SO=await window.__SOLO;if(SO&&SO.html&&SUB_API){try{const[saved,items]=await Promise.all([loadGameSave(SO.id),loadGameItems(SO.id)]);
-    try{history.replaceState(null,"","/"+location.search)}catch(e){}
-    gameMode(SO.html,SO.title,SO.id,saved,items);act("visit");act("play",SO.id);flushActs();BOOTED=true;$("#boot")&&$("#boot").remove();return}catch(e){}}}
+  if(await window.__SOLO)return; /* «Игра отдельно»: игру уже запустил лаунчер в <head> */
   document.body.classList.toggle("scan",SET.scan);bgResize();
   /* сеть и картинки параллельно: /config (доступ, роль, новости) уходит, пока декодируются спрайты и шрифты */
   const cc=SUB_API?cachedCfg():null;if(cc)applyCfg(cc); /* прошлые настройки — сразу, свежие догонят */
