@@ -29,3 +29,14 @@
 "#pX{position:absolute!important;left:auto!important;bottom:auto!important;right:calc(env(safe-area-inset-right) + 1.6vmin)!important;top:calc(var(--bkt) + 1.6vmin)!important;width:11vmin!important;height:11vmin!important;font-size:6vmin!important;z-index:5}"+
 "#pause #pR{margin-top:13.6vmin!important}}";
 document.head.appendChild(st)}
+
+/* кнопка паузы ☰ дублируется вверху слева (под «Назад» Telegram): удобно большим пальцем, не тянуться к нижнему углу */
+{const g=document.getElementById("game"),m=document.getElementById("zMenu");
+ if(g&&m&&!document.getElementById("zMenu2")){
+  const b=document.createElement("button");b.id="zMenu2";b.className="red";b.textContent="☰";b.setAttribute("aria-label","Menu");
+  b.onclick=e=>{e.stopPropagation();m.click()};g.appendChild(b);
+  const st=document.createElement("style");st.textContent="#zMenu2{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;width:10vmin;height:10vmin;padding:0;font-size:5.2vmin;line-height:1;border-radius:2vmin;z-index:6;opacity:.92;display:flex;align-items:center;justify-content:center}#game.rp #zMenu2{display:none}@media(orientation:portrait){#zMenu2{left:3vw;top:3vw;width:11vw;height:11vw;font-size:6vw;border-radius:2.6vw}}";document.head.appendChild(st)}}
+
+/* вкладка «Авторские» → «Мои карты» (там лежат карты самого игрока из конструктора) */
+{const N={ru:"Мои карты",uk:"Мої карти",be:"Мае карты",en:"My maps",de:"Meine Karten",fr:"Mes cartes",es:"Mis mapas",it:"Le mie mappe",pt:"Meus mapas",pl:"Moje mapy"};
+ for(const L in N)if(I18N[L])I18N[L]["maps.custom"]=N[L]}
