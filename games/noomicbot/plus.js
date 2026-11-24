@@ -10,6 +10,8 @@ ITEMS.face=[["face_none","x.none","",0],["face_sun","x.sun","#111111",200],["fac
 ITEMS.wear=[["wear_none","x.none","",0],["wear_gloves","x.gloves","#e04040",250],["wear_boots","x.boots","#f59e0b",250],["wear_pack","x.pack","#3b82f6",300],["wear_belt","x.belt","#ffc61a",450]];
 ITEMS.gear=[["gear_none","x.none","",0],["gear_tl","x.tlegs","#ff7a1a",800],["gear_ta","x.tarms","#22d3ee",800],["gear_tb","x.tboth","#ff4fd8",1500]];
 ITEMS.fx=[["fx_none","x.none","",0],["fx_spark","x.spark","#ffe27a",300],["fx_fire","x.fire","#ff7a1a",500],["fx_ice","x.icet","#8fd8ff",500],["fx_rainbow","x.rbt","#ff4fd8",800]];
+/* новые шлейфы и фоны: по 1 ⭐ (цены — в items.json) */
+ITEMS.fx.push(["fx_neon","x.fx_neon","#22d3ee",400],["fx_galaxy","x.fx_galaxy","#8b5cf6",400],["fx_gold","x.fx_gold","#ffc61a",400],["fx_toxic","x.fx_toxic","#39ff7a",400],["fx_sakura","x.fx_sakura","#ff9ccc",400],["fx_electric","x.fx_electric","#fde047",400],["fx_candy","x.fx_candy","#ff8fd0",400],["fx_ghost","x.fx_ghost","#e5e7eb",400],["fx_lava","x.fx_lava","#ff5a1a",400],["fx_comet","x.fx_comet","#7dd3fc",400]);ITEMS.sky.push(["sky_dawn","x.sky_dawn","linear-gradient(#4a4e8c,#ffb199)",300],["sky_storm","x.sky_storm","linear-gradient(#2b3140,#6b7686)",300],["sky_ocean","x.sky_ocean","linear-gradient(#0a6e9e,#9fe3ff)",300],["sky_neon","x.sky_neon","linear-gradient(#120a2e,#c2185b)",300],["sky_forest","x.sky_forest","linear-gradient(#1f6b46,#c8f0a0)",300],["sky_desert","x.sky_desert","linear-gradient(#e08a3c,#ffe2a8)",300],["sky_arctic","x.sky_arctic","linear-gradient(#5aa7d6,#f2fbff)",300],["sky_aurora","x.sky_aurora","linear-gradient(#04111f,#1fbf8f)",300],["sky_candy","x.sky_candy","linear-gradient(#ff8fd0,#fff0a8)",300],["sky_lava","x.sky_lava","linear-gradient(#1a0505,#ff5a1a)",300]);Object.assign(SKY_DEF,{dawn:[0x4a4e8c,0xffb199,!0],storm:[0x2b3140,0x6b7686,!0],ocean:[0x0a6e9e,0x9fe3ff,!0],neon:[0x120a2e,0xc2185b,!1],forest:[0x1f6b46,0xc8f0a0,!0],desert:[0xe08a3c,0xffe2a8,!0],arctic:[0x5aa7d6,0xf2fbff,!0],aurora:[0x04111f,0x1fbf8f,!1],candy:[0xff8fd0,0xfff0a8,!0],lava:[0x1a0505,0xff5a1a,!1]});for(const it of ITEMS.sky){const d=SKY_DEF[it[0].replace("sky_","")];if(d&&!it[2])it[2]="linear-gradient(#"+d[0].toString(16).padStart(6,"0")+",#"+d[1].toString(16).padStart(6,"0")+")"}
 /* переломы + рентген теперь включены у всех (раньше были предметом «Особое») */
 
 Object.assign(catName,{face:"x.cface",wear:"x.cwear",gear:"x.cgear",fx:"x.cfx"});
@@ -34,6 +36,7 @@ const EN={"x.cyan":"Cyan","x.lime":"Lime","x.magenta":"Magenta","x.black":"Black
  "x.hurt":"Fracture","x.p.torso":"ribs","x.p.head":"skull","x.p.armL":"left arm","x.p.armR":"right arm","x.p.thighL":"left thigh","x.p.thighR":"right thigh","x.p.calfL":"left shin","x.p.calfR":"right shin","x.p.footL":"left foot","x.p.footR":"right foot",
  "x.fracNote":"\"Fractures + X-ray\": on very hard hits the character flashes as an X-ray with a broken bone."};
 for(const L in I18N){Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU:EN)}
+{const RUX={"x.fx_neon":"Неоновый шлейф","x.fx_galaxy":"Галактика","x.fx_gold":"Золотая пыль","x.fx_toxic":"Токсичный шлейф","x.fx_sakura":"Сакура","x.fx_electric":"Молния","x.fx_candy":"Конфетный шлейф","x.fx_ghost":"Призрак","x.fx_lava":"Лава","x.fx_comet":"Комета","x.sky_dawn":"Рассвет","x.sky_storm":"Гроза","x.sky_ocean":"Океан","x.sky_neon":"Неон-город","x.sky_forest":"Лес","x.sky_desert":"Пустыня","x.sky_arctic":"Арктика","x.sky_aurora":"Северное сияние","x.sky_candy":"Конфетный","x.sky_lava":"Вулкан"},ENX={"x.fx_neon":"Neon trail","x.fx_galaxy":"Galaxy","x.fx_gold":"Gold dust","x.fx_toxic":"Toxic trail","x.fx_sakura":"Sakura","x.fx_electric":"Lightning","x.fx_candy":"Candy trail","x.fx_ghost":"Ghost","x.fx_lava":"Lava","x.fx_comet":"Comet","x.sky_dawn":"Dawn","x.sky_storm":"Storm","x.sky_ocean":"Ocean","x.sky_neon":"Neon city","x.sky_forest":"Forest","x.sky_desert":"Desert","x.sky_arctic":"Arctic","x.sky_aurora":"Aurora","x.sky_candy":"Candy","x.sky_lava":"Volcano"};for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RUX:ENX)}
 for(const k of ["face_none","wear_none","gear_none","fx_none"])SAVE.owned[k]=1;
 SAVE.eq.face=SAVE.eq.face||"face_none";SAVE.eq.wear=SAVE.eq.wear||"wear_none";SAVE.eq.gear=SAVE.eq.gear||"gear_none";SAVE.eq.fx=SAVE.eq.fx||"fx_none";
 {const st=document.createElement("style");st.textContent=".cats{flex-wrap:wrap}#xrmsg{position:absolute;left:50%;top:15vmin;transform:translateX(-50%);z-index:6;pointer-events:none;color:#fff;font-weight:800;font-size:4.6vmin;text-shadow:0 .3vmin 1.2vmin rgba(0,0,0,.7);background:rgba(190,20,30,.78);padding:.8vmin 2.6vmin;border-radius:2vmin;opacity:0;white-space:nowrap}#xrmsg.on{animation:xrm 2.4s ease-out}@keyframes xrm{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}#xrfx{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 50%,rgba(40,140,255,0) 35%,rgba(20,90,200,.55) 100%)}#xrfx.on{animation:xrf 1.6s ease-out}@keyframes xrf{0%{opacity:0}10%{opacity:1}100%{opacity:0}}";document.head.appendChild(st);
@@ -92,6 +95,26 @@ View3D.prototype.buildBones=function(){const P=this.noomi.parts,bm=this.boneMat=
     else mk(g,new T3.BoxGeometry(c.hw*1.8,c.hh*2+.025,.1),bm);
     P[p].add(g);this.bones[p]=rec}};
 
+/* цвет и форма частиц шлейфа: i — номер частицы от персонажа (0 — самая свежая), a — затухание 1..0 */
+const TF=(l)=>l.map(c=>new T3.Color(c)),TCOL={fx_spark:TF(["#ffffff","#ffe27a"]),fx_fire:TF(["#ffd24a","#ff7a1a","#c4261a"]),fx_ice:TF(["#e8f8ff","#6ec1ff"]),fx_toxic:TF(["#eaffd0","#39ff7a","#a3e635","#14532d"]),fx_sakura:TF(["#fff0f6","#ffc2e0","#ff7ab8"]),fx_gold:TF(["#ffffff","#ffe27a","#ffc61a","#c98a00"]),fx_galaxy:TF(["#ffffff","#a78bfa","#6366f1","#312e81"]),fx_electric:TF(["#ffffff","#fde047","#7dd3fc"]),fx_ghost:TF(["#ffffff","#e5e7eb","#cbd5e1"]),fx_lava:TF(["#fff3b0","#ff8a00","#ff3b00","#3b0a00"]),fx_comet:TF(["#ffffff","#bae6fd","#38bdf8","#0369a1"])};
+const _tc=new T3.Color();
+function TRAILFX(fx,i,now,a){const k=i/19;
+  if(fx==="fx_rainbow")return{c:_tc.setHSL(((now/700)+i*.06)%1,.95,.55)};
+  if(fx==="fx_neon")return{c:_tc.setHSL(.5+.35*k+Math.sin(now/500)*.05,1,.6),o:.9};
+  if(fx==="fx_candy")return{c:_tc.setHSL((i%3)/3*.3+.85,.9,.78),dy:Math.sin(now/300+i)*.06};
+  if(fx==="fx_spark")return{c:TCOL.fx_spark[i%2],o:.4+Math.random()*.6};
+  if(fx==="fx_fire")return{c:TCOL.fx_fire[Math.min(2,(k*3)|0)],dy:k*.25,s:.8+Math.random()*.5};
+  if(fx==="fx_ice")return{c:TCOL.fx_ice[i<8?0:1],dy:-k*.1};
+  const L=TCOL[fx]||TCOL.fx_spark,c=L[Math.min(L.length-1,(k*L.length)|0)];
+  if(fx==="fx_toxic")return{c,dy:Math.sin(now/260+i*.7)*.12,s:.7+(i%3)*.25};
+  if(fx==="fx_sakura")return{c,dx:Math.sin(now/420+i*.8)*.14,dy:-k*.3+Math.cos(now/380+i)*.08,s:.55,o:.9};
+  if(fx==="fx_gold")return{c,o:.35+Math.abs(Math.sin(now/120+i*1.7))*.65,s:.55+(i%2)*.4,dx:Math.sin(i*2.3)*.1,dy:Math.cos(i*1.9)*.1};
+  if(fx==="fx_galaxy")return{c,o:.3+Math.abs(Math.sin(now/200+i*2.1))*.7,s:.5+(i%3)*.3,dx:Math.sin(i*1.7+now/900)*.16,dy:Math.cos(i*2.2+now/800)*.16};
+  if(fx==="fx_electric")return{c:L[(Math.random()*3)|0],o:.6+Math.random()*.4,dx:(Math.random()-.5)*.28,dy:(Math.random()-.5)*.28,s:.6};
+  if(fx==="fx_ghost")return{c,o:a*.55,dy:k*.35,s:1.1};
+  if(fx==="fx_lava")return{c,dy:-k*.2,s:.9+Math.sin(now/200+i)*.25};
+  if(fx==="fx_comet")return{c,o:a*.9,s:1.2-k*.9};
+  return{c:L[i%L.length]}}
 /* рентген-вспышка и эффекты по состоянию игры t */
 const _pn=View3D.prototype.poseNoomi;
 View3D.prototype.poseNoomi=function(t){_pn.call(this,t);if(!this.noomi||!t.B)return;const now=performance.now(),e=t.f,P=this.noomi.parts;
@@ -105,7 +128,7 @@ View3D.prototype.poseNoomi=function(t){_pn.call(this,t);if(!this.noomi||!t.B)ret
   if(fx!=="fx_none"){if(!this.trail){const L=[];for(let i=0;i<20;i++){const m=new T3.Mesh(new T3.SphereGeometry(.07,8,6),new T3.MeshBasicMaterial({color:"#fff",transparent:true,opacity:.9}));m.renderOrder=3;this.scene.add(m);L.push(m)}this.trail={L,h:[]}}
     const c=t.com(),h=this.trail.h,last=h[0];if(!last||Math.hypot(c.x-last[0],c.y-last[1])>.1){h.unshift([c.x,c.y]);if(h.length>20)h.pop()}
     this.trail.L.forEach((m,i)=>{const p=h[i];m.visible=!!p&&this.noomi.rig.visible;if(!p)return;const a=1-i/20;m.position.set(p[0],p[1],-.15);m.scale.setScalar(.35+a*.9);
-      const col=fx==="fx_rainbow"?new T3.Color().setHSL(((now/700)+i*.06)%1,.95,.55):new T3.Color(fx==="fx_fire"?(i<6?"#ffd24a":i<12?"#ff7a1a":"#c4261a"):fx==="fx_ice"?(i<8?"#e8f8ff":"#6ec1ff"):(i%2?"#ffe27a":"#ffffff"));m.material.color.copy(col);m.material.opacity=a*.85})}
+      const S=TRAILFX(fx,i,now,a);m.material.color.copy(S.c);m.material.opacity=a*(S.o==null?.85:S.o);if(S.dx||S.dy)m.position.set(p[0]+(S.dx||0),p[1]+(S.dy||0),-.15);if(S.s)m.scale.setScalar((.35+a*.9)*S.s)})}
   else if(this.trail){this.trail.L.forEach(m=>m.visible=false);this.trail.h.length=0}
   /* рентген */
   const xr=t.xr;let lv=0;if(xr){const a=(now-xr.t)/1000;lv=a<.12?a/.12:a<1.9?1:Math.max(0,1-(a-1.9)/.5)}

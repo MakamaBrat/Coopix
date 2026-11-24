@@ -40,3 +40,24 @@ document.head.appendChild(st)}
 /* вкладка «Авторские» → «Мои карты» (там лежат карты самого игрока из конструктора) */
 {const N={ru:"Мои карты",uk:"Мої карти",be:"Мае карты",en:"My maps",de:"Meine Karten",fr:"Mes cartes",es:"Mis mapas",it:"Le mie mappe",pt:"Meus mapas",pl:"Moje mapy"};
  for(const L in N)if(I18N[L])I18N[L]["maps.custom"]=N[L]}
+
+/* ---------- меню: без номера версии, заголовок в «хромированном» стиле, язык — компактная плашка вместо флага ---------- */
+{const st=document.createElement("style");st.textContent=
+"#menu .ver{display:none!important}"+
+"#menu .ttl{font-style:italic;font-weight:900;letter-spacing:.6vmin;text-transform:uppercase;color:transparent!important;background:linear-gradient(180deg,#ffffff 0%,#dfe6f5 38%,#6f7a99 52%,#cfd8ee 54%,#ffffff 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:.22vmin #0b0b0f;paint-order:stroke fill;text-shadow:none!important;filter:drop-shadow(0 .7vmin 0 #000) drop-shadow(0 0 2.4vmin #22d3eeb0) drop-shadow(0 0 1vmin #ff3df280);transform:skewX(-6deg)}"+
+"@media(orientation:portrait){#menu .ttl{font-size:11.5vw;letter-spacing:.9vw}}"+
+"#flag{background:#0d0d11!important;border:1px solid #4a4a56!important;border-radius:99px!important;color:#fff!important;font-size:3.4vmin!important;font-weight:800;letter-spacing:.2vmin;padding:1.2vmin 2.6vmin!important;filter:none!important;display:flex;align-items:center;gap:1vmin;box-shadow:inset 0 1px 0 #ffffff1a}"+
+"@media(orientation:portrait){#flag{font-size:4vw!important;padding:1.8vw 3.6vw!important}}";
+document.head.appendChild(st);
+const f=document.getElementById("flag");
+if(f){let busy=0;const dec=t=>{const cp=[...t].map(c=>c.codePointAt(0)).filter(n=>n>=127462&&n<=127487);return cp.length>=2?String.fromCharCode(65+cp[0]-127462,65+cp[1]-127462):""};
+ const paint=()=>{if(busy)return;const code=dec(f.textContent||"");if(!code)return;busy=1;f.textContent="🌐 "+code;busy=0};
+ new MutationObserver(paint).observe(f,{childList:true,characterData:true,subtree:true});paint()}}
+
+/* ---------- кнопки управления в геймплее: тёмные, полупрозрачные ---------- */
+{const st=document.createElement("style");st.textContent=
+".zone{background:#0b0b0fb3!important;color:#fff!important;box-shadow:inset 0 0 0 .2vmin #ffffff3d,0 .4vmin 1.6vmin #0006!important;border:0!important;text-shadow:0 1px 2px #000a}"+
+".zone.down{background:#ffffffd9!important;color:#000!important;text-shadow:none}"+
+".zone.gb{background:#0b0b0fb3!important}"+
+"#zStop{background:#0b0b0fe6!important;color:#fff!important}";
+document.head.appendChild(st)}
