@@ -870,8 +870,8 @@ const Sim = (function () {
       if (e.dying) continue;
       const d = Math.hypot(e.x - cx, e.y - 6 - cy); if (d > R) continue;
       const sg = Math.abs(e.x - cx) < .5 ? (rnd() < .5 ? -1 : 1) : Math.sign(e.x - cx);
-      e.kx = sg * (.9 + power * .9 * (1 - d / R)); e.vy = -2.4 * power; e.tumble = 46; e.hurt = 14; e.act = null; e.at = 0; e.stun = Math.max(e.stun, 16);
-      if (d < R * .55) dieEnt(e, 'blast'); else e.hp -= 55;
+      e.kx = sg * (.9 + power * .9 * (1 - d / R)); e.pop = -2.4 * power * (e.dying ? 1 : .8); e.tumble = 46; e.hurt = 14; e.act = null; e.at = 0; e.stun = Math.max(e.stun, 16);
+      if (d < R * .55) { dieEnt(e, 'blast'); e.pop = -2.4 * power; } else e.hp -= 55;
     }
   }
   /* всплеск: несколько клеток воды у поверхности подбрасываются вверх */
@@ -921,6 +921,7 @@ const Sim = (function () {
       let ground = blockedC(cx, fy + 1);
       const wasSwim = e.swim;
       if (e.jump) { e.jump = false; if (ground && inLiq < 6) { e.vy = -1.45 * (ab.jump || 1); ground = false; } }
+      if (e.pop) { e.vy = e.pop; e.pop = 0; ground = false; }
       e.swim = inLiq >= 6; e.air = !ground && !e.swim;
       if (e.swim && !wasSwim && e.vy > .8 && !e.dying) splash(cx, fy, Math.min(1.5, e.vy / 2));
       if (e.swim && !e.dying) { e.vy = Math.max(-.28, e.vy - .05); if (ground && e.vy > 0) e.vy = 0; }

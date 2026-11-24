@@ -195,18 +195,19 @@
   let timeUI = null;
   function pWeather(body) {
     const mk = (title, opts, cur, set) => { const r = h('div', 'row'); r.appendChild(h('div', 'lbl', title)); opts.forEach((o) => { const b = btn(o[1], cur() === o[0], '', o[2]); b.onclick = () => { set(o[0]); Snd.sfx('tap'); openPanel('weather', true); updateHud(); }; r.appendChild(b); }); body.appendChild(r); };
+    /* время суток: ползунок и подпись, которая показывает час и часть суток */
+    const lab = h('div', 'lbl', ''), sl = h('div', 'sl'), rg = h('input'), val = h('b', '', ''), tr = h('div', 'row');
+    rg.type = 'range'; rg.min = 0; rg.max = 1439;
+    const showT = () => { const p = Sky.label().split(' · '); lab.textContent = 'Время суток: ' + p[1]; val.textContent = p[0]; };
+    rg.oninput = () => { timeUI.drag = true; Sky.set({ time: rg.value / 1440 }); showT(); };
+    rg.onchange = () => { timeUI.drag = false; saveSet(); };
+    timeUI = { rg, showT: () => { rg.value = Math.round(Sky.time * 1440) % 1440; showT(); }, drag: false }; timeUI.showT();
+    sl.append(rg, val); tr.append(lab, sl); body.appendChild(tr);
+    mk('Ход времени', [[true, 'Идёт', 'play'], [false, 'Стоит', 'pause']], () => G.tcycle, (v) => { G.tcycle = v; Sky.set({ auto: v }); saveSet(); });
     mk('Погода', [[0, 'Ясно', 'sun'], [1, 'Дождь', 'cloud'], [2, 'Снег', 'snow'], [3, 'Гроза', 'bolt']], () => G.weather, (v) => { G.weather = Sim.weather = v; if (v === 3) G.stormed = true; });
     mk('Ветер', [[-1, '← Влево'], [0, 'Штиль'], [1, 'Вправо →']], () => G.wind, (v) => { G.wind = Sim.wind = v; });
-    const lab = h('div', 'lbl', 'Время суток'), sl = h('div', 'sl'), rg = h('input'), val = h('b', '', ''), ph = h('div', 'hint', '');
-    rg.type = 'range'; rg.min = 0; rg.max = 1439;
-    const showT = () => { const p = Sky.label().split(' · '); rg.value = Math.round(Sky.time * 1440) % 1440; val.textContent = p[0]; ph.textContent = p[1]; };
-    rg.oninput = () => { timeUI.drag = true; Sky.set({ time: rg.value / 1440 }); const p = Sky.label().split(' · '); val.textContent = p[0]; ph.textContent = p[1]; };
-    rg.onchange = () => { timeUI.drag = false; saveSet(); };
-    timeUI = { rg, val, ph, showT, drag: false }; showT();
-    sl.append(rg, val); const tr = h('div', 'row'); tr.append(lab, sl, ph); body.appendChild(tr);
-    mk('Ход времени', [[true, 'Идёт', 'play'], [false, 'Стоит', 'pause']], () => G.tcycle, (v) => { G.tcycle = v; Sky.set({ auto: v }); saveSet(); });
     mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Лес'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Горы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
-    body.appendChild(h('div', 'hint', 'Авто: горы и холмы за мирозданием подстраиваются под то, что лежит на земле.'));
+    body.appendChild(h('div', 'hint', 'Авто: горы и холмы за миром подстраиваются под то, что лежит на земле.'));
   }
   function pWorld(body) {
     const col = h('div', 'row'); body.appendChild(col);

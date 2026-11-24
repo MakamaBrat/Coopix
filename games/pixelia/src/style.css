@@ -158,3 +158,5 @@ input[type=range]::-moz-range-thumb{width:20px;height:28px;background:var(--gold
 @media (max-width:560px){#hud:before,#hud:after,#bar:before,#bar:after{display:none}}
 @media (max-width:430px){.hot{font-size:10px}.slot .ic{width:calc(var(--slot) - 14px);height:calc(var(--slot) - 14px)}#hud{padding:8px 6px 9px;gap:5px}#bar{gap:5px}.tile .ic{width:44px;height:44px}}
 @media (max-height:520px){#hud{padding:4px 8px 6px}#bar{padding:6px 8px}.hot{height:50px}.hot .ic{width:28px;height:28px}.logo{margin-top:0}#hero{display:none}}
+
+#panel[data-kind=weather] .row{margin:6px 0;gap:6px}#panel[data-kind=weather] .btn{min-height:40px;padding:6px 10px;font-size:14px}

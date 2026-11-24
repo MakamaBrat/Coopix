@@ -154,7 +154,7 @@ const People = (function () {
     if (r7[7] === 'm' && r7[8] === 'm' && P.mouth) {
       const m = P.mouth;
       if (m === 1 || m === 2) { if (isSkin(r8[7]) && isSkin(r8[8])) { r8[7] = 'm'; r8[8] = 'm'; } if (m === 2 && isSkin(r7[6]) && isSkin(r7[9])) { r7[6] = 'm'; r7[9] = 'm'; } }
-      else if (m === 3 && isSkin(r8[7]) && isSkin(r8[8]) && isSkin(r7[6]) && isSkin(r7[9])) { r7[6] = 'm'; r7[9] = 'm'; r7[7] = 'S'; r7[8] = 'S'; r8[7] = 'm'; r8[8] = 'm'; }
+      else if (m === 3 && isSkin(r8[7]) && isSkin(r8[8]) && isSkin(r7[6]) && isSkin(r7[9])) { r7[6] = 'o'; r7[9] = 'o'; r7[7] = 'S'; r7[8] = 'S'; r8[7] = 'm'; r8[8] = 'm'; }
     }
     return eyes;
   }
@@ -258,8 +258,8 @@ const People = (function () {
       P.al = [.6, 2.0 + .7 * sA]; P.ar = [.6, 2.0 - .7 * sA]; P.hdy = 1; P.hx = 1; P.lean = 0; P.look = 1; P.mouth = 1; P.dy = Math.min(2, P.dy + 1);
     } else {
       const k = run ? 1 : .6, fl = -sA, fr = sA;   /* рука идёт вперёд, когда противоположная нога впереди */
-      P.al = [(run ? .9 : .4) + .7 * Math.max(0, fl) * k, (run ? 3.0 : 3.6) - (run ? 1.5 : .9) * fl];
-      P.ar = [(run ? .9 : .4) + .7 * Math.max(0, fr) * k, (run ? 3.0 : 3.6) - (run ? 1.5 : .9) * fr];
+      P.al = [(run ? .9 : .3) + .5 * Math.max(0, fl) * k, (run ? 3.0 : 3.9) - (run ? 1.5 : .6) * fl];
+      P.ar = [(run ? .9 : .3) + .5 * Math.max(0, fr) * k, (run ? 3.0 : 3.9) - (run ? 1.5 : .6) * fr];
       P.look = 1; if (run) P.lean = 1;
     }
   }
