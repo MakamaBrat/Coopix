@@ -76,6 +76,9 @@ def build(debug=None):
     up = os.path.join(D, "ui.js")
     if os.path.exists(up):
         js = js + "\n" + open(up, encoding="utf-8").read()
+    pp = os.path.join(D, "props.js")
+    if os.path.exists(pp):
+        js = js + "\n" + open(pp, encoding="utf-8").read()
     ip = os.path.join(D, "i18n.js")
     if os.path.exists(ip):
         js = js + "\n" + open(ip, encoding="utf-8").read()

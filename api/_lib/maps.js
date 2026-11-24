@@ -9,7 +9,7 @@ export const MAP_CODE_MAX = 24000;    // символов в коде
 export const MAP_PIECES_MAX = 400;    // деталей на карте (как в конструкторе)
 export const MAP_PUTS_PER_MIN = 20;   // записей карты в минуту от одного игрока
 export const MAP_ID = /^[a-f0-9]{12}$/;
-const TYPES = new Set(["bar", "block", "floor", "ramp", "tramp", "spawn", "reset"]);
+const TYPES = new Set(["bar", "block", "floor", "ramp", "tramp", "spawn", "reset", "spring", "rope", "board", "pool"]);
 const B64 = /^[A-Za-z0-9+/]+$/;
 
 const num = (v, lo, hi) => { const x = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN; return Number.isFinite(x) && x >= lo && x <= hi ? Math.round(x * 100) / 100 : null; };

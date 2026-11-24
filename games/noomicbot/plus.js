@@ -257,7 +257,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
 
 /* ---------- шаг физики: турбины и сцены Vice применяются прямо внутри world.step (после разбора нажатий этого шага — запись и повтор совпадают) ---------- */
 {const _lm3=GP.loadMap;
- GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(G.gestStep)G.gestStep(a[0])}}catch(e){}return _ws.apply(this,a)};return r}}
+ GP.loadMap=function(s){const r=_lm3.call(this,s);const G=this,w=this.world,_ws=w.step;w.step=function(...a){try{if(G===W){G.applyTurbo(a[0]);if(G.viceStep)G.viceStep(a[0]);if(G.gestStep)G.gestStep(a[0]);if(G.propStep)G.propStep(a[0])}}catch(e){}return _ws.apply(this,a)};return r}}
 
 /* ---------- магазин одним списком: заголовки разделов вместо вкладок ---------- */
 {const st=document.createElement("style");st.textContent=".shSec{display:flex;align-items:center;gap:1.4vmin;margin:3vmin 0 1.4vmin;padding-right:2.4vmin;font-weight:800;font-size:3vmin;color:#e6f2ff;letter-spacing:.1vmin}.shSec:first-child{margin-top:.6vmin}.shSec::before{content:\"\";width:1vmin;height:3.4vmin;border-radius:.6vmin;background:#2AABEE}.shSec::after{content:\"\";flex:1;height:.3vmin;border-radius:.2vmin;background:linear-gradient(90deg,rgba(42,171,238,.55),transparent)}.shSec i{order:3;font-style:normal;font-size:2.2vmin;font-weight:700;color:#7f93b8}.shSec span{order:1}.shSec::after{order:2}.cell.eq{box-shadow:inset 0 0 0 .4vmin #2AABEE;background:#2b4270}.cell{display:flex;flex-direction:column;justify-content:space-between;gap:.8vmin}.cell .n{flex:1;align-items:center;margin-bottom:0}"+
