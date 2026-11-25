@@ -1490,7 +1490,7 @@ const Sky = (function () {
   const NB = 6, B_FOREST = 0, B_DESERT = 1, B_SNOW = 2, B_ROCK = 3, B_VOLC = 4, B_SEA = 5;
   const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'cave'];
   const HZ = [.82, .82, .82, .82, .82, .6];   /* линия горизонта по сценам: у моря выше */
-  const DAY_SEC = 240;
+  const DAY_SEC = 240, SC = 2;
   const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false };
   const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
   const c255 = (v) => v < 0 ? 0 : v > 255 ? 255 : v | 0;
@@ -1525,7 +1525,7 @@ const Sky = (function () {
   /* свет на предметы фона: множитель и добавка (в тенях ночью фиолетово-синий, на закате тёплый) */
   const LIGHT_KEYS = [
     { e: -1, c: [.36, .40, .66, 10, 8, 38] }, { e: -.3, c: [.36, .40, .66, 10, 8, 38] }, { e: -.14, c: [.58, .46, .72, 26, 8, 34] },
-    { e: -.02, c: [1, .72, .66, 34, 6, 22] }, { e: .14, c: [1, .9, .82, 12, 4, 0] }, { e: .4, c: [1, 1, 1, 0, 0, 0] }, { e: 1, c: [1, 1, 1, 0, 0, 0] }];
+    { e: -.02, c: [.8, .58, .72, 40, 8, 40] }, { e: .14, c: [1, .86, .84, 12, 4, 6] }, { e: .4, c: [1, 1, 1, 0, 0, 0] }, { e: 1, c: [1, 1, 1, 0, 0, 0] }];
   const AMB_KEYS = [{ e: -1, c: [.44, .52, .80] }, { e: -.4, c: [.44, .52, .80] }, { e: -.15, c: [.56, .54, .80] }, { e: -.02, c: [.95, .76, .66] },
     { e: .1, c: [1, .9, .8] }, { e: .3, c: [1, 1, 1] }, { e: 1, c: [1, 1, 1] }];
   /* облака: верх (свет), середина, низ (тень), прозрачность */
@@ -1570,7 +1570,7 @@ const Sky = (function () {
     if (d >= 1) return 0; const hh = .6 + .4 * hash1(i, k + 21); return hh * (round ? Math.sqrt(1 - d * d) : 1 - d);
   }
   function genShapes() {
-    const U = Math.max(.6, Math.min(1.5, H / 204)), ph = (SEED % 628) / 100, ph2 = (SEED % 331) / 50;
+    const U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, ph = (SEED % 628) / 100, ph2 = (SEED % 331) / 50;
     HT = []; for (let l = 0; l < 3; l++) { HT.push([]); for (let b = 0; b < NB; b++) HT[l].push(new Float32Array(W)); }
     ridge = [0, 1, 2].map(() => new Int16Array(W));
     const ic = [0, 1, 2].map((i) => .12 + .76 * hash1(i, SEED % 53)), iw = [0, 1, 2].map((i) => .04 + .05 * hash1(i, SEED % 29 + 3));
@@ -1608,21 +1608,21 @@ const Sky = (function () {
   /* ---------- выбор сцены: по преобладающей почве во всём мире ---------- */
   function sample(S, snap) {
     const A = S.A, type = A.type, fl = A.fl, vy = A.vy, AIRt = E.AIR;
-    counts.fill(0); let total = 0;
-    for (let x = 1; x < W - 1; x += 2) {
+    counts.fill(0); let total = 0; const MW = S.W, MH = S.H;
+    for (let x = 1; x < MW - 1; x += 2) {
       let y = 1, t = 0, found = false;
-      for (; y < H - 1; y++) {
-        const i = y * W + x; t = type[i];
+      for (; y < MH - 1; y++) {
+        const i = y * MW + x; t = type[i];
         if (t === AIRt || KIND[t] === K.GAS || fl[i]) continue;
         const k = KIND[t];
-        if ((k === K.POWDER || k === K.LIQUID) && vy[i] > 0 && type[i + W] === AIRt) continue;   /* падает, ещё не почва */
+        if ((k === K.POWDER || k === K.LIQUID) && vy[i] > 0 && type[i + MW] === AIRt) continue;   /* падает, ещё не почва */
         found = true; break;
       }
       if (!found) continue;
       const b = TB[t]; counts[b === undefined ? B_ROCK : b]++; total++;
     }
     if (lockB >= 0) { if (lockB !== scene) switchScene(lockB, snap); return; }
-    const sampled = (W - 2) / 2;
+    const sampled = (MW - 2) / 2;
     if (total < sampled * .1) {   /* почти пусто: по умолчанию луг */
       cand = -1; candN = 0;
       if (snap) { scene = B_FOREST; emptyN = 0; } else if (scene !== B_FOREST && ++emptyN >= 5) { switchScene(B_FOREST, false); emptyN = 0; }
@@ -1739,30 +1739,34 @@ const Sky = (function () {
   function rebuildFg() {
     fgBuf.fill(0); fgTop = H;
     if (Y.cave) { caveFg(); return; }
-    const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / 204)), b = scene;
+    const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, b = scene;
     const grade = (c, f) => [lerp(Math.min(255, c[0] * lg[0] * ovs + lg[3]), hr, f), lerp(Math.min(255, c[1] * lg[1] * ovs + lg[4]), hg, f), lerp(Math.min(255, c[2] * lg[2] * ovs + lg[5]), hb, f)];
-    const LC = LCOL[b].map((cols, l) => cols.map((c) => grade(c, FOG[l])));
+    const dayF = .35 + .65 * sstep(-.05, .3, e), LC = LCOL[b].map((cols, l) => cols.map((c) => grade(c, FOG[l] * dayF)));   /* в сумерках дымки меньше: силуэты тёмные и сочные */
     const capLit = grade([250, 252, 255], .1), capSh = grade([186, 210, 244], .1), lava = [255, 112, 32];
     const base = b === B_SEA ? [hz - .005 * H, 0, 0] : [hz - .005 * H, hz + .07 * H, hz + .145 * H];
     const layers = b === B_SEA ? 1 : 3;
     for (let l = 0; l < layers; l++) for (let x = 0; x < W; x++) ridge[l][x] = Math.round(base[l] - HT[l][b][x] * H);
     if (b === B_SEA) seaPlane(grade);
+    const litA = new Uint8Array(W);
     for (let l = 0; l < layers; l++) {
-      const R = ridge[l], bandH = Math.max(6, Math.round((l === 0 ? .12 : .08) * H)), c = LC[l];
+      const R = ridge[l];
+      for (let x = 0; x < W; x++) litA[x] = (R[Math.min(W - 1, x + 5 * SC)] - R[Math.max(0, x - 5 * SC)]) <= 0 ? 1 : 0;
+      const bandH = Math.max(6, Math.round((l === 0 ? .12 : .08) * H)), c = LC[l];
       for (let x = 0; x < W; x++) {
         const rd = R[x], lim = b === B_SEA ? Math.min(H, hz + 1) : l < layers - 1 ? Math.min(H, ridge[l + 1][x] + 2) : H; if (rd >= lim) continue;
-        const s = R[Math.min(W - 1, x + 5)] - R[Math.max(0, x - 5)], litSide = s <= 0, ridgeH = base[l] - rd, body = litSide ? c[0] : c[1];
+        const litSide = litA[x] === 1, ridgeH = base[l] - rd;
         const y0 = Math.max(0, rd), cap = (b === B_SNOW && l < 2) ? Math.round(ridgeH * (.36 + .16 * Math.sin(x * .8))) : 0;
         const streak = (b === B_VOLC && l === 0 && hash1(x >> 1, 91) > .55) ? 5 + Math.floor(hash1(x, 17) * 14 * H / 204) : 0;
         if (rd < fgTop) fgTop = Math.max(0, rd);
         for (let y = y0; y < lim; y++) {
           const d = y - rd; let r, g, bl, k = 1;
+          const xs = Math.max(0, Math.min(W - 1, x - ((d * .55) | 0) + (hash1(y >> 1, x >> 2) < .2 ? 1 : 0))), lit = litA[xs], body = lit ? c[0] : c[1];
           if (d === 0) { const q = litSide ? 1 : .35; r = body[0] + (c[2][0] - body[0]) * q; g = body[1] + (c[2][1] - body[1]) * q; bl = body[2] + (c[2][2] - body[2]) * q; }
           else {
             if (d >= bandH * 2 + 1) k = .66; else if (d >= bandH * 2 - 1) k = ((x + y) & 1) ? .82 : .66; else if (d >= bandH + 1) k = .82; else if (d >= bandH - 1) k = ((x + y) & 1) ? 1 : .82;
             r = body[0] * k; g = body[1] * k; bl = body[2] * k;
           }
-          if (d < cap && (d < cap - 1 || ((x + y) & 1) === 0)) { const cc = litSide ? capLit : capSh; r = cc[0]; g = cc[1]; bl = cc[2]; }
+          if (d < cap && (d < cap - 1 || ((x + y) & 1) === 0)) { const cc = lit ? capLit : capSh; r = cc[0]; g = cc[1]; bl = cc[2]; }
           if (streak && d >= 2 && d < 2 + streak && (y & 3) !== 3 && (x & 1) === 0) { r = lava[0]; g = lava[1]; bl = lava[2]; }
           else if (b === B_VOLC && l === 0 && d <= 1 && Math.abs(x / W - volcX) < .02) { r = lava[0]; g = lava[1]; bl = lava[2]; }
           fgBuf[y * W + x] = px(c255(r), c255(g), c255(bl));
@@ -1775,8 +1779,8 @@ const Sky = (function () {
       for (let cx0 = Math.round(cell / 2); cx0 < W - 2; cx0 += cell) {
         const x = Math.max(2, Math.min(W - 3, cx0 + Math.round((hash1(cx0, 3) - .5) * cell * .6))), by = ridge[2][x] + 1, r = hash1(cx0, 9);
         if (by >= H - 1 || by < 8) continue;
-        if (b === B_FOREST && r < .66) {
-          const h = Math.round((9 + hash1(cx0, 11) * 9) * U);
+        if (b === B_FOREST && r < .66 && fbm(TAB[11], x / W * 6, 2) > .32) {
+          const h = Math.round((8 + hash1(cx0, 11) * 13) * U);
           if (hash1(cx0, 13) < .5) spruce(x, by, h, px3(c2[0]), px3(c2[1]), 0, trunk); else roundTree(x, by, Math.max(3, Math.round((3 + hash1(cx0, 15) * 3) * U)), px3(c2[0]), px3(c2[1]), px3(c2[2]), trunk);
         } else if (b === B_SNOW && r < .75) spruce(x, by, Math.round((10 + hash1(cx0, 11) * 9) * U), px3(c2[0]), px3(c2[1]), px3(c2[2]), trunk);
         else if (b === B_DESERT && r < .32) cactus(x, by, Math.round((7 + hash1(cx0, 11) * 6) * U), px3(grade([76, 160, 92], .05)), px3(grade([48, 116, 74], .05)));
@@ -1811,7 +1815,7 @@ const Sky = (function () {
   }
   function drawSun(sx, sy, R, e, vis) {
     const warm = 1 - sstep(0, .4, Math.max(0, e)), g1 = lerp(240, 150, warm), b1 = lerp(150, 70, warm);
-    haloD(sx, sy, R * 2.6, 255, g1, b1, .38, .26 * vis); haloD(sx, sy, R * 1.8, 255, lerp(246, 170, warm), lerp(190, 90, warm), .6, .34 * vis);
+    disc(sx, sy, R * 3.2, 255, g1, b1, .07 * vis); disc(sx, sy, R * 2.3, 255, g1, b1, .1 * vis); disc(sx, sy, R * 1.6, 255, lerp(246, 170, warm), lerp(190, 90, warm), .16 * vis);
     disc(sx, sy, R, 255, lerp(214, 130, warm), lerp(90, 40, warm), vis);
     disc(sx, sy, R - 1, 255, lerp(236, 170, warm), lerp(130, 70, warm), vis);
     disc(sx, sy, R * .62, 255, lerp(250, 206, warm), lerp(190, 110, warm), vis);
@@ -1819,7 +1823,7 @@ const Sky = (function () {
   }
   const CRAT = [[-.3, -.2, .22], [.25, .3, .18], [.1, -.5, .12], [-.15, .5, .14], [.45, -.1, .1]];
   function drawMoon(mx, my, R, vis, phase) {
-    haloD(mx, my, R * 2.4, 170, 190, 255, .4, .3 * vis); haloD(mx, my, R * 1.7, 200, 214, 255, .6, .34 * vis);
+    disc(mx, my, R * 2.8, 170, 190, 255, .06 * vis); disc(mx, my, R * 2, 190, 205, 255, .09 * vis); disc(mx, my, R * 1.4, 210, 222, 255, .14 * vis);
     const k = Math.cos(phase * 6.2831853), wax = phase < .5, R2 = R * R + R * .4;
     const x0 = Math.max(0, Math.floor(mx - R - 1)), x1 = Math.min(W - 1, Math.ceil(mx + R + 1)), y0 = Math.max(0, Math.floor(my - R - 1)), y1 = Math.min(H - 1, Math.ceil(my + R + 1));
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
@@ -1832,7 +1836,7 @@ const Sky = (function () {
     }
   }
   const bodyPos = () => {
-    const a = (Y.time - .25) * 6.2831853, hz = hzCur, rx = W * .44, ry = hz * .78, cx = W * .5, R = Math.max(5, Math.min(16, Math.round(Math.min(W, H) * .065)));
+    const a = (Y.time - .25) * 6.2831853, hz = hzCur, rx = W * .44, ry = hz * .78, cx = W * .5, R = Math.max(5 * SC, Math.min(16 * SC, Math.round(Math.min(W, H) * .065)));
     return { sx: cx - Math.cos(a) * rx, sy: hz - Math.sin(a) * ry, mx: cx + Math.cos(a) * rx, my: hz + Math.sin(a) * ry, R };
   };
   function drawBodies(e) {
@@ -1872,16 +1876,20 @@ const Sky = (function () {
   }
   /* пушистое облако: ряд пузырей с плоским низом, свет сверху, тень снизу */
   function mkPuff(i, sz) {
-    const w = Math.max(14, Math.round(W * (.08 + .14 * sz))), h = Math.max(6, Math.round(w * (.3 + .08 * hash1(i, 3)))), m = new Uint8Array(w * h), nb = 3 + Math.floor(hash1(i, 5) * 3), mid = (nb - 1) / 2;
-    for (let q = 0; q < nb; q++) {
-      const cx = (q + .5) / nb * w + (hash1(i, 20 + q) - .5) * w * .1, ry = (h - 1) / 1.62 * (.5 + .5 * (1 - Math.abs(q - mid) / (mid + .5)) * (.82 + .18 * hash1(i, 30 + q))), rx = w / nb * (.62 + .3 * hash1(i, 40 + q)), cy = h - 1 - ry * .62;
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy <= 1) m[y * w + x] = 1; }
+    /* облако из круглых пузырей разного размера (в середине крупнее), низ срезан ровно; свет сверху, тень снизу */
+    const w = Math.max(24, Math.round(W * (.15 + .17 * sz))), n = 4 + Math.floor(hash1(i, 5) * 3), circ = [];
+    let maxR = 0;
+    for (let q = 0; q < n; q++) {
+      const t = n === 1 ? .5 : q / (n - 1), mid = 1 - Math.abs(t - .5) * 2, r = w * (.1 + .13 * mid * (.7 + .3 * hash1(i, 30 + q)));
+      circ.push([r + (w - 2 * r) * t + (hash1(i, 20 + q) - .5) * w * .06, r]); if (r > maxR) maxR = r;
     }
-    const tone = new Uint8Array(w * h).fill(255), sh0 = h - 1 - Math.round(h * .34);
+    const h = Math.max(6, Math.round(maxR * 1.5) + 2), base = h - 1, m = new Uint8Array(w * h);
+    for (const [cx, r] of circ) { const cy = base - r * .5; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const dx = x + .5 - cx, dy = y + .5 - cy; if (dx * dx + dy * dy <= r * r) m[y * w + x] = 1; } }
+    const tone = new Uint8Array(w * h).fill(255), sh0 = base - Math.round(h * .3);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       if (!m[y * w + x]) continue;
-      const up = y > 0 && m[(y - 1) * w + x];
-      tone[y * w + x] = !up ? 0 : y > sh0 ? 2 : 1;
+      const up = y > 0 && m[(y - 1) * w + x], up2 = y > 1 && m[(y - 2) * w + x], ul = y > 0 && x > 0 && m[(y - 1) * w + x - 1];
+      tone[y * w + x] = (!up || !up2 || !ul) && y < sh0 ? 0 : (y > sh0 || (y === sh0 && ((x + y) & 1))) ? 2 : 1;
     }
     return { w, h, tone, kind: 0 };
   }
@@ -2005,6 +2013,7 @@ const Sky = (function () {
     if (Y.time >= 1) { Y.time -= 1; Y.day++; }
   }
   function init(canvas, w, h) {
+    w *= SC; h *= SC;   /* фон рисуется вдвое мельче клеток мира: тонкий дизеринг и детали, как в настоящем пиксель-арте */
     W = w; H = h; canvas.width = w; canvas.height = h; ctx = canvas.getContext('2d');
     img = ctx.createImageData(w, h); buf = new Uint32Array(img.data.buffer); old = new Uint32Array(w * h); skyBuf = new Uint32Array(w * h); fgBuf = new Uint32Array(w * h); xfade = 0;
     hzCur = h * HZ[scene];
@@ -2017,8 +2026,8 @@ const Sky = (function () {
       for (let i = 0; i < 26; i++) embers.push({ x: 0, y: 0, vy: 0, l: 0, ph: 0 });
     }
     clouds = [];
-    const nc = Math.max(4, Math.round(w / 52));
-    for (let i = 0; i < nc + 6; i++) { const extra = i >= nc, sz = extra ? .8 + Math.random() * .4 : Math.random(); clouds.push({ xn: Math.random(), x: 0, yn: extra ? .1 + Math.random() * .8 : .04 + Math.random() * .8, v: .012 + Math.random() * .03, extra, sp: mkPuff(i + SEED % 11, sz) }); clouds[i].x = clouds[i].xn * w; }
+    const nc = Math.max(3, Math.round(w / SC / 70));
+    for (let i = 0; i < nc + 6; i++) { const extra = i >= nc, sz = extra ? .8 + Math.random() * .4 : Math.random(); clouds.push({ xn: Math.random(), x: 0, yn: extra ? .1 + Math.random() * .8 : (i + .2 + Math.random() * .6) / nc * .85, v: .012 + Math.random() * .03, extra, sp: mkPuff(i + SEED % 11, sz) }); clouds[i].x = clouds[i].xn * w; }
     for (let i = 0; i < 6; i++) { const c = { xn: Math.random(), x: 0, yn: (i + .3 + Math.random() * .4) / 6, v: .006 + Math.random() * .012, extra: false, sp: mkStreak(i + SEED % 7) }; c.x = c.xn * w; clouds.push(c); }
     genShapes(); dirty = 2;
   }
