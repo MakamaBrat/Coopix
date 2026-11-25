@@ -3209,7 +3209,7 @@ addEventListener("pagehide",()=>persist());document.addEventListener("visibility
  /* общий отступ для экранов без своей шапки (меню, выбор карт, пауза, игра, редактор): сверху — под кнопки Telegram, снизу — над навигацией телефона */
  {const v=document.querySelector("#menu .ver");if(v)v.textContent="V 1.2 · 24.11"}
  {const bot=window.__CPX_BOT,r=document.documentElement.style,inTg=window.parent!==window;r.setProperty("--bkb",Math.max(inTg?18:0,Math.round(+bot||0)+(inTg?10:0))+"px");
-  const st=document.createElement("style");st.textContent="#menu,#maps,#pause,#game,#ed{top:var(--bkt)!important;bottom:var(--bkb)!important;height:auto!important}#maps::before,#maps::after,#ed::before,#ed::after,#pause::before,#pause::after{content:'';position:absolute;left:0;right:0;background:inherit;pointer-events:none}#maps::before,#ed::before,#pause::before{bottom:100%;height:var(--bkt)}#maps::after,#ed::after,#pause::after{top:100%;height:var(--bkb)}.sc2 .bd{bottom:calc(var(--bkb) + 2%)!important}#maps .tabs .ext{display:none!important}";document.head.appendChild(st)}}
+  const st=document.createElement("style");st.textContent="#menu,#maps,#pause,#game,#ed{top:var(--bkt)!important;bottom:var(--bkb)!important;height:auto!important}#maps::before,#maps::after,#ed::before,#ed::after,#pause::before,#pause::after{content:'';position:absolute;left:0;right:0;background:inherit;pointer-events:none}#maps::before,#ed::before,#pause::before{bottom:100%;height:var(--bkt)}#maps::after,#ed::after,#pause::after{top:100%;height:var(--bkb)}.sc2 .bd{bottom:calc(var(--bkb) + 2%)!important}#cgain{display:none!important}";document.head.appendChild(st)}}
 
 /* ---------- выход в меню из паузы: понятная подпись и отступ сверху (в Telegram там своя кнопка закрытия — их легко перепутать) ---------- */
 {const RU4={"x.exit":"В меню"},EN4={"x.exit":"Menu"};for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU4:EN4);
@@ -4118,6 +4118,7 @@ const _sp=GP.spawn;GP.spawn=function(s){this.resetProps();return _sp.call(this,s
 
 const loadedOn=(b)=>{let n=0;for(let c=b.getContactList();c;c=c.next)if(c.contact.isTouching()&&c.other.part)n++;return n};
 GP.propStep=function(dt){
+  if(this.M&&this.M.chal)this.chalStep(dt);
   const P=this.props;if(!P||!P.length)return;const st=this.st,inp=this.inp,B=this.B,g=CFG.g;
   for(const r of P){
     if(r.t==="spring"){
@@ -4232,6 +4233,48 @@ const mkMap=(name,names,lv)=>({lv,name,names,tags:[],solids:[],bars:[],spawns:[]
 const pole=(m,x,y,col)=>{for(const z of[-.95,.95])m.deco.push(DC(x,y/2,.1,y,z,.05,col||0x7a7f8a))};
 const fin=m=>{m.tags=[];if(m.bars.length)m.tags.push("bars");if(m.solids.length)m.tags.push("floor");if(m.props.some(p=>p.t==="spring"||p.t==="board"))m.tags.push("tramp");m.tags.push("moving");return m};
 
+
+/* ================= ИСПЫТАНИЯ: на время, без падений, по перекладинам до финиша ================= */
+const _sl=GP.spawnList;
+GP.spawnList=function(i){const t=i===undefined?this.M:this.maps[i];if(t&&t.chal)return[{t:"bar",i:0,f:1},{t:"bar",i:0,f:-1}];return _sl.call(this,i)};   /* старт всегда с первой перекладины */
+GP.chalStep=function(dt){const st=this.st,C=this.M.chal;if(!st||!C)return;const ch=this.ch||(this.ch={t:0,run:false,done:false});if(ch.done)return;
+  if(!ch.run){if(st.mode==="air")ch.run=true;else return}
+  ch.t+=dt;
+  if(st.mode==="bar"&&st.bar&&this.bars.indexOf(st.bar)===C.finish){ch.done=true;ch.fin=ch.t}};
+{const _s=GP.spawn;GP.spawn=function(s){const c=this.ch;if(c&&c.run&&!c.done){this.chFall=(this.chFall||0)+1}this.ch=null;return _s.call(this,s)}}
+const _lm2=GP.loadMap;GP.loadMap=function(s){this.ch=null;this.chFall=0;return _lm2.call(this,s)};
+
+/* у испытаний нет разбиваемых стёкол — убираем счётчик «окон» из плашки */
+{const _u=updCnt;updCnt=function(){_u();try{if(W&&W.M&&W.M.chal)$("cnt").textContent=T("regrabCount",RG)}catch(e){}}}
+/* таймер и итог испытания */
+for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?(L==="uk"?{"maps.ext":"Випробування","x.chBest":"Рекорд","x.chDone":"Фініш!","x.chNew":"Новий рекорд!","x.chAgain":"Ще раз","x.chExit":"Вийти","x.chFall":"Падіння — заново","x.chGoal":"Долети до фінішу без падінь"}:{"maps.ext":"Испытания","x.chBest":"Рекорд","x.chDone":"Финиш!","x.chNew":"Новый рекорд!","x.chAgain":"Ещё раз","x.chExit":"Выйти","x.chFall":"Падение — заново","x.chGoal":"Доберись до финиша без падений"}):{"maps.ext":"Challenges","x.chBest":"Best","x.chDone":"Finish!","x.chNew":"New record!","x.chAgain":"Again","x.chExit":"Exit","x.chFall":"You fell — restart","x.chGoal":"Reach the finish without falling"});
+{const g=document.getElementById("game");
+ if(g&&!document.getElementById("chal")){
+  const box=document.createElement("div");box.id="chal";box.innerHTML='<b id="chT">0:00.0</b><small id="chB"></small>';g.appendChild(box);
+  const end=document.createElement("div");end.id="chEnd";end.innerHTML='<h3 id="chH"></h3><p id="chP"></p><div class="r"><button id="chAgain"></button><button id="chExit"></button></div>';g.appendChild(end);
+  const st=document.createElement("style");st.textContent=
+   "#chal{position:absolute;left:50%;transform:translateX(-50%);top:13vmin;z-index:5;display:none;flex-direction:column;align-items:center;padding:.8vmin 3vmin;border-radius:2.4vmin;background:#0b0b0fcc;border:1px solid #4a4a56;color:#fff;pointer-events:none}"+
+   "#chal b{font-size:max(22px,6vmin);font-variant-numeric:tabular-nums;letter-spacing:.04em}#chal small{font-size:max(11px,2.5vmin);color:#c4c4d0}"+
+   "#chEnd{position:absolute;inset:0;z-index:12;display:none;align-items:center;justify-content:center;flex-direction:column;gap:2vmin;background:#000000b0;color:#fff;text-align:center}"+
+   "#chEnd h3{margin:0;font-size:max(26px,8vmin);font-style:italic;font-weight:900}#chEnd p{margin:0;font-size:max(18px,5vmin);font-variant-numeric:tabular-nums;color:#ffd24a}"+
+   "#chEnd .r{display:flex;gap:2vmin;margin-top:1vmin}#chEnd button{height:max(46px,11vmin);padding:0 5vmin;border-radius:2.4vmin;border:1px solid #4a4a56;background:#14141a;color:#fff;font-size:max(16px,4vmin);font-weight:800}#chEnd button:first-child{background:#fff;color:#000}"+
+   "@media(orientation:portrait){#chal{top:21vw}#chal b{font-size:9vw}#chEnd h3{font-size:12vw}#chEnd p{font-size:7vw}#chEnd button{height:15vw;font-size:5vw;padding:0 7vw;border-radius:3.4vw}}"+
+   "#game.rp #chEnd{display:none!important}";
+  document.head.appendChild(st);
+  const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+":"+(s<10?"0":"")+s.toFixed(1)};
+  const T_=document.getElementById("chT"),B_=document.getElementById("chB"),H=document.getElementById("chH"),P_=document.getElementById("chP");
+  document.getElementById("chAgain").onclick=()=>{end.style.display="none";try{W.spawn(W.si)}catch(e){}};
+  document.getElementById("chExit").onclick=()=>{end.style.display="none";const h=document.getElementById("pHome");if(h)h.click()};
+  let shown=false,lastFall=0;
+  const loop=()=>{try{const M=W&&W.M,on=screen==="game"&&M&&M.chal;
+    if(!on){box.style.display="none";shown=false}
+    else{box.style.display="flex";const ch=W.ch,best=(SAVE.chal||{})[M.name];T_.textContent=fmt(ch?(ch.done?ch.fin:ch.t):0);B_.textContent=T("x.chBest")+": "+(best?fmt(best):"—");
+      if(W.chFall!==lastFall){lastFall=W.chFall;if(lastFall&&window.__ncPay)window.__ncPay.toast(T("x.chFall"))}
+      if(ch&&ch.done&&!shown){shown=true;const rec=!best||ch.fin<best;if(rec){SAVE.chal=SAVE.chal||{};SAVE.chal[M.name]=+ch.fin.toFixed(2);persist()}
+        H.textContent=T("x.chDone");P_.textContent=fmt(ch.fin)+(rec?"  ·  "+T("x.chNew"):"");document.getElementById("chAgain").textContent=T("x.chAgain");document.getElementById("chExit").textContent=T("x.chExit");end.style.display="flex"}
+      if(!ch||!ch.done){if(shown){shown=false;end.style.display="none"}}}}catch(_){}requestAnimationFrame(loop)};
+  requestAnimationFrame(loop)}}
+
 function mapSpring(){
   const m=mkMap("sp_park",{ru:"Пружинный парк",uk:"Пружинний парк",en:"Spring Park"},7);
   m.solids.push(D(30,-1,140,2,{d:9,col:0x6f7681,n:"floor"}),D(-20,20,1,44,{col:0x9aa1ad,n:"wallL"}),D(98,20,1,44,{col:0x9aa1ad,n:"wallR"}));
@@ -4285,7 +4328,31 @@ function mapBoard(){
   m.solids.push(Object.assign(D(-14,.25,5,.5,{col:0x2c2c30,n:"tramp"}),{bounce:1,k:"t",d:.8}));
   m.spawns.push({x:8.1,y:3.2},{x:38.9,y:5.4},{x:-3,y:.5},{x:-16,y:.5},{x:56,y:.5});
   return fin(m)}
-MAPS.push(mapSpring(),mapRope(),mapBoard());
+
+function mapChal(n){
+  const names=[{ru:"Испытание 1: Лесенка",uk:"Випробування 1: Драбинка",en:"Challenge 1: Ladder"},{ru:"Испытание 2: Зигзаг",uk:"Випробування 2: Зигзаг",en:"Challenge 2: Zigzag"},{ru:"Испытание 3: Бездна",uk:"Випробування 3: Безодня",en:"Challenge 3: Abyss"}][n];
+  const m=mkMap("sp_chal"+(n+1),names,5+n);m.ext=true;
+  const W0=[34,52,74][n];
+  /* пол — «лава»: коснулся = заново с таймером с нуля */
+  m.solids.push(Object.assign(D(W0/2-2,-1,W0+30,2,{col:0xc03030,n:"lava"}),{reset:1}));
+  m.solids.push(D(-6,10,1,22,{col:0x9aa1ad,n:"startWall"}));
+  const pts=[];
+  if(n===0){for(let k=0;k<9;k++)pts.push([k*3.5,8])}
+  else if(n===1){for(let k=0;k<11;k++)pts.push([k*4.4,k%2?10.2:7.2])}
+  else{const hs=[8,10.5,7.5,11,8.5,6.5,10,8,11.5,7,9.5,8];let x=0;for(let k=0;k<12;k++){pts.push([x,hs[k]]);x+=4.4+(k%3)*.4}}
+  pts.forEach(([x,y],k)=>{
+    let o={x,y,z:0};
+    if(n===2&&(k===3||k===6||k===9)){const id="mb"+k;m.movers.push({id,k:"path",dx:k===6?-3.4:3.4,dy:0,s:1.6,wait:.4});o.mv=id}
+    m.bars.push(o);
+    if(!o.mv)pole(m,x,y,k===pts.length-1?0x39d96a:0x7a7f8a)});
+  const last=pts[pts.length-1];
+  m.deco.push(DC(last[0]+1.4,y_flag(last[1]),.1,3,-1.2,.05,0x39d96a),DC(last[0]+2.1,y_flag(last[1])+1.1,1.4,.8,-1.2,.05,0x39d96a));    /* флаг финиша */
+  m.deco.push(DC(-1.6,y_flag(pts[0][1]),.1,3,-1.2,.05,0x22d3ee),DC(-1.0,y_flag(pts[0][1])+1.1,1.2,.8,-1.2,.05,0x22d3ee));                 /* флаг старта */
+  m.chal={finish:m.bars.length-1};m.killY=-30;
+  m.spawns.push({x:0,y:.5});
+  return fin(m)}
+function y_flag(y){return y-1.5}
+MAPS.push(mapSpring(),mapRope(),mapBoard(),mapChal(0),mapChal(1),mapChal(2));
 
 /* ================= выбор силы стартовой пружины: кнопки −/+ внизу экрана (только на картах с такой пружиной) ================= */
 for(const L in I18N)I18N[L]["x.spPow"]=["ru","uk","be"].includes(L)?(L==="uk"?"Сила пружини":"Сила пружины"):"Spring power";
