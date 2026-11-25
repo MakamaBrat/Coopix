@@ -227,7 +227,7 @@
     mk('Ход времени', [[true, 'Идёт', 'play'], [false, 'Стоит', 'pause']], () => G.tcycle, (v) => { G.tcycle = v; Sky.set({ auto: v }); saveSet(); });
     mk('Погода', [[0, 'Ясно', 'sun'], [1, 'Дождь', 'cloud'], [2, 'Снег', 'snow'], [3, 'Гроза', 'bolt']], () => G.weather, (v) => { G.weather = Sim.weather = v; if (v === 3) G.stormed = true; });
     mk('Ветер', [[-1, '← Влево'], [0, 'Штиль'], [1, 'Вправо →']], () => G.wind, (v) => { G.wind = Sim.wind = v; });
-    mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Луг'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Горы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
+    mk('Фон по местности', [['auto', 'Авто'], ['forest', 'Равнины'], ['desert', 'Пустыня'], ['snow', 'Снег'], ['rock', 'Скалы'], ['volcano', 'Вулкан'], ['sea', 'Море'], ['beach', 'Пляж'], ['cave', 'Пещера']], () => G.biome, (v) => { G.biome = v; Sky.set({ lock: v }); saveSet(); });
     body.appendChild(h('div', 'hint', 'Авто: горы и холмы за миром подстраиваются под то, что лежит на земле.'));
   }
   function pWorld(body) {

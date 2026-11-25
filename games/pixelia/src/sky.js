@@ -81,7 +81,7 @@ const Sky = (function () {
 
   let ctx, img, buf, old, skyBuf, fgBuf, W = 0, H = 0, n = 0, dirty = 2, xfade = 0;
   let scene = B_FOREST, cand = -1, candN = 0, emptyN = 0, HT = [], ridge = [], hzCur = 100, fgTop = 0, lockB = -1, volcX = .5, hor = [212, 238, 252];
-  let stars = [], clouds = [], meteor = null, crystals = [], birds = [], flies = [], embers = [];
+  let cloudX = 0, stars = [], clouds = [], meteor = null, crystals = [], birds = [], flies = [], embers = [];
   const counts = new Float32Array(NB);
 
   /* ---------- формы гор ---------- */
@@ -355,9 +355,43 @@ const Sky = (function () {
       else { const c = fl[(hash1(x, y) * 4) | 0], q = Math.max(1, Math.round(s2 * .7)); for (let dy = 0; dy < q; dy++) for (let dx = 0; dx < q; dx++) fput(x + dx, y - dy, c); }
     }
   }
+  /* ---------- нарисованные сцены (PNG/WebP с прозрачным небом) и облака из картинки ---------- */
+  const ART = { plains: B_FOREST, desert: B_DESERT, snow: B_SNOW, sea: B_SEA, beach: B_BEACH }, HFR = { plains: .66, desert: .66, snow: .72, sea: .63, beach: .62 };
+  const artImg = {}, artPix = {}; let cloudTex = null;
+  function loadArt() {
+    if (typeof BGA === 'undefined') return;
+    for (const k in BGA) {
+      const im = new Image();
+      im.onload = () => {
+        if (k === 'clouds') { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data, t = new Uint8Array(im.width * im.height); for (let i = 0; i < t.length; i++) t[i] = Math.round(d[i * 4] / 85); cloudTex = { t, w: im.width, h: im.height }; }
+        else { artImg[k] = im; for (const q in artPix) delete artPix[q]; }
+        if (buf) dirty = 2;
+      };
+      im.src = BGA[k];
+    }
+  }
+  /* картинка сцены в размере фона: горизонт картинки ставится на горизонт неба, по бокам обрезается по центру, низ дотягивается последней строкой */
+  function scenePix(b) {
+    const name = Object.keys(ART).find((k) => ART[k] === b), im = name && artImg[name]; if (!im) return null;
+    const key = name + W + 'x' + H; if (artPix[key]) return artPix[key];
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    const iw = im.width, ih = im.height, hzT = H * HZ[b], sc = Math.max(hzT / (HFR[name] * ih), W / iw), ox = (W - iw * sc) / 2, oy = hzT - HFR[name] * ih * sc;
+    x.drawImage(im, ox, oy, iw * sc, ih * sc);
+    const bot = oy + ih * sc; if (bot < H) x.drawImage(im, 0, ih - 2, iw, 2, ox, bot - 1, iw * sc, H - bot + 2);
+    return artPix[key] = x.getImageData(0, 0, W, H).data;
+  }
+  function imageFg(pix, lg, ovs) {
+    const m0 = lg[0] * ovs, m1 = lg[1] * ovs, m2 = lg[2] * ovs, a0 = lg[3], a1 = lg[4], a2 = lg[5];
+    for (let i = 0, N = W * H; i < N; i++) {
+      const o = i * 4; if (pix[o + 3] < 110) continue;
+      fgBuf[i] = px(c255(pix[o] * m0 + a0), c255(pix[o + 1] * m1 + a1), c255(pix[o + 2] * m2 + a2));
+    }
+    fgTop = 0;
+  }
   function rebuildFg() {
     fgBuf.fill(0); fgTop = H;
     if (Y.cave) { caveFg(); return; }
+    { const pix = scenePix(scene); if (pix) { imageFg(pix, keyAt(LIGHT_KEYS, elev()), 1 - Y.ov * .2); return; } }
     const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, b = scene === B_BEACH ? B_SEA : scene;
     const grade = (c, f) => [lerp(Math.min(255, c[0] * lg[0] * ovs + lg[3]), hr, f), lerp(Math.min(255, c[1] * lg[1] * ovs + lg[4]), hg, f), lerp(Math.min(255, c[2] * lg[2] * ovs + lg[5]), hb, f)];
     const dayF = .35 + .65 * sstep(-.05, .3, e), LC = LCOL[b].map((cols, l) => cols.map((c) => grade(c, FOG[l] * dayF)));   /* в сумерках дымки меньше: силуэты тёмные и сочные */
@@ -529,8 +563,16 @@ const Sky = (function () {
     if (ov > .01) { lit = lerp3(lit, [206, 212, 224], ov * .9); mid = lerp3(mid, [150, 158, 174], ov * .9); sh = lerp3(sh, [104, 112, 130], ov * .9); al = lerp(al, .98, ov); }
     if (scene === B_DESERT) { const dw = sstep(0, .3, e) * (1 - ov); lit = lerp3(lit, [255, 240, 214], .75 * dw); mid = lerp3(mid, [246, 208, 170], .75 * dw); sh = lerp3(sh, [214, 164, 146], .75 * dw); }
     const pal = [lit, mid, sh], streakVis = Math.max(tw * 1.15, night * .3) * (1 - ov), sc = keyAt(STREAK_KEYS, e), spal = [[sc[0], sc[1], sc[2]], [sc[3], sc[4], sc[5]], [sc[6], sc[7], sc[8]]];
+    if (cloudTex) {
+      cloudX += .15 + (wind || 0) * .05;
+      const T = cloudTex, hz = hzCur, sc = Math.max(W / T.w, hz * .95 / T.h), tp = [sh, mid, lit];
+      const pass = (off, k, a, pl) => { for (let y = 0; y < Math.min(hz, T.h * sc * k); y++) { const o = ((y / (sc * k)) | 0) * T.w; for (let x = 0; x < W; x++) { let u = ((x + off) / (sc * k)) % (T.w * 2); if (u >= T.w) u = T.w * 2 - 1 - u; const t = T.t[o + (u | 0)]; if (t) { const c = pl[t - 1]; blend(y * W + x, c[0], c[1], c[2], a); } } } };
+      pass(cloudX, 1, al, tp);
+      if (ov > .08) pass(cloudX * .7 + 311, 1.35, Math.min(.95, ov * 1.1), [lerp3(sh, [96, 104, 122], .5), lerp3(mid, [140, 148, 164], .5), lerp3(lit, [180, 188, 204], .5)]);
+    }
     for (const c of clouds) {
       const sp = c.sp;
+      if (cloudTex && sp.kind === 0) continue;
       if (sp.kind === 1 && streakVis < .05) continue;
       if (c.extra && ov < .05) continue;
       c.x += c.v * 3 + wind * .05; if (c.x > W + 2) c.x = -sp.w - 2; else if (c.x < -sp.w - 4) c.x = W + 1;
@@ -637,6 +679,7 @@ const Sky = (function () {
     Y.time += dtMs / 1000 / DAY_SEC;
     if (Y.time >= 1) { Y.time -= 1; Y.day++; }
   }
+  let artLoaded = false;
   function init(canvas, w, h) {
     w *= SC; h *= SC;   /* фон рисуется вдвое мельче клеток мира: тонкий дизеринг и детали, как в настоящем пиксель-арте */
     W = w; H = h; canvas.width = w; canvas.height = h; ctx = canvas.getContext('2d');
@@ -654,7 +697,7 @@ const Sky = (function () {
     const nc = Math.max(3, Math.round(w / SC / 70));
     for (let i = 0; i < nc + 6; i++) { const extra = i >= nc, sz = extra ? .8 + Math.random() * .4 : Math.random(); clouds.push({ xn: Math.random(), x: 0, yn: extra ? .1 + Math.random() * .8 : (i + .2 + Math.random() * .6) / nc * .85, v: .012 + Math.random() * .03, extra, sp: mkPuff(i + SEED % 11, sz) }); clouds[i].x = clouds[i].xn * w; }
     for (let i = 0; i < 6; i++) { const c = { xn: Math.random(), x: 0, yn: (i + .3 + Math.random() * .4) / 6, v: .006 + Math.random() * .012, extra: false, sp: mkStreak(i + SEED % 7) }; c.x = c.xn * w; clouds.push(c); }
-    genShapes(); dirty = 2;
+    genShapes(); dirty = 2; if (!artLoaded) { artLoaded = true; loadArt(); }
   }
   function set(o) {
     if (o.time !== undefined) { Y.time = ((+o.time % 1) + 1) % 1; dirty = Math.max(dirty, 1); }
