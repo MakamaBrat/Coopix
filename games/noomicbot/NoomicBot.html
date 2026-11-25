@@ -4097,7 +4097,7 @@ document.head.appendChild(st)}
  if(g&&m&&!document.getElementById("zMenu2")){
   const b=document.createElement("button");b.id="zMenu2";b.className="red";b.textContent="☰";b.setAttribute("aria-label","Menu");
   b.onclick=e=>{e.stopPropagation();m.click()};g.appendChild(b);
-  const st=document.createElement("style");st.textContent="#zMenu2{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;width:10vmin;height:10vmin;padding:0;font-size:5.2vmin;line-height:1;border-radius:2vmin;opacity:.92;display:flex;align-items:center;justify-content:center}#game.rp #zMenu2,#game.pz #zMenu2{display:none}@media(orientation:portrait){#zMenu2{left:3vw;top:3vw;width:11vw;height:11vw;font-size:6vw;border-radius:2.6vw}}";document.head.appendChild(st);
+  const st=document.createElement("style");st.textContent="#zMenu2{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;width:10vmin;height:10vmin;padding:0;font-size:5.2vmin;line-height:1;border-radius:2vmin;opacity:.92;display:flex;align-items:center;justify-content:center}#game.rp #zMenu2,#game.pz #zMenu2,#game.cz #zMenu2{display:none}@media(orientation:portrait){#zMenu2{left:3vw;top:3vw;width:11vw;height:11vw;font-size:6vw;border-radius:2.6vw}}";document.head.appendChild(st);
   if(pz){const sync=()=>g.classList.toggle("pz",pz.classList.contains("open"));new MutationObserver(sync).observe(pz,{attributes:true,attributeFilter:["class"]});sync()}}}
 
 /* ---------- Физические элементы: пружина, тарзанка (канат), доска для прыжков, бассейн + три карты с ними ----------
@@ -4293,26 +4293,26 @@ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?(L==="uk"
   const st=document.createElement("style");st.textContent=
    "#chal{position:absolute;left:50%;transform:translateX(-50%);top:13vmin;z-index:5;display:none;flex-direction:column;align-items:center;padding:.8vmin 3vmin;border-radius:2.4vmin;background:#0b0b0fcc;border:1px solid #4a4a56;color:#fff;pointer-events:none}"+
    "#chal b{font-size:max(22px,6vmin);font-variant-numeric:tabular-nums;letter-spacing:.04em}#chal small{font-size:max(11px,2.5vmin);color:#c4c4d0}"+
-   "#chEnd{position:absolute;inset:0;z-index:12;display:none;align-items:center;justify-content:center;flex-direction:column;gap:2vmin;background:#000000b0;color:#fff;text-align:center}"+
+   "#chEnd{position:absolute;inset:calc(-1*var(--bkt,0px)) 0 calc(-1*var(--bkb,0px)) 0;padding-top:var(--bkt,0px);padding-bottom:var(--bkb,0px);z-index:12;display:none;align-items:center;justify-content:center;flex-direction:column;gap:2vmin;background:#000000b0;color:#fff;text-align:center}"+
    "#chEnd h3{margin:0;font-size:max(26px,8vmin);font-style:italic;font-weight:900}#chEnd p{margin:0;font-size:max(18px,5vmin);font-variant-numeric:tabular-nums;color:#ffd24a}"+
    "#chEnd .r{display:flex;gap:2vmin;margin-top:1vmin}#chEnd button{height:max(46px,11vmin);padding:0 5vmin;border-radius:2.4vmin;border:1px solid #4a4a56;background:#14141a;color:#fff;font-size:max(16px,4vmin);font-weight:800}#chEnd button:first-child{background:#fff;color:#000}"+
    "@media(orientation:portrait){#chal{top:21vw}#chal b{font-size:9vw}#chEnd h3{font-size:12vw}#chEnd p{font-size:7vw}#chEnd button{height:15vw;font-size:5vw;padding:0 7vw;border-radius:3.4vw}}"+
-   "#chEnd .bk{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;height:max(44px,10vmin)!important;width:auto!important;min-width:20vmin;padding:0 3vmin!important;font-size:max(15px,3.6vmin)!important;border-radius:2vmin!important;background:#14141a!important;color:#fff!important}"+
-   "@media(orientation:portrait){#chEnd .bk{left:4vw;top:3vw;height:11vw!important;min-width:27vw;font-size:4.2vw!important;border-radius:3vw!important}}"+
+   "#chEnd .bk{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:calc(var(--bkt,0px) + 2.4vmin);height:max(44px,10vmin)!important;width:auto!important;min-width:20vmin;padding:0 3vmin!important;font-size:max(15px,3.6vmin)!important;border-radius:2vmin!important;background:#14141a!important;color:#fff!important}"+
+   "@media(orientation:portrait){#chEnd .bk{left:4vw;top:calc(var(--bkt,0px) + 3vw);height:11vw!important;min-width:27vw;font-size:4.2vw!important;border-radius:3vw!important}}"+
    "#game.rp #chEnd{display:none!important}";
   document.head.appendChild(st);
   const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+":"+(s<10?"0":"")+s.toFixed(1)};
   const T_=document.getElementById("chT"),B_=document.getElementById("chB"),H=document.getElementById("chH"),P_=document.getElementById("chP");
-  document.getElementById("chAgain").onclick=()=>{end.style.display="none";try{W.spawn(W.si)}catch(e){}};
-  document.getElementById("chExit").onclick=()=>{end.style.display="none";const h=document.getElementById("pHome");if(h)h.click()};
+  document.getElementById("chAgain").onclick=()=>{end.style.display="none";g.classList.remove("cz");try{W.spawn(W.si)}catch(e){}};
+  document.getElementById("chExit").onclick=()=>{end.style.display="none";g.classList.remove("cz");const h=document.getElementById("pHome");if(h)h.click()};
   let shown=false,lastFall=0;
   const loop=()=>{try{const M=W&&W.M,on=screen==="game"&&M&&M.chal;
-    if(!on){box.style.display="none";shown=false}
+    if(!on){box.style.display="none";shown=false;g.classList.remove("cz")}
     else{box.style.display="flex";const ch=W.ch,best=(SAVE.chal||{})[M.name];T_.textContent=fmt(ch?(ch.done?ch.fin:ch.t):0);B_.textContent=T("x.chBest")+": "+(best?fmt(best):"—");
       if(W.chFall!==lastFall){lastFall=W.chFall;if(lastFall&&window.__ncPay)window.__ncPay.toast(T("x.chFall"))}
       if(ch&&ch.done&&!shown){shown=true;const rec=!best||ch.fin<best;if(rec){SAVE.chal=SAVE.chal||{};SAVE.chal[M.name]=+ch.fin.toFixed(2);persist()}
-        H.textContent=T("x.chDone");P_.textContent=fmt(ch.fin)+(rec?"  ·  "+T("x.chNew"):"");document.getElementById("chAgain").textContent=T("x.chAgain");document.getElementById("chExit").textContent="‹ "+T("back");end.style.display="flex"}
-      if(!ch||!ch.done){if(shown){shown=false;end.style.display="none"}}}}catch(_){}requestAnimationFrame(loop)};
+        H.textContent=T("x.chDone");P_.textContent=fmt(ch.fin)+(rec?"  ·  "+T("x.chNew"):"");document.getElementById("chAgain").textContent=T("x.chAgain");document.getElementById("chExit").textContent="‹ "+T("back");end.style.display="flex";g.classList.add("cz")}
+      if(!ch||!ch.done){if(shown){shown=false;end.style.display="none";g.classList.remove("cz")}}}}catch(_){}requestAnimationFrame(loop)};
   requestAnimationFrame(loop)}}
 
 function mapSpring(){
