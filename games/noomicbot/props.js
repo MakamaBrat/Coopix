@@ -187,7 +187,7 @@ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?(L==="uk"
 {const g=document.getElementById("game");
  if(g&&!document.getElementById("chal")){
   const box=document.createElement("div");box.id="chal";box.innerHTML='<b id="chT">0:00.0</b><small id="chB"></small>';g.appendChild(box);
-  const end=document.createElement("div");end.id="chEnd";end.innerHTML='<h3 id="chH"></h3><p id="chP"></p><div class="r"><button id="chAgain"></button><button id="chExit"></button></div>';g.appendChild(end);
+  const end=document.createElement("div");end.id="chEnd";end.innerHTML='<button id="chExit" class="bk"></button><h3 id="chH"></h3><p id="chP"></p><div class="r"><button id="chAgain"></button></div>';g.appendChild(end);
   const st=document.createElement("style");st.textContent=
    "#chal{position:absolute;left:50%;transform:translateX(-50%);top:13vmin;z-index:5;display:none;flex-direction:column;align-items:center;padding:.8vmin 3vmin;border-radius:2.4vmin;background:#0b0b0fcc;border:1px solid #4a4a56;color:#fff;pointer-events:none}"+
    "#chal b{font-size:max(22px,6vmin);font-variant-numeric:tabular-nums;letter-spacing:.04em}#chal small{font-size:max(11px,2.5vmin);color:#c4c4d0}"+
@@ -195,6 +195,8 @@ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?(L==="uk"
    "#chEnd h3{margin:0;font-size:max(26px,8vmin);font-style:italic;font-weight:900}#chEnd p{margin:0;font-size:max(18px,5vmin);font-variant-numeric:tabular-nums;color:#ffd24a}"+
    "#chEnd .r{display:flex;gap:2vmin;margin-top:1vmin}#chEnd button{height:max(46px,11vmin);padding:0 5vmin;border-radius:2.4vmin;border:1px solid #4a4a56;background:#14141a;color:#fff;font-size:max(16px,4vmin);font-weight:800}#chEnd button:first-child{background:#fff;color:#000}"+
    "@media(orientation:portrait){#chal{top:21vw}#chal b{font-size:9vw}#chEnd h3{font-size:12vw}#chEnd p{font-size:7vw}#chEnd button{height:15vw;font-size:5vw;padding:0 7vw;border-radius:3.4vw}}"+
+   "#chEnd .bk{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;height:max(44px,10vmin)!important;width:auto!important;min-width:20vmin;padding:0 3vmin!important;font-size:max(15px,3.6vmin)!important;border-radius:2vmin!important;background:#14141a!important;color:#fff!important}"+
+   "@media(orientation:portrait){#chEnd .bk{left:4vw;top:3vw;height:11vw!important;min-width:27vw;font-size:4.2vw!important;border-radius:3vw!important}}"+
    "#game.rp #chEnd{display:none!important}";
   document.head.appendChild(st);
   const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+":"+(s<10?"0":"")+s.toFixed(1)};
@@ -207,7 +209,7 @@ for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?(L==="uk"
     else{box.style.display="flex";const ch=W.ch,best=(SAVE.chal||{})[M.name];T_.textContent=fmt(ch?(ch.done?ch.fin:ch.t):0);B_.textContent=T("x.chBest")+": "+(best?fmt(best):"—");
       if(W.chFall!==lastFall){lastFall=W.chFall;if(lastFall&&window.__ncPay)window.__ncPay.toast(T("x.chFall"))}
       if(ch&&ch.done&&!shown){shown=true;const rec=!best||ch.fin<best;if(rec){SAVE.chal=SAVE.chal||{};SAVE.chal[M.name]=+ch.fin.toFixed(2);persist()}
-        H.textContent=T("x.chDone");P_.textContent=fmt(ch.fin)+(rec?"  ·  "+T("x.chNew"):"");document.getElementById("chAgain").textContent=T("x.chAgain");document.getElementById("chExit").textContent=T("x.chExit");end.style.display="flex"}
+        H.textContent=T("x.chDone");P_.textContent=fmt(ch.fin)+(rec?"  ·  "+T("x.chNew"):"");document.getElementById("chAgain").textContent=T("x.chAgain");document.getElementById("chExit").textContent="‹ "+T("back");end.style.display="flex"}
       if(!ch||!ch.done){if(shown){shown=false;end.style.display="none"}}}}catch(_){}requestAnimationFrame(loop)};
   requestAnimationFrame(loop)}}
 

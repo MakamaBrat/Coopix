@@ -114,3 +114,15 @@ document.head.appendChild(st)}
 "@media(orientation:portrait){#menu .ttl{font-size:8.6vw!important;letter-spacing:.6vw!important;top:calc(env(safe-area-inset-top) + 5.6%)!important}#flag{font-size:3.3vw!important;padding:1.4vw 3vw!important}#menu .flag{top:calc(env(safe-area-inset-top) + 1.2%)!important}}"+
 "@media(orientation:landscape){#menu .ttl{font-size:5.6vmin!important;top:3.4%!important}}";
 document.head.appendChild(st)}
+
+/* ---------- фон по умолчанию у всех — «Закат» (бесплатный и первый в списке); один раз переключаем и тех, у кого стоял «Ясный день» ---------- */
+{const sk=ITEMS.sky;if(sk){const i=sk.findIndex(x=>x[0]==="sky_sunset");if(i>0){const s=sk.splice(i,1)[0];s[3]=0;sk.unshift(s)}else if(i===0)sk[0][3]=0;
+  SAVE.owned.sky_sunset=1;if(!SAVE.skyMig){SAVE.skyMig=1;if(!SAVE.eq.sky||SAVE.eq.sky==="sky_day")SAVE.eq.sky="sky_sunset";persist()}}}
+
+/* ---------- кнопка паузы ☰ дублируется вверху слева (под «Назад» Telegram); пока открыто меню паузы — скрыта, чтобы не лежала поверх него ---------- */
+{const g=document.getElementById("game"),m=document.getElementById("zMenu"),pz=document.getElementById("pause");
+ if(g&&m&&!document.getElementById("zMenu2")){
+  const b=document.createElement("button");b.id="zMenu2";b.className="red";b.textContent="☰";b.setAttribute("aria-label","Menu");
+  b.onclick=e=>{e.stopPropagation();m.click()};g.appendChild(b);
+  const st=document.createElement("style");st.textContent="#zMenu2{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;width:10vmin;height:10vmin;padding:0;font-size:5.2vmin;line-height:1;border-radius:2vmin;opacity:.92;display:flex;align-items:center;justify-content:center}#game.rp #zMenu2,#game.pz #zMenu2{display:none}@media(orientation:portrait){#zMenu2{left:3vw;top:3vw;width:11vw;height:11vw;font-size:6vw;border-radius:2.6vw}}";document.head.appendChild(st);
+  if(pz){const sync=()=>g.classList.toggle("pz",pz.classList.contains("open"));new MutationObserver(sync).observe(pz,{attributes:true,attributeFilter:["class"]});sync()}}}
