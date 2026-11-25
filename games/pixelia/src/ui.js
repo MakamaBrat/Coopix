@@ -78,13 +78,33 @@
   /* ---------- мир ---------- */
   const field = $('#field'), stage = $('#stage'), ring = $('#ring'), info = $('#info'), fx = $('#fx'), fxc = fx.getContext('2d');
   let W = 0, H = 0, cs = 4;
+  /* Размер мира не зависит от устройства: всегда ~42 000 клеток, меняется только форма (под экран). Клетка = целое число физических пикселей, поэтому без размытия и одинаково на телефоне и ПК. */
+  const CELLS = 42000;
   function gridFor() {
-    const st = stage.getBoundingClientRect(); const sw = Math.min(st.width - 28, 1280), sh = st.height - 28;
-    let c = G.cs || 3; let w = Math.floor(sw / c), hh = Math.floor(sh / c);
-    /* тонкий пиксель держим: если клеток слишком много, мир чуть уже, а по бокам больше каменной рамки */
-    while (w * hh > 72000) { const w2 = Math.floor(72000 / hh); if (w2 >= (sw / c) * .72) { w = w2; break; } c++; w = Math.floor(sw / c); hh = Math.floor(sh / c); }
-    return { c, w: Math.max(60, w), h: Math.max(40, hh) };
+    const st = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, sw = Math.max(120, st.width - 28), sh = Math.max(120, st.height - 28);
+    const asp = Math.max(.5, Math.min(2.2, sw / sh));
+    let w = Math.round(Math.sqrt(CELLS * asp)), hh = Math.round(CELLS / w);
+    const sc = Math.max(1, Math.floor(Math.min(sw * dpr / w, sh * dpr / hh)));   /* физических пикселей на клетку */
+    /* подгоняем число клеток под целый масштаб, чтобы поле заполняло экран */
+    w = Math.max(60, Math.floor(sw * dpr / sc)); hh = Math.max(40, Math.floor(sh * dpr / sc));
+    if (w * hh > CELLS * 1.6) { const k = Math.sqrt(CELLS * 1.6 / (w * hh)); w = Math.floor(w * k); hh = Math.floor(hh * k); }
+    return { c: sc / dpr, w, h: hh };
   }
+  /* ---------- зум и сдвиг поля: колесо, щипок двумя пальцами, правая кнопка, кнопки в панели «Мир» ---------- */
+  const view = { z: 1, x: 0, y: 0 }; let shakeT = '';
+  function clampView() {
+    const hw = W * cs / 2, hh = H * cs / 2; view.z = Math.max(1, Math.min(8, view.z));
+    const mx = hw * (view.z - 1), my = hh * (view.z - 1); view.x = Math.max(-mx, Math.min(mx, view.x)); view.y = Math.max(-my, Math.min(my, view.y));
+  }
+  function applyView() { clampView(); field.style.transform = (view.z === 1 && !view.x && !view.y ? '' : 'translate(' + view.x.toFixed(1) + 'px,' + view.y.toFixed(1) + 'px) scale(' + view.z.toFixed(3) + ') ') + shakeT; field.style.transformOrigin = 'center'; }
+  function zoomAt(cx, cy, k) {
+    const st = stage.getBoundingClientRect(), z0 = view.z, z2 = Math.max(1, Math.min(8, z0 * k)), ux = cx - (st.left + st.width / 2) - view.x, uy = cy - (st.top + st.height / 2) - view.y;
+    view.x += ux * (1 - z2 / z0); view.y += uy * (1 - z2 / z0); view.z = z2; applyView(); showRing(null, true);
+  }
+  function zoomBtn(k) { const st = stage.getBoundingClientRect(); zoomAt(st.left + st.width / 2, st.top + st.height / 2, k); }
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.18 : 1 / 1.18); }, { passive: false });
+  const tp = new Map(); let pinch = null, panning = null;
+  function pinchState() { const a = [...tp.values()]; return { cx: (a[0].x + a[1].x) / 2, cy: (a[0].y + a[1].y) / 2, d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) || 1 }; }
   function layout(first) {
     const g = gridFor();
     if (first) Sim.alloc(g.w, g.h); else if (g.w !== W || g.h !== H) { const d = Sim.pack(); Sim.unpack(d, g.w, g.h); }
@@ -92,6 +112,7 @@
     Render.init($('#sim'), $('#glow'), $('#bg'), W, H);
     fx.width = W; fx.height = H;
     field.style.width = (W * cs) + 'px'; field.style.height = (H * cs) + 'px';
+    view.z = 1; view.x = 0; view.y = 0; applyView();
   }
   function rockTile() {
     const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d');
@@ -215,6 +236,7 @@
     add('Новый остров', 'globe', () => confirmBox('Начать новый остров? Текущий мир пропадёт.', () => { pushUndo(); newWorld('island'); closePanel(); }));
     add('Новое море', 'drop', () => confirmBox('Создать пустое море?', () => { pushUndo(); newWorld('sea'); closePanel(); }));
     add('Пустота', 'eraser', () => confirmBox('Очистить весь мир?', () => { pushUndo(); newWorld('void'); closePanel(); }));
+    { const zr = h('div', 'row'); zr.appendChild(h('div', 'lbl', 'Масштаб поля (колесо мыши, щипок двумя пальцами, правая кнопка двигает)')); [['−', () => zoomBtn(1 / 1.5)], ['+', () => zoomBtn(1.5)], ['1×', () => { view.z = 1; view.x = 0; view.y = 0; applyView(); }]].forEach((q) => { const b = btn(q[0], false, ''); b.onclick = () => { q[1](); Snd.sfx('tap'); }; zr.appendChild(b); }); body.appendChild(zr); }
     add('Сохранить в галерею', 'save', () => { closePanel(); galleryModal(true); });
     add('Галерея', 'folder', () => { closePanel(); galleryModal(false); });
     add('Настройки', 'gear', () => openPanel('settings', true));
@@ -223,7 +245,6 @@
   function pSettings(body) {
     const mk = (title, opts, cur, set) => { const r = h('div', 'row'); r.appendChild(h('div', 'lbl', title)); opts.forEach((o) => { const b = btn(o[1], cur() === o[0], '', o[2]); b.onclick = () => { set(o[0]); Snd.sfx('tap'); openPanel('settings', true); }; r.appendChild(b); }); body.appendChild(r); };
     mk('Звук', [[true, 'Вкл', 'sound'], [false, 'Выкл', 'mute']], () => G.sound, (v) => { G.sound = v; Snd.on = v; saveSet(); });
-    mk('Размер пикселя', [[0, 'Авто'], [5, 'Крупный'], [4, 'Средний'], [3, 'Мелкий'], [2, 'Тонкий']], () => G.cs, (v) => { G.cs = v; saveSet(); layout(false); });
     const r = h('div', 'row'); const b = btn('Сбросить кампанию', false, 'red wide'); b.onclick = () => confirmBox('Стереть весь прогресс кампании?', () => { prog = { day: 1, unlocked: ['EARTH', 'WATER', 'STONE', 't:HUMAN'], done: {}, finished: false }; saveProg(); renderBar(); toast('Прогресс сброшен'); }); r.appendChild(b); body.appendChild(r);
     body.appendChild(h('div', 'hint', 'Пикселия — песочница миров. Элементы реагируют друг с другом: пробуй смешивать!'));
   }
@@ -282,7 +303,7 @@
   const ptr = { down: false, x: 0, y: 0, lx: 0, ly: 0, sx: 0, sy: 0, held: 0, type: 'mouse', inside: false };
   function cellOf(e) { const r = field.getBoundingClientRect(); return [Math.max(0, Math.min(W - 1, ((e.clientX - r.left) / r.width * W) | 0)), Math.max(0, Math.min(H - 1, ((e.clientY - r.top) / r.height * H) | 0))]; }
   function showRing(e, keep) {
-    if (e) { const r = field.getBoundingClientRect(); ring.style.left = (e.clientX - r.left) + 'px'; ring.style.top = (e.clientY - r.top) + 'px'; }
+    if (e) { const r = field.getBoundingClientRect(); ring.style.left = ((e.clientX - r.left) / view.z) + 'px'; ring.style.top = ((e.clientY - r.top) / view.z) + 'px'; }
     const d = (G.size * 2 + 1) * cs; ring.style.width = d + 'px'; ring.style.height = d + 'px'; ring.classList.toggle('sq', G.shape === 'sq');
     const show = !isTool(G.sel) || ['ERASE', 'HEAT', 'COLD', 'WIND'].indexOf(G.sel.slice(2)) >= 0;
     ring.style.display = (keep && !ptr.inside) ? 'none' : (show ? 'block' : 'none');
@@ -328,7 +349,9 @@
   const { AIR, WALL, SKY } = E;
   field.addEventListener('pointerdown', (e) => {
     if (title.classList.contains('hide') === false) return;
-    Snd.init(); Snd.resume(); field.setPointerCapture(e.pointerId); const [x, y] = cellOf(e);
+    if (e.pointerType === 'touch') { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (tp.size === 2) { ptr.down = false; fxc.clearRect(0, 0, W, H); pinch = pinchState(); try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; } }
+    if (e.button === 2) { panning = { x: e.clientX, y: e.clientY }; try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; }
+    Snd.init(); Snd.resume(); try { field.setPointerCapture(e.pointerId); } catch (er) { }; const [x, y] = cellOf(e);
     ptr.down = true; ptr.type = e.pointerType; ptr.x = ptr.lx = ptr.sx = x; ptr.y = ptr.ly = ptr.sy = y; ptr.held = 0; ptr.inside = true;
     if (openedPanel) closePanel();
     pushUndo();
@@ -337,6 +360,8 @@
     showRing(e); e.preventDefault();
   });
   field.addEventListener('pointermove', (e) => {
+    if (panning) { view.x += e.clientX - panning.x; view.y += e.clientY - panning.y; panning.x = e.clientX; panning.y = e.clientY; applyView(); return; }
+    if (tp.has(e.pointerId)) { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pinch && tp.size >= 2) { const n = pinchState(); zoomAt(n.cx, n.cy, n.d / pinch.d); view.x += n.cx - pinch.cx; view.y += n.cy - pinch.cy; applyView(); pinch = n; return; } }
     const [x, y] = cellOf(e); ptr.inside = true; ptr.lx = ptr.x; ptr.ly = ptr.y; ptr.x = x; ptr.y = y;
     if (e.pointerType === 'mouse' || ptr.down) showRing(e);
     if (ptr.down) {
@@ -346,6 +371,7 @@
     infoAt(x, y, e);
   });
   const endStroke = (e) => {
+    tp.delete(e.pointerId); if (tp.size < 2) pinch = null; if (panning && e.button !== undefined) panning = null;
     if (!ptr.down) return; ptr.down = false;
     if ((G.mode === 'line' || G.mode === 'rect') && (!isTool(G.sel) || G.sel === 't:ERASE')) { const [x, y] = cellOf(e); commitShape(ptr.sx, ptr.sy, x, y); }
     if (e.pointerType !== 'mouse') ring.style.display = 'none'; info.classList.remove('on');
@@ -416,7 +442,7 @@
     while (acc >= stepMs && n < 5) { Sim.step(); acc -= stepMs; n++; } if (n === 5) acc = 0;
     if (ptr.down && !G.paused || (ptr.down && G.paused)) { ptr.held++; if (G.mode === 'brush' || isTool(G.sel)) { if (G.sel !== 't:WIND' && !(isTool(G.sel) && G.sel.slice(2) === 'METEOR' && ptr.held % 40)) stamp(ptr.x, ptr.y, false); } }
     Render.draw(Sim);
-    const sh = Sim.shake; field.style.transform = sh > .3 ? 'translate(' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px,' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px)' : '';
+    const sh = Sim.shake; { const t = sh > .3 ? 'translate(' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px,' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px)' : ''; if (t !== shakeT) { shakeT = t; applyView(); } }
     $('#flash').style.opacity = Sim.bolts.length ? (Math.max.apply(null, Sim.bolts.map((b) => b.ttl)) / 8 * .22).toFixed(2) : 0;
     frameN++;
     if (frameN % 6 === 0) { Snd.update(Sim.act, Sim.weather); Sim.act.p = Sim.act.l = Sim.act.f = 0; }

@@ -9,7 +9,7 @@
 const Sky = (function () {
   const NB = 6, B_FOREST = 0, B_DESERT = 1, B_SNOW = 2, B_ROCK = 3, B_VOLC = 4, B_SEA = 5;
   const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'cave'];
-  const HZ = [.82, .82, .82, .82, .82, .6];   /* линия горизонта по сценам: у моря выше */
+  const HZ = [.6, .64, .82, .82, .82, .6];   /* линия горизонта по сценам: у моря выше */
   const DAY_SEC = 240, SC = 2;
   const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false };
   const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
@@ -63,12 +63,13 @@ const Sky = (function () {
   /* цвета слоёв [сцена][слой дальний/средний/ближний] = [свет, тень, кромка] при дневном свете */
   const LCOL = [
     [[[150, 168, 200], [112, 130, 176], [210, 222, 242]], [[66, 160, 108], [44, 122, 90], [132, 208, 130]], [[36, 112, 66], [22, 82, 54], [84, 160, 82]]],
-    [[[232, 170, 116], [200, 128, 98], [250, 208, 150]], [[244, 200, 122], [218, 160, 96], [255, 232, 160]], [[226, 170, 88], [192, 132, 70], [250, 206, 112]]],
+    [[[246, 190, 120], [200, 112, 96], [255, 226, 160]], [[255, 210, 118], [226, 148, 88], [255, 240, 176]], [[240, 178, 84], [196, 118, 64], [255, 220, 120]]],
     [[[176, 200, 236], [122, 148, 206], [250, 252, 255]], [[150, 182, 226], [104, 134, 194], [240, 248, 255]], [[46, 122, 112], [30, 90, 92], [204, 234, 238]]],
-    [[[168, 120, 160], [112, 76, 130], [222, 170, 200]], [[120, 84, 136], [84, 56, 108], [176, 130, 170]], [[78, 56, 96], [54, 38, 72], [120, 90, 130]]],
+    [[[214, 112, 110], [140, 62, 92], [250, 170, 140]], [[166, 78, 100], [104, 48, 82], [220, 130, 120]], [[96, 46, 74], [62, 32, 58], [150, 84, 96]]],
     [[[140, 70, 70], [92, 44, 56], [206, 106, 84]], [[88, 50, 58], [58, 32, 44], [150, 78, 62]], [[54, 34, 42], [36, 22, 32], [110, 58, 48]]],
-    [[[150, 182, 222], [118, 150, 200], [204, 226, 246]], [[52, 126, 206], [40, 104, 184], [110, 176, 236]], [[36, 98, 184], [28, 78, 160], [70, 134, 214]]]];
+    [[[104, 150, 190], [70, 112, 164], [176, 210, 236]], [[52, 126, 206], [40, 104, 184], [110, 176, 236]], [[36, 98, 184], [28, 78, 160], [70, 134, 214]]]];
   const FOG = [.46, .36, .3];   /* дымка: фон уходит вдаль и не спорит с передним планом */
+  const DSKY = [[70, 148, 190], [98, 170, 202], [128, 190, 210], [164, 206, 210], [204, 216, 200], [240, 220, 182], [255, 214, 160]];   /* небо пустыни: бирюза над персиковым горизонтом */
   const TB = [];
   (function () {
     const set = (keys, b) => keys.forEach((k) => { if (E[k] !== undefined) TB[E[k]] = b; });
@@ -96,24 +97,25 @@ const Sky = (function () {
     const ic = [0, 1, 2].map((i) => .12 + .76 * hash1(i, SEED % 53)), iw = [0, 1, 2].map((i) => .04 + .05 * hash1(i, SEED % 29 + 3));
     const xm1 = .16 + .3 * hash1(1, SEED % 41), xm2 = .62 + .26 * hash1(2, SEED % 43);
     for (let x = 0; x < W; x++) {
-      const xn = x / W, f = (k, fr, o) => fbm(TAB[k], xn * fr, o), rg = (k, fr, o) => Math.pow(1 - Math.abs(2 * fbm(TAB[k], xn * fr, o) - 1), 1.3);
+      const xn = x / W, f = (k, fr, o) => fbm(TAB[k], xn * fr, o), rg = (k, fr, o) => { const v = fbm(TAB[k], xn * fr, o); return Math.pow(v * v * (3 - 2 * v), 1.1) * 1.25; };   /* округлые вершины, без острых пиков */
       const m1 = Math.pow(Math.max(0, 1 - Math.abs(xn - xm1) / .26), 1.2), m2 = Math.pow(Math.max(0, 1 - Math.abs(xn - xm2) / .2), 1.3);
       HT[0][B_FOREST][x] = .06 + .05 * f(0, 3.2, 2) + .27 * m1 * (.8 + .2 * rg(12, 9, 2)) + .17 * m2 * (.8 + .2 * rg(13, 9, 2));
       HT[1][B_FOREST][x] = .05 + .06 * f(1, 4.5, 2) + .03 * bump(x, 6 * U, .95, false, 1);
       HT[2][B_FOREST][x] = .03 + .03 * f(2, 6, 2) + .04 * bump(x, 15 * U, .8, true, 2);
-      HT[0][B_DESERT][x] = .05 + .17 * Math.floor(f(3, 2.6, 2) * 3.4) / 3;
-      HT[1][B_DESERT][x] = .045 + .06 * (.5 + .5 * Math.sin(xn * 9 + ph)) * (.6 + .4 * f(4, 4, 2));
-      HT[2][B_DESERT][x] = .03 + .035 * Math.abs(Math.sin(xn * 14 + ph2));
+      { const bt = (c, w) => { const d = Math.abs(xn - c) / w; return d >= 1 ? 0 : Math.min(1, (1 - d) * 2.4); };   /* песчаные пирамиды-бугры с наклонными боками */
+        HT[0][B_DESERT][x] = .05 + .06 * Math.pow(Math.abs(Math.sin(xn * 5 + ph)), .8) + .2 * bt(xm1, .17) + .13 * bt(xm2, .12); }
+      HT[1][B_DESERT][x] = .04 + .075 * Math.pow(Math.abs(Math.sin(xn * 7.5 + ph2)), .7) * (.7 + .3 * f(4, 3, 2));
+      HT[2][B_DESERT][x] = .025 + .04 * Math.pow(Math.abs(Math.sin(xn * 12 + ph)), .8);
       HT[0][B_SNOW][x] = .06 + .30 * Math.pow(rg(5, 3.4, 3), 1.4);
       HT[1][B_SNOW][x] = .05 + .12 * rg(6, 5, 2) + .02 * bump(x, 7 * U, .9, false, 6);
       HT[2][B_SNOW][x] = .03 + .03 * f(9, 5, 2);
       HT[0][B_ROCK][x] = .08 + .28 * rg(7, 4.4, 3);
-      HT[1][B_ROCK][x] = .04 + .15 * Math.floor(f(8, 5, 2) * 5) / 5;
+      HT[1][B_ROCK][x] = .04 + .13 * rg(8, 5, 2);
       HT[2][B_ROCK][x] = .03 + .04 * f(9, 9, 2) + .03 * bump(x, 18 * U, .5, true, 5);
       HT[1][B_VOLC][x] = .04 + .10 * rg(10, 5, 2);
       HT[2][B_VOLC][x] = .03 + .06 * rg(11, 8, 2);
       let isl = 0; for (let i = 0; i < 3; i++) isl += .055 * Math.pow(Math.max(0, 1 - Math.abs((xn - ic[i]) / iw[i])), 1.4);
-      HT[0][B_SEA][x] = .02 + .08 * Math.pow(f(2, 2.4, 2), 2) + isl * 1.3;
+      HT[0][B_SEA][x] = 0;
     }
     volcFar();
   }
@@ -175,7 +177,7 @@ const Sky = (function () {
     for (let i = 0; i < 7; i++) {
       const lo = i / 6;
       if (scene === B_VOLC) cols[i] = lerp3(cols[i], [i < 3 ? 52 : 190, i < 3 ? 22 : 60, i < 3 ? 40 : 40], .5 * (.4 + .6 * lo));
-      else if (scene === B_DESERT) cols[i] = lerp3(cols[i], [255, 222, 164], .26 * dayF * lo);
+      else if (scene === B_DESERT) cols[i] = lerp3(cols[i], DSKY[i], .8 * dayF);
       else if (scene === B_SNOW) cols[i] = lerp3(cols[i], [150, 190, 240], .14 * dayF * (1 - lo));
       if (Y.ov > .01) cols[i] = lerp3(cols[i], grey(cols[i]), Y.ov * .85);
     }
@@ -244,16 +246,112 @@ const Sky = (function () {
   }
   /* море: плоскость воды полосами, к горизонту светлее, с гребешками волн */
   function seaPlane(grade) {
-    const hz = Math.round(hzCur), top = grade([150, 202, 236], .1), deep = grade([24, 72, 152], 0), glint = grade([214, 240, 255], .1), dark = grade([20, 58, 130], 0);
+    const hz = Math.round(hzCur), top = grade([108, 156, 206], .12), deep = grade([60, 108, 176], 0), light = grade([138, 190, 226], .05), dark = grade([46, 90, 156], 0);
     for (let y = hz; y < H; y++) {
-      const t = (y - hz) / Math.max(1, H - hz), bi = Math.min(7, Math.floor(t * 8)), fr = bi / 7, nb = Math.floor(t * 8 + (((y & 1) ? .25 : -.25))) / 7;
-      const f = clamp01(Math.max(0, Math.min(1, (((y + 0) & 1) && Math.abs(t * 8 - Math.round(t * 8)) < .12) ? nb : fr)));
-      for (let x = 0; x < W; x++) fgBuf[y * W + x] = px(c255(lerp(top[0], deep[0], f)), c255(lerp(top[1], deep[1], f)), c255(lerp(top[2], deep[2], f)));
+      const t = (y - hz) / Math.max(1, H - hz), band = Math.floor(t * 7), f = band / 6, edge = (t * 7 - band) < .12 && ((y & 1) === 1) ? Math.max(0, (band - 1) / 6) : f;
+      for (let x = 0; x < W; x++) fgBuf[y * W + x] = px(c255(lerp(top[0], deep[0], edge)), c255(lerp(top[1], deep[1], edge)), c255(lerp(top[2], deep[2], edge)));
     }
     if (hz < fgTop) fgTop = hz;
-    for (let k = 1; k < 12; k++) {
-      const y = Math.round(hz + (H - hz) * Math.pow(k / 12, 1.7)); if (y >= H) break;
-      for (let x = 0; x < W; x++) { const hsh = hash1(x >> 1, k * 7 + SEED % 13); if (hsh > .72 && hsh < .86) fgBuf[y * W + x] = px3(glint); else if (hsh >= .93 && y + 1 < H) fgBuf[(y + 1) * W + x] = px3(dark); }
+    /* длинные горизонтальные полосы светлее и темнее воды, к зрителю шире */
+    for (let y = hz + 1; y < H; y++) {
+      const t = (y - hz) / Math.max(1, H - hz), dens = .1 + .22 * t;
+      let x = Math.floor(hash1(y, 5) * 30);
+      while (x < W) {
+        const len = Math.round((5 + hash1(x, y) * 26) * (1 + t * 3)), r = hash1(y * 7 + 1, x >> 2);
+        if (r < dens) { const c = r < dens * .6 ? light : dark; for (let k = 0; k < len && x + k < W; k++) fgBuf[y * W + x + k] = px3(c); }
+        x += len + Math.round(hash1(x, y + 3) * 18 * (1 + t * 2));
+      }
+    }
+  }
+  /* облачная гряда у горизонта: башня кучевых облаков из круглых пузырей в три тона, как на референсе */
+  function cloudBank(e, grade) {
+    const hz = Math.round(hzCur), c = keyAt(CLOUD_KEYS, e), tones = [[c[6] * .78, c[7] * .8, c[8] * .9], [c[3], c[4], c[5]], [c[0], c[1], c[2]]].map((v) => grade(v, .05));
+    const tw = [[.3, .26], [.78, .14]], env = (xn) => { let h = .035 + .03 * fbm(TAB[3], xn * 7, 2); for (const [cx, hh] of tw) h += hh * Math.exp(-Math.pow((xn - cx) / .1, 2)); return h * H; };
+    for (let t = 0; t < 3; t++) for (let i = 0; i < 330; i++) {
+      const cx = hash1(i, 31 + t) * (W + 20) - 10, xn = Math.max(0, Math.min(1, cx / W)), en = env(xn), rr = hash1(i, 41 + t);
+      const cy = hz - en * (.18 + t * .26) * (.5 + rr), rad = Math.max(2, (en * .3 + 2) * (1 - t * .12) * (.5 + hash1(i, 51 + t) * .6));
+      const col = px3(tones[t]), ox = t === 2 ? -rad * .25 : 0, oy = t === 2 ? -rad * .3 : 0;
+      for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) { if (dx * dx + dy * dy > rad * rad) continue; const yy = Math.round(cy + oy + dy); if (yy < hz) fput(Math.round(cx + ox + dx), yy, col); }
+    }
+  }
+  /* ---------- пустыня: плоская песчаная равнина, ступенчатые столовые горы, сагуаро, кусты и камни ---------- */
+  function butte(cx, by, w, h, lit, shade, rim) {
+    const tiers = [[1.45, .26], [.62, .2], [.56, .22], [.5, .2], [.44, .12]]; let y = by;
+    for (let ti = 0; ti < tiers.length; ti++) {
+      const th = Math.max(2, Math.round(h * tiers[ti][1])), w0 = w / 2 * tiers[ti][0], w1 = ti === 0 ? w / 2 * .66 : w0;
+      for (let r = 0; r < th; r++) {
+        const hw = Math.round(lerp(w0, w1, r / th)), k = (r % 3 === 2) ? .88 : 1, top = ti === tiers.length - 1 && r === th - 1;
+        for (let dx = -hw; dx <= hw; dx++) { const c = top ? rim : dx <= -hw * .1 ? lit : shade; fput(cx + dx, y - r, px(c255(c[0] * k), c255(c[1] * k), c255(c[2] * k))); }
+      }
+      y -= th;
+    }
+  }
+  function saguaro(cx, by, h, lit, shade) {
+    const wd = Math.max(1, Math.round(h * .11));
+    for (let y = 0; y < h; y++) for (let k = 0; k < wd; k++) fput(cx + k, by - y, k < wd / 2 ? lit : shade);
+    const arm = (sd, ah, up) => { const ay = by - Math.round(h * ah), len = Math.max(2, Math.round(h * .28)); for (let k = 1; k <= len; k++) for (let q = 0; q < wd; q++) fput(cx + (sd < 0 ? -k : wd - 1 + k), ay - q, q === 0 ? lit : shade); for (let y = 0; y < Math.round(h * up); y++) for (let q = 0; q < wd; q++) fput(cx + (sd < 0 ? -len : wd - 1 + len) + (sd < 0 ? q : -q), ay - y, q === 0 ? lit : shade); };
+    arm(-1, .42, .3); arm(1, .56, .24);
+  }
+  function desertScene(grade) {
+    const hz = Math.round(hzCur), U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, top = grade([246, 200, 140], .35), bot = grade([206, 118, 58], 0), lite = grade([252, 214, 150], .2), darkk = grade([170, 88, 48], 0);
+    for (let y = hz; y < H; y++) {
+      const t = (y - hz) / Math.max(1, H - hz), band = Math.floor(t * 8), f = band / 7, ff = ((t * 8 - band) < .14 && (y & 1)) ? Math.max(0, (band - 1) / 7) : f;
+      for (let x = 0; x < W; x++) fgBuf[y * W + x] = px(c255(lerp(top[0], bot[0], ff)), c255(lerp(top[1], bot[1], ff)), c255(lerp(top[2], bot[2], ff)));
+    }
+    if (hz < fgTop) fgTop = hz;
+    for (let y = hz + 2; y < H; y++) {   /* волны песка: длинные светлые и тёмные ряды */
+      const t = (y - hz) / (H - hz); let x = Math.floor(hash1(y, 9) * 40);
+      while (x < W) { const len = Math.round((8 + hash1(x, y) * 40) * (1 + t * 2.5)), r = hash1(y * 5 + 2, x >> 3); if (r < .1 + .1 * t) { const c = r < .08 ? lite : darkk; for (let k = 0; k < len && x + k < W; k++) fgBuf[y * W + x + k] = px3(c); } x += len + Math.round(hash1(x, y + 2) * 40); }
+    }
+    /* столовые горы: далёкие светлее и в дымке, ближние ярче; свет слева */
+    const bs = [[.12, .4, .8], [.31, .22, .5], [.58, .26, .55], [.78, .34, .7], [.93, .2, .45]];
+    for (const [xn, hh, sc] of bs.sort((a, b) => a[2] - b[2])) {
+      const f = .55 - sc * .4, lit = grade([212, 108, 66], f), sh = grade([150, 70, 54], f), rim = grade([244, 160, 110], f);
+      butte(Math.round(xn * W), hz + 1, Math.round(W * .2 * sc * 1.1), Math.round(H * hh * sc), lit, sh, rim);
+    }
+    /* предметы на земле: чем ниже, тем крупнее */
+    const objs = []; for (let i = 0; i < 70; i++) objs.push([hash1(i, 61), Math.pow(hash1(i, 62), 1.5), hash1(i, 63)]);
+    objs.sort((a, b) => a[1] - b[1]);
+    const green = grade([84, 134, 72], .1), greenS = grade([56, 100, 62], .1), olive = grade([110, 126, 56], .1), oliveL = grade([152, 164, 78], .1), rk = grade([150, 76, 52], .05), rkS = grade([104, 52, 44], .05);
+    for (const [xr, t, k] of objs) {
+      const x = Math.round(xr * W), y = hz + 6 + Math.round(t * (H - hz - 8)), s2 = (.35 + t * 1.4) * U;
+      if (k < .22) saguaro(x, y, Math.round(14 * s2), px3(green), px3(greenS));
+      else if (k < .62) { const w = Math.max(2, Math.round(5 * s2)), h = Math.max(1, Math.round(2.6 * s2)); for (let dy = 0; dy < h; dy++) for (let dx = -w + dy; dx <= w - dy; dx++) fput(x + dx, y - dy, dy >= h - 1 ? px3(oliveL) : px3(olive)); }
+      else { const w = Math.max(2, Math.round(3.5 * s2)), h = Math.max(1, Math.round(2 * s2)); for (let dy = 0; dy < h; dy++) for (let dx = -w + dy; dx <= w - dy; dx++) fput(x + dx, y - dy, dx < 0 ? px3(rk) : px3(rkS)); }
+    }
+  }
+  /* ---------- равнина: далёкие голубые холмы, зелёные холмы с деревьями, трава с кустиками, цветы и тропинка ---------- */
+  function meadowScene(grade) {
+    const hz = Math.round(hzCur), U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85;
+    const haze = px3(grade([138, 192, 212], .3)), hazeL = px3(grade([176, 220, 232], .3)), far = px3(grade([92, 158, 178], .18)), farL = px3(grade([146, 204, 212], .18)), farS = px3(grade([72, 130, 160], .18));
+    const hill = grade([96, 178, 100], .08), hillL = px3(grade([156, 220, 112], .08)), hillS = grade([62, 144, 84], .08), top = grade([118, 200, 92], .12), bot = grade([30, 118, 40], 0);
+    for (let y = hz; y < H; y++) {   /* луг: от светлой травы к тёмной, с дизерингом на стыках */
+      const t = (y - hz) / Math.max(1, H - hz), band = Math.floor(t * 9), f = band / 8, ff = ((t * 9 - band) < .14 && (y & 1)) ? Math.max(0, (band - 1) / 8) : f;
+      for (let x = 0; x < W; x++) fgBuf[y * W + x] = px(c255(lerp(top[0], bot[0], ff)), c255(lerp(top[1], bot[1], ff)), c255(lerp(top[2], bot[2], ff)));
+    }
+    if (hz < fgTop) fgTop = hz;
+    const rng = (k, fr, base, amp) => { const a = new Int16Array(W); for (let x = 0; x < W; x++) a[x] = Math.round(hz - H * (base + amp * fbm(TAB[k], x / W * fr, 3))); return a; };
+    const r0 = rng(0, 3.2, .13, .13), r1 = rng(1, 5, .06, .1);   /* два ряда далёких холмов */
+    for (let x = 0; x < W; x++) { for (let y = Math.max(0, r0[x]); y < hz; y++) fput(x, y, y - r0[x] < 2 ? hazeL : haze); for (let y = Math.max(0, r1[x]); y < hz; y++) { const d = y - r1[x]; fput(x, y, d < 1 ? farL : d > 6 * U && ((x + y) & 1) ? farS : far); } }
+    /* зелёные холмы перед равниной: два ряда, дальний светлее; тон меняется по глубине, а не по столбцам */
+    const hr = new Int16Array(W), hb = new Int16Array(W), hh = Math.round(H * .13);
+    for (let x = 0; x < W; x++) { hb[x] = Math.round(hz - H * (.01 + .06 * fbm(TAB[3], x / W * 4, 3))); hr[x] = Math.round(hz + H * .03 - H * (.03 + .07 * fbm(TAB[2], x / W * 6, 3))); }
+    const hb1 = grade([116, 194, 110], .14), hb2 = grade([80, 158, 100], .14);
+    for (let x = 0; x < W; x++) for (let y = Math.max(0, hb[x]); y < hb[x] + hh; y++) { const d = y - hb[x], c = d < 1 ? hillL : d > hh * .55 ? hb2 : hb1; fput(x, y, typeof c === 'number' ? c : px3(c)); }
+    for (let x = 0; x < W; x++) for (let y = Math.max(0, hr[x]); y < hr[x] + hh; y++) { const d = y - hr[x], c = d < 1 ? hillL : d < hh * .4 ? hill : (d < hh * .55 && ((x + y) & 1)) ? hill : hillS; fput(x, y, typeof c === 'number' ? c : px3(c)); }
+    const tl = px3(grade([44, 116, 76], .05)), ts = px3(grade([30, 88, 64], .05)), th = px3(grade([80, 156, 90], .05)), tk = px3(grade([92, 64, 44], .05));
+    for (let x = 6; x < W - 6; x += 5 * SC) if (hash1(x, 14) > .55) roundTree(Math.round(x + hash1(x, 15) * 6), hr[x] + 1, Math.max(2, Math.round((2 + hash1(x, 16) * 3) * U)), tl, ts, th, tk);
+    /* тропинка */
+    const py = hz + Math.round(H * .22), pt = grade([176, 128, 80], .02), pe = px3(grade([128, 88, 56], .02)), pb = px3(grade([200, 150, 98], .02));
+    for (let x = 0; x < W; x++) { const y0 = py + Math.round(Math.sin(x / W * 9 + SEED % 7) * 2 * U), ph = Math.max(3, Math.round(H * .04)); for (let y = 0; y < ph; y++) fput(x, y0 + y, y === 0 ? pe : y === ph - 1 ? pb : px(c255(pt[0] + ((x + y) % 7 === 0 ? -10 : 0)), c255(pt[1]), c255(pt[2]))); }
+    /* трава и цветы: чем ниже, тем крупнее */
+    const g1 = px3(grade([30, 108, 48], 0)), g2 = px3(grade([72, 160, 64], 0)), g3 = px3(grade([140, 214, 90], 0)), fl = [[255, 220, 90], [255, 255, 255], [255, 140, 170], [176, 150, 255]].map((c) => px3(grade(c, 0)));
+    const objs = []; for (let i = 0; i < 260; i++) objs.push([hash1(i, 71), Math.pow(hash1(i, 72), 1.2), hash1(i, 73)]);
+    objs.sort((a, b) => a[1] - b[1]);
+    for (const [xr, t, k] of objs) {
+      const x = Math.round(xr * W), y = hz + Math.round(H * .1) + Math.round(t * (H - hz - H * .1 - 2)), s2 = (.5 + t * 1.8) * U;
+      if (k < .8) { const n = 3 + Math.floor(hash1(x, y) * 3); for (let b = 0; b < n; b++) { const bh = Math.max(2, Math.round((2.5 + hash1(x + b, y) * 3) * s2)), lean = Math.round((b - n / 2) * .6 * s2); for (let q = 0; q < bh; q++) fput(x + b * Math.max(1, Math.round(s2 * .7)) + Math.round(lean * q / bh), y - q, q > bh * .6 ? g3 : b & 1 ? g2 : g1); } }
+      else { const c = fl[(hash1(x, y) * 4) | 0], q = Math.max(1, Math.round(s2 * .7)); for (let dy = 0; dy < q; dy++) for (let dx = 0; dx < q; dx++) fput(x + dx, y - dy, c); }
     }
   }
   function rebuildFg() {
@@ -264,9 +362,11 @@ const Sky = (function () {
     const dayF = .35 + .65 * sstep(-.05, .3, e), LC = LCOL[b].map((cols, l) => cols.map((c) => grade(c, FOG[l] * dayF)));   /* в сумерках дымки меньше: силуэты тёмные и сочные */
     const capLit = grade([250, 252, 255], .1), capSh = grade([186, 210, 244], .1), lava = [255, 112, 32];
     const base = b === B_SEA ? [hz - .005 * H, 0, 0] : [hz - .005 * H, hz + .07 * H, hz + .145 * H];
-    const layers = b === B_SEA ? 1 : 3;
+    const layers = b === B_SEA || b === B_DESERT || b === B_FOREST ? 0 : 3;
     for (let l = 0; l < layers; l++) for (let x = 0; x < W; x++) ridge[l][x] = Math.round(base[l] - HT[l][b][x] * H);
-    if (b === B_SEA) seaPlane(grade);
+    if (b === B_SEA) { seaPlane(grade); cloudBank(e, grade); }
+    if (b === B_DESERT) desertScene(grade);
+    if (b === B_FOREST) meadowScene(grade);
     const litA = new Uint8Array(W);
     for (let l = 0; l < layers; l++) {
       const R = ridge[l];
@@ -294,7 +394,7 @@ const Sky = (function () {
       }
     }
     /* деревья, ёлки, кактусы и цветы на ближнем слое */
-    if (b !== B_SEA && b !== B_ROCK && b !== B_VOLC) {
+    if (b !== B_SEA && b !== B_ROCK && b !== B_VOLC && b !== B_DESERT && b !== B_FOREST) {
       const cell = Math.max(6, Math.round(8 * U)), trunk = px3(grade([110, 74, 46], .05)), c2 = LC[2];
       for (let cx0 = Math.round(cell / 2); cx0 < W - 2; cx0 += cell) {
         const x = Math.max(2, Math.min(W - 3, cx0 + Math.round((hash1(cx0, 3) - .5) * cell * .6))), by = ridge[2][x] + 1, r = hash1(cx0, 9);
@@ -426,6 +526,7 @@ const Sky = (function () {
     const p = keyAt(CLOUD_KEYS, e), ov = Y.ov, tw = Math.max(0, 1 - Math.abs(e - .03) / .2), night = 1 - sstep(-.3, 0, e);
     let lit = [p[0], p[1], p[2]], mid = [p[3], p[4], p[5]], sh = [p[6], p[7], p[8]], al = p[9];
     if (ov > .01) { lit = lerp3(lit, [206, 212, 224], ov * .9); mid = lerp3(mid, [150, 158, 174], ov * .9); sh = lerp3(sh, [104, 112, 130], ov * .9); al = lerp(al, .98, ov); }
+    if (scene === B_DESERT) { const dw = sstep(0, .3, e) * (1 - ov); lit = lerp3(lit, [255, 240, 214], .75 * dw); mid = lerp3(mid, [246, 208, 170], .75 * dw); sh = lerp3(sh, [214, 164, 146], .75 * dw); }
     const pal = [lit, mid, sh], streakVis = Math.max(tw * 1.15, night * .3) * (1 - ov), sc = keyAt(STREAK_KEYS, e), spal = [[sc[0], sc[1], sc[2]], [sc[3], sc[4], sc[5]], [sc[6], sc[7], sc[8]]];
     for (const c of clouds) {
       const sp = c.sp;
@@ -476,10 +577,13 @@ const Sky = (function () {
   function drawGlitter(tick, e) {
     if (scene !== B_SEA) return;
     const p = bodyPos(), hz = hzCur, sunUp = p.sy < hz - 1, moonUp = !sunUp && p.my < hz - 1; if (!sunUp && !moonUp) return;
-    const bx = sunUp ? p.sx : p.mx, col = sunUp ? [255, 244, 196] : [214, 226, 255], vis = (sunUp ? 1 : .7) * (1 - Y.ov * .8);
-    for (let y = Math.ceil(hz) + 1; y < H; y++) {
-      const k = (y - hz) / (H - hz), hw = p.R * (.8 + 3.4 * k);
-      for (let x = Math.floor(bx - hw); x <= bx + hw; x++) { if (x < 0 || x >= W) continue; if (((x * 7 + y * 13 + (tick >> 4) * 5) % 5) === 0 && hash1(x, y + (tick >> 5)) > .3 + .35 * k) blend(y * W + x, col[0], col[1], col[2], .7 * vis * (1 - .5 * k)); }
+    const bx = sunUp ? p.sx : p.mx, col = sunUp ? [255, 244, 210] : [190, 226, 255], vis = (sunUp ? .9 : .8) * (1 - Y.ov * .8);
+    for (let y = Math.ceil(hz) + 2; y < H; y += 2) {
+      const k = (y - hz) / (H - hz), hw = p.R * (.5 + 2.4 * k);
+      for (let q = 0; q < 3; q++) {
+        const r = hash1(y, q + (tick >> 6)), len = Math.round((3 + r * 9) * (1 + k * 2)), x0 = Math.round(bx + (hash1(y + 9, q + (tick >> 6)) - .5) * 2 * hw - len / 2);
+        for (let x = x0; x < x0 + len; x++) if (x >= 0 && x < W) blend(y * W + x, col[0], col[1], col[2], .75 * vis * (1 - .4 * k));
+      }
     }
   }
   function drawCave(tick) {
