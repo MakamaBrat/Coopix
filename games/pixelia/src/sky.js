@@ -7,9 +7,9 @@
    Всё считается на CPU в буфер размером с мир и выводится на канвас #bg. Тяжёлое (небо и слои) пересчитывается редко и по очереди,
    каждый кадр — копия готового неба, светила, звёзды и облака. */
 const Sky = (function () {
-  const NB = 6, B_FOREST = 0, B_DESERT = 1, B_SNOW = 2, B_ROCK = 3, B_VOLC = 4, B_SEA = 5;
-  const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'cave'];
-  const HZ = [.6, .64, .82, .82, .82, .6];   /* линия горизонта по сценам: у моря выше */
+  const NB = 7, B_FOREST = 0, B_DESERT = 1, B_SNOW = 2, B_ROCK = 3, B_VOLC = 4, B_SEA = 5, B_BEACH = 6;
+  const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'beach', 'cave'];
+  const HZ = [.62, .62, .62, .82, .82, .62, .62];   /* линия горизонта по сценам: у моря выше */
   const DAY_SEC = 240, SC = 2;
   const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false };
   const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
@@ -151,6 +151,7 @@ const Sky = (function () {
       return;
     }
     emptyN = 0;
+    counts[B_BEACH] = (counts[B_SEA] >= total * .25 && counts[B_DESERT] >= total * .25) ? counts[B_SEA] + counts[B_DESERT] : 0;   /* и вода, и песок: пляж */
     let best = 0; for (let b = 1; b < NB; b++) if (counts[b] > counts[best]) best = b;
     if (snap) { if (best !== scene) { scene = best; applyScene(); } return; }
     if (best !== scene && counts[best] > counts[scene] + total * .12 && counts[best] > total * .35) {
@@ -357,7 +358,7 @@ const Sky = (function () {
   function rebuildFg() {
     fgBuf.fill(0); fgTop = H;
     if (Y.cave) { caveFg(); return; }
-    const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, b = scene;
+    const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, b = scene === B_BEACH ? B_SEA : scene;
     const grade = (c, f) => [lerp(Math.min(255, c[0] * lg[0] * ovs + lg[3]), hr, f), lerp(Math.min(255, c[1] * lg[1] * ovs + lg[4]), hg, f), lerp(Math.min(255, c[2] * lg[2] * ovs + lg[5]), hb, f)];
     const dayF = .35 + .65 * sstep(-.05, .3, e), LC = LCOL[b].map((cols, l) => cols.map((c) => grade(c, FOG[l] * dayF)));   /* в сумерках дымки меньше: силуэты тёмные и сочные */
     const capLit = grade([250, 252, 255], .1), capSh = grade([186, 210, 244], .1), lava = [255, 112, 32];
@@ -660,7 +661,7 @@ const Sky = (function () {
     if (o.auto !== undefined) Y.auto = !!o.auto;
     if (o.lock !== undefined) {
       const l = LOCKS.indexOf(o.lock) >= 0 ? o.lock : 'auto', was = Y.cave;
-      Y.lock = l; Y.cave = l === 'cave'; lockB = ['forest', 'desert', 'snow', 'rock', 'volcano', 'sea'].indexOf(l);
+      Y.lock = l; Y.cave = l === 'cave'; lockB = ['forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'beach'].indexOf(l);
       if (buf && !dirty) { if (was !== Y.cave) dirty = 2; else if (lockB >= 0 && lockB !== scene) switchScene(lockB, false); } else dirty = 2;
       if (lockB >= 0) scene = lockB;
     }
