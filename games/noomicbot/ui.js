@@ -108,3 +108,9 @@ document.head.appendChild(st)}
 "#maps .tabs{grid-area:2/1/3/3!important;height:9.5vmin!important}#maps .tabs button{font-size:3.2vmin!important}"+
 "#maps .list{grid-area:3/1/4/3!important}#maps .go{grid-area:4/1/5/3!important}#maps .pvw{grid-area:1/3/5/4!important}}";
 document.head.appendChild(st)}
+
+/* ---------- лого поменьше и ниже, чтобы плашка языка его не закрывала ---------- */
+{const st=document.createElement("style");st.textContent=
+"@media(orientation:portrait){#menu .ttl{font-size:8.6vw!important;letter-spacing:.6vw!important;top:calc(env(safe-area-inset-top) + 5.6%)!important}#flag{font-size:3.3vw!important;padding:1.4vw 3vw!important}#menu .flag{top:calc(env(safe-area-inset-top) + 1.2%)!important}}"+
+"@media(orientation:landscape){#menu .ttl{font-size:5.6vmin!important;top:3.4%!important}}";
+document.head.appendChild(st)}
