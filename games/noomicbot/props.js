@@ -4,7 +4,7 @@
    а Game.propStep (зовётся каждый физический шаг перед world.step) добавляет пружинные силы и воду.
    Всё детерминировано (фиксированный шаг, Math.random не используется) — повторы и запись работают как раньше. */
 {
-const PI=Math.PI,cl=(v,a,b)=>v<a?a:v>b?b:v,NEWT={spring:1,rope:1,board:1,pool:1};
+const VPOW=[7,10,13.5,17,21],VLEAN=[1,1,1,1,1],PI=Math.PI,cl=(v,a,b)=>v<a?a:v>b?b:v,NEWT={spring:1,rope:1,board:1,pool:1};
 
 /* ================= физика ================= */
 const _lm=GP.loadMap;
@@ -21,7 +21,7 @@ GP.buildProps=function(){
       b.setMassData({mass:.7,center:V2(0,0),I:.7*(wd*wd+.04)/12});
       const sd={prop:1,n:"spring"};b.solid=sd;fx.solid=sd;
       /* жёсткость: ёмкость пружины ~ 0.5*k*trav² (~50–130 Дж), чтобы большой ход давал больший выстрел */
-      this.props.push({t:"spring",p,b,ux,uy,h,wd,trav,k:330/Math.pow(h,.8),up:2.4,cd:1.2,cu:.3,pm:.7,tr:0,sp:0,pos0:[px,py],a0:a,load:0,wasC:0});
+      this.props.push({t:"spring",p,b,ux,uy,h,wd,trav,sel:!!p.sel,k:520/Math.pow(h,.8),up:3.2,cd:1.0,cu:.2,pm:.7,tr:0,sp:0,pos0:[px,py],a0:a,load:0,wasC:0});
     }else if(p.t==="rope"){
       const L=cl(p.len||6,3,12),a0=p.a||0;
       const b=mk(p.x,p.y,a0,{angularDamping:.07});
@@ -64,9 +64,10 @@ GP.propStep=function(dt){
       b.setPosition(V2(r.pos0[0]+r.ux*tr,r.pos0[1]+r.uy*tr));b.setLinearVelocity(V2(r.ux*sp,r.uy*sp));b.setAngle(r.a0);
       const comp=Math.max(0,-tr);r.tr=tr;r.sp=sp;
       const n=loadedOn(b),charge=!!(st&&st.mode==="stuck"&&inp.tuck&&this.welds.some(j=>j.getBodyA()===b||j.getBodyB()===b));
-      let F=r.k*comp*(sp>0&&!charge?r.up:1)-(charge?7:sp<0?r.cd:r.cu)*sp;
-      if(charge)F-=r.k*r.trav*.9;                 /* «приседание» на пружине: продавливаем платформу, отпускание = прыжок с отдачей */
-      if(sp>15)F-=(sp-15)*20;                     /* потолок скорости выброса */
+      const lv=Math.max(1,Math.min(5,this.springLvl||3)),mu=1;
+      let F=mu*r.k*comp*(sp>0&&!charge&&!r.sel?r.up:1)-(charge?7:sp<0?r.cd:r.cu)*sp;
+      if(charge)F-=r.k*r.trav*(r.sel?.16+.15*lv:.9);                 /* «приседание» на пружине: продавливаем платформу, отпускание = прыжок с отдачей */
+      if(sp>17)F-=(sp-17)*30;                     /* потолок скорости выброса */
       b.applyForceToCenter(V2(r.ux*F,r.uy*F+r.pm*g),true);
       if(n&&sp>2.4&&r.wasC>.22&&st){st.onTramp=true;st.air=Math.max(st.air,.2);this.emit("bounce");r.wasC=0}
       r.wasC=Math.max(comp,r.wasC*.9);r.load=n;
@@ -90,6 +91,31 @@ GP.propStep=function(dt){
       r.any=any;
     }
   }};
+
+/* ---------- прыжок со стоячего положения (на земле, пружине, доске): раньше слабый (≈0.5 м) и заваливал назад ----------
+   Теперь: присел («Группировка») и отпустил — прыжок вверх 1–2.2 м, глубина приседа задаёт силу; тапнуть быстро — маленький прыжок.
+   «Прогиб»/«Складка» при отпускании добавляют сальто назад/вперёд, как и раньше. Туловище выравнивается, назад не заваливает. */
+GP.jumpGround=function(s,pw,ln){
+  const B=this.B,T=B.torso,inp=this.inp,f=this.f,ang=T.getAngle();
+  const lean=f*(ln||.42),a=Math.hypot(lean,1),nx=lean/a,ny=1/a;   /* вверх и чуть вперёд по взгляду персонажа */
+  for(const id in B)B[id].setAngularVelocity(0);
+  this.st.noFootT=.18;
+  const c0=this.com();let vx=0,vy=Math.max(c0.vy,0);
+  const c=pw||2.3+3.9*Math.min(1,Math.max(0,(s-.25)/1.95)),h=inp.arch?CFG.backSpin*f:inp.pike?-CFG.backSpin*.9*f:0,cm=T.getWorldCenter();
+  for(const id in B){const b=B[id],d=b.getWorldCenter();b.setLinearVelocity(V2(vx+nx*c-h*(d.y-cm.y),vy+ny*c+h*(d.x-cm.x)));b.setAngularVelocity(h)}};
+const _rk=GP._releaseKey;
+GP._releaseKey=function(s){const t=this.st;
+  if(t&&t.mode==="stuck"&&CFG.autoUnstick&&!this.inp.stick&&!t.footBar&&this.welds.length&&["tuck","arch","straight","pike"].includes(s)){
+    const i=this.J.kneeL.getJointAngle()*this.f,sel=(this.props||[]).find(r=>r.sel&&this.welds.some(j=>j.getBodyA()===r.b||j.getBodyB()===r.b));
+    this.unstick(true);
+    if(sel){this.jumpGround(1,VPOW[Math.max(1,Math.min(5,this.springLvl||3))-1],VLEAN[Math.max(1,Math.min(5,this.springLvl||3))-1]);this.emit("bounce")}   /* стартовая пружина: сила выбрана заранее (1–5) */
+    else if(i<-.25)this.jumpGround(-i);
+    return}
+  return _rk.call(this,s)};
+/* уровень силы стартовой пружины пишется в запись и воспроизводится в повторе */
+const _ac=GP.applyCfg;GP.applyCfg=function(c){if(c&&c.spl!=null)this.springLvl=c.spl;return _ac.call(this,c)};
+const _rs=GP.recStart;GP.recStart=function(h){const r=_rs.call(this,h);if(this.props&&this.props.some(p=>p.sel)){this.springLvl=Math.max(1,Math.min(5,(typeof SAVE!=="undefined"&&SAVE.spl)||this.springLvl||3));if(this.rec)this.rec.e.push([0,4,{spl:this.springLvl}])}return r};
+GP.setSpringLvl=function(l){l=Math.max(1,Math.min(5,l|0));this.springLvl=l;SAVE.spl=l;persist();if(this.rec&&!this.rec.cut)this.rec.e.push([this.stepN,4,{spl:l}])};
 
 /* ================= 3D ================= */
 const LM=c=>new T3.MeshLambertMaterial({color:c}),BM=(c,o)=>new T3.MeshBasicMaterial(Object.assign({color:c},o||{}));
@@ -144,17 +170,23 @@ const fin=m=>{m.tags=[];if(m.bars.length)m.tags.push("bars");if(m.solids.length)
 
 function mapSpring(){
   const m=mkMap("sp_park",{ru:"Пружинный парк",uk:"Пружинний парк",en:"Spring Park"},7);
-  m.solids.push(D(32,-1,130,2,{d:9,col:0x6f7681,n:"floor"}),D(-18,16,1,36,{col:0x9aa1ad,n:"wallL"}),D(88,16,1,36,{col:0x9aa1ad,n:"wallR"}));
-  const bar=(x,y,col)=>{m.bars.push({x,y,z:0});pole(m,x,y,col)};
-  /* пружины: встаньте на неё, держите «Группировку» — платформа продавится, отпустите — выстрел с отдачей. Или падайте на неё сверху. */
-  m.props.push({t:"spring",id:"s1",x:-8,y:0,w:2,h:1.1});                     bar(-8,7.2);bar(-2.5,8.6);
-  m.props.push({t:"spring",id:"s2",x:6,y:0,w:2.2,h:2.1});                    bar(6,13.6,0xb0603a);bar(12,14.8,0xb0603a);
-  m.props.push({t:"spring",id:"s3",x:20,y:0,w:2,h:1.6,a:-.45});              bar(28,10.5);bar(34,11.8);
-  m.solids.push(D(48,2,5,4,{col:0xd0503f,n:"pod"}));
-  m.props.push({t:"spring",id:"s4",x:48,y:4,w:2.2,h:1.5});                   bar(48,14.4,0xb0603a);bar(54,15.6,0xb0603a);
-  m.props.push({t:"spring",id:"s5",x:62,y:0,w:2,h:1.6,a:.5},{t:"spring",id:"s6",x:76,y:0,w:2,h:1.6,a:-.5});
-  bar(69,13,0x3a8fb0);bar(69,18.5,0x3a8fb0);
-  m.spawns.push({x:-8,y:2.4},{x:6,y:3.6},{x:20.7,y:3.2},{x:48,y:6.4},{x:61.3,y:3.2},{x:76.7,y:3.2},{x:-14,y:.5},{x:-1,y:.5},{x:14,y:.5},{x:42,y:.5},{x:56,y:.5});
+  m.solids.push(D(30,-1,140,2,{d:9,col:0x6f7681,n:"floor"}),D(-20,20,1,44,{col:0x9aa1ad,n:"wallL"}),D(98,20,1,44,{col:0x9aa1ad,n:"wallR"}));
+  const bar=(x,y,c)=>{m.bars.push({x,y,z:0});pole(m,x,y,c)};
+  /* СТАРТ: пружина с выбором силы прыжка (кнопки −/+ внизу экрана, 1–5). Встань на неё, держи «Группировку» (платформа продавится),
+     отпусти — прыжок выбранной силы вперёд, чем сильнее — тем дальше. Цветные площадки на земле — для проверки дальности. */
+  m.props.push({t:"spring",id:"s0",x:-8.6,y:0,w:2.2,h:1.6,sel:1});
+  /* обычные мощные пружины рядом со стартом — просто попрыгать */
+  m.props.push({t:"spring",id:"p1",x:-12.4,y:0,w:2,h:1.5},{t:"spring",id:"p2",x:-15.6,y:0,w:2.2,h:2.3});
+  const PX=[-1.5,4.9,14.4,25.5,40.5],PC=[0x22d3ee,0x39d96a,0xffd24a,0xff8a2a,0xc04aff];
+  PX.forEach((x,k)=>{
+    m.deco.push(DC(x,.025,3.2,.05,.2,.9,PC[k]),DC(x,.5,.12,1,-.2,.05,PC[k]));      /* цветная площадка и маячок: куда долетает сила k+1 */
+    const sx=x+2.5;m.props.push({t:"spring",id:"q"+k,x:sx,y:0,w:2,h:1.4+k*.2});      /* мощная пружина рядом: подскок к перекладине */
+    bar(sx,14.5+k*1.8,PC[k]);bar(sx+5.5,16.5+k*1.8,PC[k])});
+  /* финиш: площадка и ряд пружин разной высоты */
+  m.solids.push(D(62,3,12,6,{col:0xd0503f,n:"finish"}));
+  m.props.push({t:"spring",id:"f1",x:58.5,y:6,w:2,h:1.4},{t:"spring",id:"f2",x:62,y:6,w:2.2,h:2},{t:"spring",id:"f3",x:65.6,y:6,w:2.4,h:2.8});
+  bar(62,26,0x3a8fb0);
+  m.spawns.push({x:-8.6,y:2.6},{x:-12.4,y:3.2},{x:-15.6,y:4},{x:62,y:8.6});
   return fin(m)}
 
 function mapRope(){
@@ -190,6 +222,28 @@ function mapBoard(){
   m.spawns.push({x:8.1,y:3.2},{x:38.9,y:5.4},{x:-3,y:.5},{x:-16,y:.5},{x:56,y:.5});
   return fin(m)}
 MAPS.push(mapSpring(),mapRope(),mapBoard());
+
+/* ================= выбор силы стартовой пружины: кнопки −/+ внизу экрана (только на картах с такой пружиной) ================= */
+for(const L in I18N)I18N[L]["x.spPow"]=["ru","uk","be"].includes(L)?(L==="uk"?"Сила пружини":"Сила пружины"):"Spring power";
+{const g=document.getElementById("game");
+ if(g&&!document.getElementById("spPow")){
+  const hud=document.createElement("div");hud.id="spPow";
+  hud.innerHTML='<button data-d="-1" aria-label="-">−</button><div class="m"><small id="spT"></small><span id="spP"><i></i><i></i><i></i><i></i><i></i></span></div><button data-d="1" aria-label="+">+</button>';
+  g.appendChild(hud);
+  const st=document.createElement("style");st.textContent=
+   "#spPow{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(2vmin + env(safe-area-inset-bottom));z-index:6;display:none;align-items:center;gap:2vmin;padding:1.2vmin 1.6vmin;border-radius:3vmin;background:#0b0b0fd9;border:1px solid #4a4a56;color:#fff}"+
+   "#spPow button{width:10vmin;height:10vmin;border-radius:2.4vmin;border:1px solid #4a4a56;background:#1c1c24;color:#fff;font-size:6vmin;font-weight:900;line-height:1;padding:0}#spPow button:active{background:#fff;color:#000}"+
+   "#spPow .m{display:flex;flex-direction:column;align-items:center;gap:.8vmin;min-width:20vmin}#spPow small{font-size:max(11px,2.4vmin);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c4c4d0}"+
+   "#spP{display:flex;gap:.9vmin;align-items:flex-end}#spP i{display:block;width:3vmin;border-radius:.8vmin;background:#33333d}#spP i:nth-child(1){height:2.6vmin}#spP i:nth-child(2){height:3.6vmin}#spP i:nth-child(3){height:4.6vmin}#spP i:nth-child(4){height:5.6vmin}#spP i:nth-child(5){height:6.6vmin}#spP i.on{background:#ffd24a}"+
+   "@media(orientation:portrait){#spPow{bottom:calc(var(--bkb,0px) + 3vw);gap:3vw;padding:2vw 3vw;border-radius:5vw}#spPow button{width:13vw;height:13vw;font-size:8vw;border-radius:3vw}#spPow .m{min-width:30vw}#spPow small{font-size:3.2vw}#spP i{width:4.4vw}#spP i:nth-child(1){height:4vw}#spP i:nth-child(2){height:5.4vw}#spP i:nth-child(3){height:6.8vw}#spP i:nth-child(4){height:8.2vw}#spP i:nth-child(5){height:9.6vw}}"+
+   "#game.rp #spPow{display:none!important}";
+  document.head.appendChild(st);
+  hud.querySelectorAll("button").forEach(b=>{b.onclick=e=>{e.stopPropagation();try{W.setSpringLvl((W.springLvl||3)+ +b.dataset.d)}catch(_){}}});
+  const pips=[...hud.querySelectorAll("#spP i")],tt=hud.querySelector("#spT");let lastOn=null,lastL=0;
+  const loop=()=>{try{const on=screen==="game"&&W&&W.M&&W.M.props&&W.M.props.some(p=>p.sel),l=(W&&W.springLvl)||3;
+    if(on!==lastOn){lastOn=on;hud.style.display=on?"flex":"none";if(on)tt.textContent=T("x.spPow")}
+    if(on&&l!==lastL){lastL=l;pips.forEach((e,i)=>e.classList.toggle("on",i<l))}}catch(_){}requestAnimationFrame(loop)};
+  requestAnimationFrame(loop)}}
 
 /* ================= конструктор карт: пружина, тарзанка, доска, бассейн ================= */
 const RUN={spring:"Пружина",rope:"Тарзанка",board:"Доска",pool:"Бассейн"},ENN={spring:"Spring",rope:"Rope swing",board:"Diving board",pool:"Pool"};

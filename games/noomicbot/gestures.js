@@ -81,7 +81,7 @@ const NAMES=["shL","shR","neck","hipL","hipR","kneeL","kneeR","ank"];
 
 /* ---------- слоумо и камера на коронный номер ---------- */
 const SLOW_T=.55; /* сколько секунд игрового времени жеста идёт замедленно (при замедлении ×0.28 это около 2 с на экране) */
-const slowOn=G=>G===W&&!RP&&!G.play&&SAVE.set.gslow!==false;
+const slowOn=G=>G===W&&SAVE.set.gslow!==false; /* и в живой игре, и в повторе: rpFrame замедляет время по FX.slow, как в жизни */
 {const RU2={"ge.slowmo":"Слоумо на коронный номер"},EN2={"ge.slowmo":"Slow-mo on signature moves"};
  for(const L in I18N)Object.assign(I18N[L],["ru","uk","be"].includes(L)?RU2:EN2);
  /* переключатель в настройках — сразу под общим «Замедлением» */

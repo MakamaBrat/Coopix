@@ -30,13 +30,6 @@
 "#pause #pR{margin-top:13.6vmin!important}}";
 document.head.appendChild(st)}
 
-/* кнопка паузы ☰ дублируется вверху слева (под «Назад» Telegram): удобно большим пальцем, не тянуться к нижнему углу */
-{const g=document.getElementById("game"),m=document.getElementById("zMenu");
- if(g&&m&&!document.getElementById("zMenu2")){
-  const b=document.createElement("button");b.id="zMenu2";b.className="red";b.textContent="☰";b.setAttribute("aria-label","Menu");
-  b.onclick=e=>{e.stopPropagation();m.click()};g.appendChild(b);
-  const st=document.createElement("style");st.textContent="#zMenu2{position:absolute;left:calc(env(safe-area-inset-left) + 2.4vmin);top:2.4vmin;width:10vmin;height:10vmin;padding:0;font-size:5.2vmin;line-height:1;border-radius:2vmin;z-index:6;opacity:.92;display:flex;align-items:center;justify-content:center}#game.rp #zMenu2{display:none}@media(orientation:portrait){#zMenu2{left:3vw;top:3vw;width:11vw;height:11vw;font-size:6vw;border-radius:2.6vw}}";document.head.appendChild(st)}}
-
 /* вкладка «Авторские» → «Мои карты» (там лежат карты самого игрока из конструктора) */
 {const N={ru:"Мои карты",uk:"Мої карти",be:"Мае карты",en:"My maps",de:"Meine Karten",fr:"Mes cartes",es:"Mis mapas",it:"Le mie mappe",pt:"Meus mapas",pl:"Moje mapy"};
  for(const L in N)if(I18N[L])I18N[L]["maps.custom"]=N[L]}
@@ -66,7 +59,7 @@ document.head.appendChild(st)}
 {const IC={col:"🎨",hat:"🎩",cape:"🦸",sky:"🌤️",face:"🕶️",wear:"👟",gear:"🚀",fx:"✨"};
  let TAB="";
  const st=document.createElement("style");st.textContent=
- "#shTabs{position:sticky;top:0;z-index:5;display:flex;gap:1.4vmin;overflow-x:auto;padding:1vmin 0 1.4vmin;margin:0 0 1vmin;background:#09090c;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x}#shTabs::-webkit-scrollbar{display:none}"+
+ "#shTabs{position:sticky;top:0;z-index:5;display:flex;gap:1.4vmin;overflow-x:auto;padding:1vmin 0 1.4vmin;margin:0 0 1vmin;background:#09090c;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}.sc2 #shTabs,.sc2 #shTabs *,#shop #shTabs,#shop #shTabs *{touch-action:pan-x pan-y!important}#shTabs{overscroll-behavior-x:contain;cursor:grab}#shTabs::-webkit-scrollbar{display:none}"+
  "#shTabs button{flex:0 0 auto;display:flex;align-items:center;gap:1vmin;height:max(40px,8vmin);padding:0 2.6vmin;border-radius:99px;border:1px solid #3b3b46;background:#14141a;color:#fff;font-size:max(14px,3vmin);font-weight:700;white-space:nowrap}"+
  "#shTabs button i{font-style:normal;font-size:.95em;opacity:.7;font-weight:600}#shTabs button.on{background:#fff;color:#000;border-color:#fff}#shTabs button.on i{opacity:.6}"+
  "@media(orientation:portrait){#shTabs{gap:2vw;padding:2vw 0 2.6vw}#shTabs button{height:11vw;padding:0 4.2vw;font-size:4vw;gap:1.6vw}}";
@@ -84,6 +77,13 @@ document.head.appendChild(st)}
   mk("",T("x.all")||"Все",total);
   secs.forEach(s=>{const n=s.querySelector("span"),i=s.querySelector("i");mk(s.dataset.cat,n?n.textContent:s.dataset.cat,i?i.textContent:"")});
   body.insertBefore(bar,body.firstChild);
+  /* прокрутка полосы вкладок пальцем, мышью (перетаскиванием) и колесом */
+  {let dx=0,sx=0,drag=false,moved=false;
+   bar.addEventListener("pointerdown",e=>{if(e.pointerType==="touch")return;drag=true;moved=false;sx=e.clientX;dx=bar.scrollLeft});
+   addEventListener("pointermove",e=>{if(!drag)return;const d=e.clientX-sx;if(Math.abs(d)>4)moved=true;bar.scrollLeft=dx-d},{passive:true});
+   addEventListener("pointerup",()=>{drag=false});
+   bar.addEventListener("click",e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+   bar.addEventListener("wheel",e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){bar.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false})}
   function apply(){for(const el of body.querySelectorAll("[data-cat]")){el.style.display=(!TAB||el.dataset.cat===TAB)?"":"none"}}
   apply()};
  const _rs=renderShop;renderShop=function(){const r=_rs.apply(this,arguments);try{dec()}catch(e){console.warn("shTabs",e)}return r};

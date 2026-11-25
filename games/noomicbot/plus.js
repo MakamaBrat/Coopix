@@ -123,13 +123,14 @@ View3D.prototype.poseNoomi=function(t){_pn.call(this,t);if(!this.noomi||!t.B)ret
   const look=this.xLook||{};
   if(look.capeId==="cape_rainbow")this.cape.material.color.setHSL((now/2400)%1,.9,.55);
   if(this.flames){const on=t.tOn||{},fl=(L,v)=>{for(const [a,b] of L){const k=.8+Math.random()*.5;a.visible=b.visible=!!v;if(v){a.scale.set(1,k,1);b.scale.set(1,k*1.05,1)}}};fl(this.flames.legs,on.legs);fl(this.flames.arms,on.arms)}
-  /* шлейф */
+  /* шлейф: тянется от рук и ног персонажа (по 7 частиц на каждую конечность), а не от центра тела */
   const fx=look.fx||"fx_none";
-  if(fx!=="fx_none"){if(!this.trail){const L=[];for(let i=0;i<20;i++){const m=new T3.Mesh(new T3.SphereGeometry(.07,8,6),new T3.MeshBasicMaterial({color:"#fff",transparent:true,opacity:.9}));m.renderOrder=3;this.scene.add(m);L.push(m)}this.trail={L,h:[]}}
-    const c=t.com(),h=this.trail.h,last=h[0];if(!last||Math.hypot(c.x-last[0],c.y-last[1])>.1){h.unshift([c.x,c.y]);if(h.length>20)h.pop()}
-    this.trail.L.forEach((m,i)=>{const p=h[i];m.visible=!!p&&this.noomi.rig.visible;if(!p)return;const a=1-i/20;m.position.set(p[0],p[1],-.15);m.scale.setScalar(.35+a*.9);
-      const S=TRAILFX(fx,i,now,a);m.material.color.copy(S.c);m.material.opacity=a*(S.o==null?.85:S.o);if(S.dx||S.dy)m.position.set(p[0]+(S.dx||0),p[1]+(S.dy||0),-.15);if(S.s)m.scale.setScalar((.35+a*.9)*S.s)})}
-  else if(this.trail){this.trail.L.forEach(m=>m.visible=false);this.trail.h.length=0}
+  if(fx!=="fx_none"){const K=7,NL=4;if(!this.trail){const L=[];for(let i=0;i<K*NL;i++){const m=new T3.Mesh(new T3.SphereGeometry(.07,8,6),new T3.MeshBasicMaterial({color:"#fff",transparent:true,opacity:.9}));m.renderOrder=3;this.scene.add(m);L.push(m)}this.trail={L,h:[[],[],[],[]]}}
+    const Bd=t.B,pts=[Bd.footL.getPosition(),Bd.footR.getPosition(),Bd.armL.getWorldPoint(V2(0,.4)),Bd.armR.getWorldPoint(V2(0,.4))],H=this.trail.h;
+    for(let l=0;l<NL;l++){const h=H[l],c=pts[l],last=h[0];if(!last||Math.hypot(c.x-last[0],c.y-last[1])>.08){h.unshift([c.x,c.y]);if(h.length>K)h.pop()}}
+    this.trail.L.forEach((m,idx)=>{const l=(idx/K)|0,j=idx%K,p=H[l][j];m.visible=!!p&&this.noomi.rig.visible;if(!p)return;const a=1-j/K,ci=Math.round(j*19/(K-1));m.position.set(p[0],p[1],-.15+(l%2?.06:-.06));m.scale.setScalar(.3+a*.55);
+      const S=TRAILFX(fx,ci,now,a);m.material.color.copy(S.c);m.material.opacity=a*(S.o==null?.85:S.o);if(S.dx||S.dy)m.position.set(p[0]+(S.dx||0)*.6,p[1]+(S.dy||0)*.6,-.15);if(S.s)m.scale.setScalar((.3+a*.55)*S.s)})}
+  else if(this.trail){this.trail.L.forEach(m=>m.visible=false);this.trail.h.forEach(h=>h.length=0)}
   /* рентген */
   const xr=t.xr;let lv=0;if(xr){const a=(now-xr.t)/1000;lv=a<.12?a/.12:a<1.9?1:Math.max(0,1-(a-1.9)/.5)}
   if(lv>0.01){if(!this.bones)this.buildBones();this.noomiMat.transparent=this.headMat.transparent=true}
