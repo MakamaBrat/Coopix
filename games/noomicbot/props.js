@@ -4,7 +4,7 @@
    а Game.propStep (зовётся каждый физический шаг перед world.step) добавляет пружинные силы и воду.
    Всё детерминировано (фиксированный шаг, Math.random не используется) — повторы и запись работают как раньше. */
 {
-const VPOW=[7,10,13.5,17,21],VLEAN=[1,1,1,1,1],PI=Math.PI,cl=(v,a,b)=>v<a?a:v>b?b:v,NEWT={spring:1,rope:1,board:1,pool:1};
+const springV=h=>6.8+2.7*h,VPOW=[7,10,13.5,17,21],VLEAN=[1,1,1,1,1],PI=Math.PI,cl=(v,a,b)=>v<a?a:v>b?b:v,NEWT={spring:1,rope:1,board:1,pool:1};
 
 /* ================= физика ================= */
 const _lm=GP.loadMap;
@@ -66,7 +66,7 @@ GP.propStep=function(dt){
       const comp=Math.max(0,-tr);r.tr=tr;r.sp=sp;
       const n=loadedOn(b),charge=!!(st&&st.mode==="stuck"&&inp.tuck&&this.welds.some(j=>j.getBodyA()===b||j.getBodyB()===b));
       const lv=Math.max(1,Math.min(5,this.springLvl||3)),mu=1;
-      let F=mu*r.k*comp*(sp>0&&!charge&&!r.sel?r.up:1)-(charge?7:sp<0?r.cd:r.cu)*sp;
+      let F=mu*r.k*comp*(sp>0&&!charge&&!r.sel&&!(r.lock>0)?r.up:1)-(charge?7:r.lock>0?9:sp<0?r.cd:r.cu)*sp;if(r.lock>0){r.lock-=dt;F*=.4}
       if(charge)F-=r.k*r.trav*(r.sel?.16+.15*lv:.9);                 /* «приседание» на пружине: продавливаем платформу, отпускание = прыжок с отдачей */
       if(sp>17)F-=(sp-17)*30;                     /* потолок скорости выброса */
       b.applyForceToCenter(V2(r.ux*F,r.uy*F+r.pm*g),true);
@@ -107,9 +107,11 @@ GP.jumpGround=function(s,pw,ln){
 const _rk=GP._releaseKey;
 GP._releaseKey=function(s){const t=this.st;
   if(t&&t.mode==="stuck"&&CFG.autoUnstick&&!this.inp.stick&&!t.footBar&&this.welds.length&&["tuck","arch","straight","pike"].includes(s)){
-    const i=this.J.kneeL.getJointAngle()*this.f,sel=(this.props||[]).find(r=>r.sel&&this.welds.some(j=>j.getBodyA()===r.b||j.getBodyB()===r.b));
+    const i=this.J.kneeL.getJointAngle()*this.f,sp=(this.props||[]).find(r=>r.t==="spring"&&this.welds.some(j=>j.getBodyA()===r.b||j.getBodyB()===r.b));
     this.unstick(true);
-    if(sel){this.jumpGround(1,VPOW[Math.max(1,Math.min(5,this.springLvl||3))-1],VLEAN[Math.max(1,Math.min(5,this.springLvl||3))-1]);this.emit("bounce")}   /* стартовая пружина: сила выбрана заранее (1–5) */
+    if(sp){   /* стоял на пружине: сила прыжка задана заранее (стартовая — по уровню 1–5, остальные — по высоте пружины), а не временем удержания */
+      const lv=Math.max(1,Math.min(5,this.springLvl||3));
+      this.jumpGround(1,sp.sel?VPOW[lv-1]:springV(sp.h),sp.sel?VLEAN[lv-1]:.1);sp.lock=.5;this.emit("bounce")}
     else if(i<-.25)this.jumpGround(-i);
     return}
   return _rk.call(this,s)};
@@ -217,20 +219,22 @@ function mapSpring(){
   const m=mkMap("sp_park",{ru:"Пружинный парк",uk:"Пружинний парк",en:"Spring Park"},7);
   m.solids.push(D(30,-1,140,2,{d:9,col:0x6f7681,n:"floor"}),D(-20,20,1,44,{col:0x9aa1ad,n:"wallL"}),D(98,20,1,44,{col:0x9aa1ad,n:"wallR"}));
   const bar=(x,y,c)=>{m.bars.push({x,y,z:0});pole(m,x,y,c)};
+  /* перекладина над пружиной, рассчитанная под её силу: высота и вынос вперёд из формулы прыжка (V = springV(h), почти вертикально) */
+  const apexBar=(sx,sy,h,c)=>{const V=springV(h),vy=V*.995,vx=V*.1,rise=vy*vy/19.62,ax=sx+vx*vy/9.8,ay=sy+h+.1+1.1+rise+.9;bar(ax,ay-2.9,c);bar(ax,ay-4.6,c);bar(ax+5,ay-3.6,c)};
   /* СТАРТ: пружина с выбором силы прыжка (кнопки −/+ внизу экрана, 1–5). Встань на неё, держи «Группировку» (платформа продавится),
      отпусти — прыжок выбранной силы вперёд, чем сильнее — тем дальше. Цветные площадки на земле — для проверки дальности. */
   m.props.push({t:"spring",id:"s0",x:-8.6,y:0,w:2.2,h:1.6,sel:1});
-  /* обычные мощные пружины рядом со стартом — просто попрыгать */
   m.props.push({t:"spring",id:"p1",x:-12.4,y:0,w:2,h:1.5},{t:"spring",id:"p2",x:-15.6,y:0,w:2.2,h:2.3});
+  apexBar(-12.4,0,1.5,0x3a8fb0);apexBar(-15.6,0,2.3,0xb0603a);
   const PX=[-1.5,4.9,14.4,25.5,40.5],PC=[0x22d3ee,0x39d96a,0xffd24a,0xff8a2a,0xc04aff];
   PX.forEach((x,k)=>{
     m.deco.push(DC(x,.025,3.2,.05,.2,.9,PC[k]),DC(x,.5,.12,1,-.2,.05,PC[k]));      /* цветная площадка и маячок: куда долетает сила k+1 */
-    const sx=x+2.5;m.props.push({t:"spring",id:"q"+k,x:sx,y:0,w:2,h:1.4+k*.2});      /* мощная пружина рядом: подскок к перекладине */
-    bar(sx,14.5+k*1.8,PC[k]);bar(sx+5.5,16.5+k*1.8,PC[k])});
+    const sx=x+2.5,h=1.4+k*.2;m.props.push({t:"spring",id:"q"+k,x:sx,y:0,w:2,h});   /* пружина рядом: подскок к перекладинам над ней */
+    apexBar(sx,0,h,PC[k])});
   /* финиш: площадка и ряд пружин разной высоты */
   m.solids.push(D(62,3,12,6,{col:0xd0503f,n:"finish"}));
   m.props.push({t:"spring",id:"f1",x:58.5,y:6,w:2,h:1.4},{t:"spring",id:"f2",x:62,y:6,w:2.2,h:2},{t:"spring",id:"f3",x:65.6,y:6,w:2.4,h:2.8});
-  bar(62,26,0x3a8fb0);
+  apexBar(62,6,2,0x3a8fb0);apexBar(65.6,6,2.8,0x3a8fb0);
   m.spawns.push({x:-8.6,y:2.6},{x:-12.4,y:3.2},{x:-15.6,y:4},{x:62,y:8.6});
   return fin(m)}
 
@@ -293,18 +297,18 @@ function y_flag(y){return y-1.5}
 MAPS.push(mapSpring(),mapRope(),mapBoard(),mapChal(0),mapChal(1),mapChal(2));
 
 /* ================= выбор силы стартовой пружины: кнопки −/+ внизу экрана (только на картах с такой пружиной) ================= */
-for(const L in I18N)I18N[L]["x.spPow"]=["ru","uk","be"].includes(L)?(L==="uk"?"Сила пружини":"Сила пружины"):"Spring power";
+for(const L in I18N)I18N[L]["x.spPow"]=["ru","uk","be"].includes(L)?"Сила":"Power";
 {const g=document.getElementById("game");
  if(g&&!document.getElementById("spPow")){
   const hud=document.createElement("div");hud.id="spPow";
   hud.innerHTML='<button data-d="-1" aria-label="-">−</button><div class="m"><small id="spT"></small><span id="spP"><i></i><i></i><i></i><i></i><i></i></span></div><button data-d="1" aria-label="+">+</button>';
   g.appendChild(hud);
   const st=document.createElement("style");st.textContent=
-   "#spPow{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(2vmin + env(safe-area-inset-bottom));z-index:6;display:none;align-items:center;gap:2vmin;padding:1.2vmin 1.6vmin;border-radius:3vmin;background:#0b0b0fd9;border:1px solid #4a4a56;color:#fff}"+
-   "#spPow button{width:10vmin;height:10vmin;border-radius:2.4vmin;border:1px solid #4a4a56;background:#1c1c24;color:#fff;font-size:6vmin;font-weight:900;line-height:1;padding:0}#spPow button:active{background:#fff;color:#000}"+
-   "#spPow .m{display:flex;flex-direction:column;align-items:center;gap:.8vmin;min-width:20vmin}#spPow small{font-size:max(11px,2.4vmin);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c4c4d0}"+
-   "#spP{display:flex;gap:.9vmin;align-items:flex-end}#spP i{display:block;width:3vmin;border-radius:.8vmin;background:#33333d}#spP i:nth-child(1){height:2.6vmin}#spP i:nth-child(2){height:3.6vmin}#spP i:nth-child(3){height:4.6vmin}#spP i:nth-child(4){height:5.6vmin}#spP i:nth-child(5){height:6.6vmin}#spP i.on{background:#ffd24a}"+
-   "@media(orientation:portrait){#spPow{bottom:calc(var(--bkb,0px) + 3vw);gap:3vw;padding:2vw 3vw;border-radius:5vw}#spPow button{width:13vw;height:13vw;font-size:8vw;border-radius:3vw}#spPow .m{min-width:30vw}#spPow small{font-size:3.2vw}#spP i{width:4.4vw}#spP i:nth-child(1){height:4vw}#spP i:nth-child(2){height:5.4vw}#spP i:nth-child(3){height:6.8vw}#spP i:nth-child(4){height:8.2vw}#spP i:nth-child(5){height:9.6vw}}"+
+   "#spPow{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(1.4vmin + env(safe-area-inset-bottom));z-index:6;display:none;align-items:center;gap:1.2vmin;padding:.8vmin 1vmin;border-radius:2.4vmin;background:#0b0b0fd9;border:1px solid #4a4a56;color:#fff}"+
+   "#spPow button{width:8vmin;height:8vmin;border-radius:2vmin;border:1px solid #4a4a56;background:#1c1c24;color:#fff;font-size:5vmin;font-weight:900;line-height:1;padding:0}#spPow button:active{background:#fff;color:#000}"+
+   "#spPow .m{display:flex;flex-direction:column;align-items:center;gap:.5vmin;min-width:14vmin}#spPow small{font-size:max(9px,1.9vmin);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#c4c4d0}"+
+   "#spP{display:flex;gap:.9vmin;align-items:flex-end}#spP i{display:block;width:2.2vmin;border-radius:.6vmin;background:#33333d}#spP i:nth-child(1){height:1.8vmin}#spP i:nth-child(2){height:2.5vmin}#spP i:nth-child(3){height:3.2vmin}#spP i:nth-child(4){height:3.9vmin}#spP i:nth-child(5){height:4.6vmin}#spP i.on{background:#ffd24a}"+
+   "@media(orientation:portrait){#spPow{bottom:calc(var(--bkb,0px) + 2vw);gap:1.4vw;padding:1.2vw 1.6vw;border-radius:3vw}#spPow button{width:8vw;height:8vw;font-size:5.4vw;border-radius:2.2vw}#spPow .m{min-width:12vw}#spPow small{font-size:2.4vw}#spP i{width:2.4vw}#spP i:nth-child(1){height:2.4vw}#spP i:nth-child(2){height:3.4vw}#spP i:nth-child(3){height:4.4vw}#spP i:nth-child(4){height:5.4vw}#spP i:nth-child(5){height:6.4vw}}"+
    "#game.rp #spPow{display:none!important}";
   document.head.appendChild(st);
   hud.querySelectorAll("button").forEach(b=>{b.onclick=e=>{e.stopPropagation();try{W.setSpringLvl((W.springLvl||3)+ +b.dataset.d)}catch(_){}}});
