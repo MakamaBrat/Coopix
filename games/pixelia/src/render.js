@@ -52,6 +52,21 @@ const Render = (function () {
   /* ---------- освещение мира по времени суток: палитры материалов умножаются на цвет окружающего света ---------- */
   const PAL0 = PAL.slice(), GRASS0 = GRASS.slice();
   const tintArr = (dst, src, r, g, b) => { for (let i = 0; i < src.length; i++) { const c = src[i]; dst[i] = ((c & 0xff000000) | (clamp(((c >> 16) & 255) * b) << 16) | (clamp(((c >> 8) & 255) * g) << 8) | clamp((c & 255) * r)) >>> 0; } };
+  /* времена года: листва (оттенки 1..8) и трава меняют цвет. Весна — свежая, лето — как нарисовано, осень — жёлтая и красная, зима — в инее */
+  const SEAS = [
+    { leaf: [[30, 96, 52], [52, 140, 70], [84, 184, 84], [126, 222, 104], [184, 246, 140], [96, 206, 88], [156, 238, 110], [58, 150, 66]], grass: [96, 198, 70] },
+    { leaf: [[22, 70, 42], [36, 108, 56], [54, 148, 68], [92, 192, 86], [150, 228, 118], [62, 172, 72], [118, 216, 92], [38, 124, 58]], grass: [70, 176, 58] },
+    { leaf: [[112, 44, 22], [164, 70, 24], [206, 108, 30], [232, 150, 44], [250, 206, 86], [190, 98, 26], [240, 184, 64], [142, 62, 24]], grass: [172, 146, 54] },
+    { leaf: [[96, 116, 128], [128, 150, 160], [166, 186, 196], [206, 222, 230], [238, 246, 250], [150, 172, 182], [222, 234, 240], [112, 134, 146]], grass: [224, 234, 246] }];
+  let seasKey = '';
+  function setSeason(si, t) {
+    const key = si + ':' + Math.round(t * 20); if (key === seasKey) return; seasKey = key;
+    const a = SEAS[si], b = SEAS[(si + 1) & 3], l = (u, v) => u + (v - u) * t;
+    for (let i = 0; i < 8; i++) LEAFPAL0[i + 1] = px(clamp(l(a.leaf[i][0], b.leaf[i][0])), clamp(l(a.leaf[i][1], b.leaf[i][1])), clamp(l(a.leaf[i][2], b.leaf[i][2])), 255);
+    const g0 = l(a.grass[0], b.grass[0]), g1 = l(a.grass[1], b.grass[1]), g2 = l(a.grass[2], b.grass[2]);
+    for (let v = 0; v < 256; v++) { const s = (v - 128) / 128 * 20; GRASS0[v] = px(clamp(g0 + s), clamp(g1 + s), clamp(g2 + s * .6), 255); }
+    litKey = -1;
+  }
   function applyAmb(am) {
     const r = am.amb[0], g = am.amb[1], b = am.amb[2];
     tintArr(PAL, PAL0, r, g, b); tintArr(GRASS, GRASS0, r, g, b); tintArr(LEAFPAL, LEAFPAL0, r, g, b); tintArr(WOODPAL, WOODPAL0, r, g, b);
@@ -67,6 +82,7 @@ const Render = (function () {
     gcv.width = lw; gcv.height = lh; gctx = gcv.getContext('2d'); gimg = gctx.createImageData(lw, lh); gu32 = new Uint32Array(gimg.data.buffer);
     light = new Float32Array(lw * lh * 3); lit = new Float32Array(lw * lh * 3); ltmp = new Float32Array(lw * lh * 3);
     const ec = document.getElementById('ents'); if (ec && typeof People !== 'undefined') People.init(ec, W, H);
+    if (typeof Houses !== 'undefined') Houses.init(document.getElementById('bld'), W, H);
     Sky.init(bgcv, W, H); litKey = -1;
   }
 
@@ -124,6 +140,8 @@ const Render = (function () {
         c = PAL[t * 256 + v];
         switch (t) {
           case EARTH: { const ta = type[i - W]; if (ta === AIR || KIND[ta] === K.GAS) c = GRASS[v]; break; }
+          case SAND: if (life[i] > 0) c = mix(c, 96, 74, 40, .14 * life[i]); break;   /* мокрый песок темнее */
+          case MUD: if (life[i] > 0) c = mix(c, 36, 24, 18, .07 * life[i]); break;      /* набухшая грязь темнее */
           case WATER: case BRINE: {
             const ta = type[i - W];
             if (KIND[ta] !== K.LIQUID) { c = mix(c, 190, 230, 255, .45); if (((x * 5 + wave + (y >> 1)) & 15) === 0) c = mix(c, 255, 255, 255, .6); }
@@ -195,6 +213,8 @@ const Render = (function () {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = (ly >> 1) + dy, xx = (lx >> 1) + dx; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) continue; const li = yy * lw3 + xx * 3, k = dx || dy ? .45 : 1.1; if (e.ab.light === 'staff') { light[li] += .5 * k; light[li + 1] += .9 * k; light[li + 2] += 1.3 * k; } else { light[li] += 1.2 * k; light[li + 1] += 1.05 * k; light[li + 2] += .6 * k; } }
     }
     for (const e of S.ents) if (e.burn > 0) { const cx = Math.floor(e.x), fy = Math.round(e.y), li = (fy >> 1) * lw3 + (cx >> 1) * 3; if (li >= 0 && li < light.length - 2) { light[li] += 1.4; light[li + 1] += .6; light[li + 2] += .1; } }
+    /* дома: окна, лампы и очаги светят ночью; задняя стена и мебель — на своём слое за миром */
+    if (typeof Houses !== 'undefined') { const nt = Sky.Y.night || 0; Houses.lights((x, y, r, g, b) => { const yy = (y | 0) >> 1, xx = (x | 0) >> 1; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) return; const li = yy * lw3 + xx * 3; light[li] += r; light[li + 1] += g; light[li + 2] += b; }, nt); Houses.drawBg(am.amb, am.ambKey, nt); }
     if (typeof People !== 'undefined') People.draw(S.ents, S.frame, am.amb, am.ambKey, lightAt);
     /* молнии */
     for (const bolt of S.bolts) {
@@ -247,6 +267,6 @@ const Render = (function () {
     x.drawImage(bgcv, 0, 0, w, h); x.drawImage(cv, 0, 0, w, h); if (typeof People !== 'undefined' && People.canvas) x.drawImage(People.canvas, 0, 0, w, h); x.globalCompositeOperation = 'screen'; x.imageSmoothingEnabled = true; x.drawImage(gcv, 0, 0, w, h);
     return c;
   }
-  Object.assign(R, { init, draw, snapshot, PAL });
+  Object.assign(R, { init, draw, snapshot, PAL, setSeason });
   return R;
 })();

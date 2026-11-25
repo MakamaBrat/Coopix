@@ -52,6 +52,7 @@ const People = (function () {
   const LEGS = {
     jeans: ['..kPppPk..', '..kPppPk..', '..kPppPk..', '..kPppPk..', '..kgppgk..', '..kkkkkk..'],
     dress: ['.kTTTTTtk.', '.kTTTTTtk.', '..kSDSDk..', '..kSDSDk..', '..kBBBBk..', '..kkkkkk..'],
+    skirt: ['.kPPPPPpk.', '.kpPPPPpk.', '..kSDSDk..', '..kSDSDk..', '..kBBBBk..', '..kkkkkk..'],
     boots: ['..kJjjJk..', '..kJjjJk..', '..kJjjJk..', '..kJjjJk..', '..kMMMMk..', '..kkkkkk..'],
     armor: ['..kXxXxk..', '..kXxXxk..', '..kXxXxk..', '..kXxXxk..', '..kxxxxk..', '..kkkkkk..'],
     robe: ['..kVVVvk..', '..kVVVvk..', '..kVVVvk..', '..kVVVvk..', '..kvVVvk..', '..kkkkkk..'],
@@ -101,6 +102,38 @@ const People = (function () {
     granny: { name: 'Бабушка', hint: 'Седой пучок и платье. Не торопится.', head: 'granny', body: 'dress', legs: 'dress', pal: { ...hairPal([206, 206, 214]), T: [128, 84, 160], t: [96, 60, 124] }, noBlink: true, abil: { speed: .6 } }
   };
   const TOWN = Object.keys(FORMS).filter((k) => FORMS[k].town);
+  /* ---------- женский вариант любого образа: длинные волосы до плеч, ресницы, у части — юбка вместо джинсов.
+     Образы, которые и так женские (платье, хвост, бабушка), не меняются; в шлеме, скафандре, маске, колпаке — только ресницы.
+     Вариант создаётся один раз (FORMS['ref~f'], 'ref~fs' — с юбкой) и дальше рисуется как обычный образ. */
+  const FEM_OK = { dress: 1, tail: 1, granny: 1 }, NO_HAIR = { helm: 1, space: 1, ninja: 1, wizard: 1, mohawk: 1 };
+  const HAIR_PROPS = [[10, 1, 'k'], [10, 2, 'a'], [10, 11, 'a'], [10, 12, 'k'], [11, 1, 'k'], [11, 2, 'a'], [11, 11, 'a'], [11, 12, 'k'], [12, 2, 'k'], [12, 11, 'k']];
+  const skinC = (c) => c === 'S' || c === 'L' || c === 'D';
+  function femHead(key) {
+    const nk = key + '~f'; if (HEADS[nk]) return nk;
+    const g = HEADS[key].map((r) => pad(r).split(''));
+    /* ресницы над внешними уголками глаз */
+    if (skinC(g[4][5])) g[4][5] = 'k'; if (skinC(g[4][10])) g[4][10] = 'k';
+    if (!NO_HAIR[key]) {
+      /* волосы спадают по бокам лица до подбородка и ниже */
+      for (let r = 3; r <= 9; r++) {
+        let l = g[r].indexOf('k'), rr = g[r].lastIndexOf('k'); if (l < 0) continue;
+        if (l >= 2) { g[r][l - 1] = r >= 8 ? 'a' : 'b'; if (l - 2 >= 0) g[r][l - 2] = 'k'; }
+        if (rr <= 11) { g[r][rr + 1] = r >= 8 ? 'a' : 'b'; if (rr + 2 < SW) g[r][rr + 2] = 'k'; }
+      }
+    }
+    HEADS[nk] = g.map((r) => r.join(''));
+    return nk;
+  }
+  function femForm(form, skirt) {
+    const F = FORMS[form] || FORMS.ref;
+    if (FEM_OK[form]) return form;
+    if (form === 'elder') return 'granny';
+    const sk = skirt && F.legs === 'jeans', key = form + '~f' + (sk ? 's' : '');
+    if (!FORMS[key]) FORMS[key] = Object.assign({}, F, { head: femHead(F.head), legs: sk ? 'skirt' : F.legs, props: (F.props || []).concat(NO_HAIR[F.head] ? [] : HAIR_PROPS), town: false, fem: true });
+    return key;
+  }
+  /* какой образ рисовать этому человечку (у девушек — женский вариант) */
+  const look = (e) => e.fem ? femForm(e.form || 'ref', ((e.seed | 0) % 3) === 0) : (e.form || 'ref');
 
   /* ---------- сборка кадра из частей: голова, туловище, руки на двух костях, ноги ----------
      Всё берётся из символьной сетки образа; поза — числа: сдвиг тела, голова, взгляд, рот, цель каждой руки, подъём и разворот ног. */
@@ -116,7 +149,7 @@ const People = (function () {
   const rigCache = {};
   function rig(form) {
     if (rigCache[form]) return rigCache[form];
-    const F = FORMS[form] || FORMS.ref, g = base(form), at = (r) => g[r + HAT], skirt = F.legs === 'dress' ? 2 : 0;
+    const F = FORMS[form] || FORMS.ref, g = base(form), at = (r) => g[r + HAT], skirt = F.legs === 'dress' || F.legs === 'skirt' ? 2 : 0;
     const R = { head: [], torso: [], armSym: [[], []], legs: [[], []], props: F.props || [], skirt, noBlink: !!F.noBlink };
     for (let r = -3; r <= 9; r++) R.head.push(at(r).slice());
     for (let r = 10; r <= 16 + skirt; r++) { const row = at(r).slice(); if (r >= 11 && r <= 15) for (const x of [3, 4, 9, 10]) row[x] = '.'; R.torso.push(row); }
@@ -159,8 +192,10 @@ const People = (function () {
     return eyes;
   }
   const NEUTRAL = { dy: 0, hdy: 0, hx: 0, lean: 0, look: 0, blink: 0, mouth: 0, al: [.2, 4], ar: [.2, 4], ll: 0, lr: 0, dl: 0, dr: 0, up: 0, tool: 0 };
-  function compose(form, P) {
-    const R = rig(form), out = [];
+  const SLEEVED = { jacket: 1, tee: 1, hoodie: 1, vest: 1, leather: 1, pirate: 1 }, NOHAT = { straw: 1, helm: 1, wizard: 1, space: 1, ninja: 1, hardhat: 1, cap: 1, bandana: 1 };
+  /* sea: время года (0 весна, 1 лето, 2 осень, 3 зима); -1 — без сезонной одежды. Летом короткие рукава и шорты, осенью шарф, зимой шапка и шарф */
+  function compose(form, P, sea) {
+    const R = rig(form), out = [], F = FORMS[form] || FORMS.ref;
     for (let y = 0; y < FH; y++) out.push(new Array(SW).fill('.'));
     const put = (y, x, c) => { if (y >= 0 && y < FH && x >= 0 && x < SW) out[y][x] = c; };
     const B = HAT + 1, dy = P.dy | 0, lean = P.lean | 0, hip = 17 + R.skirt + B + dy;
@@ -170,15 +205,15 @@ const People = (function () {
       const len = Math.max(3, 26 - lift - (P.up | 0) - hip + 1), x0 = 4 + s * 3 + (s ? sh : -sh);
       for (let j = 0; j < len; j++) {
         let si = j >= len - 2 ? nr - (len - j) : Math.min(j, nr - 3); si = Math.max(0, Math.min(nr - 1, si));
-        const row = rows[si]; for (let q = 0; q < 3; q++) if (row[q] !== '.') put(hip + j, x0 + q, row[q]);
+        const row = rows[si]; for (let q = 0; q < 3; q++) if (row[q] !== '.') { let ch = row[q]; if (sea === 1 && F.legs === 'jeans' && si >= 2 && si < nr - 1 && (ch === 'P' || ch === 'p' || ch === 'g')) ch = 'S'; put(hip + j, x0 + q, ch); }
       }
     }
-    for (let i = 0; i < R.torso.length; i++) for (let x = 0; x < SW; x++) { const c = R.torso[i][x]; if (c !== '.') put(10 + i + B + dy, x + lean, c); }
+    for (let i = 0; i < R.torso.length; i++) for (let x = 0; x < SW; x++) { let c = R.torso[i][x]; if (c !== '.') { if (i === 0 && (sea === 3 || sea === 2) && c === 'n') c = 'Q'; put(10 + i + B + dy, x + lean, c); } }
     /* руки */
     const arms = [];
     for (let s = 0; s < 2; s++) {
       const sx = (s ? 9 : 4) + lean, sy = 11 + B + dy, T = s ? P.ar : P.al, a = ik(sx, sy, sx + (s ? T[0] : -T[0]), sy + T[1], s ? 1 : -1);
-      a.pts.forEach((p, i) => put(p[1], p[0], R.armSym[s][a.pts.length === 1 ? 0 : Math.round(i / (a.pts.length - 1) * 4)]));
+      a.pts.forEach((p, i) => { const idx = a.pts.length === 1 ? 0 : Math.round(i / (a.pts.length - 1) * 4); let ch = R.armSym[s][idx]; if (sea === 1 && SLEEVED[F.body] && idx >= 2 && ch !== 'k' && !isSkin(ch)) ch = 'S'; put(p[1], p[0], ch); });
       arms.push(a);
     }
     if (P.tool) {   /* кирка в правой руке: рукоять продолжает предплечье, на конце стальная головка */
@@ -186,9 +221,19 @@ const People = (function () {
       for (let k = 1; k <= 3; k++) put(Math.round(a.hy + uy * k), Math.round(a.hx + ux * k), 'M');
       const tx = a.hx + ux * 3, ty = a.hy + uy * 3; put(Math.round(ty - ux), Math.round(tx + uy), 'X'); put(Math.round(ty + ux), Math.round(tx - uy), 'X'); put(Math.round(ty), Math.round(tx), 'x');
     }
+    if (P.tool === 2) {   /* удочка: жердь вперёд-вверх и леска вниз */
+      const a = arms[1], hx0 = Math.round(a.hx), hy0 = Math.round(a.hy);
+      for (let k = 1; k <= 6; k++) put(hy0 - Math.round(k * .5), hx0 + k, 'M');
+      for (let q = 1; q <= 6; q++) put(hy0 - 3 + q, hx0 + 6, 'l');
+    }
     /* голова */
     const hrows = R.head.map((r) => r.slice()), eyes0 = face(hrows, P, R.noBlink), hdy = P.hdy | 0, hx = (P.hx | 0) + lean, eyes = [];
-    for (let i = 0; i < hrows.length; i++) for (let x = 0; x < SW; x++) { const c = hrows[i][x]; if (c !== '.') put(i - 3 + B + dy + hdy, x + hx, c); }
+    for (let i = 0; i < hrows.length; i++) for (let x = 0; x < SW; x++) {
+      let c = hrows[i][x]; if (c === '.') continue; const r = i - 3;
+      if (sea === 3 && !F.hat && !NOHAT[F.head] && r >= 0 && r <= 3 && (c === 'a' || c === 'b' || c === 'c' || c === 'd')) c = r === 3 ? 'z' : 'Z';
+      if ((sea === 3 || sea === 2) && r === 9 && c === 'D') c = 'Q';
+      put(r + B + dy + hdy, x + hx, c);
+    }
     for (const [r, x] of eyes0) eyes.push([r - 3 + B + dy + hdy, x + hx]);
     for (const [r, x, ch] of R.props) put(r + B + dy, x + lean, ch);
     /* обводка вокруг рук там, где они отошли от тела */
@@ -199,9 +244,11 @@ const People = (function () {
   /* ---------- палитры и растр ---------- */
   const palCache = new Map();
   const mul3 = (c, a) => [Math.min(255, Math.round(c[0] * a[0])), Math.min(255, Math.round(c[1] * a[1])), Math.min(255, Math.round(c[2] * a[2]))];
+  const WCOL = [[200, 56, 52], [60, 110, 200], [232, 196, 64], [70, 160, 96], [170, 80, 190]];   /* шапка и шарф на холоде */
   function basePal(e, z) {
-    const F = FORMS[e.form] || FORMS.ref, P = Object.assign({}, REF, F.pal || {});
+    const F = FORMS[e.form] || FORMS.ref, P = Object.assign({}, REF, F.pal || {});   /* палитра — от исходного образа, женский вариант её не меняет */
     if (F.town && e.form !== 'ref' || (e.form === 'ref' && e.skinV)) { const s = SKIN[(e.seed || 0) % SKIN.length]; Object.assign(P, { S: s, L: mix(s, [255, 255, 255], .18), D: mul(s, .9), h: mix(s, [255, 240, 220], .25), o: mix(mul(s, .78), [200, 70, 30], .35) }); }
+    { const wc = WCOL[(e.seed || 0) % 5]; P.Z = wc; P.z = mix(wc, [255, 255, 255], .35); P.Q = mul(wc, .85); }
     if (z) {
       const G = [132, 184, 104];
       for (const k in P) if (k !== 'k' && k !== 'eye') P[k] = mul(mix(P[k], [96, 108, 96], .45), .86);
@@ -221,11 +268,12 @@ const People = (function () {
   const cache = new Map(), WATER = [44, 112, 224];
   const r5 = (v) => Math.round(v * 2) / 2;
   const poseKey = (P) => [P.dy, P.hdy, P.hx, P.lean, P.look, P.blink, P.mouth, r5(P.al[0]), r5(P.al[1]), r5(P.ar[0]), r5(P.ar[1]), P.ll, P.lr, P.dl, P.dr, P.up, P.tool].join(',');
-  function sprite(e, P, burn, flip, sub, amb, ak, zk, char) {
-    const form = e.form || 'ref', key = form + '|' + ((e.seed || 0) % SKIN.length) + '|' + poseKey(P) + '|' + burn + '|' + (flip ? 1 : 0) + '|' + sub + '|' + ak + '|' + zk + '|' + char + '|' + (zk >= .5 ? (e.seed || 0) % 11 : '');
+  function sprite(e, P, burn, flip, sub, amb, ak, zk, char, sea) {
+    if (sea === undefined) sea = -1;
+    const form = look(e), key = sea + '|' + form + '|' + ((e.seed || 0) % SKIN.length) + '|' + poseKey(P) + '|' + burn + '|' + (flip ? 1 : 0) + '|' + sub + '|' + ak + '|' + zk + '|' + char + '|' + (zk >= .5 ? (e.seed || 0) % 11 : '');
     let cv = cache.get(key); if (cv) return cv;
     if (cache.size > 3500) cache.clear();
-    const Pal = palette(e, zk, amb, ak), fr = compose(form, P);
+    const Pal = palette(e, zk, amb, ak), fr = compose(form, P, sea);
     cv = document.createElement('canvas'); cv.width = SW; cv.height = FH;
     const c = cv.getContext('2d'), im = c.createImageData(SW, FH), d = im.data, subRows = Math.min(FH, sub * 2);
     for (let y = 0; y < FH; y++) for (let x = 0; x < SW; x++) {
@@ -233,7 +281,12 @@ const People = (function () {
       let col = Pal[ch] || [255, 0, 255];
       if (ch === 'k' && fr.eyes.some(([ey, ex]) => ey === y && ex === x)) col = Pal.eye;
       if (zk >= .5 && ch !== 'k' && ((x * 7 + y * 13 + (e.seed || 0) * 3) % 11) === 0) col = mul(col, .62);
-      if (char) col = mix(col, [34, 28, 26], char === 2 ? .78 : .5);
+      if (char === 3) col = ch === 'k' ? [255, 255, 235] : mix(mul(col, .35), [40, 70, 160], .6);   /* просвечивает ток: белые контуры */
+      else if (char === 4) col = mix(col, ch === 'k' ? [80, 140, 210] : [190, 230, 255], .7);       /* лёд */
+      else if (char === 5) col = mix(col, [110, 230, 70], .5);                                       /* кислота */
+      else if (char === 6) col = mix(col, [150, 185, 215], .45);                                     /* утонул: бледный, синеватый */
+      else if (char === 7) col = mix(col, [130, 60, 72], .26);                                       /* разбился: синяки */
+      else if (char) col = mix(col, [34, 28, 26], char === 2 ? .78 : .5);
       if (burn) col = mix(col, burn === 2 ? [255, 196, 60] : [255, 110, 30], ch === 'k' ? .25 : .5);
       if (subRows && y >= FH - subRows) col = mix(col, WATER, y === FH - subRows ? .3 : .6);
       const tx = flip ? SW - 1 - x : x, o = (y * SW + tx) * 4;
@@ -275,7 +328,7 @@ const People = (function () {
     else { const up = local < 40; P.al = [1.2, up ? 2.6 : 4]; P.ar = [1.2, up ? 2.6 : 4]; P.hdy = up ? 1 : 0; P.look = 0; }
     return true;
   }
-  const DUR = Sim.ENT_DUR;
+  const DUR = Sim.ENT_DUR, KEEP = Sim.ENT_KEEP;
   /* выбор позы по состоянию из симуляции */
   function animate(e, T) {
     const sd = e.seed || 0, P = pose({}), st = { P, burn: 0, char: 0, rot: 0, alpha: 1, sub: Math.min(12, e.sub | 0), zk: e.z ? 1 : 0, pivot: 'feet' };
@@ -283,7 +336,7 @@ const People = (function () {
     const blink = ((T + sd * 7) % 230) < 7, dir = e.dir < 0 ? -1 : 1, flame = 1 + ((T >> 1) & 1);
     if (e.z && e.turn > 0) st.zk = Math.round((1 - e.turn / 45) * 4) / 4;
     if (e.dying) {
-      const dt = e.dt | 0, k = e.dying, dur = DUR[k] || 40;
+      const dt = e.dt | 0, k = e.dying, dur = DUR[k] || 40, keep = !!KEEP[k], jt = ((T >> 1) & 1) ? 1 : -1;
       P.al = [2.2, 3]; P.ar = [2.2, 3]; P.dl = 1; P.dr = 1; P.hdy = 1; P.blink = 1;
       if (k === 'burn') {
         if (dt < 7) { const w = T / 2.5; P.al = [2.6 + Math.sin(w) * .8, -1.8 + Math.cos(w) * 1.2]; P.ar = [2.6 + Math.cos(w) * .8, -1.8 + Math.sin(w) * 1.2]; P.mouth = 2; P.blink = 0; }
@@ -292,20 +345,39 @@ const People = (function () {
         const p = clamp01((dt - 7) / 16); st.rot = -dir * p * p * (3 - 2 * p) * 1.5;
       } else if (k === 'drown') {
         P.al = [2.4, -1.6 + Math.sin(T / 5) * .8]; P.ar = [2.4, -1.6 + Math.cos(T / 5) * .8]; P.mouth = 1; P.up = 1; P.dy = -1; P.blink = 0;
-        st.rot = -dir * Math.min(.7, dt / 40); st.pivot = 'center';
+        st.rot = -dir * Math.min(1.5, dt / 28); st.pivot = 'center';
+        if (dt > 36) { P.al = [2.2, 3]; P.ar = [2.2, 3]; P.up = 0; P.dy = 0; }
+      } else if (k === 'shock') {   /* пляска под током: контуры вспыхивают, потом падает чёрным */
+        if (dt < 34) { P.al = [3.2, -2.2 + jt * .6]; P.ar = [3.2, -2.2 - jt * .6]; P.hx = jt; P.mouth = 2; P.blink = 0; P.hdy = 0; P.dy = 0; P.ll = 1; P.lr = 1; P.dl = 1; P.dr = 1; st.char = ((T >> 1) & 1) ? 3 : 0; }
+        else { const p = clamp01((dt - 34) / 14); st.rot = -dir * p * p * (3 - 2 * p) * 1.5708; st.char = 2; }
+        st.lift = true;
+      } else if (k === 'melt') {   /* тает сверху вниз зелёной лужей */
+        P.al = [2.6 + Math.sin(T / 2) * .8, -1.6]; P.ar = [2.6 + Math.cos(T / 2) * .8, -1.6]; P.mouth = 2; P.blink = 0; P.hdy = 0; st.char = 5; st.melt = Math.min(.55, clamp01(dt / (dur - 6)));
+      } else if (k === 'freeze') {   /* дрожит, синеет и застывает ледяной статуей */
+        P.al = [1.2, 2.4]; P.ar = [1.2, 2.4]; P.hdy = 0; P.hx = dt < 24 ? jt : 0; P.blink = 0; P.mouth = 2; P.dl = 0; P.dr = 0; P.dy = 0; st.char = dt > 5 ? 4 : 0;
+      } else if (k === 'old') {   /* тихо ложится */
+        const p = clamp01(dt / 46); P.al = [1.2, 2.2]; P.ar = [1.2, 2.2]; P.mouth = 0; st.rot = -dir * p * p * (3 - 2 * p) * 1.5708; st.lift = true;
       } else {
         const spin = k === 'blast' && dt < 22, p = clamp01(dt / (spin ? 22 : 16)), ease = p * p * (3 - 2 * p);
-        st.rot = -dir * (spin ? ease * (1.5708 + 6.2832) : ease * 1.5708);
+        st.rot = -dir * (spin ? ease * (1.5708 + 6.2832) : ease * 1.5708); st.lift = true;
         if (dt < 10) { const w = T / 2; P.al = [2.8 + Math.sin(w) * .6, -1.5 + Math.cos(w)]; P.ar = [2.8 + Math.cos(w) * .6, -1.5 + Math.sin(w)]; P.mouth = 2; P.blink = 0; }
+        if (k === 'blast' && dt > 10) st.char = 1;
+        if (k === 'crush') st.squash = clamp01(dt / 10);
       }
-      if (dur - dt < 14) st.alpha = Math.max(0, (dur - dt) / 14);
+      /* тело остаётся: на нём видно, от чего умер; огонь обугливает, кислота съедает */
+      if (k === 'drown' && dt > 36) st.char = 6; else if ((k === 'fall' || k === 'crush') && dt > 10) st.char = 7;
+      if (e.charred) { st.char = 2; st.burn = e.bburn > 0 && ((T >> 2) & 1) && e.bburn % 30 < 25 ? flame : 0; }
+      if (e.acid) st.melt = Math.max(st.melt || 0, Math.min(1, .3 + e.acid / 160));
       return st;
     }
+    if (e.shock > 0) { const jt = ((T >> 1) & 1) ? 1 : -1; P.al = [3.2, -2.2 + jt * .6]; P.ar = [3.2, -2.2 - jt * .6]; P.hx = jt; P.mouth = 2; P.blink = 0; P.ll = 1; P.lr = 1; P.dl = 1; P.dr = 1; st.char = ((T >> 1) & 1) ? 3 : 0; return st; }
+    if (e.chill > 8) { P.al = [1.2, 2.2]; P.ar = [1.2, 2.2]; P.hx = ((T >> 1) & 1) ? 1 : -1; P.dy = 1; P.mouth = 2; P.look = 1; return st; }
     if (e.turn > 0) {   /* заражение: судороги */
       const f = T >> 1, r1 = rnd2(f, sd), r2 = rnd2(f, sd + 5), r3 = rnd2(f, sd + 9);
       P.hx = r1 < .33 ? -1 : r1 > .66 ? 1 : 0; P.al = [1.5 + 2 * r2, -1 + 4 * r3]; P.ar = [1.5 + 2 * r3, -1 + 4 * r1]; P.dy = f & 1 ? 0 : 1; P.mouth = 2; P.ll = r2 > .6 ? 1 : 0; P.lr = r3 > .6 ? 1 : 0;
       return st;
     }
+    if (e.sleep) { P.blink = 1; P.al = [2, 3.4]; P.ar = [2, 3.4]; P.dl = 1; P.dr = 1; P.hdy = 1; st.rot = -dir * 1.5708; st.pivot = 'lie'; return st; }
     if (e.hurt > 6) { P.dy = 1; P.hdy = 1; P.al = [2.4, 1.2]; P.ar = [2.4, 1.2]; P.mouth = 2; if (e.burn > 0) st.burn = flame; return st; }
     if (e.tumble > 0 && e.air) { P.al = [3, -2]; P.ar = [3, -2]; P.ll = 1; P.lr = 1; P.dl = 1; P.dr = 1; P.mouth = 2; st.rot = (T * .32) * (e.kx < 0 ? -1 : 1); st.pivot = 'center'; if (e.burn > 0) st.burn = flame; return st; }
     if (e.air && !e.swim) {
@@ -329,6 +401,7 @@ const People = (function () {
       st.burn = flame; return st;
     }
     if (e.act === 'seed') { P.dy = 2; P.hdy = 1; P.ar = [.8, 3.6]; P.al = [.4, 3.2]; P.look = 1; return st; }
+    if (e.act === 'fish') { P.ar = [3.6, -1.2]; P.al = [.4, 3.4]; P.look = 1; P.tool = 2; return st; }
     if (e.act === 'dig') { const c = Math.cos(T * .45); P.ar = [1.2, -2.4 + (1 + c) * 2.8]; P.al = [.4, 3.2]; P.dy = c < 0 ? 1 : 0; P.look = 1; P.tool = 1; P.lean = 1; return st; }
     if (e.walk && !e.swim) {
       const run = e.fear > 0 && !e.z, stride = e.z ? 2.2 : run ? 3.4 : 2.8;
@@ -337,6 +410,9 @@ const People = (function () {
       if (run) P.mouth = 2;
       return st;
     }
+    /* стоит: разговор, у костра */
+    if (e.task === 'chat' && e.chatWith != null && !e.walk) { P.look = 1; P.mouth = (T >> 4) & 1 ? 1 : 0; P.ar = [2.4 + Math.sin(T / 7) * .8, 1.4 + Math.cos(T / 5) * 1.2]; P.al = [.4, 3.8]; P.hdy = (T >> 5) & 1; return st; }
+    if (e.task === 'camp' && !e.walk) { P.look = 1; P.al = [1.2, 2.2]; P.ar = [1.2, 2.2]; P.blink = ((T + sd * 7) % 230) < 7 ? 1 : 0; P.mouth = 3; return st; }
     /* стоит */
     const br = ((T + sd * 13) % 160) < 64; P.hdy = br ? 1 : 0; P.blink = blink && !e.z ? 1 : 0;
     const slot = Math.floor((T + sd * 3) / 90), r = rnd2(slot, sd); P.look = r < .22 ? -1 : r > .78 ? 1 : 0;
@@ -349,26 +425,85 @@ const People = (function () {
   /* слой: ширина и высота вдвое больше мира */
   let lay = null, lctx = null;
   function init(canvas, W, H) { lay = canvas; lay.width = W * 2; lay.height = H * 2; lctx = lay.getContext('2d'); lctx.imageSmoothingEnabled = false; }
+  /* значки над головой: сердце, сон, восклицание, разговор, нота, огонь (символы: x — цвет значка, w — белый, d — тёмный) */
+  const EMO = {
+    heart: { c: [255, 96, 128], g: ['.x.x.', 'xxxxx', 'xxxxx', '.xxx.', '..x..'] }, zzz: { c: [220, 235, 255], g: ['xxxx', '..x.', '.x..', 'xxxx'] },
+    alert: { c: [255, 224, 64], g: ['.x.', '.x.', '.x.', '...', '.x.'] }, talk: { c: [255, 255, 255], g: ['xxxxxx', 'x.x.x.', 'xxxxxx', '.xx...'] },
+    note: { c: [150, 220, 255], g: ['.xxx', '.x.x', '.x..', 'xx..', 'xx..'] }, fire: { c: [255, 150, 50], g: ['..x..', '.xxx.', 'xxxxx', 'xxxxx'] },
+    bolt: { c: [255, 232, 60], g: ['..xx', '.xx.', 'xxxx', '.xx.', 'xx..'] }, skull: { c: [240, 240, 245], g: ['.xxx.', 'xxxxx', 'x.x.x', '.xxx.', '.x.x.'] },
+    drop: { c: [90, 170, 255], g: ['..x..', '.xxx.', 'xxxxx', 'xxxxx', '.xxx.'] }, cry: { c: [110, 190, 255], g: ['..x..', '.xxx.', 'xxxxx', '.xxx.'] },
+    stars: { c: [255, 230, 90], g: ['x...x', '.x.x.', '..x..', '.x.x.', 'x...x'] }, flake: { c: [190, 235, 255], g: ['..x..', 'x.x.x', '.xxx.', 'x.x.x', '..x..'] },
+    angry: { c: [255, 84, 60], g: ['x.x.x', '.xxx.', 'xxxxx', '.xxx.', 'x.x.x'] }, broken: { c: [190, 130, 235], g: ['.x.x.', 'xxxxx', 'xxxxx', '.xxx.', '..x..'] },
+    shake: { c: [255, 200, 90], g: ['.x.x.', 'xxxxx', 'xxxxx', '.xxx.', '..x..'] }, ghost: { c: [236, 242, 255], g: ['.xxx.', 'xxxxx', 'xxxxx', 'xxxxx', 'x.x.x'] }
+  };
+  let selId = null;
+  /* пузыри эмоций из присланного листа: ключ эмоции -> картинка */
+  const BUB = { heart: ['emote', 'heart'], cry: ['emote', 'broken'], broken: ['emote', 'broken'], alert: ['emote', 'alert'], talk: ['emote', 'dots'], note: ['emote', 'note'], shake: ['emote', 'shake'], zzz: ['badge', 'zzz'], fire: ['badge', 'fire'],
+    money: ['emote', 'money'], spark: ['emote', 'spark'], up: ['emote', 'up'], ask: ['emote', 'ask'], gift: ['emote', 'gift'], meat: ['emote', 'meat'], coffee: ['emote', 'coffee'], down: ['emote', 'down'] }, bubCache = {};
+  function bubble(k) {
+    const d = BUB[k]; if (!d || typeof UIA === 'undefined') return null;
+    let im = bubCache[k]; if (!im) { im = bubCache[k] = new Image(); im.src = UIA[d[0]][d[1]]; }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  const CAUSE_G = { shock: 'bolt', burn: 'fire', drown: 'drop', fall: 'stars', crush: 'stars', blast: 'stars', melt: 'skull', freeze: 'flake', slain: 'stars' };
+  function glyph(k, x, y, a) {
+    const o = EMO[k]; if (!o) return; lctx.globalAlpha = a; lctx.fillStyle = 'rgba(20,16,28,.85)';
+    o.g.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === 'x') lctx.fillRect(x + i - 1, y + j - 1, 3, 3); });
+    lctx.fillStyle = 'rgb(' + o.c.join(',') + ')';
+    o.g.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === 'x') lctx.fillRect(x + i, y + j, 1, 1); });
+    lctx.globalAlpha = 1;
+  }
   function draw(ents, T, amb, ambKey, lightAt) {
     if (!lctx) return;
     lctx.clearRect(0, 0, lay.width, lay.height);
-    const day = amb[0] > .985 && amb[1] > .985 && amb[2] > .985;
+    const day = amb[0] > .985 && amb[1] > .985 && amb[2] > .985, sea = (typeof Sky !== 'undefined' && Sky.Y) ? Sky.Y.season : -1, night = (typeof Sky !== 'undefined' && Sky.Y) ? Sky.Y.night || 0 : 0;
+    /* передний план домов (перекрытия, столбы, крыша, дым) — перед людьми он не нужен, поэтому рисуется первым */
+    if (typeof Houses !== 'undefined') Houses.drawFg(lctx, amb, ambKey, T, night);
     for (const e of ents) {
       if (e.seed == null) e.seed = (Math.random() * 1000) | 0;
       if (!e.form) e.form = 'ref';
       /* ночью человечек освещён тем же светом, что и мир вокруг: у костра и лампы он виден, в темноте тёмный */
       let a = amb, ak = ambKey;
-      if (!day && lightAt) { const L = lightAt(e.x, e.y - 6), q = (v) => Math.min(1.1, Math.round(v * 10) / 10); a = [q(L[0]), q(L[1]), q(L[2])]; ak = a.join(','); }
-      const st = animate(e, T), spr = sprite(e, st.P, st.burn, e.dir < 0, st.sub, a, ak, st.zk, st.char);
+      if (!day && lightAt) { const L = (typeof Houses !== 'undefined' && Houses.lightFor(e, night)) || lightAt(e.x, e.y - 6), q = (v) => Math.min(1.1, Math.round(v * 10) / 10); a = [q(L[0]), q(L[1]), q(L[2])]; ak = a.join(','); }
+      const st = animate(e, T), spr = sprite(e, st.P, st.burn, e.dir < 0, st.sub, a, ak, st.zk, st.char, sea);
+      const sc = (typeof Life !== 'undefined' && e.age !== undefined) ? Life.ageScale(e.age) : 1, dw = Math.round(SW * sc), dh = Math.round(FH * sc);
       const cx = Math.round(e.x * 2), fy = (Math.round(e.y) + 1) * 2;
-      if (st.alpha < 1) lctx.globalAlpha = st.alpha;
+      const da = e.doorT > 0 ? .25 + .75 * (1 - e.doorT / 16) : 1;   /* только что вышел из двери в стене: проявляется */
+      if (st.alpha * da < 1) lctx.globalAlpha = st.alpha * da;
       if (st.rot) {
         lctx.save();
-        if (st.pivot === 'center') { lctx.translate(cx, fy - FH / 2); lctx.rotate(st.rot); lctx.drawImage(spr, -SW / 2, -FH / 2); }
-        else { lctx.translate(cx, fy); lctx.rotate(st.rot); lctx.drawImage(spr, -SW / 2, -FH); }
+        if (st.pivot === 'center') { lctx.translate(cx, fy - dh / 2); lctx.rotate(st.rot); lctx.drawImage(spr, -dw / 2, -dh / 2, dw, dh); }
+        else if (st.pivot === 'lie') { lctx.translate(cx, fy - dw / 2); lctx.rotate(st.rot); lctx.drawImage(spr, -dw / 2, -dh / 2, dw, dh); }
+        else { lctx.translate(cx, fy - (st.lift ? Math.abs(Math.sin(st.rot)) * dw / 2 : 0)); lctx.rotate(st.rot); lctx.drawImage(spr, -dw / 2, -dh, dw, dh); }
         lctx.restore();
-      } else lctx.drawImage(spr, cx - SW / 2, fy - FH);
-      if (st.alpha < 1) lctx.globalAlpha = 1;
+      } else if (st.melt) {   /* кислота: тело съедается сверху, внизу растёт зелёная лужа */
+        const sy0 = Math.min(FH - 1, Math.floor(st.melt * FH)), ph = Math.max(1, Math.round(dh * (FH - sy0) / FH)), w = Math.round(st.melt * 7);
+        lctx.drawImage(spr, 0, sy0, SW, FH - sy0, cx - dw / 2, fy - ph, dw, ph);
+        lctx.fillStyle = 'rgba(120,230,70,.85)'; lctx.fillRect(cx - 3 - w, fy - 1, 7 + 2 * w, 2); lctx.fillStyle = 'rgba(200,255,120,.9)'; lctx.fillRect(cx - 1 - (w >> 1), fy - 1, 3 + w, 1);
+      } else if (st.squash) { const h2 = Math.max(4, Math.round(dh * (1 - .62 * st.squash))), w2 = Math.round(dw * (1 + .5 * st.squash)); lctx.drawImage(spr, cx - w2 / 2, fy - h2, w2, h2); }
+      else { lctx.drawImage(spr, cx - dw / 2, fy - dh, dw, dh); if (e.weapon && !e.dying && !e.sleep && typeof Combat !== 'undefined') Combat.draw(lctx, e, cx, fy, dh); }
+      if (st.alpha * da < 1) lctx.globalAlpha = 1;
+      /* искры тока */
+      if ((e.dying === 'shock' && e.dt < 34) || (!e.dying && e.shock > 0)) for (let q = 0; q < 4; q++) {
+        const x = cx + Math.round((Math.random() - .5) * 20), y = fy - Math.round(Math.random() * dh); lctx.fillStyle = Math.random() < .5 ? '#fff6a0' : '#7fd8ff';
+        lctx.fillRect(x, y, 1, 3); lctx.fillRect(x - 1, y + 1, 3, 1);
+      }
+      if (e.dying) {   /* причина смерти над головой и душа, уходящая вверх */
+        const dt = e.dt | 0, k = e.dying, dur = DUR[k] || 40, top0 = fy - dh - 4, cg = CAUSE_G[k];
+        if (cg && dt < 100) glyph(cg, cx - (EMO[cg].g[0].length >> 1), top0 - EMO[cg].g.length - Math.round(dt * .08), dt < 70 ? 1 : (100 - dt) / 30);
+        const g = dt - (dur - 10); if (g > 0 && g < 160 && !e.z) glyph('ghost', cx - 2 + Math.round(Math.sin(g / 7) * 3), top0 - 8 - Math.round(g * .42), Math.min(1, (160 - g) / 80) * .85);
+        continue;
+      }
+      const top = fy - (st.pivot === 'lie' ? dw : dh) - 4;
+      if (e.emo) {
+        const bob = Math.round(Math.sin(T / 9 + e.seed) * 1), k = e.emo.k, a = Math.min(1, e.emo.t / 20), b = bubble(k), o = EMO[k];
+        if (b) { lctx.globalAlpha = a; lctx.drawImage(b, Math.round(cx) - 10, Math.round(top) - 23 + bob, 20, 20); lctx.globalAlpha = 1; }
+        else if (o) glyph(k, cx - (o.g[0].length >> 1), top - o.g.length - 1 + bob, a);
+      }
+      if (selId !== null && e.id === selId) {   /* стрелка над выбранным */
+        const y = top - 10 + Math.round(Math.sin(T / 6) * 1.5); lctx.fillStyle = 'rgba(20,16,28,.9)'; lctx.fillRect(cx - 4, y - 1, 9, 3); lctx.fillRect(cx - 3, y + 2, 7, 2); lctx.fillRect(cx - 2, y + 4, 5, 2); lctx.fillRect(cx - 1, y + 6, 3, 1);
+        lctx.fillStyle = '#ffd23c'; lctx.fillRect(cx - 3, y, 7, 1); lctx.fillRect(cx - 2, y + 1, 5, 2); lctx.fillRect(cx - 1, y + 3, 3, 1); lctx.fillRect(cx, y + 4, 1, 1);
+      }
     }
   }
   /* случайный горожанин для инструмента «Человек» */
@@ -383,11 +518,12 @@ const People = (function () {
   }
   /* каждый образ — отдельный инструмент во вкладке «Люди» */
   if (typeof TOOLS !== 'undefined') {
+    TOOLS.CHILD = { name: 'Ребёнок', hint: 'Маленький человечек: играет и ходит за родителями, потом растёт.' };
     for (const id in FORMS) TOOLS['P_' + id] = { name: FORMS[id].name, hint: FORMS[id].hint, form: id };
     if (typeof CATS !== 'undefined' && !CATS.some((c) => c.id === 'people')) {
       const life = CATS.find((c) => c.id === 'life'); if (life) life.els = life.els.filter((k) => k !== 't:HUMAN' && k !== 't:ZOMBIE');
-      CATS.splice(CATS.indexOf(life) + 1, 0, { id: 'people', name: 'Люди', icon: 'people', els: ['t:HUMAN'].concat(Object.keys(FORMS).filter((k) => k !== 'ref').map((k) => 't:P_' + k), ['t:ZOMBIE']) });
+      CATS.splice(CATS.indexOf(life) + 1, 0, { id: 'people', name: 'Люди', icon: 'people', els: ['t:HUMAN', 't:CHILD'].concat(Object.keys(FORMS).filter((k) => k !== 'ref').map((k) => 't:P_' + k), ['t:ZOMBIE']) });
     }
   }
-  return { init, draw, icon, randomForm, FORMS, compose, sprite, animate, NEUTRAL, get canvas() { return lay; } };
+  return { init, draw, icon, randomForm, FORMS, compose, sprite, animate, NEUTRAL, setSel(id) { selId = id; }, get canvas() { return lay; } };
 })();

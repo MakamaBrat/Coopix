@@ -11,7 +11,7 @@ const Sky = (function () {
   const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'beach', 'cave'];
   const HZ = [.62, .62, .62, .82, .82, .62, .62];   /* линия горизонта по сценам: у моря выше */
   const DAY_SEC = 240, SC = 2;
-  const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false };
+  const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false, daySec: DAY_SEC, slen: 12, season: 1, dos: 0, year: 1, sp: .25, sblend: 0 };
   const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
   const c255 = (v) => v < 0 ? 0 : v > 255 ? 255 : v | 0;
   const sstep = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
@@ -81,7 +81,7 @@ const Sky = (function () {
 
   let ctx, img, buf, old, skyBuf, fgBuf, W = 0, H = 0, n = 0, dirty = 2, xfade = 0;
   let scene = B_FOREST, cand = -1, candN = 0, emptyN = 0, HT = [], ridge = [], hzCur = 100, fgTop = 0, lockB = -1, volcX = .5, hor = [212, 238, 252];
-  let cloudX = 0, stars = [], clouds = [], meteor = null, crystals = [], birds = [], flies = [], embers = [];
+  let fgKey = -1, cmap = null, cloudX = 0, stars = [], clouds = [], meteor = null, crystals = [], birds = [], flies = [], embers = [];
   const counts = new Float32Array(NB);
 
   /* ---------- формы гор ---------- */
@@ -356,14 +356,54 @@ const Sky = (function () {
     }
   }
   /* ---------- нарисованные сцены (PNG/WebP с прозрачным небом) и облака из картинки ---------- */
-  const ART = { plains: B_FOREST, desert: B_DESERT, snow: B_SNOW, sea: B_SEA, beach: B_BEACH }, HFR = { plains: .66, desert: .66, snow: .72, sea: .63, beach: .62 };
+  const ART = { plains: B_FOREST, desert: B_DESERT, snow: B_SNOW, sea: B_SEA, beach: B_BEACH }, HFR = { plains: .66, plains_spring: .66, plains_autumn: .66, plains_winter: .66, desert: .66, snow: .72, sea: .63, beach: .62 };
+  /* отдельные нарисованные картинки на сезон (если файла нет, берётся летняя с окраской): луг */
+  const SEAS_ART = [['plains_spring'], [], ['plains_autumn'], ['plains_winter']];
   const artImg = {}, artPix = {}; let cloudTex = null;
+  const CS = [];   /* облака-картинки с листа */
+  /* каждому облаку на небе — своя картинка: крупные кучевые повыше, длинные и маленькие ниже; не шире половины экрана */
+  function assignClouds() {
+    if (!CS.length || !clouds.length) return;
+    const maxW = W * .55, fit = CS.filter((q) => q.w <= maxW), big = fit.filter((q) => q.h >= 40), mid = fit.filter((q) => q.h >= 24 && q.h < 40), low = fit.filter((q) => q.h < 24);
+    let k = 0;
+    for (const c of clouds) {
+      if (c.sp.kind !== 0) continue;
+      const pool = c.extra ? (big.length ? big : fit) : c.yn < .35 ? (big.length ? big : fit) : c.yn < .65 ? (mid.length ? mid : fit) : (low.length ? low : fit);
+      if (!pool.length) continue;
+      c.sp = pool[(k * 7 + (SEED % 13)) % pool.length]; k++;
+    }
+  }
   function loadArt() {
     if (typeof BGA === 'undefined') return;
     for (const k in BGA) {
       const im = new Image();
       im.onload = () => {
-        if (k === 'clouds') { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data, t = new Uint8Array(im.width * im.height); for (let i = 0; i < t.length; i++) t[i] = Math.round(d[i * 4] / 85); cloudTex = { t, w: im.width, h: im.height }; }
+        if (k === 'cloudset') {
+          /* отдельные облака с листа: тон в красном канале, прозрачность в альфе (scripts/build_pixelia_art.py) */
+          const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+          const d = x.getImageData(0, 0, im.width, im.height).data;
+          CS.length = 0;
+          for (const [bx, by, w, h] of (typeof BGA_CLOUDS !== 'undefined' ? BGA_CLOUDS : [])) {
+            const tone = new Uint8Array(w * h).fill(255);
+            for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const o = ((by + yy) * im.width + bx + xx) * 4; if (d[o + 3] > 127) tone[yy * w + xx] = Math.min(2, Math.round(d[o] / 120)); }
+            CS.push({ w, h, tone, kind: 0, art: 1 });
+          }
+          assignClouds();
+        }
+        else if (k === 'clouds') { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data, t = new Uint8Array(im.width * im.height); for (let i = 0; i < t.length; i++) t[i] = Math.round(d[i * 4] / 85);
+          /* делаем текстуру бесшовной: хвост шириной B накладывается на начало, и в каждой строке граница идёт там,
+             где тона хвоста и начала совпадают (путь наименьшей разницы сверху вниз, как при сшивке текстур). Период становится w - B */
+          const w0 = im.width, h0 = im.height, B = Math.round(w0 * .22), wn = w0 - B, tn = new Uint8Array(wn * h0);
+          const cost = new Float32Array(h0 * B), from = new Int16Array(h0 * B), cut = new Int16Array(h0);
+          for (let y = 0; y < h0; y++) for (let x = 0; x < B; x++) {
+            const c = Math.abs(t[y * w0 + x] - t[y * w0 + wn + x]) * 4 + Math.abs(x - B / 2) / B * .2;
+            if (!y) { cost[x] = c; continue; }
+            let bv = 1e9, bi = x; for (let dx = -2; dx <= 2; dx++) { const q = x + dx; if (q < 0 || q >= B) continue; const v = cost[(y - 1) * B + q]; if (v < bv) { bv = v; bi = q; } }
+            cost[y * B + x] = c + bv; from[y * B + x] = bi;
+          }
+          { let bi = 0; for (let x = 1; x < B; x++) if (cost[(h0 - 1) * B + x] < cost[(h0 - 1) * B + bi]) bi = x; for (let y = h0 - 1; y >= 0; y--) { cut[y] = bi; bi = from[y * B + bi]; } }
+          for (let y = 0; y < h0; y++) for (let x = 0; x < wn; x++) tn[y * wn + x] = x < cut[y] ? t[y * w0 + wn + x] : t[y * w0 + x];
+          cloudTex = { t: tn, w: wn, h: h0 }; }
         else { artImg[k] = im; for (const q in artPix) delete artPix[q]; }
         if (buf) dirty = 2;
       };
@@ -371,25 +411,49 @@ const Sky = (function () {
     }
   }
   /* картинка сцены в размере фона: горизонт картинки ставится на горизонт неба, по бокам обрезается по центру, низ дотягивается последней строкой */
-  function scenePix(b) {
-    const name = Object.keys(ART).find((k) => ART[k] === b), im = name && artImg[name]; if (!im) return null;
+  function scenePix(b, nm) {
+    const name = nm || Object.keys(ART).find((k) => ART[k] === b), im = name && artImg[name]; if (!im) return null;
     const key = name + W + 'x' + H; if (artPix[key]) return artPix[key];
     const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-    const iw = im.width, ih = im.height, hzT = H * HZ[b], sc = Math.max(hzT / (HFR[name] * ih), W / iw), ox = (W - iw * sc) / 2, oy = hzT - HFR[name] * ih * sc;
-    x.drawImage(im, ox, oy, iw * sc, ih * sc);
-    const bot = oy + ih * sc; if (bot < H) x.drawImage(im, 0, ih - 2, iw, 2, ox, bot - 1, iw * sc, H - bot + 2);
+    /* картинка всегда покрывает всю ширину одним куском (без зеркальных копий по бокам): масштаб — больший из «горизонт на месте» и «во всю ширину»;
+       горизонт картинки стоит на горизонте неба, лишнее уходит вниз за край, на узком экране бока обрезаются по центру */
+    const iw = im.width, ih = im.height, hzT = H * HZ[b], sc = Math.max(hzT / (HFR[name] * ih), W / iw), pw = iw * sc, ox = (W - pw) / 2, oy = hzT - HFR[name] * ih * sc, bot = oy + ih * sc;
+    x.drawImage(im, ox, oy, pw, ih * sc);
+    if (bot < H) x.drawImage(im, 0, ih - 2, iw, 2, ox, bot - 1, pw, H - bot + 2);
     return artPix[key] = x.getImageData(0, 0, W, H).data;
   }
+  /* слой сезона: если для времени года есть своя картинка — она без окраски, иначе летняя с окраской (осенью жёлтая, зимой в инее, весной ярче) */
+  function seasonLayer(base, i) {
+    const nm = scene === B_FOREST && (SEAS_ART[i] || [])[0], p = nm && artImg[nm] ? scenePix(scene, nm) : null;
+    return p ? { pix: p, tint: [0, 0, 0] } : { pix: base, tint: SEAS_P[i] };
+  }
+  let _r = 0, _g = 0, _b = 0;
+  function gradePx(pix, o, lg, ovs, tn) {
+    let r = pix[o] * lg[0] * ovs + lg[3], g = pix[o + 1] * lg[1] * ovs + lg[4], b = pix[o + 2] * lg[2] * ovs + lg[5];
+    const sp = tn[0], sa = tn[1], sw = tn[2];
+    if (sp + sa + sw > .001) {
+      const gk = Math.max(0, Math.min(1, (g - Math.max(r, b) - 8) / 50));
+      if (sa) { r += (g * 1.12 - r) * gk * sa; g -= g * .25 * gk * sa; b -= b * .2 * gk * sa; r *= 1 + .05 * sa; }
+      if (sp) { g += 12 * gk * sp; r += 6 * gk * sp; }
+      if (sw) { const x = sw * (gk * .78 + .1); r += (214 * lg[0] - r) * x; g += (226 * lg[1] - g) * x; b += (240 * lg[2] - b) * x; r *= 1 - .03 * sw; b *= 1 + .04 * sw; }
+    }
+    _r = r; _g = g; _b = b;
+  }
   function imageFg(pix, lg, ovs) {
-    const m0 = lg[0] * ovs, m1 = lg[1] * ovs, m2 = lg[2] * ovs, a0 = lg[3], a1 = lg[4], a2 = lg[5];
+    const s0 = Y.season, s1 = (s0 + 1) & 3, t = sTrans(), L0 = seasonLayer(pix, s0), L1 = t > .004 ? seasonLayer(pix, s1) : null;
     for (let i = 0, N = W * H; i < N; i++) {
-      const o = i * 4; if (pix[o + 3] < 110) continue;
-      fgBuf[i] = px(c255(pix[o] * m0 + a0), c255(pix[o + 1] * m1 + a1), c255(pix[o + 2] * m2 + a2));
+      const o = i * 4, ok0 = L0.pix[o + 3] >= 110, ok1 = L1 ? L1.pix[o + 3] >= 110 : false;
+      if (!ok0 && !ok1) continue;
+      let r, g, b;
+      if (ok0) { gradePx(L0.pix, o, lg, ovs, L0.tint); r = _r; g = _g; b = _b; }
+      if (ok1) { gradePx(L1.pix, o, lg, ovs, L1.tint); if (ok0) { r += (_r - r) * t; g += (_g - g) * t; b += (_b - b) * t; } else { r = _r; g = _g; b = _b; } }
+      r = r > 255 ? 255 : r < 0 ? 0 : r | 0; g = g > 255 ? 255 : g < 0 ? 0 : g | 0; b = b > 255 ? 255 : b < 0 ? 0 : b | 0;
+      fgBuf[i] = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
     }
     fgTop = 0;
   }
   function rebuildFg() {
-    fgBuf.fill(0); fgTop = H;
+    fgKey = -1; fgBuf.fill(0); fgTop = H;
     if (Y.cave) { caveFg(); return; }
     { const pix = scenePix(scene); if (pix) { imageFg(pix, keyAt(LIGHT_KEYS, elev()), 1 - Y.ov * .2); return; } }
     const e = elev(), lg = keyAt(LIGHT_KEYS, e), ovs = 1 - Y.ov * .2, hz = hzCur, hr = hor[0], hg = hor[1], hb = hor[2], U = Math.max(.6, Math.min(1.5, H / SC / 204)) * SC * .85, b = scene === B_BEACH ? B_SEA : scene;
@@ -563,16 +627,21 @@ const Sky = (function () {
     if (ov > .01) { lit = lerp3(lit, [206, 212, 224], ov * .9); mid = lerp3(mid, [150, 158, 174], ov * .9); sh = lerp3(sh, [104, 112, 130], ov * .9); al = lerp(al, .98, ov); }
     if (scene === B_DESERT) { const dw = sstep(0, .3, e) * (1 - ov); lit = lerp3(lit, [255, 240, 214], .75 * dw); mid = lerp3(mid, [246, 208, 170], .75 * dw); sh = lerp3(sh, [214, 164, 146], .75 * dw); }
     const pal = [lit, mid, sh], streakVis = Math.max(tw * 1.15, night * .3) * (1 - ov), sc = keyAt(STREAK_KEYS, e), spal = [[sc[0], sc[1], sc[2]], [sc[3], sc[4], sc[5]], [sc[6], sc[7], sc[8]]];
-    if (cloudTex) {
+    if (cloudTex && !CS.length) {
       cloudX += .15 + (wind || 0) * .05;
-      const T = cloudTex, hz = hzCur, sc = Math.max(W / T.w, hz * .95 / T.h), tp = [sh, mid, lit];
-      const pass = (off, k, a, pl) => { for (let y = 0; y < Math.min(hz, T.h * sc * k); y++) { const o = ((y / (sc * k)) | 0) * T.w; for (let x = 0; x < W; x++) { let u = ((x + off) / (sc * k)) % (T.w * 2); if (u >= T.w) u = T.w * 2 - 1 - u; const t = T.t[o + (u | 0)]; if (t) { const c = pl[t - 1]; blend(y * W + x, c[0], c[1], c[2], a); } } } };
+      /* размер облаков по высоте неба, но период повтора не меньше ширины экрана: одно и то же облако никогда не видно дважды */
+      const T = cloudTex, hz = hzCur, sc = Math.max(hz * .95 / T.h, W * 1.05 / T.w), tp = [sh, mid, lit];
+      const cm = cmap || (cmap = new Int16Array(W)), pass = (off, k, a, pl) => {
+        const q = sc * k; for (let x = 0; x < W; x++) { let u = ((x + off) / q) % T.w; if (u < 0) u += T.w; cm[x] = u | 0; }
+        const rows = Math.min(hz, T.h * q) | 0, pr = [0, 1, 2].map((i) => pl[i]);
+        for (let y = 0; y < rows; y++) { const o = ((y / q) | 0) * T.w, ro = y * W; for (let x = 0; x < W; x++) { const t = T.t[o + cm[x]]; if (t) { const c = pr[t - 1]; blend(ro + x, c[0], c[1], c[2], a); } } }
+      };
       pass(cloudX, 1, al, tp);
       if (ov > .08) pass(cloudX * .7 + 311, 1.35, Math.min(.95, ov * 1.1), [lerp3(sh, [96, 104, 122], .5), lerp3(mid, [140, 148, 164], .5), lerp3(lit, [180, 188, 204], .5)]);
     }
     for (const c of clouds) {
       const sp = c.sp;
-      if (cloudTex && sp.kind === 0) continue;
+      if (cloudTex && !CS.length && sp.kind === 0) continue;
       if (sp.kind === 1 && streakVis < .05) continue;
       if (c.extra && ov < .05) continue;
       c.x += c.v * 3 + wind * .05; if (c.x > W + 2) c.x = -sp.w - 2; else if (c.x < -sp.w - 4) c.x = W + 1;
@@ -664,7 +733,7 @@ const Sky = (function () {
     const wt = S.weather | 0, ot = wt === 3 ? 1 : wt === 1 ? .6 : wt === 2 ? .5 : 0; Y.ov += (ot - Y.ov) * .012;
     if (dirty) { sample(S, true); applyScene(); rebuildSky(); rebuildFg(); dirty = 0; compose(S, tick); return; }
     if (n % 24 === 0) sample(S, false);
-    if (n % 30 === 6) rebuildSky(); else if (n % 30 === 18) rebuildFg();
+    if (n % 30 === 6) rebuildSky(); else if (n % 30 === 18) { const k = Math.round(elev() * 60) + Math.round(Y.ov * 10) * 1000 + scene * 100000 + Math.round(Y.sp * 96) * 1000000; if (k !== fgKey) { rebuildFg(); fgKey = k; } }   /* слои пересобираются, только когда заметно изменился свет */
     if (n % 3 === 0) compose(S, tick);
   }
   function ambient() {
@@ -674,15 +743,24 @@ const Sky = (function () {
     Y.amb = am.map((v) => v * s); Y.ambKey = (eb + 8) + 17 * ob; Y.night = 1 - sstep(-.3, .05, e);
     return Y;
   }
+  /* ---------- календарь: в сезоне Y.slen дней (выбирается: 3, 6, 12, 24; по умолчанию 12), в году четыре сезона. Весна, лето, осень, зима ---------- */
+  const SEAS_P = [[1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 1]], TEMPS = [14, 26, 10, -1];   /* [весна, осень, зима] — сила окраски; температура воздуха */
+  function calSync() { const L = Y.slen, YL = L * 4, d = ((Y.day % YL) + YL) % YL; Y.season = (d / L) | 0; Y.dos = d % L; Y.year = Math.floor(Y.day / YL) + 1; Y.sp = (d + Y.time) / YL; Y.sblend = (Y.dos + Y.time) / L; }
+  const sTrans = () => sstep(.62, 1, Y.sblend);   /* плавный переход в следующий сезон в последней трети */
+  function seasonMix() { const a = SEAS_P[Y.season], b = SEAS_P[(Y.season + 1) & 3], t = sTrans(); return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+  function seasonTemp() { return lerp(TEMPS[Y.season], TEMPS[(Y.season + 1) & 3], sTrans()); }
   function advance(dtMs) {
     if (!Y.auto) return;
-    Y.time += dtMs / 1000 / DAY_SEC;
-    if (Y.time >= 1) { Y.time -= 1; Y.day++; }
+    /* глубокая ночь (после сумерек и до рассвета) идёт вдвое быстрее: ночь вдвое короче, закат и рассвет — как были */
+    const deep = Y.time > .8 || Y.time < .2;
+    Y.time += dtMs / 1000 / Y.daySec * (deep ? 2 : 1);
+    while (Y.time >= 1) { Y.time -= 1; Y.day++; }
+    calSync();
   }
   let artLoaded = false;
   function init(canvas, w, h) {
     w *= SC; h *= SC;   /* фон рисуется вдвое мельче клеток мира: тонкий дизеринг и детали, как в настоящем пиксель-арте */
-    W = w; H = h; canvas.width = w; canvas.height = h; ctx = canvas.getContext('2d');
+    W = w; H = h; cmap = null; canvas.width = w; canvas.height = h; ctx = canvas.getContext('2d');
     img = ctx.createImageData(w, h); buf = new Uint32Array(img.data.buffer); old = new Uint32Array(w * h); skyBuf = new Uint32Array(w * h); fgBuf = new Uint32Array(w * h); xfade = 0;
     hzCur = h * HZ[scene];
     if (!stars.length) {
@@ -694,9 +772,10 @@ const Sky = (function () {
       for (let i = 0; i < 26; i++) embers.push({ x: 0, y: 0, vy: 0, l: 0, ph: 0 });
     }
     clouds = [];
-    const nc = Math.max(3, Math.round(w / SC / 70));
+    const nc = Math.max(3, Math.round(w / SC / 58));
     for (let i = 0; i < nc + 6; i++) { const extra = i >= nc, sz = extra ? .8 + Math.random() * .4 : Math.random(); clouds.push({ xn: Math.random(), x: 0, yn: extra ? .1 + Math.random() * .8 : (i + .2 + Math.random() * .6) / nc * .85, v: .012 + Math.random() * .03, extra, sp: mkPuff(i + SEED % 11, sz) }); clouds[i].x = clouds[i].xn * w; }
     for (let i = 0; i < 6; i++) { const c = { xn: Math.random(), x: 0, yn: (i + .3 + Math.random() * .4) / 6, v: .006 + Math.random() * .012, extra: false, sp: mkStreak(i + SEED % 7) }; c.x = c.xn * w; clouds.push(c); }
+    assignClouds();
     genShapes(); dirty = 2; if (!artLoaded) { artLoaded = true; loadArt(); }
   }
   function set(o) {
@@ -708,7 +787,15 @@ const Sky = (function () {
       if (buf && !dirty) { if (was !== Y.cave) dirty = 2; else if (lockB >= 0 && lockB !== scene) switchScene(lockB, false); } else dirty = 2;
       if (lockB >= 0) scene = lockB;
     }
-    if (o.day !== undefined) Y.day = o.day | 0;
+    if (o.slen !== undefined) {
+      const L = [3, 6, 12, 24].indexOf(+o.slen) >= 0 ? +o.slen : 12;
+      /* при смене длины сезона остаёмся в том же сезоне и на той же доле его */
+      if (o.day === undefined && L !== Y.slen) { calSync(); const f = Y.dos / Y.slen; Y.day = (Y.year - 1) * 4 * L + Y.season * L + Math.floor(f * L); }
+      Y.slen = L;
+    }
+    if (o.day !== undefined) Y.day = Math.max(0, o.day | 0);
+    if (o.dsec !== undefined) Y.daySec = Math.max(4, Math.min(960, +o.dsec || DAY_SEC));
+    calSync(); dirty = Math.max(dirty, 1);
   }
   const NAMES = [[.2, 'Ночь'], [.3, 'Рассвет'], [.42, 'Утро'], [.62, 'День'], [.72, 'Вечер'], [.82, 'Закат'], [.87, 'Сумерки'], [1.01, 'Ночь']];
   function label() {
@@ -716,5 +803,5 @@ const Sky = (function () {
     let nm = 'Ночь'; for (const q of NAMES) if (Y.time < q[0]) { nm = q[1]; break; }
     return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ' · ' + nm;
   }
-  return { init, draw, advance, ambient, set, label, LOCKS, DAY_SEC, get time() { return Y.time; }, get auto() { return Y.auto; }, get lock() { return Y.lock; }, get day() { return Y.day; }, get scene() { return scene; }, Y };
+  return { init, draw, advance, ambient, set, label, LOCKS, DAY_SEC, get time() { return Y.time; }, get auto() { return Y.auto; }, get lock() { return Y.lock; }, get day() { return Y.day; }, get season() { return Y.season; }, seasonMix, seasonTemp, seasonT: sTrans, get scene() { return scene; }, get cloudList() { return clouds; }, Y };
 })();

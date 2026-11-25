@@ -1,4 +1,4 @@
-:root{--slot:min(52px,calc((100vw - 64px)/8));--hot:min(60px,calc((100vw - 140px)/5));
+:root{--slot:min(52px,calc((100vw - 72px)/9));--hot:min(70px,calc((100vw - 64px)/8));
 --ink:#15131d;--slate:#3b4058;--slate2:#2c3046;--slate3:#20233a;--hi:#5d6688;--sel:#4f587c;
 --gold:#f6c84e;--gold2:#b8761f;--gold3:#fff0a8;--text:#f6ecd2;--muted:#b9b4cc;--red:#e0483e;--green:#5cc84a;
 --parch:#f1deb4;--parch2:#d9b67a;--pink:#5a3414;--vine:none}
@@ -6,6 +6,7 @@
 html,body{margin:0;height:100%;background:#191b28;color:var(--text);font-family:'Pix',ui-monospace,Consolas,monospace;font-size:15px;overflow:hidden;touch-action:none;overscroll-behavior:none}
 button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
 .ic{image-rendering:pixelated;display:block;pointer-events:none}
+.ic.smooth{image-rendering:auto}
 #app{position:fixed;inset:0;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 /* сланцевая плита: тёмная обводка с рублеными углами, светлая кромка сверху */
 .pb{background:var(--slate);box-shadow:0 -3px 0 0 var(--ink),0 3px 0 0 var(--ink),-3px 0 0 0 var(--ink),3px 0 0 0 var(--ink),0 6px 0 0 rgba(0,0,0,.28),inset 0 3px 0 0 var(--hi),inset 0 -4px 0 0 var(--slate2),inset 3px 0 0 0 #474d68,inset -3px 0 0 0 var(--slate2)}
@@ -31,8 +32,6 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
 #flash{position:absolute;inset:0;background:#cfe2ff;opacity:0;pointer-events:none;mix-blend-mode:screen}
 #ring{position:absolute;border:2px solid rgba(255,240,168,.9);box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 0 1px rgba(0,0,0,.4);pointer-events:none;display:none;transform:translate(-50%,-50%);border-radius:50%}
 #ring.sq{border-radius:0}
-#info{position:absolute;left:8px;top:8px;padding:4px 9px;font-size:13px;pointer-events:none;opacity:0;transition:opacity .15s;background:var(--slate2);color:var(--text);box-shadow:0 0 0 2px var(--gold2),0 0 0 4px var(--ink);white-space:nowrap}
-#info.on{opacity:1}
 #stepbtn{position:absolute;right:10px;top:10px;display:none;width:48px;height:48px;align-items:center;justify-content:center}
 #stepbtn .ic{width:32px;height:32px}
 #paused{position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:5px 16px;font-size:14px;color:#fff3d6;background:#c8423a;box-shadow:0 0 0 3px var(--ink),inset 0 3px 0 #ff7a6a,inset 0 -3px 0 #8a2228;display:none;pointer-events:none;letter-spacing:2px}
@@ -160,3 +159,211 @@ input[type=range]::-moz-range-thumb{width:20px;height:28px;background:var(--gold
 @media (max-height:520px){#hud{padding:4px 8px 6px}#bar{padding:6px 8px}.hot{height:50px}.hot .ic{width:28px;height:28px}.logo{margin-top:0}#hero{display:none}}
 
 #panel[data-kind=weather] .row{margin:6px 0;gap:6px}#panel[data-kind=weather] .btn{min-height:40px;padding:6px 10px;font-size:14px}
+
+.hot span{font-size:10px}.hot .ic{width:min(36px,calc(var(--hot) - 14px));height:min(36px,calc(var(--hot) - 14px))}#bar{gap:5px}@media (max-width:430px){.hot span{font-size:8px;padding:0}}
+
+#pcard{position:absolute;left:8px;top:8px;z-index:12;display:none;min-width:170px;max-width:240px;padding:8px 10px 9px;font-size:12px;line-height:1.4;color:var(--text);background:var(--slate2)}
+#pcard .ch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:3px}
+#pcard b{color:var(--gold);font-size:14px}#pcard .cx{font-size:16px;color:var(--muted);padding:0 4px;pointer-events:auto}
+#pcard .cr{color:var(--text)}
+#pcard .pt{width:34px;height:34px;image-rendering:pixelated;flex:0 0 auto}
+#pcard .ch b{flex:1}
+#pcard .tb{float:right;width:34px;height:34px;margin:0 0 2px 8px;image-rendering:auto}
+
+/* календарь */
+.cal{min-width:min(92vw,460px)}
+.dgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+.day{height:44px;font-size:15px;color:var(--text);display:flex;align-items:center;justify-content:center}
+.day.past{opacity:.55}
+.day.cur{background:var(--sc);color:#1a1020;box-shadow:0 0 0 3px var(--ink),inset 0 0 0 3px #fff3b0}
+.stab.on{background:var(--sc);color:#1a1020}
+
+/* ================================================================
+   Тема «Сливовый вечер» — тёмный вариант из присланного листа ui_atlas.png:
+   тёмно-сливовые плашки с тонкой золотой кромкой, выбранное — тёплым медным с золотым контуром,
+   красные ленты-заголовки, ячейки — тёмные окошки с розово-сливовой линией.
+   Стоит в конце файла и перекрывает прежнюю сланцевую тему.
+   Шрифт: пиксельный оставлен только для логотипа, остальной текст — обычный жирный (читается на любом экране).
+   ================================================================ */
+:root{--ink:#1a0f1c;--text:#f6e6d4;--muted:#c9a9b4;
+--pl0:#5a3d55;--pl1:#4b3249;--pl2:#3f2a40;--pl3:#2f1f31;--pl4:#241726;--line:#6f4c5e;--line2:#8a6474;
+--au0:#ffe2a0;--au1:#f9ac56;--au2:#e8893a;--au3:#a85a2a;
+--cu0:#d68a5e;--cu1:#ac644a;--cu2:#8a4a38;--rust:#f9ac56}
+html,body{background:#1e1420;font-family:"Nunito","Segoe UI","Trebuchet MS",Roboto,"Helvetica Neue",system-ui,sans-serif;font-weight:600;letter-spacing:.1px}
+.logo{font-family:'Pix',ui-monospace,monospace}
+
+/* плашка: тёмная слива, светлая кромка сверху, золотой контур, тёмная «губа» снизу */
+.pb{background:linear-gradient(var(--pl1),var(--pl2));color:var(--text);border-radius:10px;
+box-shadow:inset 0 2px 0 0 rgba(255,220,200,.10),inset 0 -3px 0 0 var(--pl3),0 0 0 2px var(--au2),0 0 0 4px var(--ink),0 5px 0 2px rgba(10,4,12,.55)}
+.pb.gold{background:linear-gradient(var(--pl2),var(--pl3));box-shadow:inset 0 0 0 2px var(--pl1),0 0 0 2px var(--au1),0 0 0 4px var(--au3),0 0 0 6px var(--ink),0 10px 0 rgba(0,0,0,.35)}
+.pb.on,.slot.on,.hot.on,.cat.on,.tile.on,.btn.on,.day.on{background:linear-gradient(var(--cu0),var(--cu1) 55%,var(--cu2));color:#fff6e6;text-shadow:0 1px 0 #5a2a1c;
+box-shadow:inset 0 2px 0 0 rgba(255,230,190,.35),inset 0 -3px 0 0 #74382c,0 0 0 2px var(--au0),0 0 0 4px var(--ink),0 5px 0 2px rgba(10,4,12,.55),0 0 16px 2px rgba(249,172,86,.45)}
+.pb:hover:not(.on):not(.toast):not(.goal):not(.gslot):not(.box):not(#pcard){background:linear-gradient(var(--pl0),var(--pl1))}
+
+/* верхняя и нижняя полки: тёмное дерево-слива с золотой кромкой; листьев на полках нет, чтобы не закрывать кнопки */
+#hud{background:linear-gradient(#45304a,#33223a);box-shadow:0 2px 0 0 var(--au2),0 4px 0 0 var(--au3),0 6px 0 0 var(--ink),0 12px 14px rgba(0,0,0,.45)}
+#bar{background:linear-gradient(#33223a,#45304a);box-shadow:0 -2px 0 0 var(--au2),0 -4px 0 0 var(--au3),0 -6px 0 0 var(--ink),0 -10px 14px rgba(0,0,0,.35)}
+#hud:before,#hud:after,#bar:before,#bar:after{display:none}
+.slot .badge{background:linear-gradient(var(--au0),var(--au1) 55%,var(--au2));color:#3a1804;font-weight:800;border-radius:6px;box-shadow:0 0 0 2px var(--ink)}
+.slot .dot{border-radius:50%;box-shadow:0 0 0 2px var(--ink)}
+.hot{color:var(--muted)}
+.hot.pb{height:66px;border-radius:12px}
+.hot span,.hot.pb span{font-size:11px;font-weight:700;letter-spacing:0}
+.hot.on span{color:#fff6e6}
+
+/* сцена: тёмный сливовый камень и рама «слива с золотом» вокруг мира */
+#stage{background-color:#2a1c2c}
+#field{box-shadow:0 0 0 3px var(--ink),0 0 0 5px var(--au1),0 0 0 7px var(--au3),0 0 0 11px var(--pl2),0 0 0 14px var(--ink),0 14px 40px rgba(0,0,0,.7)}
+#paused{font-weight:800;border-radius:6px}
+
+/* выдвижная панель */
+#panel,#panel[data-kind=settings],#panel[data-kind=goals]{background:linear-gradient(#45304a,#39263c);color:var(--text);border-radius:18px 18px 0 0;padding-top:22px;
+box-shadow:inset 0 0 0 2px var(--pl0),0 0 0 2px var(--au1),0 -4px 0 0 var(--au3),0 -6px 0 0 var(--ink),0 -20px 30px rgba(0,0,0,.5)}
+#panel[data-kind=settings] .pbody,#panel[data-kind=goals] .pbody{background:none}
+#panel:before,#panel:after{top:-26px;width:120px;height:43px;background:var(--vine) 0 0/120px 43px no-repeat;z-index:2}
+#panel:before{left:-4px}#panel:after{right:-4px}
+.phead>span{font-weight:800;letter-spacing:.5px;background:#b8404a;color:#fff3e6;border-radius:4px;text-shadow:0 2px 0 #6a1c24;box-shadow:0 0 0 2px var(--au1),0 0 0 4px var(--ink),inset 0 3px 0 #e0646a,inset 0 -4px 0 #84262e}
+.phead>span:before,.phead>span:after{background:#8a2c34;box-shadow:0 0 0 2px var(--ink)}
+.pbody::-webkit-scrollbar-track{background:var(--pl3);border-radius:6px;box-shadow:inset 0 0 0 2px var(--line)}
+.pbody::-webkit-scrollbar-thumb{background:linear-gradient(90deg,var(--au1),var(--au2));border-radius:6px;box-shadow:inset 0 0 0 2px var(--au3)}
+/* вкладки: тёмные ушки с медной кромкой, выбранная — медная и чуть выше */
+.cats{justify-content:center;gap:5px;padding:8px 6px 0;margin:0 0 -2px;overflow:visible}
+.cat.pb{flex:1 1 0;min-width:0;max-width:56px;height:52px;border-radius:12px 12px 4px 4px;background:linear-gradient(#55394f,#4a323f);box-shadow:inset 0 2px 0 rgba(255,220,200,.08),0 0 0 2px #b96540,0 0 0 4px var(--ink)}
+.cat.pb.on{transform:translateY(-4px);height:56px;background:linear-gradient(var(--cu0),var(--cu1));box-shadow:inset 0 2px 0 rgba(255,230,190,.35),0 0 0 2px var(--au0),0 0 0 4px var(--ink),0 0 14px 2px rgba(249,172,86,.45)}
+.cat .ic{width:min(34px,78%);height:auto;aspect-ratio:1}
+/* поле ячеек: тёмная карточка, ячейки — окошки с розово-сливовой линией, как на листе */
+.grid{background:linear-gradient(#3b2739,#33223a);border-radius:14px;gap:10px;padding:14px;box-shadow:inset 0 2px 0 rgba(0,0,0,.25),0 0 0 2px var(--au2),0 0 0 4px var(--ink)}
+.pb.tile{height:92px;color:var(--text);background:linear-gradient(#3e2840,#382437);border-radius:10px;box-shadow:inset 0 0 0 2px var(--line),inset 0 3px 0 rgba(0,0,0,.25)}
+.pb.tile:hover:not(.on){background:linear-gradient(#4f3550,#432c43);box-shadow:inset 0 0 0 2px var(--line2),0 0 0 2px rgba(249,172,86,.35)}
+.pb.tile.on{color:#fff6e6;background:linear-gradient(var(--cu0),var(--cu1) 55%,var(--cu2));box-shadow:inset 0 2px 0 rgba(255,230,190,.35),0 0 0 2px var(--au0),0 0 0 4px var(--ink),0 0 16px 3px rgba(249,172,86,.5)}
+.tile span{font-size:12px;font-weight:700;line-height:1.15;text-align:center;padding:0 3px}
+.tile .ic{width:58px;height:58px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
+.tile.lock .ic.el{filter:grayscale(1) brightness(.45) opacity(.5)}
+.tile.lock{color:#7e6372}
+.hint,#panel[data-kind=settings] .hint,#panel[data-kind=goals] .hint,#modal .hint{color:var(--muted);font-weight:600}
+.lbl,#panel[data-kind=settings] .lbl,#panel[data-kind=goals] .lbl{color:var(--au1);font-weight:800}
+
+/* кнопки: тёмные, зелёная и красная — как на листе, у всех золотой контур */
+.btn.pb{border-radius:10px;min-height:44px;font-weight:700}
+.btn.pb.gold{background:linear-gradient(#a8b866,#828e52 55%,#66703e);color:#fffbe8;text-shadow:0 2px 0 #3a4220;box-shadow:inset 0 2px 0 rgba(255,255,220,.3),inset 0 -3px 0 #545c32,0 0 0 2px var(--au1),0 0 0 4px var(--ink),0 5px 0 2px rgba(10,4,12,.55)}
+.btn.pb.red{background:linear-gradient(#d8606a,#bd454d 55%,#9a3440);color:#fff;text-shadow:0 2px 0 #6a1c24;box-shadow:inset 0 2px 0 rgba(255,220,220,.3),inset 0 -3px 0 #7e2a34,0 0 0 2px var(--au1),0 0 0 4px var(--ink),0 5px 0 2px rgba(10,4,12,.55)}
+.btn.pb.on{color:#fff6e6}
+.mini.pb{border-radius:10px}
+.sl b{border-radius:6px;font-weight:800}
+input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#a83540,var(--au1));border-radius:6px;box-shadow:0 0 0 2px var(--ink),inset 0 3px 0 rgba(255,255,255,.25)}
+input[type=range]::-webkit-slider-thumb{border-radius:4px}
+input[type=range]::-moz-range-track{background:linear-gradient(90deg,#a83540,var(--au1))}
+
+/* заставка и окна */
+.menu{background:linear-gradient(#45304a,#39263c);border-radius:16px;box-shadow:inset 0 0 0 2px var(--pl0),0 0 0 2px var(--au1),0 0 0 4px var(--au3),0 0 0 6px var(--ink),0 12px 0 rgba(0,0,0,.35)}
+.menu:before,.menu:after,#modal .box:before,#modal .box:after{top:-28px;width:120px;height:43px;background:var(--vine) 0 0/120px 43px no-repeat}
+.menu:before,#modal .box:before{left:-10px}.menu:after,#modal .box:after{right:-10px}
+.menu .btn{font-size:17px}
+#modal{background:rgba(14,6,16,.7)}
+#modal .box{background:linear-gradient(#45304a,#39263c);color:var(--text);border-radius:16px;box-shadow:inset 0 0 0 2px var(--pl0),0 0 0 2px var(--au1),0 0 0 4px var(--au3),0 0 0 6px var(--ink),0 12px 0 rgba(0,0,0,.4)}
+.pb.toast{background:linear-gradient(var(--pl1),var(--pl2));color:var(--text);font-weight:700;border-radius:10px;box-shadow:0 0 0 2px var(--au2),0 0 0 4px var(--ink),0 6px 0 rgba(0,0,0,.35)}
+.pb.toast.good{color:var(--au0);box-shadow:0 0 0 2px var(--au0),0 0 0 4px var(--ink),0 0 18px rgba(249,172,86,.6)}
+.bubble{font-weight:700}
+.sage .face{background:radial-gradient(#7a5a78,#3f2a40 72%);border-radius:50%}
+.pb.goal{background:linear-gradient(#53384b,#47304a);color:var(--text);border-radius:10px;box-shadow:inset 0 0 0 2px var(--line),0 4px 0 rgba(0,0,0,.3)}
+.goal .cb{background:var(--pl3);border-radius:6px;box-shadow:0 0 0 2px var(--au2)}
+.goal small{color:var(--muted)}
+.gslot{color:var(--text)}
+.gslot canvas,.gslot img{background:var(--pl3);border-radius:8px;box-shadow:0 0 0 2px var(--line)}
+.gslot .empty{background:var(--pl3);color:#8e7080;border-radius:8px;box-shadow:inset 0 3px 0 rgba(0,0,0,.3),0 0 0 2px var(--line)}
+.gslot .nm,#modal .gslot .nm{color:var(--muted)}
+.day.pb{color:var(--text);font-weight:700}
+
+/* карточка человечка */
+#pcard.pb{padding:8px 10px 9px;border-radius:12px;color:var(--text);background:linear-gradient(var(--pl1),var(--pl2));font-size:13px}
+#pcard b{color:var(--au1)}#pcard .cx{color:var(--muted)}#pcard .cr{color:var(--text)}
+#pcard .tb{width:48px;height:48px;image-rendering:pixelated}
+
+@media (max-width:560px){
+#panel:before,#panel:after,.menu:before,.menu:after,#modal .box:before,#modal .box:after{width:90px;height:32px;background-size:90px 32px;top:-20px}
+.cats{gap:4px;padding:8px 2px 0}
+.pb.tile{height:84px}.tile .ic{width:48px;height:48px}
+.grid{padding:10px;gap:8px}
+.hot span,.hot.pb span{font-size:10px}
+}
+
+/* жители: список, карточка, отношения, общества, летопись */
+.ptabs{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.ptabs .btn{flex:1;min-width:90px}
+.pbox{display:flex;flex-direction:column;gap:8px}
+.pgrp{display:flex;align-items:center;gap:10px;margin:8px 0 2px}
+.pgrp small,.shead small{color:var(--muted)}
+.stag{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:var(--text)}
+.stag:before{content:"";width:12px;height:12px;border-radius:50%;background:var(--sc,#7a6a74);box-shadow:0 0 0 2px var(--ink)}
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.pb.prow{display:flex;align-items:center;gap:9px;padding:6px 9px;text-align:left;min-height:52px}
+.pb.prow.dead{opacity:.55}
+.pf{width:32px;height:32px;image-rendering:pixelated;flex:0 0 auto}
+.pt{display:flex;flex-direction:column;min-width:0;flex:1}
+.pt b,.rt b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt small,.rt small{font-size:11px;color:var(--muted)}
+.pm{display:inline-flex;align-items:center;gap:3px;font-weight:800;color:var(--au0)}
+.ci{width:18px;height:18px;image-rendering:pixelated}
+.pback{align-self:flex-start;min-height:36px!important}
+.phero{display:flex;align-items:center;gap:14px;padding:10px;border-radius:12px;background:linear-gradient(#53384b,#3f2a40);box-shadow:inset 0 0 0 2px var(--line)}
+.pbig{width:72px;height:72px;image-rendering:pixelated;flex:0 0 auto;background:radial-gradient(#7a5a78,#2f1f31 70%);border-radius:12px;box-shadow:0 0 0 2px var(--au2)}
+.pinfo{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pname{font-size:20px;font-weight:800;color:var(--au0)}
+.pline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.prole{background:linear-gradient(var(--au0),var(--au1));color:#3a1804;font-size:11px;font-weight:800;padding:1px 7px;border-radius:6px}
+.pbadge{width:48px;height:48px;image-rendering:pixelated}
+.pfacts{display:flex;flex-direction:column;gap:5px;padding:4px 2px}
+.pfact{display:flex;gap:10px;font-size:13px;line-height:1.35}
+.pfact>span{width:92px;flex:0 0 auto;color:var(--muted)}
+.pfact>b{font-weight:700}
+.rlist{display:flex;flex-direction:column;gap:5px}
+.rrow{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:9px;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1px var(--line);text-align:left}
+.rrow:hover{background:rgba(255,255,255,.06)}
+.rf{width:24px;height:24px;image-rendering:pixelated;flex:0 0 auto}
+.rt{display:flex;flex-direction:column;flex:1;min-width:0}
+.rbar{width:90px;height:8px;border-radius:4px;background:var(--pl3);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;flex:0 0 auto}
+.rbar i{display:block;height:100%;background:linear-gradient(90deg,#e8894a,#f9d080)}
+.rbar.neg i{background:linear-gradient(90deg,#9a3440,#e05a5a)}
+.pb.scard{padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:inset 0 3px 0 var(--sc),inset 0 2px 0 rgba(255,220,200,.1),0 0 0 2px var(--au2),0 0 0 4px var(--ink)}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.slead{display:flex;align-items:center;gap:8px;font-weight:700;text-align:left}
+.sres{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;font-weight:800;padding:3px 8px;border-radius:7px;background:var(--pl3);box-shadow:inset 0 0 0 1px var(--line)}
+.chip.low{color:#ffb0a0;box-shadow:inset 0 0 0 1px #a84a4a}
+.sprof{font-size:12px;color:var(--muted)}
+.shouse{display:flex;flex-direction:column;gap:5px;padding:8px;border-radius:9px;background:rgba(0,0,0,.18)}
+.srooms{display:flex;flex-direction:column;gap:3px}
+.room{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text)}
+.ri{width:24px;height:24px;image-rendering:pixelated}
+.llist{display:flex;flex-direction:column;gap:6px}
+.lrow{display:flex;flex-direction:column;gap:1px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.18);box-shadow:inset 3px 0 0 var(--sc,var(--line))}
+.lrow small{color:var(--muted);font-size:11px}
+.lrow span{font-size:13px}
+@media (max-width:430px){.plist{grid-template-columns:1fr 1fr}.pfact>span{width:76px}.rbar{width:60px}}
+/* карточка: навигация, переключатель «Обзор / Отношения», фильтры, группы, сердечки */
+.pnav{display:flex;gap:8px;align-items:center}
+.pnav .pshow{margin-left:auto;min-height:36px!important;font-size:13px}
+.pseg{display:flex;gap:6px}
+.pseg .btn{flex:1;min-height:38px!important}
+.pflt{display:flex;gap:6px;flex-wrap:wrap}
+.btn.pb.chipbtn{min-height:30px;padding:2px 10px;font-size:12px;border-radius:15px}
+.rgh{display:flex;align-items:center;gap:8px;margin:8px 2px 0;color:var(--au1);font-weight:800;font-size:13px;text-align:left;width:100%}
+.rgh small{color:var(--muted);font-weight:700}
+.rgh em{margin-left:auto;font-style:normal;font-size:12px;color:var(--muted);text-decoration:underline}
+.rrow{min-height:44px}
+.rrow.g-fam{box-shadow:inset 3px 0 0 #f9ac56,inset 0 0 0 1px var(--line)}
+.rrow.g-friend{box-shadow:inset 3px 0 0 #e8789a,inset 0 0 0 1px var(--line)}
+.rrow.g-foe{box-shadow:inset 3px 0 0 #9a3440,inset 0 0 0 1px var(--line)}
+.rt small{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rl{color:var(--text);font-weight:700}
+.mu{font-size:10px;font-weight:800;padding:0 6px;border-radius:6px;background:var(--pl3)}
+.mu.mu{color:#f9b0c8}.mu.one{color:var(--au1)}.mu.bad{color:#ff8a8a}
+.rh{font-style:normal;letter-spacing:1px;font-size:13px;white-space:nowrap;flex:0 0 auto}
+.rh i{font-style:normal}.rh .hf{color:#ff6f91;text-shadow:0 1px 0 #5a1424}.rh .he{color:#5e4458}.rh .hb{color:#e05a5a}
+.pclose{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:16px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 1px var(--line);font-size:12px;font-weight:700;text-align:left}
+.pchip:hover,.rrow:hover{background:rgba(255,255,255,.07)}
+.pchip.love{color:#ffb0c8}.pchip.feud{color:#ff9a9a}
+.srel{display:flex;flex-wrap:wrap;gap:6px}
+.lrow.big span{font-weight:800;color:var(--au0)}
+@media (max-width:430px){.rh{font-size:11px;letter-spacing:0}.pnav .pshow{font-size:12px;padding:2px 8px}}

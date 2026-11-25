@@ -223,6 +223,7 @@ const Icons = (function () {
   /* элементы: кэшируем dataURL */
   function elIcon(key) {
     if (cache['e' + key]) return cache['e' + key];
+    if (typeof UIA !== 'undefined' && UIA.icon[key]) return UIA.icon[key];   /* нарисованные иконки из присланного листа */
     const id = E[key]; let g;
     if (SPEC[key]) g = SPEC[key]();
     else if (CUBES[key]) g = cube(CUBES[key], id);
@@ -248,6 +249,6 @@ const Icons = (function () {
     g.set(11, 7, '#ffd23c'); g.set(7, 11, '#ff9ac8');
     return cache.vine = finish(g);
   }
-  function img(src, cls) { const i = new Image(); i.src = src; i.className = 'ic ' + (cls || ''); i.draggable = false; return i; }
+  function img(src, cls) { const i = new Image(); i.onload = () => { if (i.naturalWidth >= 32) i.classList.add('smooth'); }; i.src = src; i.className = 'ic ' + (cls || ''); i.draggable = false; return i; }
   return { ui: fromArt, el: elIcon, img, vine, ART };
 })();

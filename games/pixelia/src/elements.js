@@ -4,7 +4,7 @@
    жидкости — по плотности/вязкости/химии, твёрдые — по теплу, току и горючести. */
 const K = { AIR: 0, POWDER: 1, LIQUID: 2, GAS: 3, SOLID: 4, SPEC: 5 };
 const NT = 64;
-const AMB = 20;
+let AMB = 20;   /* температура воздуха: меняется по временам года (ui.js) */
 const ID_LIST = ['AIR', 'WALL', 'SKY', 'EARTH', 'SAND', 'SNOW', 'SALT', 'GUNP', 'ASH', 'WATER', 'BRINE', 'OIL', 'LAVA', 'ACID', 'MUD',
   'FIRE', 'STEAM', 'SMOKE', 'GAS', 'STONE', 'METAL', 'GLASS', 'WOOD', 'ICE', 'LEAF', 'SEED', 'SPROUT', 'SPARK', 'BATT', 'LAMP', 'CLONE', 'VOID', 'FLY', 'CONE', 'FSEED', 'LITTER'];
 const E = {};
