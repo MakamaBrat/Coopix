@@ -106,7 +106,7 @@ const People = (function () {
      Образы, которые и так женские (платье, хвост, бабушка), не меняются; в шлеме, скафандре, маске, колпаке — только ресницы.
      Вариант создаётся один раз (FORMS['ref~f'], 'ref~fs' — с юбкой) и дальше рисуется как обычный образ. */
   const FEM_OK = { dress: 1, tail: 1, granny: 1 }, NO_HAIR = { helm: 1, space: 1, ninja: 1, wizard: 1, mohawk: 1 };
-  const HAIR_PROPS = [[10, 1, 'k'], [10, 2, 'a'], [10, 11, 'a'], [10, 12, 'k'], [11, 1, 'k'], [11, 2, 'a'], [11, 11, 'a'], [11, 12, 'k'], [12, 2, 'k'], [12, 11, 'k']];
+  const HAIR_PROPS = [[10, 1, 'k'], [10, 2, 'a'], [10, 11, 'a'], [10, 12, 'k'], [11, 1, 'k'], [11, 2, 'a'], [11, 11, 'a'], [11, 12, 'k'], [12, 1, 'k'], [12, 2, 'a'], [12, 11, 'a'], [12, 12, 'k'], [13, 2, 'k'], [13, 11, 'k']];
   const skinC = (c) => c === 'S' || c === 'L' || c === 'D';
   function femHead(key) {
     const nk = key + '~f'; if (HEADS[nk]) return nk;
@@ -129,7 +129,7 @@ const People = (function () {
     if (FEM_OK[form]) return form;
     if (form === 'elder') return 'granny';
     const sk = skirt && F.legs === 'jeans', key = form + '~f' + (sk ? 's' : '');
-    if (!FORMS[key]) FORMS[key] = Object.assign({}, F, { head: femHead(F.head), legs: sk ? 'skirt' : F.legs, props: (F.props || []).concat(NO_HAIR[F.head] ? [] : HAIR_PROPS), town: false, fem: true });
+    if (!FORMS[key]) FORMS[key] = Object.assign({}, F, { head: femHead(F.head === 'spiky' ? 'bob' : F.head), legs: sk ? 'skirt' : F.legs, props: (F.props || []).concat(NO_HAIR[F.head] ? [] : HAIR_PROPS), town: false, fem: true });
     return key;
   }
   /* какой образ рисовать этому человечку (у девушек — женский вариант) */
@@ -525,5 +525,5 @@ const People = (function () {
       CATS.splice(CATS.indexOf(life) + 1, 0, { id: 'people', name: 'Люди', icon: 'people', els: ['t:HUMAN', 't:CHILD'].concat(Object.keys(FORMS).filter((k) => k !== 'ref').map((k) => 't:P_' + k), ['t:ZOMBIE']) });
     }
   }
-  return { init, draw, icon, randomForm, FORMS, compose, sprite, animate, NEUTRAL, setSel(id) { selId = id; }, get canvas() { return lay; } };
+  return { init, draw, icon, iconFor(e) { return icon(look(e), e.z); }, look, randomForm, FORMS, compose, sprite, animate, NEUTRAL, setSel(id) { selId = id; }, get canvas() { return lay; } };
 })();

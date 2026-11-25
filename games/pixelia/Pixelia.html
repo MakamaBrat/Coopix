@@ -2979,6 +2979,7 @@ const People = (function () {
   const LEGS = {
     jeans: ['..kPppPk..', '..kPppPk..', '..kPppPk..', '..kPppPk..', '..kgppgk..', '..kkkkkk..'],
     dress: ['.kTTTTTtk.', '.kTTTTTtk.', '..kSDSDk..', '..kSDSDk..', '..kBBBBk..', '..kkkkkk..'],
+    skirt: ['.kPPPPPpk.', '.kpPPPPpk.', '..kSDSDk..', '..kSDSDk..', '..kBBBBk..', '..kkkkkk..'],
     boots: ['..kJjjJk..', '..kJjjJk..', '..kJjjJk..', '..kJjjJk..', '..kMMMMk..', '..kkkkkk..'],
     armor: ['..kXxXxk..', '..kXxXxk..', '..kXxXxk..', '..kXxXxk..', '..kxxxxk..', '..kkkkkk..'],
     robe: ['..kVVVvk..', '..kVVVvk..', '..kVVVvk..', '..kVVVvk..', '..kvVVvk..', '..kkkkkk..'],
@@ -3028,6 +3029,38 @@ const People = (function () {
     granny: { name: 'Бабушка', hint: 'Седой пучок и платье. Не торопится.', head: 'granny', body: 'dress', legs: 'dress', pal: { ...hairPal([206, 206, 214]), T: [128, 84, 160], t: [96, 60, 124] }, noBlink: true, abil: { speed: .6 } }
   };
   const TOWN = Object.keys(FORMS).filter((k) => FORMS[k].town);
+  /* ---------- женский вариант любого образа: длинные волосы до плеч, ресницы, у части — юбка вместо джинсов.
+     Образы, которые и так женские (платье, хвост, бабушка), не меняются; в шлеме, скафандре, маске, колпаке — только ресницы.
+     Вариант создаётся один раз (FORMS['ref~f'], 'ref~fs' — с юбкой) и дальше рисуется как обычный образ. */
+  const FEM_OK = { dress: 1, tail: 1, granny: 1 }, NO_HAIR = { helm: 1, space: 1, ninja: 1, wizard: 1, mohawk: 1 };
+  const HAIR_PROPS = [[10, 1, 'k'], [10, 2, 'a'], [10, 11, 'a'], [10, 12, 'k'], [11, 1, 'k'], [11, 2, 'a'], [11, 11, 'a'], [11, 12, 'k'], [12, 1, 'k'], [12, 2, 'a'], [12, 11, 'a'], [12, 12, 'k'], [13, 2, 'k'], [13, 11, 'k']];
+  const skinC = (c) => c === 'S' || c === 'L' || c === 'D';
+  function femHead(key) {
+    const nk = key + '~f'; if (HEADS[nk]) return nk;
+    const g = HEADS[key].map((r) => pad(r).split(''));
+    /* ресницы над внешними уголками глаз */
+    if (skinC(g[4][5])) g[4][5] = 'k'; if (skinC(g[4][10])) g[4][10] = 'k';
+    if (!NO_HAIR[key]) {
+      /* волосы спадают по бокам лица до подбородка и ниже */
+      for (let r = 3; r <= 9; r++) {
+        let l = g[r].indexOf('k'), rr = g[r].lastIndexOf('k'); if (l < 0) continue;
+        if (l >= 2) { g[r][l - 1] = r >= 8 ? 'a' : 'b'; if (l - 2 >= 0) g[r][l - 2] = 'k'; }
+        if (rr <= 11) { g[r][rr + 1] = r >= 8 ? 'a' : 'b'; if (rr + 2 < SW) g[r][rr + 2] = 'k'; }
+      }
+    }
+    HEADS[nk] = g.map((r) => r.join(''));
+    return nk;
+  }
+  function femForm(form, skirt) {
+    const F = FORMS[form] || FORMS.ref;
+    if (FEM_OK[form]) return form;
+    if (form === 'elder') return 'granny';
+    const sk = skirt && F.legs === 'jeans', key = form + '~f' + (sk ? 's' : '');
+    if (!FORMS[key]) FORMS[key] = Object.assign({}, F, { head: femHead(F.head === 'spiky' ? 'bob' : F.head), legs: sk ? 'skirt' : F.legs, props: (F.props || []).concat(NO_HAIR[F.head] ? [] : HAIR_PROPS), town: false, fem: true });
+    return key;
+  }
+  /* какой образ рисовать этому человечку (у девушек — женский вариант) */
+  const look = (e) => e.fem ? femForm(e.form || 'ref', ((e.seed | 0) % 3) === 0) : (e.form || 'ref');
 
   /* ---------- сборка кадра из частей: голова, туловище, руки на двух костях, ноги ----------
      Всё берётся из символьной сетки образа; поза — числа: сдвиг тела, голова, взгляд, рот, цель каждой руки, подъём и разворот ног. */
@@ -3043,7 +3076,7 @@ const People = (function () {
   const rigCache = {};
   function rig(form) {
     if (rigCache[form]) return rigCache[form];
-    const F = FORMS[form] || FORMS.ref, g = base(form), at = (r) => g[r + HAT], skirt = F.legs === 'dress' ? 2 : 0;
+    const F = FORMS[form] || FORMS.ref, g = base(form), at = (r) => g[r + HAT], skirt = F.legs === 'dress' || F.legs === 'skirt' ? 2 : 0;
     const R = { head: [], torso: [], armSym: [[], []], legs: [[], []], props: F.props || [], skirt, noBlink: !!F.noBlink };
     for (let r = -3; r <= 9; r++) R.head.push(at(r).slice());
     for (let r = 10; r <= 16 + skirt; r++) { const row = at(r).slice(); if (r >= 11 && r <= 15) for (const x of [3, 4, 9, 10]) row[x] = '.'; R.torso.push(row); }
@@ -3140,7 +3173,7 @@ const People = (function () {
   const mul3 = (c, a) => [Math.min(255, Math.round(c[0] * a[0])), Math.min(255, Math.round(c[1] * a[1])), Math.min(255, Math.round(c[2] * a[2]))];
   const WCOL = [[200, 56, 52], [60, 110, 200], [232, 196, 64], [70, 160, 96], [170, 80, 190]];   /* шапка и шарф на холоде */
   function basePal(e, z) {
-    const F = FORMS[e.form] || FORMS.ref, P = Object.assign({}, REF, F.pal || {});
+    const F = FORMS[e.form] || FORMS.ref, P = Object.assign({}, REF, F.pal || {});   /* палитра — от исходного образа, женский вариант её не меняет */
     if (F.town && e.form !== 'ref' || (e.form === 'ref' && e.skinV)) { const s = SKIN[(e.seed || 0) % SKIN.length]; Object.assign(P, { S: s, L: mix(s, [255, 255, 255], .18), D: mul(s, .9), h: mix(s, [255, 240, 220], .25), o: mix(mul(s, .78), [200, 70, 30], .35) }); }
     { const wc = WCOL[(e.seed || 0) % 5]; P.Z = wc; P.z = mix(wc, [255, 255, 255], .35); P.Q = mul(wc, .85); }
     if (z) {
@@ -3164,7 +3197,7 @@ const People = (function () {
   const poseKey = (P) => [P.dy, P.hdy, P.hx, P.lean, P.look, P.blink, P.mouth, r5(P.al[0]), r5(P.al[1]), r5(P.ar[0]), r5(P.ar[1]), P.ll, P.lr, P.dl, P.dr, P.up, P.tool].join(',');
   function sprite(e, P, burn, flip, sub, amb, ak, zk, char, sea) {
     if (sea === undefined) sea = -1;
-    const form = e.form || 'ref', key = sea + '|' + form + '|' + ((e.seed || 0) % SKIN.length) + '|' + poseKey(P) + '|' + burn + '|' + (flip ? 1 : 0) + '|' + sub + '|' + ak + '|' + zk + '|' + char + '|' + (zk >= .5 ? (e.seed || 0) % 11 : '');
+    const form = look(e), key = sea + '|' + form + '|' + ((e.seed || 0) % SKIN.length) + '|' + poseKey(P) + '|' + burn + '|' + (flip ? 1 : 0) + '|' + sub + '|' + ak + '|' + zk + '|' + char + '|' + (zk >= .5 ? (e.seed || 0) % 11 : '');
     let cv = cache.get(key); if (cv) return cv;
     if (cache.size > 3500) cache.clear();
     const Pal = palette(e, zk, amb, ak), fr = compose(form, P, sea);
@@ -3419,7 +3452,7 @@ const People = (function () {
       CATS.splice(CATS.indexOf(life) + 1, 0, { id: 'people', name: 'Люди', icon: 'people', els: ['t:HUMAN', 't:CHILD'].concat(Object.keys(FORMS).filter((k) => k !== 'ref').map((k) => 't:P_' + k), ['t:ZOMBIE']) });
     }
   }
-  return { init, draw, icon, randomForm, FORMS, compose, sprite, animate, NEUTRAL, setSel(id) { selId = id; }, get canvas() { return lay; } };
+  return { init, draw, icon, iconFor(e) { return icon(look(e), e.z); }, look, randomForm, FORMS, compose, sprite, animate, NEUTRAL, setSel(id) { selId = id; }, get canvas() { return lay; } };
 })();
 
 </script>
@@ -5537,7 +5570,7 @@ const Snd = (function () {
   panel.addEventListener('pointerdown', () => { pvTouch = performance.now(); }, true);
   panel.addEventListener('wheel', () => { pvTouch = performance.now(); }, { capture: true, passive: true });
   panel.addEventListener('scroll', () => { pvTouch = performance.now(); }, true);
-  function face(e, cls) { const i = img(People.icon(e.form, e.z), cls || 'pf'); i.classList.remove('smooth'); return i; }
+  function face(e, cls) { const i = img(People.iconFor(e), cls || 'pf'); i.classList.remove('smooth'); return i; }
   function socTag(s) { const t = h('span', 'stag', s ? s.name : 'Без общества'); if (s) t.style.setProperty('--sc', s.color); return t; }
   function money(e) { const m = h('span', 'pm'); m.appendChild(img(coin(), 'ci')); const t = document.createTextNode(''); m.appendChild(t); onLive(() => { t.data = String(e.money | 0); }); return m; }
   function peopleList(box) {

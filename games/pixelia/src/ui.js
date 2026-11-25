@@ -282,7 +282,7 @@
   panel.addEventListener('pointerdown', () => { pvTouch = performance.now(); }, true);
   panel.addEventListener('wheel', () => { pvTouch = performance.now(); }, { capture: true, passive: true });
   panel.addEventListener('scroll', () => { pvTouch = performance.now(); }, true);
-  function face(e, cls) { const i = img(People.icon(e.form, e.z), cls || 'pf'); i.classList.remove('smooth'); return i; }
+  function face(e, cls) { const i = img(People.iconFor(e), cls || 'pf'); i.classList.remove('smooth'); return i; }
   function socTag(s) { const t = h('span', 'stag', s ? s.name : 'Без общества'); if (s) t.style.setProperty('--sc', s.color); return t; }
   function money(e) { const m = h('span', 'pm'); m.appendChild(img(coin(), 'ci')); const t = document.createTextNode(''); m.appendChild(t); onLive(() => { t.data = String(e.money | 0); }); return m; }
   function peopleList(box) {
