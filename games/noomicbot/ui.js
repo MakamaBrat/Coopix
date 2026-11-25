@@ -88,3 +88,23 @@ document.head.appendChild(st)}
   apply()};
  const _rs=renderShop;renderShop=function(){const r=_rs.apply(this,arguments);try{dec()}catch(e){console.warn("shTabs",e)}return r};
  for(const L in I18N)I18N[L]["x.all"]=["ru","uk","be"].includes(L)?(L==="uk"?"Усе":"Все"):"All"}
+
+/* ---------- экран выбора карты: «Назад» + фильтры в одну строку, типы карт — широкий сегментный переключатель ---------- */
+{const st=document.createElement("style");st.textContent=
+"#maps .tabs{display:flex!important;gap:0!important;padding:.6vmin!important;border-radius:99px!important;background:#14141a!important;border:1px solid #33333d!important;overflow:hidden}"+
+"#maps .tabs button{flex:1 1 0!important;min-width:0;display:flex;align-items:center;justify-content:center;gap:.8vmin;height:100%!important;margin:0!important;padding:0 1.2vmin!important;border-radius:99px!important;border:0!important;background:transparent!important;color:#b6b6c1!important;font-weight:800!important;white-space:nowrap;box-shadow:none!important;text-align:center}"+
+"#maps .tabs button.on{background:#fff!important;color:#000!important}#maps .tabs button.ext.on{background:linear-gradient(90deg,#ffd24a,#ff8a2a)!important;color:#000!important}"+
+"#maps .tabs button.ext:not(.on){color:#ffb36b!important}"+
+"@media(orientation:portrait){"+
+"#maps.open{grid-template-columns:27vw 1fr!important;grid-template-rows:auto auto auto minmax(0,1fr) auto!important}"+
+"#maps .back{grid-area:1/1/2/2!important;height:12vw!important}"+
+"#maps .chips{grid-area:1/2/2/3!important;display:flex!important;gap:2vw!important;height:12vw;align-items:stretch;overflow:hidden}#maps .chips button{flex:1 1 0;min-width:0;height:auto!important;font-size:3.5vw!important;padding:0 2vw!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"+
+"#maps .tabs{grid-area:2/1/3/3!important;height:13.5vw!important}#maps .tabs button{font-size:3.6vw!important}"+
+"#maps .pvw{grid-area:3/1/4/3!important}#maps .list{grid-area:4/1/5/3!important}#maps .go{grid-area:5/1/6/3!important}}"+
+"@media(orientation:landscape){"+
+"#maps.open{grid-template-rows:auto auto minmax(0,1fr) auto!important}"+
+"#maps .back{grid-area:1/1/2/2!important}"+
+"#maps .chips{grid-area:1/2/2/3!important;display:flex!important;gap:1.2vmin!important;align-items:stretch;overflow:hidden;height:9vmin}#maps .chips button{flex:1 1 0;min-width:0;height:auto!important;font-size:2.8vmin!important;padding:0 1.4vmin!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"+
+"#maps .tabs{grid-area:2/1/3/3!important;height:9.5vmin!important}#maps .tabs button{font-size:3.2vmin!important}"+
+"#maps .list{grid-area:3/1/4/3!important}#maps .go{grid-area:4/1/5/3!important}#maps .pvw{grid-area:1/3/5/4!important}}";
+document.head.appendChild(st)}
