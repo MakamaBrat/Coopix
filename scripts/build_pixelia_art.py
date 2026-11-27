@@ -19,16 +19,57 @@ def b64(data, mime):
     return "data:%s;base64,%s" % (mime, base64.b64encode(data).decode())
 
 
+K_SCENE = 4   # во столько раз нейросеть увеличила свой пиксель на картинках сцен (измерено по периоду перепадов: 4.0 у всех)
+
+
+def grid_phase(a, k, axis):
+    """сдвиг пиксельной сетки: где по оси чаще всего проходят резкие перепады цвета"""
+    rgb = a[..., :3].astype(np.int32)
+    d = np.abs(np.diff(rgb, axis=axis)).sum(-1)
+    col = (d > 30).sum(0 if axis == 1 else 1).astype(float)
+    ph = (np.arange(len(col)) % k) / k
+    z = (col * np.exp(2j * np.pi * ph)).sum()
+    edge = (np.angle(z) / (2 * np.pi) * k) % k          # перепад между i и i+1 при i ≡ edge (mod k)
+    return int(round(edge + 1)) % k                       # клетка сетки начинается сразу после перепада
+
+
 def scene(name):
+    """картинка сцены -> её родная пиксельная сетка (в K_SCENE раз меньше): цвет клетки — среднее её середины
+    (края клетки размыты нейросетью), прозрачность жёсткая, светлая кайма по силуэту (остаток белого фона) убирается.
+    В игре рисуется целым увеличением без сглаживания: пиксель картинки = клетка мира."""
     im = Image.open(os.path.join(ART, name + ".webp")).convert("RGBA")
-    h = round(im.size[1] * 960 / im.size[0])
-    im = im.resize((960, h), Image.LANCZOS)
-    a = np.asarray(im).copy()
-    a[a[..., 3] < 24] = 0          # убираем ореол на краях прозрачности
-    im = Image.fromarray(a, "RGBA")
+    a = np.asarray(im).astype(np.float32)
+    k = K_SCENE
+    # по силуэту в исходнике идёт тонкая почти чёрная линия (остаток вырезанного неба) — срезаем полосу в 2 точки
+    import scipy.ndimage as nd
+    m = a[..., 3] > 127
+    a[~nd.binary_erosion(m, iterations=2), 3] = 0
+    ox, oy = grid_phase(a, k, 1), grid_phase(a, k, 0)
+    h, w = (a.shape[0] - oy) // k, (a.shape[1] - ox) // k
+    b = a[oy:oy + h * k, ox:ox + w * k].reshape(h, k, w, k, 4)
+    inner = b[:, 1:k - 1, :, 1:k - 1, :].transpose(0, 2, 1, 3, 4).reshape(h, w, (k - 2) * (k - 2), 4)
+    al = inner[..., 3] / 255.0
+    asum = al.sum(-1)
+    rgb = (inner[..., :3] * al[..., None]).sum(-2) / np.maximum(asum[..., None], 1e-6)
+    alpha = (inner[..., 3].mean(-1) > 127)
+    out = np.zeros((h, w, 4), np.uint8)
+    out[..., :3] = np.clip(rgb, 0, 255).astype(np.uint8); out[..., 3] = np.where(alpha, 255, 0)
+    # кайма: краевая клетка заметно светлее или темнее соседней внутренней — красим её цветом внутренней
+    lum = out[..., :3].astype(np.int32) @ np.array([3, 6, 1]) // 10
+    op = out[..., 3] > 0
+    edge = op & ~(np.roll(op, 1, 0) & np.roll(op, -1, 0) & np.roll(op, 1, 1) & np.roll(op, -1, 1))
+    for yy, xx in zip(*np.nonzero(edge)):
+        best = None
+        for dy, dx in ((1, 0), (0, 1), (0, -1), (-1, 0), (1, 1), (1, -1)):
+            y2, x2 = yy + dy, xx + dx
+            if 0 <= y2 < h and 0 <= x2 < w and op[y2, x2] and not edge[y2, x2]: best = (y2, x2); break
+        if best and abs(int(lum[yy, xx]) - int(lum[best])) > 40: out[yy, xx, :3] = out[best][:3]   # светлая или тёмная кайма
+    out[out[..., 3] == 0] = 0
+    pim = Image.fromarray(out, "RGBA")
     buf = io.BytesIO()
-    im.save(buf, "WEBP", quality=84, alpha_quality=92, method=6)
-    return b64(buf.getvalue(), "image/webp"), len(buf.getvalue())
+    pim.save(buf, "PNG", optimize=True)
+    print("  %s: сетка %dx%d, сдвиг (%d,%d)" % (name, w, h, ox, oy))
+    return b64(buf.getvalue(), "image/png"), len(buf.getvalue())
 
 
 def clouds():

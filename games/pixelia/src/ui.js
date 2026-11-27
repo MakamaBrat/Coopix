@@ -11,14 +11,15 @@
     get(k, d) { try { const v = localStorage.getItem('pixelia.' + k); return v == null ? (k in mem ? mem[k] : d) : JSON.parse(v); } catch (e) { return k in mem ? mem[k] : d; } },
     set(k, v) { try { localStorage.setItem('pixelia.' + k, JSON.stringify(v)); return true; } catch (e) { mem[k] = v; return false; } }
   };
-  const G = Object.assign({ sel: 'WATER', size: 3, shape: 'round', mode: 'brush', replace: false, paused: false, speed: 1, lens: false, cs: 0, sound: true, time: .3, tcycle: true, biome: 'auto', sday: 12, dsec: 240, slen: 12, wauto: true, hot: [], lastEl: {}, weather: 0, wind: 0, cat: 1 }, store.get('set', {}));
+  const G = Object.assign({ sel: 'WATER', size: 3, shape: 'round', mode: 'brush', replace: false, paused: false, speed: 1, lens: false, cs: 0, sound: true, time: .3, tcycle: true, biome: 'auto', sday: 12, dsec: 240, slen: 2, wauto: true, hot: [], lastEl: {}, weather: 0, wind: 0, cat: 1 }, store.get('set', {}));
+  if (!G.cal3) { G.slen = 3; G.cal3 = 1; }   /* календарь: по умолчанию сезон — 3 дня */
   if (!G.lastEl || typeof G.lastEl !== 'object') G.lastEl = {};
   /* старые сохранения хранили тему неба: переводим в время суток */
   { const sv = store.get('set', {}); if (sv.time === undefined && sv.theme) { G.time = { night: .02, day: .5, dusk: .74, cave: .3 }[sv.theme] || .3; if (sv.theme === 'cave') G.biome = 'cave'; } }
   /* человечек всегда под рукой на нижней полке */
   G.paused = false; G.lens = false; G.weather = 0; G.wind = 0; G.camp = false;
   let prog = store.get('prog', null) || { day: 1, unlocked: ['EARTH', 'WATER', 'STONE', 't:HUMAN'], done: {}, finished: false };
-  const saveSet = () => store.set('set', { sel: G.sel, size: G.size, shape: G.shape, mode: G.mode, replace: G.replace, speed: 1, cs: G.cs, sound: G.sound, time: Sky.time, tcycle: G.tcycle, biome: G.biome, sday: Sky.day, dsec: Sky.Y.daySec, slen: Sky.Y.slen, wauto: G.wauto, lastEl: G.lastEl, cat: G.cat });
+  const saveSet = () => store.set('set', { sel: G.sel, size: G.size, shape: G.shape, mode: G.mode, replace: G.replace, speed: 1, cs: G.cs, sound: G.sound, time: Sky.time, tcycle: G.tcycle, biome: G.biome, sday: Sky.day, dsec: Sky.Y.daySec, slen: Sky.Y.slen, cal3: 1, cal2: 1, wauto: G.wauto, lastEl: G.lastEl, cat: G.cat });
   if (prog.unlocked && prog.unlocked.indexOf('t:HUMAN') < 0) prog.unlocked.push('t:HUMAN');
   const saveProg = () => store.set('prog', prog);
 
@@ -30,9 +31,9 @@
   const nameOf = (k) => isTool(k) ? TOOLS[k.slice(2)].name : NAME[E[k]];
   const hintOf = (k) => isTool(k) ? TOOLS[k.slice(2)].hint : HINT[E[k]];
   const formOf = (k) => isTool(k) && TOOLS[k.slice(2)] && TOOLS[k.slice(2)].form;
-  const iconOf = (k) => k === 't:HUMAN' || k === 't:ZOMBIE' || k === 't:CHILD' ? People.icon('ref', k === 't:ZOMBIE') : formOf(k) ? People.icon(formOf(k)) : isTool(k) ? (UIA.icon[k] || Icons.ui(TOOL_ICON[k.slice(2)])) : Icons.el(k);
+  const iconOf = (k) => k === 't:HUMAN' || k === 't:ZOMBIE' || k === 't:CHILD' ? People.icon('ref', k === 't:ZOMBIE') : formOf(k) ? People.icon(formOf(k)) : isTool(k) ? (UIA.icon[k] || (typeof Arms !== 'undefined' && Arms.icon(k.slice(2))) || Icons.ui(TOOL_ICON[k.slice(2)])) : Icons.el(k);
   const img = (src, cls) => Icons.img(src, cls);
-  const catIcon = (c) => UIA.icon['cat:' + c.icon] || ({ pile: Icons.el('SAND'), drop: Icons.el('WATER'), puff: Icons.el('STEAM'), block: Icons.el('STONE'), seed: Icons.el('SEED'), bulb: Icons.el('LAMP'), bolt: Icons.ui('bolt'), people: People.icon('ref') })[c.icon];
+  const catIcon = (c) => UIA.icon['cat:' + c.icon] || ({ pile: Icons.el('SAND'), drop: Icons.el('WATER'), puff: Icons.el('STEAM'), block: Icons.el('STONE'), seed: Icons.el('SEED'), bulb: Icons.el('LAMP'), bolt: Icons.ui('bolt'), people: People.icon('ref'), costumes: People.icon('king') })[c.icon];
 
   /* ---------- кампания ---------- */
   const DAYS = [
@@ -81,20 +82,21 @@
   /* Размер мира не зависит от устройства: всегда ~42 000 клеток, меняется только форма (под экран). Клетка = целое число физических пикселей, поэтому без размытия и одинаково на телефоне и ПК. */
   const CELLS = 42000;
   function gridFor() {
-    const st = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, sw = Math.max(120, st.width - 28), sh = Math.max(120, st.height - 28);
-    const asp = Math.max(.5, Math.min(2.2, sw / sh));
-    let w = Math.round(Math.sqrt(CELLS * asp)), hh = Math.round(CELLS / w);
-    const sc = Math.max(1, Math.floor(Math.min(sw * dpr / w, sh * dpr / hh)));   /* физических пикселей на клетку */
-    /* подгоняем число клеток под целый масштаб, чтобы поле заполняло экран */
-    w = Math.max(60, Math.floor(sw * dpr / sc)); hh = Math.max(40, Math.floor(sh * dpr / sc));
-    if (w * hh > CELLS * 1.6) { const k = Math.sqrt(CELLS * 1.6 / (w * hh)); w = Math.floor(w * k); hh = Math.floor(hh * k); }
-    return { c: sc / dpr, w, h: hh };
+    /* поле всегда закрывает сцену целиком (без пустых полос): клетка — целое число физических пикселей,
+       клеток примерно CELLS (не больше 1,6×), край обрезается меньше чем на клетку.
+       На вертикальном телефоне мир шире экрана (как альбомный), по нему водят пальцем «Рукой» или двумя пальцами. */
+    const dpr = window.devicePixelRatio || 1, sw = Math.max(120, stage.clientWidth), sh = Math.max(120, stage.clientHeight);   /* clientWidth — без учёта трансформаций */
+    const wide = sw < sh * .9, vw = wide ? sh * 1.35 : sw;
+    let sc = Math.max(1, Math.round(Math.sqrt(vw * sh * dpr * dpr / CELLS)));
+    while (Math.ceil(vw * dpr / sc) * Math.ceil(sh * dpr / sc) > CELLS * 1.6) sc++;
+    return { c: sc / dpr, w: Math.max(60, Math.ceil(vw * dpr / sc)), h: Math.max(40, Math.ceil(sh * dpr / sc)), wide };
   }
   /* ---------- зум и сдвиг поля: колесо, щипок двумя пальцами, правая кнопка, кнопки в панели «Мир» ---------- */
   const view = { z: 1, x: 0, y: 0 }; let shakeT = '';
   function clampView() {
     const hw = W * cs / 2, hh = H * cs / 2; view.z = Math.max(1, Math.min(8, view.z));
-    const mx = hw * (view.z - 1), my = hh * (view.z - 1); view.x = Math.max(-mx, Math.min(mx, view.x)); view.y = Math.max(-my, Math.min(my, view.y));
+    const sw = stage.clientWidth || 0, sh = stage.clientHeight || 0;   /* край мира никогда не заходит внутрь экрана — нет пустых полос */
+    const mx = Math.max(0, hw * view.z - sw / 2), my = Math.max(0, hh * view.z - sh / 2); view.x = Math.max(-mx, Math.min(mx, view.x)); view.y = Math.max(-my, Math.min(my, view.y));
   }
   function applyView() { clampView(); field.style.transform = (view.z === 1 && !view.x && !view.y ? '' : 'translate(' + view.x.toFixed(1) + 'px,' + view.y.toFixed(1) + 'px) scale(' + view.z.toFixed(3) + ') ') + shakeT; field.style.transformOrigin = 'center'; }
   function zoomAt(cx, cy, k) {
@@ -102,7 +104,12 @@
     view.x += ux * (1 - z2 / z0); view.y += uy * (1 - z2 / z0); view.z = z2; applyView(); showRing(null, true);
   }
   function zoomBtn(k) { const st = stage.getBoundingClientRect(); zoomAt(st.left + st.width / 2, st.top + st.height / 2, k); }
-  stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.18 : 1 / 1.18); }, { passive: false });
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault(); if (followId != null) setFollow(null);
+    const pad = !e.ctrlKey && e.deltaMode === 0 && (Math.abs(e.deltaX) > .5 || (Math.abs(e.deltaY) < 40 && e.deltaY % 1 !== 0));
+    if (pad) { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); return; }   /* тачпад: два пальца двигают мир */
+    const k = e.ctrlKey ? Math.exp(-e.deltaY * .01) : (e.deltaY < 0 ? 1.18 : 1 / 1.18); zoomAt(e.clientX, e.clientY, k);
+  }, { passive: false });
   /* ---------- карточка человечка: имя, возраст, занятие ---------- */
   const TASK_BADGE = { sleep: 'zzz', camp: 'fire', fire: 'fire', build: 'home', chat: 'group', together: 'group', rest: 'book', mourn: 'scroll', bury: 'scales', wed: 'beers', quarrel: 'scales', sulk: 'scroll' };
   const card = h('div', 'pb'); card.id = 'pcard'; stage.appendChild(card); let cardEnt = null;
@@ -125,9 +132,9 @@
   /* нажатие на человечка (или на тело) инструментом из вкладки «Люди»: открыть карточку */
   const personTool = () => { const k = G.sel; return isTool(k) && (k === 't:HUMAN' || k === 't:ZOMBIE' || k === 't:CHILD' || !!formOf(k)); };
   /* кто стоит под пальцем (узко: чтобы ставить людей рядом с другими не мешало) */
-  function personAt(e) {
-    const [x, y] = cellOf(e); let best = null, bd = 1e9;
-    for (const o of Sim.ents) { if (o.z) continue; const dx = Math.abs(o.x - x), dy = y - o.y; if (dx > 2.5 || dy > 1 || dy < (o.dead ? -4 : -13)) continue; const d = dx + Math.abs(dy + (o.dead ? 2 : 6)) * .3; if (d < bd) { bd = d; best = o; } }
+  function personAt(e, wide) {
+    const [x, y] = cellOf(e); let best = null, bd = 1e9; const tol = wide ? Math.max(4, 22 / (cs * view.z)) : 2.5;
+    for (const o of Sim.ents) { if (o.z) continue; const dx = Math.abs(o.x - x), dy = y - o.y; if (dx > tol || dy > (wide ? 4 : 1) || dy < (o.dead ? -4 : -13)) continue; const d = dx + Math.abs(dy + (o.dead ? 2 : 6)) * .3; if (d < bd) { bd = d; best = o; } }
     return best;
   }
   const tp = new Map(); let pinch = null, panning = null, lpT = 0, lp = null;
@@ -145,6 +152,8 @@
     W = g.w; H = g.h; cs = g.c;
     Render.init($('#sim'), $('#glow'), $('#bg'), W, H);
     fx.width = W; fx.height = H;
+    { const ds = document.documentElement.style; ds.setProperty('--hudh', (hud.offsetTop + hud.offsetHeight) + 'px'); ds.setProperty('--barh', Math.max(0, window.innerHeight - bar.offsetTop) + 'px'); }
+    if (g.wide && first && !G.wideTip) { G.wideTip = 1; setTimeout(() => toast('Мир шире экрана: двигай его «Рукой» сверху или двумя пальцами'), 1600); }   /* целиком в сцене, даже если она уменьшилась */
     field.style.width = (W * cs) + 'px'; field.style.height = (H * cs) + 'px';
     view.z = 1; view.x = 0; view.y = 0; applyView();
   }
@@ -157,6 +166,7 @@
     return c.toDataURL();
   }
   function newWorld(kind) {
+    if (typeof Arms !== 'undefined') Arms.list.length = 0;
     if (typeof Town !== 'undefined') Town.clear();
     Sim.generate(kind, { plain: G.camp && prog.day === 1 && !prog.finished });
     Sim.stats.blasts = Sim.stats.lightning = Sim.stats.meteors = 0;
@@ -166,7 +176,8 @@
   /* ---------- вкладки интерфейса ---------- */
   const hud = $('#hud'), bar = $('#bar'), panel = $('#panel');
   const slotDefs = [
-    { id: 'br', icon: () => Icons.ui(MODE_ICON[G.mode] || 'brush'), act: () => openPanel('brush') },
+    { id: 'mv', icon: () => Icons.ui('hand'), act: () => { G.panMode = !G.panMode; zoomCtl.style.display = G.panMode ? 'flex' : 'none'; if (openedPanel) closePanel(); updateHud(); toast(G.panMode ? 'Рука: двигай мир пальцем, щипок или колесо — приблизить' : 'Рука выключена — снова рисуешь'); } },
+    { id: 'br', icon: () => Icons.ui(MODE_ICON[G.mode] || 'brush'), act: () => { G.panMode = false; zoomCtl.style.display = 'none'; openPanel('brush'); } },
     { id: 'er', icon: () => Icons.ui('eraser'), act: toggleErase },
     { id: 'we', icon: () => Icons.ui('cloud'), act: () => openPanel('weather') },
     { id: 'wo', icon: () => Icons.ui('globe'), act: () => openPanel('world') },
@@ -179,7 +190,7 @@
   slotDefs.forEach((s) => { const b = h('button', 'slot pb'); b.appendChild(img(s.icon())); b.onclick = () => { Snd.init(); Snd.resume(); Snd.sfx('tap'); s.act(); }; hud.appendChild(b); slotEls[s.id] = b; });
   function updateHud() {
     slotDefs.forEach((s) => { const b = slotEls[s.id]; b.firstChild.src = s.icon(); });
-    slotEls.er.classList.toggle('on', G.sel === 't:ERASE');
+    slotEls.er.classList.toggle('on', G.sel === 't:ERASE'); slotEls.mv.classList.toggle('on', !!G.panMode);
     slotEls.pl.classList.toggle('on', G.paused); slotEls.sp.classList.toggle('on', G.speed !== 1); slotEls.br.classList.toggle('on', openedPanel === 'brush');
     slotEls.we.classList.toggle('on', openedPanel === 'weather' || G.weather > 0); slotEls.wo.classList.toggle('on', openedPanel === 'world'); slotEls.pe.classList.toggle('on', openedPanel === 'people');
     let sb = slotEls.sp.querySelector('.badge'); if (!sb) { sb = h('span', 'badge'); slotEls.sp.appendChild(sb); } sb.textContent = '×' + G.speed;
@@ -191,11 +202,12 @@
   function toggleErase() { if (G.sel === 't:ERASE') select(G.last && G.last !== 't:ERASE' ? G.last : 'WATER', true); else { G.last = G.sel; select('t:ERASE', true); } }
   function select(k, quiet) {
     if (!exists(k)) return; if (!isUnlocked(k)) { toast(lockHint(k)); Snd.sfx('nope'); return; }
+    if (G.panMode) { G.panMode = false; const z = document.querySelector('.zoomctl'); if (z) z.style.display = 'none'; }   /* выбрал материал — рука выключается */
     G.sel = k; const ci = catIdx(k); if (ci >= 0) { G.lastEl[CATS[ci].id] = k; G.cat = ci; }
     saveSet(); renderBar(); updateHud(); if (!quiet) Snd.sfx('pop');
   }
   /* нижняя панель: недавние элементы */
-  const undoStack = []; let speeds = [.5, 1, 2, 3], spIdx = 1;
+  const undoStack = []; let speeds = [1, 5], spIdx = 0;   /* два режима времени: обычный и ускоренный ×5 */
   /* нижняя панель — только типы: на каждой кнопке последний выбранный элемент этого типа. Нажатие выбирает его, повторное нажатие или долгое удержание открывает список типа */
   const catIdx = (k) => CATS.findIndex((c) => c.els.indexOf(k) >= 0);
   function lastOf(c) {
@@ -205,48 +217,92 @@
   function openCat(i) { G.cat = i; saveSet(); openPanel('elements', true); }
   function tapCat(i) {
     const c = CATS[i], k = lastOf(c); if (!k) return;
-    if (catIdx(G.sel) === i && G.sel === k) { openCat(i); return; }
     if (!isUnlocked(k)) { toast(lockHint(k)); Snd.sfx('nope'); return; }
     select(k); if (openedPanel === 'elements') closePanel();
   }
+  let barInit = false;
   function renderBar() {
     bar.innerHTML = '';
+    if (!barInit) { barInit = true; const ci = catIdx(G.sel); if (ci >= 0) G.cat = ci; }   /* при старте ряд показывает группу выбранного элемента */
+    /* верхний ряд: все элементы выбранной группы — выбрать одним касанием; долгое касание — подсказка */
+    const strip = h('div', 'strip'), cat = CATS[G.cat] || CATS[0];
+    cat.els.filter(exists).forEach((k) => {
+      const lock = !isUnlocked(k), b = h('button', 'sitem' + (k === G.sel ? ' on' : '') + (lock ? ' lock' : '')); b.title = nameOf(k);
+      b.appendChild(img(iconOf(k), 'el')); b.appendChild(h('span', '', nameOf(k)));
+      let t = 0, long = false;
+      b.onpointerdown = () => { long = false; clearTimeout(t); t = setTimeout(() => { long = true; toast(nameOf(k) + ': ' + (lock ? lockHint(k) : (hintOf(k) || ''))); }, 450); };
+      b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(t);
+      b.onclick = () => { if (long) { long = false; return; } Snd.init(); Snd.resume(); if (lock) { toast(lockHint(k)); Snd.sfx('nope'); return; } Snd.sfx('tap'); select(k); renderBar(); };
+      strip.appendChild(b);
+    });
+    const row = h('div', 'catrow'); bar.appendChild(row); bar.appendChild(strip);   /* сверху — группы, снизу — элементы выбранной группы */
     CATS.forEach((c, i) => {
       const k = lastOf(c); if (!k) return;
-      const b = h('button', 'hot pb'); b.dataset.i = i; b.appendChild(img(iconOf(k), 'el')); b.appendChild(h('span', '', c.name));
+      const b = h('button', 'hot pb' + (i === G.cat ? ' on' : '')); b.dataset.i = i; b.appendChild(img(iconOf(k), 'el')); b.appendChild(h('span', '', c.name));
       let t = 0, long = false;
       b.onpointerdown = () => { long = false; clearTimeout(t); t = setTimeout(() => { long = true; Snd.init(); Snd.resume(); Snd.sfx('tap'); openCat(i); }, 450); };
       b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(t);
-      b.onclick = () => { if (long) { long = false; return; } Snd.init(); Snd.resume(); Snd.sfx('tap'); tapCat(i); };
-      bar.appendChild(b);
+      b.onclick = () => { if (long) { long = false; return; } Snd.init(); Snd.resume(); Snd.sfx('tap'); G.cat = i; saveSet(); tapCat(i); renderBar(); };
+      row.appendChild(b);
     });
     updateHud();
   }
-  function undo() { if (!undoStack.length) { toast('Отменять нечего'); return; } const d = undoStack.pop(); loadPack(d); Snd.sfx('tap'); }
-  function pushUndo() { undoStack.push(Sim.pack()); if (undoStack.length > 8) undoStack.shift(); }
+  /* отмена возвращает мир целиком: клетки и жителей (кто погиб после этого действия — снова жив, стоит там же) */
+  const entSnap = () => Sim.ents.map((e) => ({ ref: e, data: JSON.stringify(e, (k, v) => (k && k[0] === '_') || typeof v === 'function' ? undefined : v) }));
+  function undo() {
+    if (!undoStack.length) { toast('Отменять нечего'); return; }
+    const d = undoStack.pop(), cur = Sim.ents.slice();
+    const back = d.ents ? d.ents.filter((it) => (it.ref.dying || it.ref.dead || cur.indexOf(it.ref) < 0) && !JSON.parse(it.data).dying).length : 0;
+    loadPack(d.cells || d);   /* (загрузка клеток очищает список жителей — ниже он восстанавливается) */
+    if (d.ents) {
+      Sim.ents.length = 0;
+      for (const it of d.ents) { const e = it.ref, data = JSON.parse(it.data); for (const k of Object.keys(e)) if (!(k in data) && k[0] !== '_') delete e[k]; Object.assign(e, data); e.ry = e.y; Sim.ents.push(e); }
+      if (back) toast(back === 1 ? 'Отменено: житель снова жив' : 'Отменено: ' + back + (back % 10 >= 2 && back % 10 <= 4 && (back % 100 < 12 || back % 100 > 14) ? ' жителя' : ' жителей') + ' снова живы');
+    }
+    Snd.sfx('tap');
+  }
+  function pushUndo() { undoStack.push({ cells: Sim.pack(), ents: entSnap() }); if (undoStack.length > 8) undoStack.shift(); }
   function loadPack(d) { Sim.unpack(d, W, H); }
 
-  /* ---------- жители: список по обществам, карточка (обзор и отношения), общества и летопись ----------
-     Панель не пересобирается сама: раз в полсекунды обновляются только числа, занятия и полоски (pvLive).
-     Целиком она перерисовывается, только если поменялся состав (кто-то родился, умер, сменил общество) и игрок
-     не трогал панель последние полторы секунды, — чтобы строки не прыгали под пальцем. */
-  const pv = { tab: 'list', sel: null, sub: 'info', rf: 'all', strangers: false };
-  let pvLive = [], pvSig = '', pvTouch = 0;
-  const TASK_ICON = { sleep: 'zzz', camp: 'fire', fire: 'fire', house: 'home', build: 'home', chat: 'group', together: 'group', rest: 'book', mourn: 'scroll', bury: 'scales', wed: 'beers', quarrel: 'scales', sulk: 'scroll',
-    preach: 'scales', pray: 'scales', study: 'book', read: 'book', learn: 'book', drink: 'beers', serve: 'beers', craft: 'bag', trade: 'bag', work: 'bag', quarry: 'home', shelter: 'home' };
-  const coin = () => (UIA.emote && UIA.emote.money) || '';
+  /* ---------- жители: список с фильтрами, карточка жителя (обзор и отношения), общества, летопись ----------
+     Значки — из листа people_icons.png (UIA.pi). Панель не пересобирается сама: раз в полсекунды обновляются только
+     числа, полоски и значки занятий (pvLive). Перерисовка целиком — при смене состава и не раньше 1,5 с после касания.
+     «Следить»: камера приближает и ведёт выбранного человечка (follow), сверху стоит плашка с его именем. */
+  const pv = { tab: 'list', sel: null, sub: 'info', rf: 'all', strangers: false, flt: 'all', fold: {}, sopen: {} };
+  let pvLive = [], pvSig = '', pvTouch = 0, pvOrder = [], followId = null;
+  const PI = (k) => (UIA.pi && UIA.pi[k]) || '';
+  const icon = (k, cls) => { const i = img(PI(k), 'pi ' + (cls || '')); return i; };
+  const PROF_ICON = { pirate: 'a_fish', lumber: 'p_lumber', mason: 'p_mason', builder: 'p_builder', fisher: 'p_fisher', farmer: 'p_farmer', trader: 'p_bow', priest: 'p_priest', scholar: 'p_scholar', barkeep: 'p_barkeep', crafter: 'p_crafter', none: 'p_none' };
+  const TASK_ICON = { sleep: 'a_sleep', camp: 'a_fire', fire: 'a_fire', house: 'build', build: 'build', chat: 'a_talk', together: 'a_love', wed: 'a_love', rest: 'smile', wander: 'a_run', play: 'a_run', follow: 'a_run', mourn: 'm_sad', bury: 'm_sad', quarrel: 'm_angry', sulk: 'm_sad',
+    preach: 'p_priest', pray: 'p_priest', study: 'a_read', read: 'a_read', learn: 'grad', drink: 'a_music', serve: 'a_music', craft: 'a_craft', trade: 'a_talk', work: 'build', quarry: 'a_quarry', shaft: 'a_quarry', climb: 'a_run', dockwork: 'build', exercise: 'health', eat: 'a_eat', visit: 'a_talk', dance: 'a_music', stars: 'star', tag: 'a_run', explore: 'search', water: 'drop', forage: 'food', repair: 'build', gawk: 'search', shelter: 'house', chop: 'a_chop', fish: 'a_fish', sow: 'a_sow', swim: 'drop', arm: 'sword', fight: 'sword', hearth: 'a_fire' };
+  const taskIcon = (e) => e.dying ? 'm_sad' : e.burn > 0 ? 'a_fire' : e.fear > 0 ? 'a_run' : TASK_ICON[e.task] || 'smile';
+  /* лицо-настроение по тому, что сейчас происходит */
+  function moodOf(e) {
+    if (e.dying) return ['m_sad', 'погиб' + (e.fem ? 'ла' : '')];
+    if (e.sleep) return ['m_sleep', 'спит'];
+    if (e.fight || e.task === 'quarrel' || e.task === 'sulk') return ['m_angry', 'злится'];
+    if (e.task === 'mourn' || e.hp < 40) return ['m_sad', e.hp < 40 ? 'ранен' + (e.fem ? 'а' : '') : 'горюет'];
+    if (e.fear > 0 || e.burn > 0) return ['m_surprise', 'напуган' + (e.fem ? 'а' : '')];
+    /* дальше — настоящее настроение (Life: moodTick) и его главная причина */
+    const v = e.mood || 0, a = e.fem ? 'а' : '', w = e.moodWhy ? ' — ' + e.moodWhy : '';
+    if (v >= 5) return ['m_joy', 'счастлив' + a + w];
+    if (v >= 1.5) return ['m_happy', 'в духе' + w];
+    if (v > -1.5) return ['m_think', 'спокоен' + (e.fem ? 'а' : '')];
+    if (v > -5) return ['m_sad', 'грустит' + w];
+    return ['m_sad', 'подавлен' + a + w];
+  }
+  const coin = () => PI('coin');
   const live = (o) => o && !o.dying && !o.z;
   const onLive = (f) => { pvLive.push(f); f(); };
-  function openPerson(e) { pv.tab = 'list'; pv.sel = e.id; People.setSel(e.dead ? null : e.id); openPanel('people', true); }
-  function goPerson(id, sub) { pv.tab = 'list'; pv.sel = id; if (sub) pv.sub = sub; const o = Life.byId(id); People.setSel(o && !o.dying ? id : null); Snd.sfx('tap'); openPanel('people', true); panel.querySelector('.pbody').scrollTop = 0; }
-  /* родство и симпатия: группа, подпись, цвет */
-  const sibling = (a, b) => a.par != null && a.par === b.par;
+  const socIndex = (s) => s ? Math.max(0, Town.socs.indexOf(s)) % 4 : 0;
+  function openPerson(e) { pv.tab = 'list'; pv.sel = e.id; pv.sub = 'info'; People.setSel(e.dead ? null : e.id); openPanel('people', true); }
+  function goPerson(id, sub) { pv.tab = 'list'; pv.sel = id; if (sub) pv.sub = sub; const o = Life.byId(id); People.setSel(o && !o.dying ? id : null); Snd.sfx('tap'); openPanel('people', true); const pb = panel.querySelector('.pbody'); if (pb) pb.scrollTop = 0; }
+  const sibling = (a, b) => (a.par != null && a.par === b.par) || (a.par2 != null && a.par2 === b.par2);
   function relGroup(e, o) {
-    if (e.mate === o.id || e.par === o.id || o.par === e.id || sibling(e, o)) return 'fam';
+    if (e.mate === o.id || e.par === o.id || o.par === e.id || e.par2 === o.id || o.par2 === e.id || sibling(e, o)) return 'fam';
     const r = e.rel[o.id] || 0; if (r < 0) return 'foe'; if (r >= 2) return 'friend'; if (r > 0) return 'known'; return 'none';
   }
-  const GROUPS = [['fam', 'Семья'], ['friend', 'Друзья'], ['known', 'Знакомые'], ['foe', 'Недруги'], ['none', 'Не знакомы']];
-  /* сердечки: сколько тепла у e к o (0..5), недруги — разбитые */
+  const GROUPS = [['fam', 'Семья', 'pair'], ['friend', 'Друзья', 'heart'], ['known', 'Знакомые', 'a_talk'], ['foe', 'Недруги', 'm_angry'], ['none', 'Не знакомы', 'search']];
   function hearts(v) { const n = Math.max(0, Math.min(5, Math.round(v))), bad = Math.max(0, Math.min(5, Math.round(-v))); return bad ? '<i class="hb">' + '✕'.repeat(bad) + '</i>' : '<i class="hf">' + '♥'.repeat(n) + '</i><i class="he">' + '♥'.repeat(5 - n) + '</i>'; }
   function mutual(e, o) {
     const a = e.rel[o.id] || 0, b = o.rel[e.id] || 0;
@@ -260,7 +316,10 @@
   function pPeople(body) {
     pvLive = []; pvSig = sigOf();
     const tabs = h('div', 'ptabs');
-    [['list', 'Жители'], ['soc', 'Общества'], ['log', 'Летопись']].forEach(([k, t]) => { const b = btn(t, pv.tab === k, 'ptab'); b.onclick = () => { pv.tab = k; pv.sel = null; Snd.sfx('tap'); openPanel('people', true); }; tabs.appendChild(b); });
+    [['list', 'Жители', 'pair'], ['soc', 'Общества', 'flag'], ['log', 'Летопись', 'scroll']].forEach(([k, t, ic]) => {
+      const b = h('button', 'ptab' + (pv.tab === k ? ' on' : '')); b.appendChild(icon(ic)); b.appendChild(h('span', '', t));
+      b.onclick = () => { pv.tab = k; pv.sel = null; Snd.sfx('tap'); openPanel('people', true); }; tabs.appendChild(b);
+    });
     body.appendChild(tabs);
     const box = h('div', 'pbox'); body.appendChild(box);
     if (pv.tab === 'list' && pv.sel != null) personView(box);
@@ -268,10 +327,9 @@
     else if (pv.tab === 'soc') socView(box);
     else logView(box);
   }
-  /* состав, при смене которого панель надо перерисовать */
   function sigOf() {
-    const ids = Sim.ents.filter((e) => !e.z && (!e.dying || e.dead)).map((e) => e.id + (e.dying ? 'd' : '') + ':' + (e.soc || 0) + (e.prof || '')).join(',');
-    return pv.tab + '|' + (pv.tab === 'soc' ? Town.socs.map((s) => s.id + ':' + s.leader).join(',') + '|' + Houses.list.map((b) => b.id + (b.done ? 'd' : '')).join(',') : pv.tab === 'log' ? Town.log.length + (Town.log[0] || {}).txt : ids + '|' + Town.socs.map((s) => s.leader).join(','));
+    const ids = Sim.ents.filter((e) => !e.z && (!e.dying || e.dead)).map((e) => e.id + (e.dying ? 'd' : '') + ':' + (e.soc || 0) + (e.prof || '') + (e.home ? 'h' : '')).join(',');
+    return pv.tab + '|' + pv.flt + '|' + (pv.tab === 'soc' ? Town.socs.map((s) => s.id + ':' + s.leader + JSON.stringify(s.war || {})).join(',') + '|' + Houses.list.map((b) => b.id + (b.done ? 'd' : '')).join(',') : pv.tab === 'log' ? Town.log.length + (Town.log[0] || {}).txt : ids + '|' + Town.socs.map((s) => s.leader).join(','));
   }
   function pvTick() {
     if (openedPanel !== 'people') return;
@@ -283,85 +341,141 @@
   panel.addEventListener('wheel', () => { pvTouch = performance.now(); }, { capture: true, passive: true });
   panel.addEventListener('scroll', () => { pvTouch = performance.now(); }, true);
   function face(e, cls) { const i = img(People.iconFor(e), cls || 'pf'); i.classList.remove('smooth'); return i; }
-  function socTag(s) { const t = h('span', 'stag', s ? s.name : 'Без общества'); if (s) t.style.setProperty('--sc', s.color); return t; }
+  function socTag(s) { const t = h('span', 'stag'); if (s) { t.appendChild(icon('banner' + socIndex(s), 'ban')); t.style.setProperty('--sc', s.color); } t.appendChild(document.createTextNode(s ? s.name : 'Без общества')); return t; }
   function money(e) { const m = h('span', 'pm'); m.appendChild(img(coin(), 'ci')); const t = document.createTextNode(''); m.appendChild(t); onLive(() => { t.data = String(e.money | 0); }); return m; }
+  function hpBar(e, cls) { const b = h('span', 'hpb ' + (cls || '')), f = h('i'); b.appendChild(f); onLive(() => { const v = Math.max(0, Math.min(1, (e.hp || 0) / ((e.ab && e.ab.hp) || 100))); f.style.width = Math.round(v * 100) + '%'; b.classList.toggle('low', v < .4); }); return b; }
+  /* ---------- список ---------- */
+  const FILTERS = [['all', 'Все', 'crowd'], ['adult', 'Взрослые', 'pair'], ['kid', 'Дети', 'grad'], ['homeless', 'Без дома', 'tent'], ['fight', 'В бою', 'sword']];
+  const passF = (e) => pv.flt === 'all' || (pv.flt === 'adult' && e.age >= 16) || (pv.flt === 'kid' && e.age < 16) || (pv.flt === 'homeless' && !e.dying && !Town.homeOf(e)) || (pv.flt === 'fight' && (e.fight || e.task === 'arm'));
   function peopleList(box) {
-    const ents = Sim.ents.filter((e) => !e.z && (!e.dying || e.dead));
-    box.appendChild(h('div', 'hint', 'Нажми на жителя, чтобы открыть карточку. В мире карточку открывает долгое нажатие на человечка.'));
-    if (!ents.length) { box.appendChild(h('div', 'hint', 'Пока никого нет. Поставь человечков инструментами из вкладки «Люди» — встретившись, они выберут главу и заживут обществом.')); return; }
+    const all = Sim.ents.filter((e) => !e.z && (!e.dying || e.dead));
+    if (!all.length) { box.appendChild(h('div', 'pempty', 'Пока никого нет. Поставь человечков инструментами из вкладки «Люди» — встретившись, они выберут главу и заживут обществом.')); return; }
+    const fl = h('div', 'pflt');
+    FILTERS.forEach(([k, t, ic]) => { const n = all.filter((e) => { const o = pv.flt; pv.flt = k; const r = passF(e); pv.flt = o; return r; }).length; const b = h('button', 'chip2' + (pv.flt === k ? ' on' : '')); b.appendChild(icon(ic)); b.appendChild(h('span', '', t + ' ' + n)); b.onclick = () => { pv.flt = k; Snd.sfx('tap'); openPanel('people', true); }; fl.appendChild(b); });
+    box.appendChild(fl);
+    const ents = all.filter(passF);
     const groups = Town.socs.map((s) => ({ s, m: ents.filter((e) => e.soc === s.id) })).concat([{ s: null, m: ents.filter((e) => e.soc == null || !Town.byId(e.soc)) }]).filter((g) => g.m.length);
+    pvOrder = [];
     for (const g of groups) {
-      const hd = h('div', 'pgrp'); hd.appendChild(socTag(g.s)); const sm = h('small'); hd.appendChild(sm); box.appendChild(hd);
-      onLive(() => { sm.textContent = g.m.filter(live).length + ' чел.' + (g.s ? ' · казна ' + g.s.bank + ' мон.' : ''); });
+      const key = g.s ? g.s.id : 0, hd = h('button', 'pgrp'); hd.appendChild(socTag(g.s));
+      const sm = h('small'); hd.appendChild(sm); hd.appendChild(h('em', '', pv.fold[key] ? '▸' : '▾'));
+      onLive(() => { sm.textContent = g.m.filter(live).length + ' чел.' + (g.s && g.s.war && Object.values(g.s.war).some(Boolean) ? ' · ⚔ война' : ''); });
+      hd.onclick = () => { pv.fold[key] = !pv.fold[key]; Snd.sfx('tap'); openPanel('people', true); };
+      box.appendChild(hd);
+      if (pv.fold[key]) continue;
       const list = h('div', 'plist'); box.appendChild(list);
-      g.m.sort((a, b) => (b.id === (g.s && g.s.leader)) - (a.id === (g.s && g.s.leader)) || a.id - b.id);   /* порядок постоянный: глава, потом по времени появления */
+      g.m.sort((a, b) => (b.id === (g.s && g.s.leader)) - (a.id === (g.s && g.s.leader)) || a.id - b.id);
       for (const e of g.m) {
+        pvOrder.push(e.id);
         const r = h('button', 'prow pb' + (e.dying ? ' dead' : '')), lead = g.s && g.s.leader === e.id;
-        r.appendChild(face(e));
-        const t = h('div', 'pt'); t.appendChild(h('b', '', (lead ? '♛ ' : '') + e.name)); const sub = h('small'); t.appendChild(sub); r.appendChild(t);
-        onLive(() => { sub.textContent = e.dying ? 'погиб' + (e.fem ? 'ла' : '') : Math.floor(e.age) + ' · ' + (Town.PROF[e.prof] || { n: Life.stageOf(e.age) }).n + ' · ' + (e.txt || ''); });
-        if (!e.dying) r.appendChild(money(e));
-        r.onclick = () => goPerson(e.id);
+        const fw = h('span', 'pfw'); fw.appendChild(face(e)); if (lead) fw.appendChild(icon('crown', 'crn')); r.appendChild(fw);
+        const t = h('div', 'pt'), nm = h('b'); nm.appendChild(icon(e.fem ? 'female' : 'male', 'sx')); nm.appendChild(document.createTextNode(e.name)); t.appendChild(nm);
+        const sub = h('small'); t.appendChild(sub); r.appendChild(t);
+        const side = h('div', 'pside');
+        if (!e.dying) { const ti = icon('smile', 'ti'); side.appendChild(ti); onLive(() => { const k = taskIcon(e); if (ti.dataset.k !== k) { ti.dataset.k = k; ti.src = PI(k); } ti.title = e.txt || ''; }); side.appendChild(hpBar(e, 'mini')); }
+        r.appendChild(side);
+        onLive(() => { sub.innerHTML = ''; if (e.dying) { sub.textContent = 'погиб' + (e.fem ? 'ла' : ''); return; } if (e.prof && e.age >= 16) sub.appendChild(icon(PROF_ICON[e.prof] || 'p_none', 'pi16')); sub.appendChild(document.createTextNode(Math.floor(e.age) + ' · ' + ((Town.PROF[e.prof] || {}).n || Life.stageOf(e.age)) + ' · ' + (e.money | 0) + ' мон.')); });
+        r.onclick = () => goPerson(e.id, 'info');
         list.appendChild(r);
       }
     }
+    if (!ents.length) box.appendChild(h('div', 'pempty', 'Под этот фильтр никто не подходит.'));
   }
+  /* ---------- карточка ---------- */
   function personView(box) {
-    const e = Life.byId(pv.sel);
+    const e = Life.byId(pv.sel) || (Life.anyById ? Life.anyById(pv.sel) : null);
     const nav = h('div', 'pnav');
-    const back = btn('← Ко всем', false, 'pback'); back.onclick = () => { pv.sel = null; Snd.sfx('tap'); openPanel('people', true); }; nav.appendChild(back);
-    if (e && !e.dying) { const sb = btn('Показать в мире', false, 'gold pshow'); sb.onclick = () => { People.setSel(e.id); closePanel(); }; nav.appendChild(sb); }
+    const back = h('button', 'pbtn'); back.textContent = '← Все'; back.onclick = () => { pv.sel = null; Snd.sfx('tap'); openPanel('people', true); }; nav.appendChild(back);
+    const ord = pvOrder.length ? pvOrder : Sim.ents.filter((o) => !o.z && (!o.dying || o.dead)).map((o) => o.id), k = ord.indexOf(pv.sel);
+    const prev = h('button', 'pbtn sq', '‹'), next = h('button', 'pbtn sq', '›');
+    prev.disabled = k <= 0; next.disabled = k < 0 || k >= ord.length - 1;
+    prev.onclick = () => { if (k > 0) goPerson(ord[k - 1]); }; next.onclick = () => { if (k >= 0 && k < ord.length - 1) goPerson(ord[k + 1]); };
+    nav.append(prev, h('span', 'pcnt', k >= 0 ? (k + 1) + ' / ' + ord.length : ''), next);
+    if (e && !e.dying) { const fb = h('button', 'pbtn gold' + (followId === e.id ? ' on' : '')); fb.appendChild(icon('search')); fb.appendChild(document.createTextNode(followId === e.id ? 'Слежу' : 'Следить')); fb.onclick = () => { setFollow(followId === e.id ? null : e.id); Snd.sfx('tap'); openPanel('people', true); }; nav.appendChild(fb); }
     box.appendChild(nav);
-    if (!e) { box.appendChild(h('div', 'hint', 'Этого человечка больше нет.')); return; }
+    if (!e) { box.appendChild(h('div', 'pempty', 'Этого человечка больше нет.')); return; }
     const s = Town.byId(e.soc), top = h('div', 'phero');
-    top.appendChild(face(e, 'pbig'));
+    const fr = h('div', 'pframe'); fr.appendChild(face(e, 'pbig')); if (s && s.leader === e.id) fr.appendChild(icon('crown', 'crn big')); top.appendChild(fr);
     const info = h('div', 'pinfo');
-    info.appendChild(h('div', 'pname', (s && s.leader === e.id ? '♛ ' : '') + e.name));
+    const nm = h('div', 'pname'); nm.appendChild(icon(e.fem ? 'female' : 'male', 'sx')); nm.appendChild(document.createTextNode(e.name)); info.appendChild(nm);
     const l0 = h('div', 'pline'); info.appendChild(l0); onLive(() => { l0.textContent = Life.describe(e)[0]; });
     const st = h('div', 'pline'); st.appendChild(socTag(s)); if (s && s.leader === e.id) st.appendChild(h('span', 'prole', 'Глава')); info.appendChild(st);
     top.appendChild(info);
-    if (!e.dying) { const bi = img(UIA.badge.home, 'pbadge'); bi.classList.remove('smooth'); top.appendChild(bi); let last = ''; onLive(() => { const k = TASK_ICON[e.task] || ''; if (k !== last) { last = k; bi.style.visibility = k ? 'visible' : 'hidden'; if (k) bi.src = UIA.badge[k]; } }); }
+    const md = h('div', 'pmood'), mi = icon('m_happy', 'mood'), mt = h('small'); md.append(mi, mt); top.appendChild(md);
+    onLive(() => { const [k2, t] = moodOf(e); if (mi.dataset.k !== k2) { mi.dataset.k = k2; mi.src = PI(k2); } mt.textContent = t; });
     box.appendChild(top);
-    /* переключатель: обзор / отношения */
+    /* сейчас */
+    if (!e.dying) { const now = h('div', 'pnow'), ni = icon('smile'), nt = h('span'); now.append(ni, nt); onLive(() => { const k2 = taskIcon(e); if (ni.dataset.k !== k2) { ni.dataset.k = k2; ni.src = PI(k2); } nt.textContent = e.burn > 0 ? 'Горит!' : e.txt || '—'; }); box.appendChild(now); }
     const others = Sim.ents.filter((o) => o !== e && live(o));
-    const cnt = { fam: 0, friend: 0, foe: 0 }; for (const o of others) { const g = relGroup(e, o); if (cnt[g] != null) cnt[g]++; }
     const seg = h('div', 'pseg');
-    [['info', 'Обзор'], ['rel', 'Отношения · ' + others.filter((o) => relGroup(e, o) !== 'none').length]].forEach(([k, t]) => { const b = btn(t, pv.sub === k, ''); b.onclick = () => { pv.sub = k; Snd.sfx('tap'); openPanel('people', true); }; seg.appendChild(b); });
+    [['info', 'Обзор', 'star'], ['rel', 'Отношения · ' + others.filter((o) => relGroup(e, o) !== 'none').length, 'heart'], ['log', 'Летопись · ' + ((e.plog || []).length), 'scroll']].forEach(([kk, t, ic]) => { const b = h('button', 'ptab' + (pv.sub === kk ? ' on' : '')); b.appendChild(icon(ic)); b.appendChild(h('span', '', t)); b.onclick = () => { pv.sub = kk; Snd.sfx('tap'); openPanel('people', true); }; seg.appendChild(b); });
     box.appendChild(seg);
     if (pv.sub === 'rel') { relView(box, e, others); return; }
-    const facts = h('div', 'pfacts');
-    const fact = (k, v) => { const r = h('div', 'pfact'); r.appendChild(h('span', '', k)); const b = h('b'); if (typeof v === 'string') b.textContent = v; else b.appendChild(v); r.appendChild(b); facts.appendChild(r); return b; };
-    if (e.dying) Life.describe(e).slice(1).forEach((l) => fact('', l));
-    else {
-      const tb = fact('Занятие', ''); onLive(() => { tb.textContent = e.txt || '—'; });
-      const P = Town.PROF[e.prof]; fact('Профессия', P ? P.n + (P.d ? ' — ' + P.d.toLowerCase() : '') : (e.age < 16 ? 'ещё ребёнок' : 'выбирает'));
-      { const m = money(e), ex = document.createTextNode(''); m.appendChild(ex); onLive(() => { ex.data = ' мон. (заработано ' + (e.earned | 0) + ')'; }); fact('Деньги', m); }
-      { const wb = fact('Оружие', ''); onLive(() => { wb.textContent = (e.weapon ? Combat.WEAP[e.weapon].n : 'нет') + (e.kills ? ' · побед: ' + e.kills : '') + ' · здоровье ' + Math.max(0, e.hp | 0); }); }
-      const hb = fact('Дом', ''); onLive(() => { const hm = Town.homeOf(e); hb.textContent = hm ? hm.b.name + ' · ' + (hm.r.f + 1) + '-й этаж' : 'нет своего жилья'; });
+    if (pv.sub === 'log') { personLog(box, e); return; }
+    if (e.dying) { const d = h('div', 'pfacts'); Life.describe(e).slice(1).forEach((l) => d.appendChild(h('div', 'pfact', l))); box.appendChild(d); famBlock(box, e, others); return; }
+    /* плитки */
+    const tiles = h('div', 'ptiles');
+    const tile = (ic, label, fill) => { const t = h('div', 'ptile'); t.appendChild(icon(ic, 'tic')); const c = h('div', 'tc'); c.appendChild(h('small', '', label)); const v = h('b'); c.appendChild(v); t.appendChild(c); tiles.appendChild(t); onLive(() => fill(v, c)); };
+    tile('health', 'Здоровье', (v, c) => { v.textContent = Math.max(0, e.hp | 0) + ' / ' + ((e.ab && e.ab.hp) || 100); if (!c.querySelector('.hpb')) c.appendChild(hpBar(e)); });
+    tile('coin', 'Деньги', (v) => { v.textContent = (e.money | 0) + ' мон. · всего ' + (e.earned | 0); });
+    tile(e.weapon ? 'sword' : 'shield', 'Оружие', (v) => { v.textContent = (e.weapon ? Combat.WEAP[e.weapon].n : 'нет') + (e.kills ? ' · побед ' + e.kills : ''); });
+    tile('house', 'Дом', (v) => { const hm = Town.homeOf(e); v.textContent = hm ? hm.b.name + ', ' + (hm.r.f + 1) + ' эт.' : 'нет — живёт под небом'; });
+    box.appendChild(tiles);
+    { const P = Town.PROF[e.prof], pr = h('div', 'pprof'); pr.appendChild(icon(PROF_ICON[e.prof] || 'p_none', 'pbadge')); const c = h('div'); c.appendChild(h('b', '', P ? P.n : (e.age < 16 ? 'Ещё ребёнок' : 'Выбирает дело'))); c.appendChild(h('small', '', P && P.d ? P.d : (e.age < 16 ? 'Играет, учится, ходит за родителями' : ''))); pr.appendChild(c); box.appendChild(pr); }
+    /* подробно: характер, учёба, дети, родители, заработок */
+    {
+      const fx2 = h('div', 'pfacts2'); box.appendChild(h('div', 'lbl', 'Подробно')); box.appendChild(fx2);
+      onLive(() => {
+        const fam = Life.family ? Life.family(e) : [], kids = fam.filter((x) => x.rel === 'сын' || x.rel === 'дочь').map((x) => x.o), pars = Life.parentsOf ? Life.parentsOf(e) : [], mate = Life.byId(e.mate), cha = e.cha || 0;
+        const rows = [
+          ['m_happy', 'Характер', cha > .66 ? 'общительный, тянется к людям' : cha > .33 ? 'спокойный' : 'замкнутый, любит одиночество'],
+          ['book', 'Учёность', (e.smart || 0) >= 4 ? 'образован' + (e.fem ? 'а' : '') : (e.smart || 0) >= 1 ? 'немного учил' + (e.fem ? 'ась' : 'ся') : 'не учил' + (e.fem ? 'ась' : 'ся')],
+          ['a_love', 'Пара', mate ? mate.name + (e.mst === 2 ? (e.fem ? ' — муж' : ' — жена') : ' — встречаются') : 'нет'],
+          ['pair', 'Дети', kids.length ? kids.map((o) => o.name + (o.dying ? ' †' : '')).join(', ') : 'нет'],
+          ['crowd', 'Родители', pars.length ? pars.map((o) => o.name + (o.dying ? ' †' : '')).join(', ') : '—'],
+          ['coin', 'Заработал' + (e.fem ? 'а' : ''), (e.earned | 0) + ' мон. за жизнь'],
+          ['sword', 'Победы', String(e.kills | 0)]
+        ];
+        fx2.innerHTML = ''; for (const [ic, k, v] of rows) { const q = h('div', 'pf2'); q.appendChild(icon(ic, 'pi16')); q.appendChild(h('small', '', k)); q.appendChild(h('span', '', v)); fx2.appendChild(q); }
+      });
     }
-    box.appendChild(facts);
-    /* коротко о близких: семья и лучшие друзья, нажатие — к их карточке */
-    const close = others.filter((o) => relGroup(e, o) === 'fam').concat(others.filter((o) => relGroup(e, o) === 'friend').sort((a, b) => (e.rel[b.id] || 0) - (e.rel[a.id] || 0)).slice(0, 4));
-    if (close.length) {
-      box.appendChild(h('div', 'lbl', 'Близкие'));
-      const cl = h('div', 'pclose');
-      for (const o of close) { const c = h('button', 'pchip'); c.appendChild(face(o, 'rf')); c.appendChild(h('span', '', o.name + ' · ' + Town.relLabel(e, o).toLowerCase())); c.onclick = () => goPerson(o.id, 'info'); cl.appendChild(c); }
-      box.appendChild(cl);
-    }
-    const sum = h('div', 'hint', 'Семья: ' + cnt.fam + ' · друзей: ' + cnt.friend + ' · недругов: ' + cnt.foe + '. Все отношения — во вкладке «Отношения».'); box.appendChild(sum);
+    famBlock(box, e, others);
   }
-  /* отношения: фильтр, группы, сердечки, взаимность */
+  /* родные (живые и умершие) и лучшие друзья — кнопками с лицами */
+  function famBlock(box, e, others) {
+    const fam = Life.family ? Life.family(e) : [], famIds = new Set(fam.map((x) => x.o.id));
+    const fr2 = others.filter((o) => !famIds.has(o.id) && relGroup(e, o) === 'friend').sort((a, b) => (e.rel[b.id] || 0) - (e.rel[a.id] || 0)).slice(0, 4);
+    if (fam.length) {
+      const cl = h('div', 'pclose');
+      for (const { o, rel } of fam) { const dead = !!o.dying || !Sim.ents.includes(o), c = h('button', 'pchip' + (dead ? ' dead' : '')); c.appendChild(face(o, 'rf')); c.appendChild(icon('pair', 'pi16')); c.appendChild(h('span', '', o.name + ' · ' + rel + (dead ? ' †' : ''))); c.onclick = () => goPerson(o.id, 'info'); cl.appendChild(c); }
+      box.appendChild(h('div', 'lbl', 'Семья')); box.appendChild(cl);
+    }
+    if (fr2.length) {
+      const cl = h('div', 'pclose');
+      for (const o of fr2) { const c = h('button', 'pchip'); c.appendChild(face(o, 'rf')); c.appendChild(icon('heart', 'pi16')); c.appendChild(h('span', '', o.name + ' · ' + Town.relLabel(e, o).toLowerCase())); c.onclick = () => goPerson(o.id, 'info'); cl.appendChild(c); }
+      box.appendChild(h('div', 'lbl', 'Близкие друзья')); box.appendChild(cl);
+    }
+  }
+  /* личная летопись: всё, что случилось с человеком */
+  function personLog(box, e) {
+    const L = e.plog || [];
+    if (!L.length) { box.appendChild(h('div', 'pempty', 'Пока ничего заметного не случилось.')); return; }
+    const l = h('div', 'llist');
+    for (const it of L) { const r = h('div', 'lrow'); const ic = (LOG_ICON.find(([re]) => re.test(it.txt)) || [0, 'scroll'])[1]; r.appendChild(icon(ic, 'lic')); const c = h('div'); c.appendChild(h('small', '', it.t)); c.appendChild(h('span', '', it.txt)); r.appendChild(c); l.appendChild(r); }
+    box.appendChild(l);
+  }
   function relView(box, e, others) {
-    if (!others.length) { box.appendChild(h('div', 'hint', 'В мире больше никого.')); return; }
+    if (!others.length) { box.appendChild(h('div', 'pempty', 'В мире больше никого.')); return; }
     const flt = h('div', 'pflt');
-    [['all', 'Все'], ['fam', 'Семья'], ['friend', 'Друзья'], ['foe', 'Недруги'], ['soc', 'Своё общество']].forEach(([k, t]) => { const b = btn(t, pv.rf === k, 'chipbtn'); b.onclick = () => { pv.rf = k; Snd.sfx('tap'); openPanel('people', true); }; flt.appendChild(b); });
+    [['all', 'Все', 'crowd'], ['fam', 'Семья', 'pair'], ['friend', 'Друзья', 'heart'], ['foe', 'Недруги', 'm_angry'], ['soc', 'Своё общество', 'flag']].forEach(([k, t, ic]) => { const b = h('button', 'chip2' + (pv.rf === k ? ' on' : '')); b.appendChild(icon(ic)); b.appendChild(h('span', '', t)); b.onclick = () => { pv.rf = k; Snd.sfx('tap'); openPanel('people', true); }; flt.appendChild(b); });
     box.appendChild(flt);
     const pass = (o) => pv.rf === 'all' || pv.rf === relGroup(e, o) || (pv.rf === 'soc' && o.soc === e.soc && e.soc != null);
     let shown = 0;
-    for (const [g, title] of GROUPS) {
-      const L = others.filter((o) => relGroup(e, o) === g && pass(o)).sort((a, b) => (g === 'foe' ? (e.rel[a.id] || 0) - (e.rel[b.id] || 0) : (e.rel[b.id] || 0) - (e.rel[a.id] || 0)));
+    const famAll = Life.family ? Life.family(e).map((x) => x.o) : [], famSet = new Set(famAll.map((o) => o.id));
+    for (const [g, title, ic] of GROUPS) {
+      const L = (g === 'fam' ? famAll.filter((o) => pass(o) || pv.rf === 'fam') : others.filter((o) => !famSet.has(o.id) && relGroup(e, o) === g && pass(o))).sort((a, b) => (g === 'foe' ? (e.rel[a.id] || 0) - (e.rel[b.id] || 0) : (e.rel[b.id] || 0) - (e.rel[a.id] || 0)));
       if (!L.length) continue;
-      const hd = h('button', 'rgh' + (g === 'none' ? ' fold' : '')); hd.innerHTML = '<span>' + title + '</span><small>' + L.length + '</small>' + (g === 'none' ? '<em>' + (pv.strangers ? 'скрыть' : 'показать') + '</em>' : '');
+      const hd = h('button', 'rgh'); hd.appendChild(icon(ic)); hd.appendChild(h('span', '', title)); hd.appendChild(h('small', '', String(L.length))); if (g === 'none') hd.appendChild(h('em', '', pv.strangers ? 'скрыть' : 'показать'));
       if (g === 'none') hd.onclick = () => { pv.strangers = !pv.strangers; Snd.sfx('tap'); openPanel('people', true); };
       box.appendChild(hd);
       if (g === 'none' && !pv.strangers) continue;
@@ -370,7 +484,7 @@
         shown++;
         const r = h('button', 'rrow g-' + g);
         r.appendChild(face(o, 'rf'));
-        const t = h('div', 'rt'); t.appendChild(h('b', '', o.name));
+        const t = h('div', 'rt'), nm = h('b'); nm.appendChild(icon(o.fem ? 'female' : 'male', 'sx')); nm.appendChild(document.createTextNode(o.name + (o.dying || !Sim.ents.includes(o) ? ' †' : ''))); t.appendChild(nm);
         const sub = h('small'); t.appendChild(sub); r.appendChild(t);
         const hs = h('span', 'rh'); r.appendChild(hs);
         onLive(() => {
@@ -382,62 +496,120 @@
         rl.appendChild(r);
       }
     }
-    if (!shown && !others.some((o) => relGroup(e, o) === 'none' && pass(o))) box.appendChild(h('div', 'hint', 'Здесь пока никого.'));
-    box.appendChild(h('div', 'hint', 'Сердечки — как ' + e.name + ' относится к человеку; пометка рядом — отвечает ли тот взаимностью. Симпатия растёт от разговоров, работы и праздников вместе, падает от ссор и измен.'));
+    if (!shown && !others.some((o) => relGroup(e, o) === 'none' && pass(o))) box.appendChild(h('div', 'pempty', 'Здесь пока никого.'));
+    box.appendChild(h('div', 'hint', 'Сердечки — как ' + e.name + ' относится к человеку; пометка — отвечает ли тот взаимностью. Симпатия растёт от разговоров, работы и праздников вместе, падает от ссор, драк и измен.'));
   }
+  /* ---------- общества: коротко, по раскрытию — подробно ---------- */
   function socView(box) {
-    if (!Town.socs.length) { box.appendChild(h('div', 'hint', 'Обществ пока нет. Двое взрослых рядом основывают общество и выбирают главу.')); return; }
+    if (!Town.socs.length) { box.appendChild(h('div', 'pempty', 'Обществ пока нет. Двое взрослых рядом основывают общество и выбирают главу.')); return; }
+    /* отношения между обществами — одной табличкой сверху */
+    if (Town.socs.length > 1) {
+      const rb = h('div', 'sdip'); rb.appendChild(h('div', 'lbl', 'Отношения обществ'));
+      for (let i = 0; i < Town.socs.length; i++) for (let j = i + 1; j < Town.socs.length; j++) {
+        const a = Town.socs[i], b = Town.socs[j], v = a.rel[b.id] || 0, war = a.war && a.war[b.id];
+        const r = h('div', 'sdrow ' + (war ? 'war' : v >= 2 ? 'ok' : v <= -3 ? 'bad' : ''));
+        const na = h('span', 'sdn'); na.style.setProperty('--sc', a.color); na.textContent = a.name;
+        const nb = h('span', 'sdn'); nb.style.setProperty('--sc', b.color); nb.textContent = b.name;
+        const mid = h('span', 'sdm'); mid.appendChild(icon(war ? 'sword' : v >= 2 ? 'a_talk' : v <= -3 ? 'm_angry' : 'flag', 'pi16')); mid.appendChild(h('small', '', Town.relSocLabel(v, war)));
+        r.append(na, mid, nb); rb.appendChild(r);
+      }
+      box.appendChild(rb);
+    }
     for (const s of Town.socs) {
-      const c = h('div', 'scard pb'); c.style.setProperty('--sc', s.color);
-      const L = Life.byId(s.leader), m = Town.members(s);
-      const hd = h('div', 'shead'); hd.appendChild(socTag(s)); hd.appendChild(h('small', '', 'с ' + (s.born || '—'))); c.appendChild(hd);
-      const lead = h('button', 'slead'); if (L) { lead.appendChild(face(L, 'rf')); lead.appendChild(h('span', '', '♛ Глава: ' + L.name)); lead.onclick = () => goPerson(L.id, 'info'); } c.appendChild(lead);
+      const m = Town.members(s), L = Life.byId(s.leader), open = pv.sopen[s.id] != null ? pv.sopen[s.id] : Town.socs.length === 1;
+      const war = s.war && Object.keys(s.war).some((k) => s.war[k]);
+      const c = h('div', 'scard2' + (open ? ' open' : '')); c.style.setProperty('--sc', s.color);
+      const hd = h('button', 'sh2'); hd.appendChild(icon('banner' + socIndex(s), 'sban'));
+      const ht = h('div', 'sht'); ht.appendChild(h('b', '', s.name)); const hs = h('small'); ht.appendChild(hs); hd.appendChild(ht);
+      onLive(() => { hs.textContent = Town.members(s).length + ' чел.' + (L ? ' · глава ' + L.name : ''); });
+      if (war) hd.appendChild(h('span', 'swar', '⚔ война'));
+      hd.appendChild(h('em', '', open ? '▾' : '▸'));
+      hd.onclick = () => { pv.sopen[s.id] = !open; Snd.sfx('tap'); openPanel('people', true); };
+      c.appendChild(hd);
+      if (!open) { box.appendChild(c); continue; }
+      /* запасы — одной строкой */
       const res = h('div', 'sres'); c.appendChild(res);
       onLive(() => {
         res.innerHTML = '';
-        const chip = (t, v, need) => res.appendChild(h('span', 'chip' + (need && v < need ? ' low' : ''), t + ' ' + v + (need ? ' / ' + need : '')));
-        chip('Жителей', Town.members(s).length); chip('Монеты', s.bank, s.want && s.want.bank); chip('Дерево', s.wood, s.want && s.want.wood); chip('Камень', s.stone, s.want && s.want.stone);
+        const t = (ic, v, need, title) => { const q = h('span', 'sr' + (need && v < need ? ' low' : '')); q.title = title; q.appendChild(icon(ic, 'pi16')); q.appendChild(document.createTextNode(String(v))); res.appendChild(q); };
+        const n = Town.members(s).length;
+        t('coin', s.bank | 0, s.want && s.want.bank, 'казна'); t('wood', s.wood | 0, s.want && s.want.wood, 'дерево'); t('stone', s.stone | 0, s.want && s.want.stone, 'камень');
+        t('food', Math.floor(s.food || 0), n, 'еда'); t('drop', Math.floor(s.water || 0), n, 'вода'); t('sword', Town.members(s).filter((e) => e.weapon).length, 0, 'с оружием');
       });
-      const profs = {}; for (const e of m) if (e.prof) profs[e.prof] = (profs[e.prof] || 0) + 1;
-      c.appendChild(h('div', 'sprof', Object.keys(profs).map((p) => (Town.PROF[p] || Town.PROF.none).n + ' ' + profs[p]).join(' · ') || '—'));
-      /* пары и вражда внутри общества */
+      /* жители — лицами, нажми на лицо */
+      c.appendChild(h('div', 'lbl', 'Жители'));
+      const fg = h('div', 'sfaces');
+      m.slice().sort((a, b) => (b.id === s.leader) - (a.id === s.leader) || b.age - a.age).forEach((e) => {
+        const q = h('button', 'sface'); const fw = h('span', 'pfw'); fw.appendChild(face(e)); if (e.id === s.leader) fw.appendChild(icon('crown', 'crn')); q.appendChild(fw);
+        q.appendChild(h('small', '', e.name)); const pi = icon(PROF_ICON[e.prof] || 'p_none', 'spi'); if (e.age >= 16 && e.prof) q.appendChild(pi);
+        q.onclick = () => goPerson(e.id, 'info'); fg.appendChild(q);
+      });
+      c.appendChild(fg);
+      /* пары и ссоры */
       const pairs = [], feuds = [];
-      for (let i = 0; i < m.length; i++) for (let j = i + 1; j < m.length; j++) {
-        const a = m[i], b = m[j];
-        if (a.mate === b.id) pairs.push([a, b, a.mst === 2 ? 'женаты' : 'встречаются']);
-        else if ((a.rel[b.id] || 0) < 0 && (b.rel[a.id] || 0) < 0) feuds.push([a, b]);
-      }
+      for (let i = 0; i < m.length; i++) for (let j = i + 1; j < m.length; j++) { const a = m[i], b = m[j]; if (a.mate === b.id) pairs.push([a, b, a.mst === 2 ? 'женаты' : 'вместе']); else if ((a.rel[b.id] || 0) < 0 && (b.rel[a.id] || 0) < 0) feuds.push([a, b]); }
       if (pairs.length || feuds.length) {
         const rel = h('div', 'srel');
-        for (const [a, b, t] of pairs) { const q = h('button', 'pchip love'); q.innerHTML = '♥ '; q.appendChild(document.createTextNode(a.name + ' и ' + b.name + ' — ' + t)); q.onclick = () => goPerson(a.id, 'rel'); rel.appendChild(q); }
-        for (const [a, b] of feuds) { const q = h('button', 'pchip feud'); q.textContent = '✕ ' + a.name + ' и ' + b.name + ' — в ссоре'; q.onclick = () => goPerson(a.id, 'rel'); rel.appendChild(q); }
+        for (const [a, b, t] of pairs) { const q = h('button', 'pchip love'); q.appendChild(icon('a_love', 'pi16')); q.appendChild(h('span', '', a.name + ' и ' + b.name + ' · ' + t)); q.onclick = () => goPerson(a.id, 'rel'); rel.appendChild(q); }
+        for (const [a, b] of feuds) { const q = h('button', 'pchip feud'); q.appendChild(icon('m_angry', 'pi16')); q.appendChild(h('span', '', a.name + ' и ' + b.name + ' · ссора')); q.onclick = () => goPerson(a.id, 'rel'); rel.appendChild(q); }
         c.appendChild(rel);
       }
-      /* соседи: отношения и войны */
-      { const others = Town.socs.filter((o) => o !== s); if (others.length) { const dl = h('div', 'srel'); for (const o of others) { const v = s.rel[o.id] || 0, war = s.war && s.war[o.id], q = h('span', 'pchip ' + (war ? 'feud' : v >= 2 ? 'love' : '')); q.textContent = (war ? '⚔ ' : '') + '«' + o.name + '»: ' + Town.relSocLabel(v, war) + ' (' + v.toFixed(1) + ')'; dl.appendChild(q); } c.appendChild(dl); } }
-      { const armed = m.filter((e) => e.weapon).length; c.appendChild(h('div', 'sprof', 'Вооружены: ' + armed + ' из ' + m.filter((e) => e.age >= 16).length + (s.lost ? ' · павших в последней войне: ' + s.lost : ''))); }
-      if (s.want) c.appendChild(h('div', 'hint', 'Копят на новый дом: торговец докупает недостающее дерево и камень на деньги казны.'));
-      const bs = Houses.list.filter((b) => b.soc === s.id);
-      for (const b of bs) {
-        const r = h('div', 'shouse'), bt = h('b'); r.appendChild(bt); onLive(() => { bt.textContent = b.name + (b.done ? '' : ' — строится ' + Math.round(b.prog * 100) + '%'); });
-        const rooms = h('div', 'srooms');
-        b.rooms.slice().sort((a, c2) => c2.f - a.f || a.i - c2.i).forEach((rm) => {
-          const q = h('span', 'room'), bd = UIA.badge[Houses.ROLES[rm.role].badge]; if (bd) { const i = img(bd, 'ri'); i.classList.remove('smooth'); q.appendChild(i); }
-          const who = rm.owners.map((id) => (Life.byId(id) || {}).name).filter(Boolean);
-          q.appendChild(document.createTextNode((rm.f + 1) + ' эт. · ' + Houses.ROLES[rm.role].n + (who.length ? ' · ' + who.join(', ') : '')));
-          rooms.appendChild(q);
-        });
-        r.appendChild(rooms); c.appendChild(r);
+      /* постройки — строчками; комнаты по нажатию */
+      const bs = Houses.list.filter((b) => b.soc === s.id), mn = Works.mines.filter((o) => o.soc === s.id).length, dk = Works.docks.filter((o) => o.soc === s.id).length, rd = Works.rods.filter((o) => o.soc === s.id).length;
+      if (bs.length || mn || dk || rd) {
+        c.appendChild(h('div', 'lbl', 'Постройки'));
+        for (const b of bs) {
+          const key = 'b' + b.id, r = h('button', 'sb2'); r.appendChild(icon(b.done ? 'house' : 'build', 'pi16'));
+          const bt = h('span'); r.appendChild(bt); const bm = h('small'); r.appendChild(bm);
+          onLive(() => { bt.textContent = b.name; bm.textContent = b.ruin ? 'рушится' : Houses.damaged(b) ? 'повреждён' : b.done ? b.rooms.length + ' комн.' : 'строится ' + Math.round(b.prog * 100) + '%'; });
+          r.onclick = () => { pv.fold[key] = !pv.fold[key]; Snd.sfx('tap'); openPanel('people', true); };
+          c.appendChild(r);
+          if (pv.fold[key]) {
+            const rooms = h('div', 'srooms');
+            b.rooms.slice().sort((a, c2) => c2.f - a.f || a.i - c2.i).forEach((rm) => {
+              const q = h('span', 'room'), bd = UIA.badge[Houses.ROLES[rm.role].badge]; if (bd) { const i = img(bd, 'ri'); i.classList.remove('smooth'); q.appendChild(i); }
+              const who = rm.owners.map((id) => (Life.byId(id) || {}).name).filter(Boolean);
+              q.appendChild(document.createTextNode((rm.f + 1) + ' эт. · ' + Houses.ROLES[rm.role].n + (who.length ? ' · ' + who.join(', ') : '')));
+              rooms.appendChild(q);
+            });
+            c.appendChild(rooms);
+          }
+        }
+        const extra = [[mn, 'шахт'], [dk, 'причал'], [rd, 'громоотвод']].filter(([n]) => n).map(([n, t]) => t + ': ' + n).join(' · ');
+        if (extra) c.appendChild(h('div', 'hint', extra));
       }
-      if (!bs.length) c.appendChild(h('div', 'hint', 'Своих домов пока нет.'));
+      if (s.want) c.appendChild(h('div', 'hint', 'Копят на новый дом.'));
       box.appendChild(c);
     }
   }
+  /* ---------- летопись ---------- */
+  const LOG_ICON = [[/застал/, 'm_angry'], [/предложение/, 'a_love'], [/ждёт ребёнка|Родил|родила/, 'heart'], [/Тайно/, 'a_love'], [/цветок/, 'heart'], [/Война/, 'sword'], [/Мир /, 'a_talk'], [/пал[а]? в бою|погиб/, 'm_sad'], [/поженил/, 'a_love'], [/заселил/, 'house'], [/заложил|Достроено/, 'build'], [/рушится|разрушен/, 'stone'], [/Основано|Раскол|опустело/, 'flag'], [/глава/, 'crown'], [/сделал/, 'sword'], [/подрались/, 'm_angry'], [/теперь/, 'p_none'], [/Спор/, 'm_angry']];
   function logView(box) {
-    if (!Town.log.length) { box.appendChild(h('div', 'hint', 'Летопись пуста.')); return; }
+    if (!Town.log.length) { box.appendChild(h('div', 'pempty', 'Летопись пуста.')); return; }
     const l = h('div', 'llist');
-    for (const it of Town.log) { const r = h('div', 'lrow' + (it.big ? ' big' : '')); if (it.c) r.style.setProperty('--sc', it.c); r.appendChild(h('small', '', it.t)); r.appendChild(h('span', '', it.txt)); l.appendChild(r); }
+    for (const it of Town.log) {
+      const r = h('div', 'lrow' + (it.big ? ' big' : '')); if (it.c) r.style.setProperty('--sc', it.c);
+      const ic = (LOG_ICON.find(([re]) => re.test(it.txt)) || [0, 'scroll'])[1]; r.appendChild(icon(ic, 'lic'));
+      const c = h('div'); c.appendChild(h('small', '', it.t)); c.appendChild(h('span', '', it.txt)); r.appendChild(c); l.appendChild(r);
+    }
     box.appendChild(l);
+  }
+  /* ---------- слежка камерой ---------- */
+  const followChip = h('button', 'follow'); followChip.style.display = 'none'; stage.appendChild(followChip);
+  followChip.onclick = () => setFollow(null);
+  function setFollow(id) {
+    followId = id; const e = id != null ? Life.byId(id) : null;
+    if (e) { People.setSel(e.id); followChip.innerHTML = ''; followChip.appendChild(face(e, 'rf')); followChip.appendChild(h('span', '', 'Слежу: ' + e.name)); followChip.appendChild(h('em', '', '✕')); followChip.style.display = 'flex'; }
+    else { followChip.style.display = 'none'; }
+  }
+  /* камера плавно держит выбранного в середине видимой части сцены (над открытой панелью) */
+  function followStep() {
+    if (followId == null) return;
+    const e = Life.byId(followId); if (!e || e.dying) { setFollow(null); return; }
+    const st = stage.getBoundingClientRect(), pr = panel.classList.contains('open') ? panel.getBoundingClientRect() : null;
+    const visBottom = pr ? Math.min(st.bottom, pr.top) : st.bottom, cyScreen = (st.top + visBottom) / 2 - (st.top + st.height / 2);
+    const z = Math.max(view.z, 2.4), px = (e.x / W - .5) * W * cs, py = ((e.y - 6) / H - .5) * H * cs;
+    view.z += (z - view.z) * .12; view.x += (-px * view.z - view.x) * .12; view.y += (-py * view.z + cyScreen - view.y) * .12; applyView();
   }
 
   /* ---------- панели ---------- */
@@ -449,6 +621,10 @@
     const titles = { elements: 'Элементы', brush: 'Кисть', weather: 'Небо и погода', world: 'Мир', goals: G.camp ? 'Цели дня' : 'Мудрец', settings: 'Настройки', people: 'Жители' };
     const hd = h('div', 'phead'); hd.appendChild(h('span', '', titles[name])); const x = h('button', 'x'); x.appendChild(img(Icons.ui('close'))); x.onclick = closePanel; hd.appendChild(x);
     const body = h('div', 'pbody'); panel.append(hd, body);
+    /* ручка шторки: потянуть вниз — закрыть (удобно на телефоне) */
+    const grip = h('div', 'pgrip'); panel.prepend(grip);
+    let sy = null; const down = (ev) => { sy = ev.clientY; }, upf = (ev) => { if (sy != null && ev.clientY - sy > 50) closePanel(); sy = null; };
+    for (const el of [grip, hd]) { el.addEventListener('pointerdown', down); el.addEventListener('pointerup', upf); }
     ({ elements: pElements, brush: pBrush, weather: pWeather, world: pWorld, goals: pGoals, settings: pSettings, people: pPeople })[name](body);
     panel.classList.add('open'); updateHud();
   }
@@ -504,7 +680,7 @@
     { n: 'Лето', c: '#f6c84e', t: 26, txt: 'Тепло и ясно, изредка грозы. Люди купаются и рыбачат, ходят в лёгкой одежде.' },
     { n: 'Осень', c: '#e0782a', t: 10, txt: 'Листва желтеет и краснеет, моросят дожди. Люди заготавливают дрова и надевают шарфы.' },
     { n: 'Зима', c: '#8ac8f0', t: -1, txt: 'Снегопады, деревья в инее. Люди в шапках, греются у костров и сидят по домам.' }];
-  const SEASON_LEN = [[3, '3 дня'], [6, '6 дней'], [12, '12 дней'], [24, '24 дня']];   /* сколько суток длится каждое время года */
+  const SEASON_LEN = [[2, '2 дня'], [3, '3 дня'], [6, '6 дней'], [12, '12 дней'], [24, '24 дня']];   /* сколько суток длится каждое время года */
   const SPEEDS = [[0, 'Стоит'], [240, 'Обычный'], [80, 'Быстрый'], [24, 'Очень быстрый'], [6, 'Вихрь']];
   const dateText = () => { const Y = Sky.Y; return SEASON[Y.season].n + ' · день ' + (Y.dos + 1) + ' · год ' + Y.year + ' · ' + Math.round(Sky.seasonTemp()) + '°'; };
   const WSEAS = [[.66, .28, 0, .06], [.8, .1, 0, .1], [.62, .32, 0, .06], [.68, 0, .32, 0]];   /* вес: ясно, дождь, снег, гроза — по сезонам; ясно чаще, чтобы мир не заливало водой и снегом */
@@ -546,10 +722,8 @@
   function pWorld(body) {
     const col = h('div', 'row'); body.appendChild(col);
     const add = (t, ic, f, cls) => { const b = btn(t, false, 'wide ' + (cls || ''), ic); b.onclick = f; col.appendChild(b); };
-    add('Новый остров', 'globe', () => confirmBox('Начать новый остров? Текущий мир пропадёт.', () => { pushUndo(); newWorld('island'); closePanel(); }));
-    add('Новое море', 'drop', () => confirmBox('Создать пустое море?', () => { pushUndo(); newWorld('sea'); closePanel(); }));
-    add('Пустота', 'eraser', () => confirmBox('Очистить весь мир?', () => { pushUndo(); newWorld('void'); closePanel(); }));
-    { const zr = h('div', 'row'); zr.appendChild(h('div', 'lbl', 'Масштаб поля (колесо мыши, щипок двумя пальцами, правая кнопка двигает)')); [['−', () => zoomBtn(1 / 1.5)], ['+', () => zoomBtn(1.5)], ['1×', () => { view.z = 1; view.x = 0; view.y = 0; applyView(); }]].forEach((q) => { const b = btn(q[0], false, ''); b.onclick = () => { q[1](); Snd.sfx('tap'); }; zr.appendChild(b); }); body.appendChild(zr); }
+    add('Новый мир', 'globe', () => confirmBox('Начать новый пустой мир? Текущий пропадёт (его можно сохранить в галерею).', () => { pushUndo(); newWorld('void'); closePanel(); }));
+    { const zr = h('div', 'row'); zr.appendChild(h('div', 'lbl', 'Масштаб: колесо мыши или щипок; двигать — два пальца, правая/средняя кнопка, стрелки или WASD, «Рука» сверху; 0 — весь мир')); [['−', () => zoomBtn(1 / 1.5)], ['+', () => zoomBtn(1.5)], ['1×', () => { view.z = 1; view.x = 0; view.y = 0; applyView(); }]].forEach((q) => { const b = btn(q[0], false, ''); b.onclick = () => { q[1](); Snd.sfx('tap'); }; zr.appendChild(b); }); body.appendChild(zr); }
     add('Сохранить в галерею', 'save', () => { closePanel(); galleryModal(true); });
     add('Галерея', 'folder', () => { closePanel(); galleryModal(false); });
     add('Настройки', 'gear', () => openPanel('settings', true));
@@ -628,6 +802,7 @@
     const i = y * W + x, t = Sim.A.type[i];
     if (t === AIR || (G.replace && t !== WALL && t !== SKY)) { Sim.put(i, id); sowAt = { x, y }; }
   }
+  let noticeAcc = null, aim = null;
   function stamp(x, y, first) {
     const k = G.sel, sq = G.shape === 'sq';
     if (isTool(k)) {
@@ -641,6 +816,11 @@
       else if (t === 'HEAT') Sim.heatArea(x, y, G.size, 90);
       else if (t === 'COLD') Sim.heatArea(x, y, G.size, -90);
       else if (t === 'WIND') { Sim.pushArea(x, y, G.size + 2, ptr.x - ptr.lx, ptr.y - ptr.ly); }
+      else if (typeof Arms !== 'undefined' && Arms.KINDS[t]) {
+        /* взрывчатка: что бросают и на что целятся — тянут пальцем (aim), остальное ставится нажатием */
+        if (Arms.KINDS[t].aim) { if (first) aim = { k: t, x, y }; }
+        else if (first || ptr.held % 30 === 0) Arms.spawn(t, x, y);
+      }
       return;
     }
     const id = E[k];
@@ -648,6 +828,9 @@
     const solid = KIND[id] === K.SOLID || KIND[id] === K.SPEC;
     const dens = (solid || G.size <= 1) ? 1 : .55;
     Sim.paint(x, y, G.size, id, sq, G.replace, dens);
+    /* жители замечают, что рядом вдруг появилось много чего-то */
+    if (!noticeAcc || noticeAcc.id !== id || Math.abs(noticeAcc.x - x) > 40) noticeAcc = { x, y, id, n: 0 };
+    noticeAcc.n += Math.max(1, Math.round(G.size * G.size * dens)); noticeAcc.x = (noticeAcc.x * 3 + x) / 4; noticeAcc.y = (noticeAcc.y * 3 + y) / 4;
   }
   function strokeLine(x0, y0, x1, y1, fn) {
     const dx = x1 - x0, dy = y1 - y0, n = Math.max(Math.abs(dx), Math.abs(dy)), stepSz = Math.max(1, Math.floor(G.size * .8));
@@ -670,12 +853,17 @@
     else { const id = isTool(G.sel) ? 0 : E[G.sel]; for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) { if (x < 1 || x >= W - 1 || y < 1 || y >= H - 1) continue; const i = y * W + x, cur = Sim.A.type[i]; if (G.sel === 't:ERASE') { if (cur !== WALL && cur !== SKY) Sim.put(i, 0); } else if (id && (cur === AIR || G.replace)) Sim.put(i, id); } }
   }
   const { AIR, WALL, SKY } = E;
+  /* кнопки приближения для режима «Рука» */
+  const zoomCtl = h('div', 'zoomctl'); zoomCtl.style.display = 'none'; stage.appendChild(zoomCtl);
+  [['+', 1.4], ['−', 1 / 1.4], ['⟲', 0]].forEach(([t, k]) => { const b = h('button', 'pbtn sq', t); b.onclick = () => { if (followId != null) setFollow(null); if (k) zoomBtn(k); else { view.z = 1; view.x = 0; view.y = 0; applyView(); } Snd.sfx('tap'); }; zoomCtl.appendChild(b); });
   field.addEventListener('pointerdown', (e) => {
     if (title.classList.contains('hide') === false) return;
-    if (e.pointerType === 'touch') { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (tp.size === 2) { ptr.down = false; fxc.clearRect(0, 0, W, H); pinch = pinchState(); try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; } }
+    if (e.pointerType === 'touch') { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (tp.size === 2) { ptr.down = false; fxc.clearRect(0, 0, W, H); if (followId != null) setFollow(null); pinch = pinchState(); try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; } }
+    /* «Рука»: только сдвиг и приближение; короткое нажатие на человечка — его карточка, ничего не ставится */
+    if (G.panMode && e.button !== 2) { if (followId != null) setFollow(null); panning = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, who: personAt(e, true) }; try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; }
     /* инструмент «Люди» и нажали прямо на человечка: короткое нажатие ставит нового, долгое (полсекунды) открывает карточку */
     if (e.button !== 2 && personTool()) { const who = personAt(e); if (who) { const [cx0, cy0] = cellOf(e); lp = { x: cx0, y: cy0, cx: e.clientX, cy: e.clientY, who }; clearTimeout(lpT); lpT = setTimeout(() => { if (lp) { const o = lp.who; lp = null; Snd.sfx('pop'); openPerson(o); } }, 480); e.preventDefault(); return; } }
-    if (e.button === 2) { panning = { x: e.clientX, y: e.clientY }; try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; }
+    if (e.button === 2 || e.button === 1 || G.panMode) { if (followId != null) setFollow(null); panning = { x: e.clientX, y: e.clientY }; try { field.setPointerCapture(e.pointerId); } catch (er) { }; e.preventDefault(); return; }
     Snd.init(); Snd.resume(); try { field.setPointerCapture(e.pointerId); } catch (er) { }; const [x, y] = cellOf(e);
     ptr.down = true; ptr.type = e.pointerType; ptr.x = ptr.lx = ptr.sx = x; ptr.y = ptr.ly = ptr.sy = y; ptr.held = 0; ptr.inside = true;
     if (openedPanel) closePanel();
@@ -689,16 +877,25 @@
     if (tp.has(e.pointerId)) { tp.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pinch && tp.size >= 2) { const n = pinchState(); zoomAt(n.cx, n.cy, n.d / pinch.d); view.x += n.cx - pinch.cx; view.y += n.cy - pinch.cy; applyView(); pinch = n; return; } }
     const [x, y] = cellOf(e); ptr.inside = true; ptr.lx = ptr.x; ptr.ly = ptr.y; ptr.x = x; ptr.y = y;
     if (e.pointerType === 'mouse' || ptr.down) showRing(e);
+    if (ptr.down && aim) { fxc.clearRect(0, 0, W, H); Arms.preview(fxc, aim.k, aim.x, aim.y, x, y); return; }
     if (ptr.down) {
       if (G.mode === 'line' || G.mode === 'rect') { if (!isTool(G.sel) || G.sel === 't:ERASE') previewShape(ptr.sx, ptr.sy, x, y); }
       else if (G.mode === 'brush' || isTool(G.sel)) { if (!isTool(G.sel) || ['ERASE', 'HEAT', 'COLD'].indexOf(G.sel.slice(2)) >= 0) strokeLine(ptr.lx, ptr.ly, x, y, (a, b) => stamp(a, b, false)); }
     }
   });
   const endStroke = (e) => {
-    tp.delete(e.pointerId); if (tp.size < 2) pinch = null; if (panning && e.button !== undefined) panning = null;
+    tp.delete(e.pointerId); if (tp.size < 2) pinch = null;
+    if (panning && e.button !== undefined) { const p = panning; panning = null; if (p.who && Math.hypot(e.clientX - p.sx, e.clientY - p.sy) < 8) { Snd.sfx('pop'); openPerson(p.who); } if (G.panMode) return; }
     /* короткое нажатие на человечка инструментом «Люди» — просто ставим нового */
     if (lp) { clearTimeout(lpT); const q = lp; lp = null; if (openedPanel) closePanel(); pushUndo(); stamp(q.x, q.y, true); return; }
     if (!ptr.down) return; ptr.down = false;
+    if (aim) {   /* бросок или пуск по протянутому отрезку */
+      const [x, y] = cellOf(e), a = aim; aim = null; fxc.clearRect(0, 0, W, H);
+      if (a.k === 'ROCKET') { if (Math.hypot(x - a.x, y - a.y) < 3) Arms.spawn('ROCKET', x, y); else Arms.spawn('ROCKET', a.x, a.y, 0, 0, x, y); }
+      else { const [vx, vy] = Arms.throwVel(a.x, a.y, x, y); Arms.spawn(a.k, a.x, a.y, vx, vy); }
+      if (e.pointerType !== 'mouse') ring.style.display = 'none';
+      return;
+    }
     if ((G.mode === 'line' || G.mode === 'rect') && (!isTool(G.sel) || G.sel === 't:ERASE')) { const [x, y] = cellOf(e); commitShape(ptr.sx, ptr.sy, x, y); }
     if (e.pointerType !== 'mouse') ring.style.display = 'none';
   };
@@ -711,6 +908,7 @@
   const TIPS = ['Хочешь построить мир? Начнём с песка!', 'Земля и вода — это грязь. А грязь — это жизнь!', 'Поджигай осторожно: огонь любит деревья.', 'Молния плавит песок в стекло. Проверим?', 'Семя у воды вырастет в дерево.', 'Соль топит лёд. Разве ты не знал?'];
   function buildTitle() {
     title.innerHTML = '';
+    { const art = (typeof BGA !== 'undefined') && (BGA[['plains_spring', 'plains', 'plains_autumn', 'plains_winter'][Sky.Y.season]] || BGA.plains); if (art) title.style.setProperty('--tbg', 'url(' + art + ')'); }
     const logo = h('div', 'logo'); logo.innerHTML = '<span class="o">ПИКСЕЛИЯ</span><span class="f">ПИКСЕЛИЯ</span>';
     const sub = h('div', 'sub', 'песочница миров');
     const top = h('div'); top.style.textAlign = 'center'; top.append(logo, sub);
@@ -751,28 +949,36 @@
   setInterval(() => { if (!document.hidden && title.classList.contains('hide')) autosave(); }, 20000);
 
   /* ---------- главный цикл ---------- */
-  let last = performance.now(), acc = 0, frameN = 0;
+  let last = performance.now(), acc = 0, frameN = 0, dtS = 1000 / 60;
   Sim.sfx = (n, v) => Snd.sfx(n, v);
   function loop(now) {
     requestAnimationFrame(loop);
     const dt = Math.min(100, now - last); last = now;
-    if (!G.paused) { acc += dt * G.speed; Sky.advance(dt * G.speed); autoWeather(dt); } const stepMs = 1000 / 60; let n = 0;
-    while (acc >= stepMs && n < 5) { Sim.step(); acc -= stepMs; n++; } if (n === 5) acc = 0;
+    /* ровный шаг: время кадра сглаживается (иначе на ×5 за кадр выходит то 4, то 6 шагов — рывки); шаги мира — пока укладываются в 12 мс,
+       небо идёт ровно столько, сколько прошёл мир (на слабом устройстве ускорение мягко проседает, но не дёргается) */
+    dtS += (dt - dtS) * .12; const stepMs = 1000 / 60; let n = 0;
+    if (!G.paused) { acc += dtS * G.speed; const t0 = performance.now(), maxN = G.speed > 1 ? 7 : 3;
+      while (acc >= stepMs && n < maxN && (n === 0 || performance.now() - t0 < 12)) { Sim.step(); acc -= stepMs; n++; }
+      if (acc > stepMs * 2) acc = stepMs * .5; Sky.advance(n * stepMs); autoWeather(dt); }
     if (ptr.down && !G.paused || (ptr.down && G.paused)) { ptr.held++; if (G.mode === 'brush' || isTool(G.sel)) { if (G.sel !== 't:WIND' && !(isTool(G.sel) && G.sel.slice(2) === 'METEOR' && ptr.held % 40)) stamp(ptr.x, ptr.y, false); } }
+    followStep();
     Render.draw(Sim);
     const sh = Sim.shake; { const t = sh > .3 ? 'translate(' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px,' + ((Math.random() - .5) * sh * cs * .5).toFixed(1) + 'px)' : ''; if (t !== shakeT) { shakeT = t; applyView(); } }
-    $('#flash').style.opacity = Sim.bolts.length ? (Math.max.apply(null, Sim.bolts.map((b) => b.ttl)) / 8 * .22).toFixed(2) : 0;
+    $('#flash').style.opacity = Math.max(Sim.bolts.length ? Math.max.apply(null, Sim.bolts.map((b) => b.ttl)) / 8 * .22 : 0, typeof Arms !== 'undefined' ? Math.min(.95, Arms.flash / 40 * 1.1) : 0).toFixed(2);
     frameN++;
     if (frameN % 6 === 0) { Snd.update(Sim.act, Sim.weather); Sim.act.p = Sim.act.l = Sim.act.f = 0; }
     Sim.tod = Sky.time;
     if (cardEnt) { if (Sim.ents.indexOf(cardEnt) < 0) closeCard(); else { if (frameN % 6 === 0) cardText(); placeCard(); } }
     if (frameN % 45 === 0) checkGoals();
     if (frameN % 30 === 0) pvTick();
+    if (frameN % 20 === 0 && noticeAcc && !ptr.down) { if (noticeAcc.n > 24 && Life.notice) Life.notice(noticeAcc.x, noticeAcc.y, noticeAcc.n, noticeAcc.id); noticeAcc = null; }
     if (frameN % 20 === 0) seasonTick();
     if (frameN % 20 === 0 && openedPanel === 'weather' && timeUI && !timeUI.drag) timeUI.showT();
     if (!title.classList.contains('hide')) { titleTimer++; if (titleTimer % 420 === 200) Sim.lightning(Math.floor(W * (.15 + Math.random() * .7))); }
   }
   let rzT = 0; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => layout(false), 220); });
+  /* сцена поменяла размер (полки заполнились, повернули телефон, появилась адресная строка) — мир пересчитывается, чтобы целиком помещаться */
+  if (window.ResizeObserver) { let lastSz = ''; new ResizeObserver(() => { const k = stage.clientWidth + 'x' + stage.clientHeight; if (k === lastSz) return; lastSz = k; clearTimeout(rzT); rzT = setTimeout(() => layout(false), 150); }).observe(stage); }
   window.addEventListener('keydown', (e) => {
     if (e.target && e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { G.paused = !G.paused; updateHud(); e.preventDefault(); }
@@ -780,11 +986,21 @@
     else if (e.key === '[') { G.size = Math.max(1, G.size - 1); showRing(null); }
     else if (e.key === ']') { G.size = Math.min(14, G.size + 1); showRing(null); }
     else if (e.key === 'e') toggleErase();
+    else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'a', 'd', 'w', 's', 'ф', 'в', 'ц', 'ы'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+      const st = 60, k = e.key; if (followId != null) setFollow(null);
+      if (k === 'ArrowLeft' || k === 'a' || k === 'ф') view.x += st; else if (k === 'ArrowRight' || k === 'd' || k === 'в') view.x -= st; else if (k === 'ArrowUp' || k === 'w' || k === 'ц') view.y += st; else view.y -= st;
+      applyView(); e.preventDefault();
+    }
+    else if (e.key === '+' || e.key === '=') zoomBtn(1.25);
+    else if (e.key === '-' || e.key === '_') zoomBtn(1 / 1.25);
+    else if (e.key === '0') { view.z = 1; view.x = 0; view.y = 0; applyView(); }
   });
 
   /* ---------- старт ---------- */
   /* ветка с осенними листьями для углов панелей (раньше — зелёная лоза из Icons.vine) */
   document.documentElement.style.setProperty('--vine', 'url(' + ((UIA.deco && UIA.deco.branch) || Icons.vine()) + ')');
+  /* детали из атласа интерфейса (scripts/build_pixelia_ui.py: ui_parts): лента заголовка, уголки, крестик, стрелки, ромб ползунка */
+  { const ds = document.documentElement.style, P = UIA.part || {}; for (const k in P) ds.setProperty('--p-' + k, 'url(' + P[k] + ')'); }
   stage.style.backgroundImage = 'url(' + rockTile() + ')'; stage.style.backgroundSize = '144px 144px'; stage.style.imageRendering = 'pixelated';
   Snd.on = G.sound;
   if (typeof Town !== 'undefined') Town.onNote = (t) => { if (title.classList.contains('hide')) toast(t); };

@@ -214,7 +214,7 @@ const Render = (function () {
     }
     for (const e of S.ents) if (e.burn > 0) { const cx = Math.floor(e.x), fy = Math.round(e.y), li = (fy >> 1) * lw3 + (cx >> 1) * 3; if (li >= 0 && li < light.length - 2) { light[li] += 1.4; light[li + 1] += .6; light[li + 2] += .1; } }
     /* дома: окна, лампы и очаги светят ночью; задняя стена и мебель — на своём слое за миром */
-    if (typeof Houses !== 'undefined') { const nt = Sky.Y.night || 0; Houses.lights((x, y, r, g, b) => { const yy = (y | 0) >> 1, xx = (x | 0) >> 1; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) return; const li = yy * lw3 + xx * 3; light[li] += r; light[li + 1] += g; light[li + 2] += b; }, nt); Houses.drawBg(am.amb, am.ambKey, nt); }
+    if (typeof Houses !== 'undefined') { const nt = Sky.Y.night || 0; Houses.lights((x, y, r, g, b) => { const yy = (y | 0) >> 1, xx = (x | 0) >> 1; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) return; const li = yy * lw3 + xx * 3; light[li] += r; light[li + 1] += g; light[li + 2] += b; }, nt); Houses.drawBg(am.amb, am.ambKey, nt); if (typeof Works !== 'undefined') Works.lights((x, y, r, g, b) => { const yy = (y | 0) >> 1, xx = (x | 0) >> 1; if (yy < 0 || yy >= lh || xx < 0 || xx >= lw) return; const li = yy * lw3 + xx * 3; light[li] += r; light[li + 1] += g; light[li + 2] += b; }, nt); }
     if (typeof People !== 'undefined') People.draw(S.ents, S.frame, am.amb, am.ambKey, lightAt);
     /* молнии */
     for (const bolt of S.bolts) {

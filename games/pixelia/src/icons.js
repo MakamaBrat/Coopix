@@ -41,6 +41,7 @@ const Icons = (function () {
     sage: ['......bB', '.....bbB', '.....bbyB', '....bbbbB', '...bbbbbbB', '.BBBBBBBBBBB', '..WpppppppW', '..WpkpppkpW', '..WwwpppwwW', '...wwwwwww', '...wwwwwwW', '....wwwwW', '.....wwW'],
     star: ['......gg', '.....yggG', '.....yggG', 'yyyyyyggggGGGG', '.yyyyyggggGGG', '..yyyyggggGG', '...yyyggggG', '...yyggggGG', '..yyggG.gGGG', '..yggG...gGG', '.ygG......GG', '.gG........G'],
     home: ['......rr', '.....rrrR', '....rrrrrR', '...rrrrrrrR', '..rrrrrrrrrR', '.rrrrrrrrrrrR', 'RRRRRRRRRRRRRR', '.ssssssssssss', '.sbbsssmmMsss', '.sbbsssmmMsss', '.ssssssmmMsss', '.MMMMMMMMMMMM'],
+    hand: ['....pp.pp.....', '....pp.pp.pp..', '.pp.pp.pp.pp..', '.pp.pp.pp.pp..', '.pp.pp.pp.pp..', '.pppppppppPp..', '.pppppppppPp.pp', '.ppppppppppPpp', '..ppppppppPPp.', '..pppppppPPp..', '...ppppppPp...', '....PPPPPP....'],
     human: ['....MMMMM', '...MMMMMMM', '...MpppppM', '...pkpppkp', '...ppppppp', '....ppPpp', '..rrrrrrrrr', '.prrrrrrrrrp', '.prrrrrrrrrp', '...BBBBBBB', '...BBB.BBB', '...BBB.BBB', '...MMM.MMM'],
     zombie: ['....fffff', '...fEfffEf', '...EeeeeeE', '...ererrere', '...eeeeeee', '....eeEee', '..NNNNNNNNN', '.eNNNdNNNNNe', '.eNNNNNNdNNe', '...dddddddd', '...ddd.ddd', '...ddd.ddd', '...MMM.MMM'],
     drop: ['......b', '.....bbb', '.....bbb', '....bbbbb', '...bbbbbbb', '..bcbbbbbbb', '.bcbbbbbbbbB', '.bcbbbbbbbbB', '.bbbbbbbbbbB', '.bbbbbbbbbBB', '..bbbbbbbBB', '...bBBBBBB'],

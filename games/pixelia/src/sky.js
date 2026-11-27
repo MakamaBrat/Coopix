@@ -11,7 +11,7 @@ const Sky = (function () {
   const LOCKS = ['auto', 'forest', 'desert', 'snow', 'rock', 'volcano', 'sea', 'beach', 'cave'];
   const HZ = [.62, .62, .62, .82, .82, .62, .62];   /* линия горизонта по сценам: у моря выше */
   const DAY_SEC = 240, SC = 2;
-  const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false, daySec: DAY_SEC, slen: 12, season: 1, dos: 0, year: 1, sp: .25, sblend: 0 };
+  const Y = { time: .3, auto: true, lock: 'auto', day: 0, ov: 0, night: 0, ambKey: 0, amb: [1, 1, 1], cave: false, daySec: DAY_SEC, slen: 3, season: 1, dos: 0, year: 1, sp: .25, sblend: 0 };
   const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
   const c255 = (v) => v < 0 ? 0 : v > 255 ? 255 : v | 0;
   const sstep = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
@@ -186,7 +186,7 @@ const Sky = (function () {
   }
   function rebuildSky() {
     if (Y.cave) { buildCave(); return; }
-    const e = elev(), cols = skyColors(e), hz = Math.max(8, hzCur), zw = .035;
+    const e = elev(), cols = skyColors(e), hz = Math.max(8, hzCur), zw = .05;   /* переходы между полосами шире — без резких ступеней */
     hor = cols[6];
     const p32 = cols.map(px3), c0 = new Uint32Array(H), c1 = new Uint32Array(H), uu = new Float32Array(H);
     for (let y = 0; y < H; y++) {
@@ -195,8 +195,8 @@ const Sky = (function () {
       if (k > 0) { c0[y] = p32[k - 1]; c1[y] = p32[k]; uu[y] = (t - (BANDS[k] - zw)) / (2 * zw); } else { c0[y] = p32[Math.min(i, 6)]; uu[y] = -1; }
     }
     for (let y = 0; y < H; y++) {
-      const u = uu[y], a = c0[y], b = c1[y], o = y * W, ty = (y & 3) << 2;
-      if (u < 0) { for (let x = 0; x < W; x++) skyBuf[o + x] = a; } else for (let x = 0; x < W; x++) skyBuf[o + x] = u > BAY[ty | (x & 3)] ? b : a;
+      const u = uu[y], a = c0[y], b = c1[y], o = y * W, ty = ((y / SC | 0) & 3) << 2;   /* растр шагом в клетку мира, как пиксели картинок */
+      if (u < 0) { for (let x = 0; x < W; x++) skyBuf[o + x] = a; } else for (let x = 0; x < W; x++) skyBuf[o + x] = u > BAY[ty | ((x / SC | 0) & 3)] ? b : a;
     }
   }
   function buildCave() {
@@ -410,16 +410,21 @@ const Sky = (function () {
       im.src = BGA[k];
     }
   }
-  /* картинка сцены в размере фона: горизонт картинки ставится на горизонт неба, по бокам обрезается по центру, низ дотягивается последней строкой */
+  /* картинка сцены в размере фона: целым увеличением, горизонт картинки на горизонте неба, по бокам обрезается по центру */
   function scenePix(b, nm) {
     const name = nm || Object.keys(ART).find((k) => ART[k] === b), im = name && artImg[name]; if (!im) return null;
     const key = name + W + 'x' + H; if (artPix[key]) return artPix[key];
-    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
     /* картинка всегда покрывает всю ширину одним куском (без зеркальных копий по бокам): масштаб — больший из «горизонт на месте» и «во всю ширину»;
        горизонт картинки стоит на горизонте неба, лишнее уходит вниз за край, на узком экране бока обрезаются по центру */
-    const iw = im.width, ih = im.height, hzT = H * HZ[b], sc = Math.max(hzT / (HFR[name] * ih), W / iw), pw = iw * sc, ox = (W - pw) / 2, oy = hzT - HFR[name] * ih * sc, bot = oy + ih * sc;
-    x.drawImage(im, ox, oy, pw, ih * sc);
-    if (bot < H) x.drawImage(im, 0, ih - 2, iw, 2, ox, bot - 1, pw, H - bot + 2);
+    /* картинка уже на своей пиксельной сетке (scripts/build_pixelia_art.py): рисуем её целым увеличением без сглаживания,
+       пиксель картинки = клетка мира (SC точек фона); если не закрывает поле — увеличиваем ещё на целое число клеток.
+       Горизонт картинки стоит на горизонте неба, сдвиги кратны клетке — пиксели фона лежат ровно на сетке мира */
+    const iw = im.width, ih = im.height, hf = HFR[name], hzT = H * HZ[b];
+    let k = SC; while (iw * k < W || hf * ih * k < hzT || (1 - hf) * ih * k < H - hzT) k += SC;
+    const pw = iw * k, ph = ih * k, ox = Math.round((W - pw) / 2 / SC) * SC;
+    let oy = Math.round((hzT - hf * ih * k) / SC) * SC; oy = Math.min(0, Math.max(H - ph, oy));
+    x.drawImage(im, ox, oy, pw, ph);
     return artPix[key] = x.getImageData(0, 0, W, H).data;
   }
   /* слой сезона: если для времени года есть своя картинка — она без окраски, иначе летняя с окраской (осенью жёлтая, зимой в инее, весной ярче) */
@@ -751,9 +756,9 @@ const Sky = (function () {
   function seasonTemp() { return lerp(TEMPS[Y.season], TEMPS[(Y.season + 1) & 3], sTrans()); }
   function advance(dtMs) {
     if (!Y.auto) return;
-    /* глубокая ночь (после сумерек и до рассвета) идёт вдвое быстрее: ночь вдвое короче, закат и рассвет — как были */
+    /* глубокая ночь (после сумерек и до рассвета) идёт в 3,33 раза быстрее (на 40% короче прежней), день — в 1,25 раза (на 20% короче) */
     const deep = Y.time > .8 || Y.time < .2;
-    Y.time += dtMs / 1000 / Y.daySec * (deep ? 2 : 1);
+    Y.time += dtMs / 1000 / Y.daySec * (deep ? 10 / 3 / 1.1 : 1.25 / 1.1);   /* и всё вместе — на 10% длиннее */
     while (Y.time >= 1) { Y.time -= 1; Y.day++; }
     calSync();
   }
@@ -788,7 +793,7 @@ const Sky = (function () {
       if (lockB >= 0) scene = lockB;
     }
     if (o.slen !== undefined) {
-      const L = [3, 6, 12, 24].indexOf(+o.slen) >= 0 ? +o.slen : 12;
+      const L = [2, 3, 6, 12, 24].indexOf(+o.slen) >= 0 ? +o.slen : 3;
       /* при смене длины сезона остаёмся в том же сезоне и на той же доле его */
       if (o.day === undefined && L !== Y.slen) { calSync(); const f = Y.dos / Y.slen; Y.day = (Y.year - 1) * 4 * L + Y.season * L + Math.floor(f * L); }
       Y.slen = L;

@@ -107,7 +107,7 @@ const CATS = [
   { id: 'solid', name: 'Твёрдое', icon: 'block', els: ['STONE', 'WALL', 'METAL', 'GLASS', 'WOOD', 'ICE', 'LEAF'] },
   { id: 'life', name: 'Жизнь', icon: 'seed', els: ['SEED', 'CONE', 'FSEED', 'FLY', 't:HUMAN', 't:ZOMBIE'] },
   { id: 'tech', name: 'Механизмы', icon: 'bulb', els: ['SPARK', 'BATT', 'LAMP', 'CLONE', 'VOID'] },
-  { id: 'power', name: 'Силы', icon: 'bolt', els: ['t:LIGHTNING', 't:METEOR', 't:BLAST', 't:WIND', 't:HEAT', 't:COLD'] }
+  { id: 'power', name: 'Силы', icon: 'bolt', els: ['t:LIGHTNING', 't:METEOR', 't:BLAST', 't:BOMB', 't:MINE', 't:DRONE', 't:ROCKET', 't:GRENADE', 't:CLUSTER', 't:GASGREN', 't:SMOKE', 't:FLASH', 't:WIND', 't:HEAT', 't:COLD'] }
 ];
 const TOOLS = {
   'ERASE': { name: 'Ластик', hint: 'Стирает всё под кистью.' },
@@ -118,5 +118,14 @@ const TOOLS = {
   'ZOMBIE': { name: 'Зомби', hint: 'Идёт к людям и заражает их.' },
   'WIND': { name: 'Ветер', hint: 'Води пальцем: толкает газ, дым, снег и песок.' },
   'HEAT': { name: 'Жар', hint: 'Нагревает всё под кистью.' },
-  'COLD': { name: 'Холод', hint: 'Охлаждает всё под кистью.' }
+  'COLD': { name: 'Холод', hint: 'Охлаждает всё под кистью.' },
+  'BOMB': { name: 'Бомба', hint: 'Падает, катится и взрывается через 3 секунды.' },
+  'MINE': { name: 'Мина', hint: 'Ложится на землю и взрывается, когда кто-то подходит.' },
+  'DRONE': { name: 'Дрон', hint: 'Кружит над миром, потом разгоняется и врезается куда-нибудь.' },
+  'ROCKET': { name: 'Ракета', hint: 'Потяни от точки пуска к цели — ракета летит на крестик. Нажми — прилетит сверху.' },
+  'GRENADE': { name: 'Граната', hint: 'Потяни и отпусти — бросок. Взрыв через 2,5 секунды.' },
+  'CLUSTER': { name: 'Осколочная', hint: 'Бросок: взрывается и разбрасывает мелкие бомбочки.' },
+  'GASGREN': { name: 'Газ. граната', hint: 'Бросок: ядовитый газ — люди кашляют и слабеют. Газ горит!' },
+  'SMOKE': { name: 'Дымовуха', hint: 'Бросок: облако дыма.' },
+  'FLASH': { name: 'Светошумовая', hint: 'Бросок: вспышка и грохот, все рядом ослеплены и оглушены.' }
 };

@@ -8,17 +8,17 @@
    Оружие делают из дерева и камня общества (Life: задача arm → Combat.craft); у лесорубов — топор. */
 const Combat = (function () {
   const WEAP = {
-    fist: { n: 'Кулаки', dmg: 6, reach: 3, cd: 34, kb: .4 },
-    club: { n: 'Дубина', dmg: 13, reach: 3.6, cd: 40, kb: .9 },
-    spear: { n: 'Копьё', dmg: 15, reach: 5.5, cd: 44, kb: .6 },
-    axe: { n: 'Топор', dmg: 16, reach: 3.8, cd: 42, kb: .7 },
-    sword: { n: 'Меч', dmg: 22, reach: 4.4, cd: 36, kb: .8 }
+    fist: { n: 'Кулаки', dmg: 6, reach: 10, cd: 30, kb: .4 },
+    club: { n: 'Дубина', dmg: 13, reach: 7.5, cd: 40, kb: .9 },
+    spear: { n: 'Копьё', dmg: 15, reach: 9.5, cd: 44, kb: .6 },
+    axe: { n: 'Топор', dmg: 16, reach: 7.5, cd: 42, kb: .7 },
+    sword: { n: 'Меч', dmg: 22, reach: 8, cd: 36, kb: .8 }
   };
   let S = null;
   const alive = (o) => o && !o.dying;
   const human = (o) => alive(o) && !o.z;
   const adult = (e) => e.age >= 16 && e.age < 62;
-  const fighterOK = (e) => human(e) && adult(e) && e.hp > 35 && !e.sleep;
+  const fighterOK = (e) => human(e) && adult(e) && e.hp > 35 && !e.sleep && !e.preg && e.carriedBy == null && e.heldBy == null && e.rideOn == null;
   const town = () => typeof Town !== 'undefined';
   function warWith(a, b) { if (!town() || a.soc == null || b.soc == null || a.soc === b.soc) return false; const s = Town.byId(a.soc); return !!(s && s.war && s.war[b.soc]); }
   function armedNear(e, r) { let n = 0; for (const o of S.ents) if (o !== e && human(o) && o.weapon && Math.abs(o.x - e.x) < r && Math.abs(o.y - e.y) < 20) n++; return n; }
@@ -48,19 +48,29 @@ const Combat = (function () {
   }
   function stop(e, t) {
     if (t && !t.dying && e.hp < 40) { e.fear = 90; e.dir = t.x > e.x ? -1 : 1; e.txt = 'Отступает'; Life.emote(e, 'broken', 80); }
-    e.fight = null; e.task = null; e.tt = 0;
+    e.fight = null; e.task = null; e.tt = 0; e.face = null;
   }
   function hit(e, t, W) {
-    e.atk = 16;
+    e.dir = e.face = t.x < e.x ? -1 : 1; e.atk = e.weapon ? 16 : 22; e.pside = !e.pside;   /* кулаком — удар держится дольше, чтобы его было видно */
     let dmg = W.dmg * (.75 + Math.random() * .5) * (e.age < 18 ? .7 : 1) * (e.form === 'knight' ? 1.3 : 1) / ((t.ab && t.ab.tough) || 1);
     if (t.z) dmg *= 1.5;   /* по зомби бьют в голову */
-    if (!e.fight.lethal) dmg = Math.min(dmg, Math.max(0, t.hp - 22));   /* кулачная драка не убивает */
-    t.hp -= dmg; t.hurt = 12; t.stun = Math.max(t.stun || 0, 8); t.kx = (t.kx || 0) + e.dir * W.kb;
+    /* драка не насмерть, но изредка удар выходит роковым: кулаком 0,6% за удар, оружием 2% (по ослабевшему — вдвое чаще): примерно одна драка из 15 на кулаках кончается смертью */
+    let fatal = false;
+    if (!e.fight.lethal) { const ch = (e.weapon ? .02 : .006) * (t.hp < 50 ? 2 : 1); if (!t.z && Math.random() < ch) { fatal = true; dmg = Math.max(dmg * 2.5 + 20, t.hp + 1); } else dmg = Math.min(dmg, Math.max(0, t.hp - 22)); }
+    if (e.fight.lethal && !t.z) { dmg *= 1.35; if (t.hp - dmg < 25 && Math.random() < .3) dmg = t.hp + 1; }   /* в битве раны тяжелее, ослабевшего добивают */
+    t.hp -= dmg; t.hurt = 20; t.stun = Math.max(t.stun || 0, 8); t.kx = (t.kx || 0) + e.dir * W.kb;
+    t.hitT = (typeof People !== 'undefined' && People.T != null) ? People.T : S.frame; t.hitD = e.dir; t.hitFist = !e.weapon;   /* вспышка удара у живота */
     if (S.sfx) S.sfx('tap', .35);
     if (t.hp <= 0) {
-      S.die(t, 'slain', (t.z ? 'упокоен: ' : 'убит в бою: ') + e.name);
-      e.kills = (e.kills || 0) + 1; Life.emote(e, t.z ? 'spark' : 'alert', 120);
+      S.die(t, 'slain', t.z ? 'упокоен: ' + e.name : fatal ? 'случайно убит в драке: ' + e.name : 'убит в бою: ' + e.name);
+      if (fatal) { e.fight = null; e.task = null; e.tt = 0; e.fear = 120; e.txt = 'В ужасе: не хотел' + (e.fem ? 'а' : '') + ' убивать'; Life.emote(e, 'cry', 200); if (town()) Town.note(e.name + ' случайно убил' + (e.fem ? 'а' : '') + ' ' + t.name + ' в драке', Town.byId(e.soc), true); }
+      e.kills = (e.kills || 0) + 1; if (!fatal) Life.emote(e, t.z ? 'spark' : 'alert', 120);
       if (!t.z && town()) Town.onSlain(e, t);
+      return;
+    }
+    if (!t.z && human(t) && !e.fight.lethal && t.hp > 0 && Math.random() < (e.weapon ? .05 : .09)) {   /* нокдаун: лежачего не бьют — драка на этом кончается */
+      t.ko = 90; t.stun = Math.max(t.stun || 0, 90); stop(t, e); t.fear = 0; stop(e, t); e.cheerT = 50; Life.emote(e, 'spark', 90); Life.emote(t, 'down', 120);
+      if (town()) Town.note(e.name + ' отправил' + (e.fem ? 'а' : '') + ' ' + t.name + ' в нокдаун', Town.byId(e.soc));
       return;
     }
     if (!t.z && human(t)) {
@@ -71,18 +81,28 @@ const Combat = (function () {
   /* шаг боя: true — бой ещё идёт и человечком управляет он */
   function step(e) {
     const t = Life.byId(e.fight.t);
-    const lim = e.fight.lethal ? 28 : 40;
+    const lim = e.fight.lethal ? 12 : 40;   /* на войне бьются почти до конца */
     if (!t || t.dying || (!e.fight.lethal && t.hp < 30) || e.hp < lim || S.frame - e.fight.start > 1800) { stop(e, t); return false; }
     if (e.fight.lethal && !t.z && !warWith(e, t)) { stop(e, null); Life.emote(e, 'note', 80); return false; }   /* заключили мир — бой окончен */
     const W = WEAP[e.weapon || 'fist'], dx = t.x - e.x, adx = Math.abs(dx);
     if (adx > 140 || Math.abs(t.y - e.y) > 34) { stop(e, null); return false; }
-    e.dir = dx < 0 ? -1 : 1;
+    e.dir = dx < 0 ? -1 : 1; e.face = e.dir;   /* в драке всегда лицом к противнику, даже когда отступает */
     if (adx > W.reach) { e.idle = 0; e.spdk = 1.3; if (adx > 10 && Math.random() < .01) e.jump = true; }
     else {
       e.idle = 1;
-      if (adx < 1.5) { e.idle = 0; e.dir = -e.dir; }   /* не лезет вплотную */
-      if (--e.fight.cd <= 0 && Math.abs(t.y - e.y) < 8) { hit(e, t, W); if (e.fight) e.fight.cd = W.cd + ((Math.random() * 12) | 0); }
+      if (adx < (e.weapon ? 5.5 : 8)) { e.idle = 0; e.dir = -e.dir; }   /* не лезет вплотную: пятится назад, лицом к противнику */
+      else if (--e.fight.cd <= 0 && Math.abs(t.y - e.y) < 8) { hit(e, t, W); if (e.fight) e.fight.cd = W.cd + ((Math.random() * 12) | 0); }
     }
+    return true;
+  }
+  /* война: сначала бойцы собираются строем у края своей деревни (≈12 с), потом идут на вражескую деревню; встретив врага — бой */
+  function march(e) {
+    const s = town() && Town.byId(e.soc), fs = s && Town.byId(e.march.foe);
+    if (!s || !fs || !s.war || !s.war[fs.id] || !fighterOK(e)) { e.march = null; if (e.task === 'march') { e.task = null; e.tt = 0; } return false; }
+    const my = Town.center(s), their = Town.center(fs), dir = Math.sign(their - my) || 1, ready = S.frame > ((s.warAt && s.warAt[fs.id]) || 0) + 700;
+    const slot = ((e.id % 7) - 3) * 2.2, gx = ready ? their - dir * 6 + slot : my + dir * 14 + slot;
+    e.task = 'march'; e.tt = 60; e.txt = ready ? 'Идёт в бой на «' + fs.name + '»' : 'Собирается на битву с «' + fs.name + '»';
+    const dx = gx - e.x; if (Math.abs(dx) < 1.5) { e.idle = 1; e.dir = dir; e.face = dir; } else { e.idle = 0; e.dir = Math.sign(dx); e.spdk = ready ? 1.2 : 1; }
     return true;
   }
   /* вызывается из Life.think каждый такт; true — занятие на этот такт задал бой */
@@ -90,6 +110,7 @@ const Combat = (function () {
     S = sim;
     if (e.prof === 'lumber' && !e.weapon && e.age >= 16) e.weapon = 'axe';
     if (e.fight) { if (step(e)) return true; }
+    if (e.march && (S.frame + e.id) % 15 !== 0) { if (march(e)) return true; }   /* раз в 15 тактов — осмотреться: нет ли врага рядом */
     if ((S.frame + e.id) % 15 || e.sleep) return false;
     /* опасность: безоружный взрослый бросает дела и идёт делать оружие (если есть из чего) */
     if (!e.weapon && fighterOK(e) && e.task !== 'arm' && town() && danger(e)) { const s = Town.byId(e.soc); if (s && s.wood >= 3) e.tt = 0; }
@@ -104,7 +125,20 @@ const Combat = (function () {
         else if (!fighterOK(e) && d < 30) { e.fear = 60; e.dir = o.x > e.x ? -1 : 1; e.txt = 'Прячется от врагов'; }
       }
     }
-    if (best) { start(e, best, true); return true; }
+    if (best) { e.march = null; start(e, best, true); return true; }
+    if (fighterOK(e) && town() && !e.march) { const s = Town.byId(e.soc), foe = s && s.war ? Object.keys(s.war).find((k) => s.war[k]) : null; if (foe != null) { e.march = { foe: +foe }; return march(e); } }
+    /* задиры: «Боец» и «Рыцарь» сами задирают ближайших взрослых — драка до первой слабости (не насмерть), потом передышка */
+    if ((e.form === 'fighter' || e.form === 'knight') && fighterOK(e) && S.frame > (e.aggT || 0) && Math.random() < .25) {
+      if (e.form === 'knight' && !e.weapon) e.weapon = 'sword';
+      let tgt = null, td = 1e9;
+      for (const o of S.ents) { if (o === e || !human(o) || !adult(o) || o.sleep || o.fight || o.hp < 45) continue; const d = Math.abs(o.x - e.x); if (d < 45 && Math.abs(o.y - e.y) < 10 && d < td) { td = d; tgt = o; } }
+      if (tgt) {
+        e.aggT = S.frame + 900; start(e, tgt, false); e.txt = 'Задирается к ' + tgt.name; Life.emote(e, 'shake', 90);
+        if (fighterOK(tgt)) start(tgt, e, false); else { tgt.fear = 80; tgt.dir = e.x > tgt.x ? -1 : 1; tgt.task = null; tgt.txt = 'Убегает от задиры'; }
+        if (town()) { Town.note(e.name + ' затеял' + (e.fem ? 'а' : '') + ' драку с ' + tgt.name, Town.byId(e.soc)); if (e.soc !== tgt.soc) Town.incident(e.soc, tgt.soc, .5); }
+        return true;
+      }
+    }
     /* личная вражда: иногда кулачная драка */
     if (fighterOK(e) && Math.random() < .015) for (const o of S.ents) {
       if (o === e || !human(o) || !adult(o) || o.sleep || o.fight) continue;
@@ -119,12 +153,17 @@ const Combat = (function () {
   }
   /* оружие в руке на слое людей: древко пикселями от кисти, при ударе — замах сверху вперёд */
   const LOOK = { club: { L: 9, c: '#6a4426', end: '#8e5c34', fat: 1 }, spear: { L: 12, c: '#7a5030', end: '#dfe4ec' }, axe: { L: 8, c: '#6a4426', end: '#c8ced8', head: 1 }, sword: { L: 9, c: '#e8eef6', end: '#ffffff', hilt: '#e2a83e' } };
-  function draw(c, e, cx, fy, dh) {
+  function draw(c, e, cx, fy, dh, hand) {
     const w = LOOK[e.weapon]; if (!w) return;
-    const d = e.dir < 0 ? -1 : 1, hx = cx + d * 3, hy = fy - Math.round(dh * .43);
+    /* оружие в кисти передней руки (её даёт спрайт); рукоять чуть ниже кисти — кулак обхватывает древко */
+    const d = (e.task === 'fight' && e.face ? e.face : e.dir) < 0 ? -1 : 1, hx = hand ? Math.round(hand[0]) : cx + d * 3, hy = hand ? Math.round(hand[1]) + 1 : fy - Math.round(dh * .43);
     const a = e.atk > 0 ? -1.9 + (1 - e.atk / 16) * 2.3 : (e.task === 'fight' ? -.55 : -1.25);
     const ca = Math.cos(a) * d, sa = Math.sin(a), px = [];
-    for (let t = 0; t < w.L; t++) px.push([Math.round(hx + ca * t), Math.round(hy + sa * t), t]);
+    if (e.atk > 0 && e.atk < 15) {   /* след удара: светлая дуга от замаха до клинка */
+      const r0 = w.L - .5;
+      for (let q = -1.9; q < a; q += .09) { c.fillStyle = q > a - .45 ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.28)'; c.fillRect(Math.round(hx + Math.cos(q) * d * r0), Math.round(hy + Math.sin(q) * r0), 1, 1); }
+    }
+    for (let t = -2; t < w.L; t++) px.push([Math.round(hx + ca * t), Math.round(hy + sa * t), t]);   /* хвостик рукояти торчит из кулака */
     c.fillStyle = 'rgba(30,16,12,.85)'; for (const [x, y] of px) c.fillRect(x - 1, y, 3, 1);   /* тёмный контур */
     for (const [x, y, t] of px) {
       let col = w.c; if (t >= w.L - 3) col = w.end; if (w.hilt && t < 2) col = w.hilt;
@@ -133,5 +172,5 @@ const Combat = (function () {
       if (w.hilt && t === 2) { c.fillStyle = w.hilt; c.fillRect(x - 1, y + (sa > -.5 ? -1 : 0), 3, 1); }
     }
   }
-  return { think, brave, danger, craft, draw, warWith, WEAP };
+  return { think, start, brave, danger, craft, draw, warWith, WEAP };
 })();

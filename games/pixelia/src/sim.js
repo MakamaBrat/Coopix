@@ -114,6 +114,7 @@ const Sim = (function () {
   function blast(cx, cy, R, power) {
     const R2 = R * R;
     S.shake = Math.max(S.shake, Math.min(14, power * R * 1.1)); S.stats.blasts++; if (S.ents.length) entBlast(cx, cy, R, power);
+    if (typeof Arms !== 'undefined' && Arms.fx) Arms.fx(cx, cy, R, power);   /* огненный шар, искры, дым */
     if (typeof Houses !== 'undefined') Houses.blast(cx, cy, R, power);
     sfx('boom', Math.min(1, power * R / 8));
     for (let y = cy - R; y <= cy + R; y++) {
@@ -167,6 +168,15 @@ const Sim = (function () {
 
   /* ---------- молния и метеорит ---------- */
   function lightning(x0) {
+    /* громоотвод рядом: разряд уходит в шест и в землю, ничего не поджигая */
+    const rod = typeof Works !== 'undefined' && Works.rodFor ? Works.rodFor(x0 | 0) : null;
+    if (rod) {
+      const top = rod.g - 15, rc = []; let rx = Math.max(2, Math.min(W - 3, (x0 | 0))), ry = 1;
+      while (ry < top) { rc.push(ry * W + rx); const left = top - ry; if (rx !== rod.x && rnd() < Math.min(1, 2.5 * Math.abs(rod.x - rx) / Math.max(1, left))) rx += Math.sign(rod.x - rx); else if (left > 6 && rnd() < .3) rx += rnd() < .5 ? -1 : 1; rx = Math.max(1, Math.min(W - 2, rx)); ry++; }
+      for (let y = top; y < rod.g; y++) rc.push(y * W + rod.x);
+      rod.hit = 30; S.bolts.push({ cells: rc, ttl: 8 }); S.stats.lightning++; S.shake = Math.max(S.shake, 3); sfx('zap', 1);
+      return;
+    }
     let x = Math.max(2, Math.min(W - 3, x0 | 0)), y = 1;
     const cells = [];
     while (y < H - 2) {
@@ -461,6 +471,7 @@ const Sim = (function () {
     if (gx < 1 || gx >= W - 1 || gy < 2 || gy >= H - 1) return 0;
     const i = gy * W + gx, t = type[i];
     if (t !== AIR && KIND[t] !== K.GAS && !(t === SPROUT && c.x === 0 && c.y === 0)) return 0;
+    if (typeof Houses !== 'undefined' && Houses.blocks && Houses.blocks(gx, gy)) return 0;   /* в дом крона не прорастает */
     if (!(c.f & 1) && !(c.x === 0 && c.y === 0)) {
       let ok = false; for (let k = 0; k < 8; k++) if (isTreeCell(i + NB8[k])) { ok = true; break; }
       if (!ok) return -1;
@@ -468,6 +479,7 @@ const Sim = (function () {
     if (c.f & 2) {
       let d = 1; while (d <= 7 && (type[i + d * W] === AIR || KIND[type[i + d * W]] === K.GAS)) d++;
       if (d > 7 || (d === 1 && type[i + W] === AIR)) return 0;
+      if (typeof Houses !== 'undefined' && Houses.blocks) for (let q = 1; q < d; q++) if (Houses.blocks(gx, gy + q)) return 0;
       for (let q = 1; q < d; q++) { put(i + q * W, WOOD); aux[i + q * W] = 1; }
     }
     put(i, c.t === 1 ? WOOD : LEAF); aux[i] = c.a; return 1;
@@ -492,6 +504,7 @@ const Sim = (function () {
   }
   function startPlan(i, kind) {
     if (plants.length >= 24) return false;
+    if (typeof Houses !== 'undefined' && Houses.blocks && Houses.blocks(i % W, (i / W) | 0)) return false;   /* семя в доме не прорастает */
     const p = buildPlan(i % W, (i / W) | 0, kind); if (!p) return false;
     put(i, SPROUT); plants.push(p); return true;
   }
@@ -503,7 +516,8 @@ const Sim = (function () {
   function stepPlants() {
     for (let n = plants.length - 1; n >= 0; n--) {
       const p = plants[n];
-      if (!isTreeCell(p.base)) { plants.splice(n, 1); continue; }   /* росток сгорел или его смыло: рост прекращается */
+      if (type[p.base] === WATER) { put(p.base, SPROUT); continue; }   /* полили — росток в воде не гибнет */
+      if (!isTreeCell(p.base)) { plants.splice(n, 1); continue; }   /* росток сгорел, сломали: рост прекращается */
       p.prog += p.dt;
       while (p.idx < p.cells.length && p.cells[p.idx].o <= p.prog) { const c = p.cells[p.idx++]; if (placeCell(p, c) < 0) p.pend.push(c); }
       if (p.pend.length && (S.frame & 1) === 0) pendStep(p);
@@ -519,6 +533,8 @@ const Sim = (function () {
      Грязь с избытком влаги отдаёт её вниз по слоям, на воздухе высыхает. Впитывает только поверхностная вода (дождь, лужи, ручьи), озёра и моря дно не осушают. */
   const SAT_MUD = 6, SAT_SAND = 3;
   const isPlant = (j) => { const t = type[j]; return t === LEAF || t === SPROUT || t === LITTER || (t === WOOD && aux[j] !== 0); };
+  /* вода над этой клеткой — лужа не глубже 4 клеток (озёра и моря так не впитываются) */
+  function shallow(i) { let j = i - W; for (let k = 0; k < 4; k++, j -= W) { const t = type[j]; if (t === AIR || KIND[t] === K.GAS) return true; if (t !== WATER) return false; } return false; }
   function soak(i, b) {
     const tb = type[b];
     /* листва, ростки и кора впитывают дождь; часть капель просачивается сквозь крону вниз — на кронах лужи не копятся */
@@ -564,11 +580,17 @@ const Sim = (function () {
         return false;
       }
       case SEED: case CONE: case FSEED: {
+        /* полили — семя всплыло: в мелкой воде (до 4 клеток над землёй) оно опускается и прорастает в землю под водой */
+        if (type[i + W] === WATER && tm > 0 && tm < 60 && plants.length < 24 && rnd() < .05) {
+          let j = i + W, k = 0; while (k < 5 && type[j] === WATER) { j += W; k++; }
+          if (k < 5 && (type[j] === EARTH || type[j] === MUD)) { const r = rnd(), kind = t === CONE ? 'spruce' : t === FSEED ? 'meadow' : r < .34 ? 'oak' : r < .58 ? 'bent' : r < .76 ? 'poplar' : 'bushy'; if (type[j] === MUD) conv(j, EARTH); if (startPlan(j - W, kind)) { put(i, WATER); return true; } }
+        }
         const b = i + W, tb = type[b];
         if ((tb === EARTH || tb === MUD) && tm > 0 && tm < 60 && plants.length < 24) {
           let ok = false;
           if (tb === MUD) { ok = true; conv(b, EARTH); }
           else for (let dy = -2; dy <= 3 && !ok; dy++) for (let dx = -4; dx <= 4; dx++) { const j = i + dy * W + dx; if (type[j] === WATER) { put(j, AIR); ok = true; break; } }
+          if (!ok) for (let dy = 1; dy <= 3 && !ok; dy++) for (let dx = -3; dx <= 3; dx++) { const j = i + dy * W + dx; if (type[j] === MUD) { if (life[j] > 1) life[j]--; else conv(j, EARTH); ok = true; break; } }   /* полили — земля вокруг намокла: семени хватает этой влаги */
           if (ok) {
             const r = rnd(), kind = t === CONE ? 'spruce' : t === FSEED ? 'meadow' : r < .34 ? 'oak' : r < .58 ? 'bent' : r < .76 ? 'poplar' : 'bushy';
             if (startPlan(i, kind)) return true;
@@ -591,7 +613,7 @@ const Sim = (function () {
           if (brine) { conv(i, SALT); if (type[i - W] === AIR) put(i - W, STEAM, 108); } else put(i, STEAM, 108);
           return true;
         }
-        if (!brine && type[i - W] === AIR) {   /* поверхностная вода: почва впитывает, на жаре тонкая лужа высыхает */
+        if (!brine && (type[i - W] === AIR || (type[i + W] !== WATER && shallow(i)))) {   /* неглубокая лужа (до 4 клеток) тоже уходит в землю снизу; поверхностная вода: почва впитывает, на жаре тонкая лужа высыхает */
           if (rnd() < .5 && soak(i, i + W)) return true;
           if (rnd() < .2 && soak(i, i + (rnd() < .5 ? -1 : 1))) return true;
           if (tm > 18 && KIND[type[i + W]] !== K.LIQUID && rnd() < (tm - 18) * .00005) { put(i, AIR); return true; }
@@ -759,8 +781,27 @@ const Sim = (function () {
     if (rp !== 0 && (rp >= 1 || rnd() < rp)) { if (react(i, x, y, t)) return; t = type[i]; if (KIND[t] !== K.GAS) return; }
     updGas(i, x, y, t);
   }
+  /* листва без опоры: от живого дерева (ствол, который стоит на земле) по стволу и листьям — заливка; листья, до которых она
+     не дошла (дерево срубили, разрушили, ствол сгорел), осыпаются опавшей листвой — постепенно, а не висят в воздухе */
+  let sup = null, stk = null;
+  function leafSupport() {
+    const N2 = W * H; if (!sup || sup.length !== N2) { sup = new Uint8Array(N2); stk = new Int32Array(N2); } else sup.fill(0);
+    const tree = (j) => { const t = type[j]; return t === LEAF || (t === WOOD && aux[j] !== 0) || t === SPROUT; };
+    let sp = 0;
+    for (let i = W; i < N2 - W; i++) {
+      const t = type[i]; if (!((t === WOOD && aux[i] !== 0) || t === SPROUT)) continue;
+      const below = type[i + W]; if (below === AIR || KIND[below] === K.GAS || KIND[below] === K.LIQUID || tree(i + W)) continue;
+      sup[i] = 1; stk[sp++] = i;   /* корень: ствол или росток стоит на земле, камне, стене */
+    }
+    while (sp) { const i = stk[--sp]; for (const d of NB8) { const j = i + d; if (j < W || j >= N2 - W || sup[j] || !tree(j)) continue; sup[j] = 1; stk[sp++] = j; } }
+    for (let i = W; i < N2 - W; i++) {
+      const t = type[i]; if (sup[i] || !(t === LEAF || (t === WOOD && aux[i] !== 0))) continue;
+      if (rnd() < .35) { put(i, rnd() < .55 ? LITTER : AIR); }   /* листья и оторванные ветки осыпаются опавшей листвой */
+    }
+  }
   function step() {
     fr = (fr + 1) & 0xffff; if (fr === 0) fr = 1; S.frame++; eqBudget = 10;
+    if (S.frame % 45 === 17) leafSupport();
     weatherTick(); stepMeteors(); stepBolts(); stepFlying();
     if (S.pressure && (fr & 1) === 0) pressurePass();
     for (let y = H - 2; y >= 1; y--) {
@@ -896,8 +937,8 @@ const Sim = (function () {
   const HB = 12;
   const SHIRTS = [[220, 70, 60], [70, 150, 230], [240, 200, 60], [160, 90, 220], [80, 190, 110], [240, 140, 50]];
   const NOAB = {};
-  S.ENT_DUR = { fall: 46, blast: 52, crush: 30, burn: 42, drown: 64, shock: 70, melt: 60, freeze: 46, old: 70, slain: 40 };
-  S.ENT_KEEP = { fall: 1, blast: 1, crush: 1, drown: 1, shock: 1, old: 1, burn: 1, melt: 1, freeze: 1, slain: 1 };   /* тело остаётся после любой смерти: его можно похоронить или уничтожить */
+  S.ENT_DUR = { fall: 46, blast: 52, crush: 30, burn: 42, drown: 64, shock: 70, melt: 60, freeze: 46, old: 70, slain: 40, gas: 60 };
+  S.ENT_KEEP = { fall: 1, blast: 1, crush: 1, drown: 1, shock: 1, old: 1, burn: 1, melt: 1, freeze: 1, slain: 1, gas: 1 };   /* тело остаётся после любой смерти: его можно похоронить или уничтожить */
   function spawnEnt(x, y, z, form, ab, extra) {
     if (ents.length >= 70) { const d = ents.findIndex((o) => o.dead); ents.splice(d >= 0 ? d : 0, 1); }
     x = Math.max(5, Math.min(W - 6, x | 0)); y = Math.max(HB + 2, Math.min(H - 3, y | 0));
@@ -955,7 +996,7 @@ const Sim = (function () {
     if (typeof Life !== 'undefined') Life.step(S);
     for (let n = ents.length - 1; n >= 0; n--) {
       const e = ents[n]; let cx = Math.floor(e.x), fy = Math.round(e.y);
-      if (e.hurt > 0) e.hurt--; if (e.land > 0) e.land--; if (e.fear > 0) e.fear--; if (e.atk > 0) e.atk--; if (e.stun > 0) e.stun--; if (e.turn > 0) e.turn--; if (e.tumble > 0) e.tumble--;
+      if (e.hurt > 0) e.hurt--; if (e.land > 0) e.land--; if (e.fear > 0) e.fear--; if (e.atk > 0) e.atk--; if (e.stun > 0) e.stun--; if (e.turn > 0) e.turn--; if (e.tumble > 0) e.tumble--; if (e.ko > 0) e.ko--;
       if (e.at > 0 && --e.at === 0) e.act = null;
       let inLiq = 0, hot = false, fire = false, acid = false;
       for (let k = 0; k < HB; k++) {
@@ -972,7 +1013,8 @@ const Sim = (function () {
         else if (hot) dieEnt(e, 'burn', 'сгорел');
         else {
           /* загорелся: огонь жжёт здоровье, но сам гаснет — короткий ожог не смертелен, гибнет тот, кто долго стоит в пламени */
-          if (fire && !ab.fireproof) e.burn = Math.max(e.burn, 110);
+          if (fire && !ab.fireproof) { e.heat = (e.heat || 0) + 1; if (e.heat > 8 || e.burn > 0) e.burn = Math.max(e.burn, 110); }   /* искра или язычок пламени не поджигает — загорается, кто пробыл в огне дольше мгновения */
+          else if (e.heat > 0) e.heat = Math.max(0, e.heat - .5);
           if (e.burn > 0) {
             e.burn--; if (inLiq >= 5) e.burn = 0; if (!fire) e.burn = Math.max(0, e.burn - 2);   /* вне пламени гаснет втрое быстрее */
             e.hp -= .3; e.hurt = Math.max(e.hurt, 2);
@@ -1009,7 +1051,11 @@ const Sim = (function () {
         if (!ok) {
           let heavy = false;
           for (let k = 0; k < HB; k++) { const j = (fy - k) * W + cx, t = type[j]; if (t === AIR) continue; if (t === LEAF || t === SPROUT || t === SEED || t === CONE || t === FSEED || (t === WOOD && aux[j] !== 0)) put(j, AIR); else if (KIND[t] === K.SOLID || KIND[t] === K.POWDER) heavy = true; }
-          if (heavy) { e.hp -= 3; if (e.hp <= 0 && !e.dying) dieEnt(e, 'crush'); }
+          /* сыпучее (земля, песок, пепел, снег) — выкапывается без вреда; давит только твёрдое (камень, металл, стены) */
+          let solidHit = false;
+          if (heavy && !e.dying && !e.z) for (let k = 0; k < HB; k++) { const j = (fy - k) * W + cx, t = type[j]; if (t === AIR) continue; if (KIND[t] === K.POWDER) { if (rnd() < .5) put(j, AIR); } else if (KIND[t] === K.SOLID) solidHit = true; }
+          else solidHit = heavy;
+          if (solidHit) { e.hp -= 3; if (e.hp <= 0 && !e.dying) dieEnt(e, 'crush'); }
         }
       }
       let ground = blockedC(cx, fy + 1);
@@ -1023,6 +1069,7 @@ const Sim = (function () {
       else {
         if (e.vy > 1.1 && !e.dying) e.land = Math.min(12, 4 + Math.round(e.vy * 3));
         if (e.vy > 2.5) { e.hp -= (e.vy - 2.3) * (e.tumble > 0 ? 40 : 80) / (ab.tough || 1); e.hurt = 14; if (!e.dying && e.hp > 0) e.stun = Math.max(e.stun, 12); }
+        if (e.tumble > 0 && e.vy > .6 && !e.dying && !e.z && e.hp > 0) { e.ko = 84; e.stun = Math.max(e.stun, 84); e.tumble = 0; }   /* отбросило — лежит в нокдауне */
         e.vy = 0;
       }
       if (e.hp <= 0 && !e.dying) dieEnt(e, e.tumble > 0 ? 'blast' : 'fall');
@@ -1092,11 +1139,20 @@ const Sim = (function () {
       const nx = e.x + e.dir * sp, ncx = Math.floor(nx), lead = ncx + e.dir;
       if (ncx !== cx) {
         if (bodyFree(ncx, fy) && bodyFree(lead, fy)) {
-          if (!e.z && ground && e.burn === 0 && !e.swim && !blockedC(ncx, fy + 1) && !blockedC(ncx, fy + 2) && !blockedC(ncx, fy + 3) && !blockedC(ncx, fy + 4) && !blockedC(ncx, fy + 5)) { e.dir = -e.dir; e.t = 40; }
+          /* обрыв: без цели не прыгают ниже 5 клеток, с целью или в испуге — до 12 (такое падение не ранит) */
+          let drop = 0; if (!e.z && ground && e.burn === 0 && !e.swim) { while (drop < 13 && !blockedC(ncx, fy + 1 + drop)) drop++; }
+          const maxDrop = (e.goal != null || e.fear > 0 || e.fight) ? 12 : 5;
+          if (drop > maxDrop) { e.dir = -e.dir; e.t = 40; }
           else e.x = nx;
         } else {
           let stepped = false;
-          if (ground || e.swim) for (let up = 1; up <= 3; up++) if (bodyFree(ncx, fy - up) && bodyFree(lead, fy - up) && bodyFree(cx, fy - up)) { e.x = nx; e.y = fy - up; stepped = true; break; }
+          if (ground || e.swim) for (let up = 1; up <= 3; up++) if (bodyFree(ncx, fy - up) && bodyFree(lead, fy - up) && bodyFree(cx, fy - up)) {
+            e.x = nx; e.y = fy - up; stepped = true;
+            /* протаптывает тропу: верх высокой ступени из мягкой земли иногда осыпается под ногами */
+            if (!e.z && up >= 2 && rnd() < .3) { const j = (fy - up + 1) * W + ncx, t = type[j]; if (t === EARTH || t === SAND || t === MUD || t === SNOW || t === ASH || t === LITTER) put(j, AIR); }
+            break;
+          }
+          if (stepped || bodyFree(ncx, fy)) e.bump = 0; else e.bump = (e.bump | 0) + 1;
           if (!stepped && ab.dig && ground && !e.z) {
             /* шахтёр прокапывает проход: камень, землю, песок, снег — но не гранит */
             let can = false, hard = false;
@@ -1108,7 +1164,7 @@ const Sim = (function () {
             }
             if (can && !hard) { stepped = true; e.act = 'dig'; e.at = 10; }
           }
-          if (!stepped && !ab.dig && ground && !e.z && !e.burn) {
+          if (!stepped && !ab.dig && (ground || e.swim) && !e.z && !e.burn) {
             let plants = false, soft = false, hard = false;
             for (const col of [ncx, lead]) for (let k = 0; k < HB; k++) {
               const j = (fy - k) * W + col, t = type[j];
@@ -1118,8 +1174,10 @@ const Sim = (function () {
               else hard = true;
             }
             if (plants && !soft && !hard) { stepped = true; e.act = 'dig'; e.at = 8; }   /* проламывает листву */
-            else if (soft && !hard && e.goal != null) {   /* к цели мешает земляная стенка — прокапывает */
-              for (const col of [ncx, lead]) for (let k = 0; k < HB; k++) { const j = (fy - k) * W + col, t = type[j]; if ((t === EARTH || t === SAND || t === MUD || t === SNOW || t === ASH || t === SALT) && rnd() < .12) put(j, AIR); }
+            else if ((soft && (e.goal != null || e.bump > 3)) || (hard && (e.goal != null || e.bump > 8) && !(e.age < 14))) {   /* к цели мешает стенка — прокапывает (камень прорубает медленно), постройки не трогает */
+              let built = false; for (const col of [ncx, lead]) for (let k = 0; k < HB; k++) { const t = type[(fy - k) * W + col]; if ((t === WOOD && aux[(fy - k) * W + col] === 0) || t === WALL || t === METAL || t === GLASS || t === SKY || t === BATT || t === LAMP || t === CLONE || t === VOID) built = true; }
+              if (!built) for (const col of [ncx, lead]) for (let k = 0; k < HB; k++) { const j = (fy - k) * W + col, t = type[j]; if ((t === EARTH || t === SAND || t === MUD || t === SNOW || t === ASH || t === SALT) && rnd() < .12) put(j, AIR); else if ((t === STONE || t === ICE) && rnd() < .035) put(j, AIR); else if (t === WOOD && aux[j] !== 0 && rnd() < .05) put(j, AIR); }   /* ствол дерева на пути — прорубает */
+              if (built) { e.goal = null; e.tt = Math.min(e.tt || 0, 2); }
               stepped = true; e.act = 'dig'; e.at = 10; if (rnd() < .04) sfx('pop', .3);
             }
           }
@@ -1290,7 +1348,7 @@ const Sim = (function () {
   }
 
   Object.assign(S, {
-    die: (e, k, w) => dieEnt(e, k, w), alloc, clear, step, put, conv, paint, heatArea, pushArea, blast, lightning, meteor, census, generate, plantInstant, pack, unpack, ignite,
+    die: (e, k, w) => dieEnt(e, k, w), launch, alloc, clear, step, put, conv, paint, heatArea, pushArea, blast, lightning, meteor, census, generate, plantInstant, pack, unpack, ignite,
     spawnEnt, rnd, rn, get frameNo() { return fr; }, get flying() { return nf; }
   });
   return S;

@@ -66,6 +66,8 @@ const Houses = (function () {
       if (!d && sg < 0) continue;
       const x0 = Math.round(x - w / 2 + sg * d); if (x0 < 4 || x0 + w > W - 4) continue;
       if (list.some((b) => x0 < b.x0 + b.w + 5 && x0 + w + 5 > b.x0)) continue;
+      if (S.camps && S.camps.some((c) => c.x > x0 - 12 && c.x < x0 + w + 12)) continue;
+      if (typeof Works !== 'undefined' && Works.gardens && Works.gardens.some((g) => g.beds.some((q) => q.x > x0 - 5 && q.x < x0 + w + 5) || (g.wx != null && g.wx > x0 - 8 && g.wx < x0 + w + 8))) continue;   /* огород и поленницу не застраивают */   /* у горящего костра дом не строят: загорится */
       const gs = []; let ok = true;
       for (let k = 0; k < w && ok; k++) { const gk = groundAt(x0 + k); if (gk < 0) ok = false; else gs.push(gk); }
       if (!ok) continue;
@@ -116,8 +118,36 @@ const Houses = (function () {
   function remove(b) { const k = list.indexOf(b); if (k >= 0) list.splice(k, 1); bgDirty = true; }
   /* шаг: двери закрываются, обломки летят; у готовых домов — огонь (раз в 6 тактов) и опора (раз в 12); у недостроенных —
      целы ли уложенные перекрытия. Перекрытия сверяются раз в полсекунды, чтобы доски рисовались только над целыми клетками */
+  /* силуэт дома: стены и скат крыши (скат — 1 клетка вверх на 1 вбок, свес 4 клетки). Деревья не растут внутрь силуэта,
+     а запас вокруг него неровный (0–2 клетки пятнами), поэтому крона у дома обрывается естественно — по стене и по скату, без ровного среза */
+  function zone(b) {
+    const roofCells = Math.ceil((b.w + 8) / 2) + 6;
+    return { x0: b.x0 - 6, x1: b.x0 + b.w + 6, y0: floorRow(b, b.nf) - roofCells, y1: b.g };
+  }
+  const ragged = (x, y) => { let h = ((x >> 1) * 73856093) ^ ((y >> 1) * 19349663); h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) % 3; };
+  function inHouse(b, x, y, pad) {
+    if (y > b.g) return false;
+    const yT = floorRow(b, b.nf);
+    if (y >= yT) return x >= b.x0 - pad && x <= b.x0 + b.w - 1 + pad;          /* стены */
+    const Lc = b.x0 - 4, Rc = b.x0 + b.w + 3, u = Math.min(x - Lc, Rc - x);   /* под скатом крыши */
+    return u >= -pad && y >= yT - u - 1 - pad;
+  }
+  function blocks(x, y) {
+    for (const b of list) { if (!(b.prog > 0 || b.done)) continue; if (inHouse(b, x, y, ragged(x, y))) return true; }
+    return false;
+  }
+  /* листва, ветки, ростки и семена, оказавшиеся внутри силуэта дома, убираются (стены дома — дерево без метки роста, их не трогаем) */
+  function clearPlants(b) {
+    const A = S.A, W = S.W, z = zone(b);
+    for (let y = Math.max(1, z.y0); y <= Math.min(S.H - 2, z.y1 - 1); y++) for (let x = Math.max(1, z.x0); x <= Math.min(W - 2, z.x1); x++) {
+      if (!inHouse(b, x, y, 0)) continue;
+      const i = y * W + x, t = A.type[i];
+      if (t === E.LEAF || t === E.SPROUT || t === E.SEED || t === E.CONE || t === E.FSEED || (t === E.WOOD && A.aux[i] !== 0)) S.put(i, E.AIR);
+    }
+  }
   function step(sim, onCollapse) {
     S = sim;
+    if (S.frame % 120 === 7) for (const b of list) if (b.prog > 0 || b.done) clearPlants(b);
     for (const b of list) for (const f in b.doors) if (b.doors[f] > 0 && --b.doors[f] === 0) { b.ver++; bgDirty = true; }
     debrisStep();
     for (let k = list.length - 1; k >= 0; k--) {
@@ -273,6 +303,32 @@ const Houses = (function () {
     c.filter = 'none';
   }
   function useDoor(b, f0, f1) { b.doors[f0] = 26; b.doors[f1] = 26; b.ver++; bgDirty = true; }
+  /* цел ли этаж: пол под дверью и бóльшая часть перекрытия на месте (первый этаж — земля) */
+  function floorOK(b, f) {
+    if (!b || b.ruin) return false; if (f === 0) return true;
+    const row = floorRow(b, f), W = S.W, dx = doorX(b);
+    for (let x = dx - 1; x <= dx + 2; x++) if (S.A.type[row * W + x] !== E.WOOD) return false;
+    let n = 0; for (let x = b.x0; x < b.x0 + b.w; x++) if (S.A.type[row * W + x] === E.WOOD) n++;
+    return n > b.w * .6;
+  }
+  /* повреждён ли дом (выбиты или сгорели куски, но ещё не развалины) */
+  const damaged = (b) => !!(b && b.done && !b.ruin && b.ch && b.ch.left < b.ch.total);
+  /* ремонт: возвращает n кусков, примыкающих к целым и не занятых чужими клетками; перекрытия в них кладутся заново */
+  function repair(b, n) {
+    const C = b.ch; if (!C) return 0; let done = 0;
+    for (let k = 0; k < C.has.length && done < n; k++) {
+      if (!C.has[k] || C.alive[k]) continue;
+      const i = k % C.nx, j = (k / C.nx) | 0;
+      if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([di, dj]) => { const ii = i + di, jj = j + dj; return ii >= 0 && jj >= 0 && ii < C.nx && jj < C.ny && C.alive[jj * C.nx + ii]; })) continue;
+      const { x0, y0 } = chunkCells(b, k);
+      let blocked = false; for (let y = y0; y < y0 + 4 && !blocked; y++) for (let x = x0; x < x0 + 4; x++) { const t = S.A.type[y * S.W + x]; if (t !== E.AIR && !isSlab(b, x, y) && (KIND[t] === K.SOLID || KIND[t] === K.POWDER) && t !== E.ASH) { blocked = true; break; } }
+      if (blocked) continue;
+      for (let y = y0; y < y0 + 4; y++) for (let x = x0; x < x0 + 4; x++) { const q = y * S.W + x; if (isSlab(b, x, y) && S.A.type[q] !== E.WOOD) { S.put(q, E.WOOD); S.A.aux[q] = 0; } else if (S.A.type[q] === E.ASH) S.put(q, E.AIR); }
+      C.alive[k] = 1; C.char[k] = 0; C.heat[k] = 0; C.left++; done++;
+    }
+    if (done) { b.ver++; bgDirty = true; }
+    return done;
+  }
   function clear() { list.length = 0; debris.length = 0; bgDirty = true; }
   /* после смены размера окна мир пересэмплирован: дома переезжают и перекрытия кладутся заново */
   function rescale(kx, ky) {
@@ -446,7 +502,7 @@ const Houses = (function () {
   /* фон домов на своём слое: перерисовывается, когда дом изменился или сменилось освещение */
   function drawBg(amb, ambKey, night) {
     if (!cx) return;
-    const key = ambKey + '|' + list.map((b) => b.id + ':' + b.ver).join(',');
+    const key = ambKey + '|' + list.map((b) => b.id + ':' + b.ver).join(',') + '|w' + (typeof Works !== 'undefined' ? Works.ver : 0) + (ready ? 'r' : '');
     if (!bgDirty && key === bgKey) return;
     bgDirty = false; bgKey = key;
     cx.clearRect(0, 0, LW, LH);
@@ -456,6 +512,8 @@ const Houses = (function () {
       cx.drawImage(night > .02 ? tinted(b, 'bg', col, ambKey + (warm ? 'w' : '')) : b.cache.bg, b.cache.x, b.cache.y);
       if (night > .05 && warm) for (const [x, y, w, h, kind] of b.cache.glows) if (kind === 1) { cx.fillStyle = 'rgba(255,196,96,' + (.42 * night).toFixed(2) + ')'; cx.fillRect(b.cache.x + x, b.cache.y + y, w, h); }
     }
+    /* шахты и причалы за миром */
+    if (typeof Works !== 'undefined') { const br = (amb[0] + amb[1] + amb[2]) / 3; if (br < .97) cx.filter = 'brightness(' + Math.max(.35, br).toFixed(2) + ')'; Works.drawBg(cx, 0); cx.filter = 'none'; }
   }
   /* передний план на слое людей (перед человечками) */
   function drawFg(c, amb, ambKey, T, night) {
@@ -489,5 +547,5 @@ const Houses = (function () {
     cv = canvas; LW = W * 2; LH = H * 2; if (cv) { cv.width = LW; cv.height = LH; cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false; }
     S = S || Sim; load(); for (const b of list) b.ver++; bgDirty = true;
   }
-  return { init, list, byId, create, build, remove, step, clear, blast, debris, rescale, findSite, floorOf, where, standY, floorRow, doorX, roomX, useDoor, drawBg, drawFg, lights, lightFor, nameOf, ROLES, RW, FH, get ready() { return ready; }, set sim(v) { S = v; } };
+  return { blocks, zone, init, img: (k) => img[k], list, byId, create, build, remove, step, clear, blast, debris, rescale, findSite, floorOf, where, standY, floorRow, doorX, roomX, useDoor, drawBg, drawFg, lights, lightFor, nameOf, floorOK, damaged, repair, ROLES, RW, FH, get ready() { return ready; }, set sim(v) { S = v; } };
 })();

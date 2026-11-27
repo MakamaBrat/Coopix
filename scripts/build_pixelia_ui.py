@@ -242,6 +242,26 @@ def deco():
     return {"branch": pixelize(c, 4.4)}
 
 
+# ---------------------------------------------------------------- значки для меню «Жители» (people_icons.png, 1536x1024, прозрачный фон)
+# пол, знаки профессий, занятия, лица-настроения, ресурсы, награды, дома, знамёна обществ
+PEOPLE_ICONS = {'male': (1258, 39, 1316, 97), 'female': (1320, 34, 1365, 103), 'pair': (1372, 38, 1460, 96), 'crowd': (1464, 35, 1524, 89), 'm_calm': (208, 131, 302, 213), 'm_happy': (311, 126, 412, 213), 'm_surprise': (408, 128, 498, 212), 'm_think': (498, 125, 590, 225), 'm_joy': (685, 128, 776, 212), 'm_angry': (772, 129, 868, 213), 'm_sleep': (866, 127, 950, 213), 'm_sad': (954, 132, 1040, 213), 'heart': (1055, 140, 1126, 203), 'energy': (1130, 136, 1184, 206), 'drop': (1195, 137, 1249, 203), 'food': (1256, 137, 1325, 204), 'smile': (1329, 137, 1396, 203), 'star': (1465, 137, 1527, 200), 'p_lumber': (22, 228, 116, 321), 'p_mason': (120, 228, 212, 321), 'p_farmer': (216, 228, 307, 321), 'p_fisher': (311, 228, 403, 321), 'p_crafter': (407, 228, 498, 321), 'p_cook': (594, 228, 680, 321), 'p_scholar': (683, 228, 770, 321), 'p_potion': (773, 228, 859, 321), 'p_soldier': (957, 228, 1048, 321), 'p_bow': (1052, 228, 1146, 321), 'p_none': (1149, 228, 1244, 321), 'p_barkeep': (1247, 228, 1342, 321), 'p_builder': (1346, 228, 1437, 321), 'p_priest': (1441, 228, 1530, 321), 'a_sleep': (14, 330, 116, 415), 'a_eat': (122, 338, 200, 410), 'a_read': (206, 344, 293, 410), 'a_fire': (298, 328, 378, 416), 'a_fish': (381, 325, 475, 412), 'a_sow': (475, 326, 557, 413), 'a_craft': (561, 325, 643, 415), 'a_quarry': (648, 330, 741, 416), 'a_chop': (745, 334, 834, 416), 'a_plant': (839, 334, 920, 413), 'a_cook': (928, 329, 1003, 414), 'a_music': (1097, 335, 1178, 417), 'a_run': (1177, 326, 1259, 413), 'a_talk': (1263, 347, 1345, 403), 'a_gift': (1352, 330, 1435, 416), 'a_love': (1441, 334, 1528, 410), 'health': (21, 426, 103, 505), 'brain': (112, 431, 194, 504), 'grad': (198, 430, 288, 499), 'luck': (380, 423, 456, 507), 'shield': (470, 426, 544, 506), 'target': (557, 424, 649, 506), 'sword': (640, 430, 718, 505), 'build': (727, 428, 808, 502), 'wood': (10, 515, 99, 590), 'stone': (186, 519, 268, 586), 'scroll': (10, 678, 93, 757), 'coin': (543, 683, 610, 749), 'crown': (616, 683, 691, 744), 'trophy': (696, 681, 776, 755), 'medal': (785, 675, 847, 757), 'flag': (934, 678, 992, 758), 'calendar': (1000, 679, 1069, 749), 'search': (1461, 682, 1528, 754), 'house': (9, 764, 106, 843), 'house2': (108, 762, 202, 841), 'tent': (199, 769, 290, 844), 'banner0': (981, 859, 1071, 974), 'banner1': (1071, 859, 1161, 974), 'banner2': (1161, 859, 1251, 974), 'banner3': (1251, 859, 1342, 974)}
+
+
+def people_icons():
+    from scipy import ndimage as nd
+    im = load("people_icons.png"); out = {}
+    for name, box in PEOPLE_ICONS.items():
+        c = im.crop(box); a = np.array(c)
+        m = a[:, :, 3] > 40
+        lab, n = nd.label(nd.binary_dilation(m, iterations=3))
+        if n > 1:   # только главный кусок: соседние значки, попавшие в рамку, отбрасываем
+            sizes = nd.sum(m, lab, range(1, n + 1)); keep = lab == (1 + int(np.argmax(sizes)))
+            if not name.startswith(("m_", "banner")): a[~keep] = 0
+        c = tight(Image.fromarray(a, "RGBA"))
+        out[name] = up(pixelize(c, 3.6), 2)
+    return out
+
+
 def debug_sheet(groups):
     tiles = [v for d in groups.values() for v in d.values()]
     cell, cols = 120, 10
@@ -253,10 +273,93 @@ def debug_sheet(groups):
     sheet.save(os.path.join(DEBUG, "debug_sheet.png"))
 
 
+
+# ---------------------------------------------------------------- детали интерфейса из ui_atlas.png (1536x1024, настоящая прозрачность с мягкой тенью)
+# каждая деталь ищется как связная область по альфе в своей рамке поиска и приводится к своей пиксельной сетке (шаг ~4 точки)
+UI_PARTS = {
+    "ribbon": (215, 20, 575, 112),     # лента заголовка с хвостами
+    "corner": (1410, 862, 1515, 970),  # уголок-завиток с листком (правый нижний)
+    "divider": (620, 915, 805, 965),   # разделитель: линия с ромбом
+    "close": (1330, 520, 1415, 605),   # красная кнопка с крестом
+    "ok": (1418, 520, 1505, 605),      # зелёная кнопка с галочкой
+    "prev": (1108, 520, 1195, 605),    # стрелка влево
+    "next": (1200, 520, 1290, 605),    # стрелка вправо
+    "chk_on": (1100, 612, 1155, 672), "chk_off": (1155, 612, 1210, 672),
+    "rad_on": (1215, 612, 1272, 672), "rad_off": (1272, 612, 1320, 672),
+    "knob": (1262, 680, 1325, 742),    # ромб ползунка
+    "spark": (1045, 880, 1145, 970),
+    "flag_r": (1168, 882, 1228, 970), "flag_b": (1228, 882, 1288, 970), "flag_g": (1288, 882, 1345, 970), "flag_p": (1345, 882, 1405, 970),
+}
+
+
+def grid_phase(a, k, axis):
+    rgb = a[..., :3].astype(np.int32)
+    d = np.abs(np.diff(rgb, axis=axis)).sum(-1)
+    col = (d > 30).sum(0 if axis == 1 else 1).astype(float)
+    ph = (np.arange(len(col)) % k) / k
+    z = (col * np.exp(2j * np.pi * ph)).sum()
+    return int(round((np.angle(z) / (2 * np.pi) * k) % k + 1)) % k
+
+
+def part(im, box, k=4, thr=150):
+    """деталь атласа: самая крупная связная область по альфе в рамке -> родная сетка, жёсткая альфа, без тени"""
+    crop = np.array(im.crop(box)).astype(np.float32)
+    m = crop[..., 3] > thr
+    lab, n = nd.label(nd.binary_dilation(m, iterations=2))
+    if n:
+        sizes = nd.sum(m, lab, range(1, n + 1)); best = 1 + int(np.argmax(sizes))
+        keep = (lab == best) & m
+        ys, xs = np.nonzero(keep); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        crop = crop[y0:y1, x0:x1].copy(); keep = keep[y0:y1, x0:x1]
+        crop[~keep, 3] = 0
+    ox, oy = grid_phase(crop, k, 1), grid_phase(crop, k, 0)
+    h, w = (crop.shape[0] - oy) // k, (crop.shape[1] - ox) // k
+    b = crop[oy:oy + h * k, ox:ox + w * k].reshape(h, k, w, k, 4)
+    inner = b[:, 1:k - 1, :, 1:k - 1, :].transpose(0, 2, 1, 3, 4).reshape(h, w, (k - 2) * (k - 2), 4)
+    al = inner[..., 3] / 255.0
+    rgb = (inner[..., :3] * al[..., None]).sum(-2) / np.maximum(al.sum(-1)[..., None], 1e-6)
+    out = np.zeros((h, w, 4), np.uint8)
+    out[..., :3] = np.clip(rgb, 0, 255).astype(np.uint8)
+    out[..., 3] = np.where(b[..., 3].mean(axis=(1, 3)) > 110, 255, 0)
+    out[out[..., 3] == 0] = 0
+    return Image.fromarray(out, "RGBA")
+
+
+def ui_parts():
+    im = load("ui_atlas.png").convert("RGBA")
+    P = {name: part(im, box) for name, box in UI_PARTS.items()}
+    # лента: левый конец (хвост + край плашки), гладкая середина в 1 точку, правый конец; ромб посередине убираем
+    rib = np.array(P.pop("ribbon"))
+    cold = (rib[..., 2].astype(int) > rib[..., 0].astype(int) - 6) & (rib[..., 3] > 0)   # тёмно-фиолетовая панель под хвостами — не лента
+    rib[cold] = 0
+    ys, xs = np.nonzero(rib[..., 3]); rib = rib[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    h, w = rib.shape[:2]
+    cut = max(6, int(w * .27))
+    mid = rib[:, int(w * .36):int(w * .36) + 1].copy()
+    P["rib_l"] = Image.fromarray(rib[:, :cut].copy(), "RGBA")
+    P["rib_m"] = Image.fromarray(mid, "RGBA")
+    P["rib_r"] = Image.fromarray(rib[:, w - cut:].copy(), "RGBA")
+    # ромб ползунка: только золото и его обводка (без красной и тёмной дорожки)
+    kn = np.array(P["knob"]).astype(int)
+    gold = (kn[..., 0] > 170) & (kn[..., 1] > 110) & (kn[..., 2] < 140) & (kn[..., 3] > 0)
+    keep = nd.binary_dilation(gold, iterations=1) & (kn[..., 3] > 0)
+    lab, n = nd.label(keep)
+    if n: sizes = nd.sum(keep, lab, range(1, n + 1)); keep = lab == 1 + int(np.argmax(sizes))
+    kn[~keep] = 0; ys, xs = np.nonzero(kn[..., 3]); kn = kn[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    P["knob"] = Image.fromarray(kn.astype(np.uint8), "RGBA")
+    # уголки: из правого нижнего — остальные три отражением
+    c = P.pop("corner")
+    P["c_br"] = c; P["c_bl"] = c.transpose(Image.FLIP_LEFT_RIGHT); P["c_tr"] = c.transpose(Image.FLIP_TOP_BOTTOM); P["c_tl"] = c.transpose(Image.ROTATE_180)
+    for k2, v in P.items(): print("  part", k2, v.size)
+    return P
+
+
 def main():
     groups = {"icon": icons()}
     groups.update(bubbles())
     groups["deco"] = deco()
+    groups["pi"] = people_icons()
+    groups["part"] = ui_parts()
     if DEBUG: debug_sheet(groups)
     body = []
     for g, d in groups.items():
